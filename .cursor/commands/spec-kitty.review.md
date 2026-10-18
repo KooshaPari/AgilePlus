@@ -7,8 +7,8 @@ description: DEPRECATED — use `ap review-loop` instead. See docs/design/SPECKI
 
 ## Migration
 
-| SpecKitty | AgilePlus (`ap`) |
-|-----------|-------------------|
+| SpecKitty            | AgilePlus (`ap`)              |
+| -------------------- | ----------------------------- |
 | `/spec-kitty.review` | `ap review-loop <feature-id>` |
 
 ```bash

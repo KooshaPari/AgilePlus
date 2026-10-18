@@ -5,16 +5,16 @@ lane: "done"
 dependencies: []
 base_branch: main
 base_commit: ed03fc47e3662d17514d0d9e56dbaeba7f22a9e7
-created_at: '2026-03-02T20:47:57.984923+00:00'
+created_at: "2026-03-02T20:47:57.984923+00:00"
 subtasks: [T116, T117, T118, T119, T120]
 shell_pid: "35449"
 agent: "claude-opus"
 reviewed_by: "Koosha Paridehpour"
 review_status: "approved"
 history:
-- date: '2026-03-02'
-  action: created
-  by: spec-kitty
+    - date: "2026-03-02"
+      action: created
+      by: spec-kitty
 ---
 
 # WP21: Performance Benchmarks
@@ -68,6 +68,7 @@ criterion_main!(benches);
 ```
 
 **Metrics to track:**
+
 - Average append time (microseconds per event)
 - p50, p95, p99 latencies
 - Throughput (events/second): target ≥10,000 events/sec
@@ -75,11 +76,13 @@ criterion_main!(benches);
 - WAL checkpoint overhead
 
 **Configuration:**
+
 - SQLite: WAL mode enabled
 - Batch size: measure both individual appends and batch inserts
 - Database size: test with 0KB (cold), 10MB, 100MB
 
 **Output format (regression detection):**
+
 ```
 Event Append Throughput
 =======================
@@ -158,6 +161,7 @@ criterion_main!(benches);
 ```
 
 **Metrics to track:**
+
 - Full replay (1000 events): target <100ms
 - Snapshot-based replay (900 snapshot + 100 new): target <10ms
 - Snapshot load time: <1ms
@@ -165,6 +169,7 @@ criterion_main!(benches);
 - Memory usage during replay: <10MB for single entity
 
 **Comparison output:**
+
 ```
 Event Replay Performance
 ========================
@@ -242,18 +247,21 @@ criterion_main!(benches);
 ```
 
 **Metrics to track:**
+
 - GET /api/features (list 100): p95 <100ms, p99 <200ms
 - GET /api/features/:id: p95 <50ms, p99 <100ms
 - POST /api/features/:id/transition: p95 <100ms, p99 <200ms
 - GET /health: p95 <10ms, p99 <20ms
 
 **Test scenarios:**
+
 - Cold start (first request, cache miss)
 - Warm cache (repeated requests)
 - Cache invalidation (after state change)
 - Concurrent requests (10 parallel clients)
 
 **Output format:**
+
 ```
 API Response Time Benchmarks
 =============================
@@ -322,18 +330,21 @@ criterion_main!(benches);
 ```
 
 **Metrics to track:**
+
 - Push single feature: target <2s
 - Pull single feature: target <2s
 - Full sync (100 features, no conflicts): target <30s
 - Sync with conflict resolution (5 conflicts): target <10s
 
 **Test scenarios:**
+
 - Network latency simulation (50ms, 100ms)
 - Plane.so API rate limiting (100 req/min)
 - Large payloads (5KB+ feature descriptions)
 - Partial failures and retries
 
 **Output format:**
+
 ```
 Sync Round-Trip Performance
 ============================
@@ -395,17 +406,20 @@ async fn memory_usage_idle() {
 ```
 
 **Metrics to track:**
+
 - agileplus-api at idle: target <100MB
 - Dragonfly cache: documented, no hard gate
 - Neo4j JVM: documented, excluded from gate
 - Total platform: documented
 
 **Load test scenario:**
+
 - Run with 100 features, 500 work packages
 - 10 concurrent API clients making requests
 - Steady-state memory after 5 minutes
 
 **Output format:**
+
 ```
 Memory Usage (idle)
 ===================
@@ -452,18 +466,18 @@ cargo bench --bench event_append_throughput -- --baseline before
 
 Performance gates enforced by CI:
 
-| Metric | Target | Gate Type |
-|--------|--------|-----------|
-| Event append throughput | ≥10K events/sec | Hard fail |
-| Full event replay (1000) | <100ms | Hard fail |
-| Snapshot replay (900+100) | <10ms | Hard fail |
-| API /features list (100) | <100ms p95 | Warning |
-| API /features/:id | <50ms p95 | Warning |
-| Feature transition | <100ms p95 | Warning |
-| Health endpoint | <10ms p95 | Warning |
-| Sync single feature | <2s | Warning |
-| Full sync (100 features) | <30s | Warning |
-| agileplus-api memory | <100MB | Hard fail |
+| Metric                    | Target          | Gate Type |
+| ------------------------- | --------------- | --------- |
+| Event append throughput   | ≥10K events/sec | Hard fail |
+| Full event replay (1000)  | <100ms          | Hard fail |
+| Snapshot replay (900+100) | <10ms           | Hard fail |
+| API /features list (100)  | <100ms p95      | Warning   |
+| API /features/:id         | <50ms p95       | Warning   |
+| Feature transition        | <100ms p95      | Warning   |
+| Health endpoint           | <10ms p95       | Warning   |
+| Sync single feature       | <2s             | Warning   |
+| Full sync (100 features)  | <30s            | Warning   |
+| agileplus-api memory      | <100MB          | Hard fail |
 
 ## Definition of Done
 

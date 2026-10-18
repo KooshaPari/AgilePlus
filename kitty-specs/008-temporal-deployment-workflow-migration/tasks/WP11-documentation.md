@@ -19,6 +19,7 @@ Create all operational documentation for the Temporal + Hatchet infrastructure. 
 ## Context
 
 Documentation lives in `docs/infra/` of the main project repository. Each document below must be:
+
 - Written in Markdown with Mermaid diagrams for architecture
 - Linked from `docs/infra/README.md`
 - Reviewed by a human operator before merge
@@ -36,28 +37,31 @@ This directory contains operational documentation for all infrastructure service
 
 ## Services
 
-| Service | Purpose | Dashboard | Port |
-|---------|---------|-----------|------|
-| [Temporal](temporal/) | Durable workflow orchestration | https://temporal.internal | 8233 |
-| [Hatchet](hatchet/) | Lightweight job scheduler | https://hatchet.internal | 8081 |
-| [Jaeger](tracing/) | Distributed tracing | https://jaeger.internal | 16686 |
-| [Grafana](monitoring/) | SLO dashboards | https://grafana.internal | 3000 |
-| [Prometheus](monitoring/) | Metrics collection | - | 9090 |
-| [NATS](nats/) | Pure event bus | - | 4222 |
+| Service                   | Purpose                        | Dashboard                 | Port  |
+| ------------------------- | ------------------------------ | ------------------------- | ----- |
+| [Temporal](temporal/)     | Durable workflow orchestration | https://temporal.internal | 8233  |
+| [Hatchet](hatchet/)       | Lightweight job scheduler      | https://hatchet.internal  | 8081  |
+| [Jaeger](tracing/)        | Distributed tracing            | https://jaeger.internal   | 16686 |
+| [Grafana](monitoring/)    | SLO dashboards                 | https://grafana.internal  | 3000  |
+| [Prometheus](monitoring/) | Metrics collection             | -                         | 9090  |
+| [NATS](nats/)             | Pure event bus                 | -                         | 4222  |
 
 ## Workflow Engines
 
 ### Temporal (Primary)
+
 - **Use for**: Long-running workflows, durable execution, saga patterns, exactly-once guarantees
 - **Examples**: Agent dispatch, multi-step data pipelines, human-in-the-loop workflows
 - **Docs**: [Temporal Overview](temporal/README.md)
 
 ### Hatchet (Secondary)
+
 - **Use for**: CI triggers, cron jobs, lightweight event-driven steps
 - **Examples**: GitHub webhook → CI pipeline, hourly health checks, scheduled syncs
 - **Docs**: [Hatchet Overview](hatchet/README.md)
 
 ### NATS (Event Bus Only)
+
 - **Use for**: At-most-once pub/sub, non-critical event propagation
 - **Examples**: `events.*`, `agent.result.*`, `ci.status.*`
 - **DO NOT use for**: Workflow dispatch, queue-based processing
@@ -65,15 +69,15 @@ This directory contains operational documentation for all infrastructure service
 
 ## Runbooks
 
-| Runbook | Trigger | SLA |
-|---------|---------|-----|
-| [Temporal Deployment](temporal/DEPLOY.md) | Initial deploy or major upgrade | 30 min |
-| [Temporal Troubleshooting](temporal/TROUBLESHOOT.md) | Workflow stuck, latency spike | 15 min |
-| [Workflow Authoring](temporal/AUTHORING.md) | Writing new workflows | - |
-| [Rollback Procedure](rollback/PROCEDURE.md) | Critical failure | 10 min |
-| [Hatchet Deployment](hatchet/DEPLOY.md) | Initial deploy or upgrade | 20 min |
-| [Hatchet Authoring](hatchet/AUTHORING.md) | Writing new Hatchet workflows | - |
-| [NATS Recovery](nats/RECOVERY.md) | NATS down, need event bus | 10 min |
+| Runbook                                              | Trigger                         | SLA    |
+| ---------------------------------------------------- | ------------------------------- | ------ |
+| [Temporal Deployment](temporal/DEPLOY.md)            | Initial deploy or major upgrade | 30 min |
+| [Temporal Troubleshooting](temporal/TROUBLESHOOT.md) | Workflow stuck, latency spike   | 15 min |
+| [Workflow Authoring](temporal/AUTHORING.md)          | Writing new workflows           | -      |
+| [Rollback Procedure](rollback/PROCEDURE.md)          | Critical failure                | 10 min |
+| [Hatchet Deployment](hatchet/DEPLOY.md)              | Initial deploy or upgrade       | 20 min |
+| [Hatchet Authoring](hatchet/AUTHORING.md)            | Writing new Hatchet workflows   | -      |
+| [NATS Recovery](nats/RECOVERY.md)                    | NATS down, need event bus       | 10 min |
 
 ## Architecture
 
@@ -89,7 +93,7 @@ This directory contains operational documentation for all infrastructure service
 
 ### 2. `docs/infra/temporal/README.md` — Temporal Overview
 
-```markdown
+````markdown
 # Temporal: Durable Workflow Orchestration
 
 ## Overview
@@ -108,65 +112,74 @@ graph LR
     Worker1 --> Activity1[Activity:<br/>dispatch_to_agent]
     Worker2 --> Activity2[Activity:<br/>collect_result]
 ```
+````
 
 ## Key Concepts
 
 ### Workflows
+
 A Workflow is a durable function execution. It has:
+
 - **Workflow ID**: Unique identifier (e.g., `agent-dispatch-{task_id}`)
 - **Run ID**: Each execution of a workflow gets a new run ID
 - **Task Queue**: Worker's subscription queue (default: `default`)
 
 ### Activities
+
 An Activity is a single step executed by a worker:
+
 - Heartbeat support for long-running steps
 - Automatic retry with configurable backoff
 - Timeout per activity and per attempt
 
 ### SLOs
 
-| Metric | Target | Critical Threshold |
-|--------|--------|-------------------|
-| Completion Rate | > 99.9% | < 95% for 15 min |
-| p99 Latency | < 5 min | > 10 min |
-| Activity Retry Rate | < 1% | > 5% |
+| Metric              | Target  | Critical Threshold |
+| ------------------- | ------- | ------------------ |
+| Completion Rate     | > 99.9% | < 95% for 15 min   |
+| p99 Latency         | < 5 min | > 10 min           |
+| Activity Retry Rate | < 1%    | > 5%               |
 
 ## Default Ports
 
-| Port | Service | URL |
-|------|---------|-----|
-| 7233 | gRPC | temporal:7233 |
-| 8233 | Frontend UI | https://temporal.internal |
-| 9233 | Metrics | http://temporal:9233/metrics |
-| 9200 | Elasticsearch | http://elasticsearch:9200 |
+| Port | Service       | URL                          |
+| ---- | ------------- | ---------------------------- |
+| 7233 | gRPC          | temporal:7233                |
+| 8233 | Frontend UI   | https://temporal.internal    |
+| 9233 | Metrics       | http://temporal:9233/metrics |
+| 9200 | Elasticsearch | http://elasticsearch:9200    |
 
 ## Environment Variables
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| TEMPORAL_HOST | temporal:7233 | Temporal gRPC address |
-| TEMPORAL_NAMESPACE | default | Workflow namespace |
-| TEMPORAL_TASK_QUEUE | default | Default task queue |
-| WORKFLOW_ENGINE | temporal | Dispatch routing (temporal/hatchet/nats) |
+| Variable            | Default       | Purpose                                  |
+| ------------------- | ------------- | ---------------------------------------- |
+| TEMPORAL_HOST       | temporal:7233 | Temporal gRPC address                    |
+| TEMPORAL_NAMESPACE  | default       | Workflow namespace                       |
+| TEMPORAL_TASK_QUEUE | default       | Default task queue                       |
+| WORKFLOW_ENGINE     | temporal      | Dispatch routing (temporal/hatchet/nats) |
 
 ## Common Operations
 
 ### View Running Workflows
+
 ```bash
 tctl workflow list
 ```
 
 ### Cancel a Stuck Workflow
+
 ```bash
 tctl workflow cancel {workflow_id}
 ```
 
 ### Reset a Failed Workflow
+
 ```bash
 tctl workflow reset --workflow_id {workflow_id} --reason "Manual reset after bug fix"
 ```
 
 ### View Workflow History
+
 ```bash
 tctl workflow show {workflow_id}
 ```
@@ -177,7 +190,8 @@ tctl workflow show {workflow_id}
 curl http://localhost:8233/health
 # Expected: {"status":"SERVING"}
 ```
-```
+
+````
 
 ### 3. `docs/infra/temporal/AUTHORING.md` — Workflow Authoring Guide
 
@@ -211,7 +225,7 @@ impl Workflow for AgentDispatchWorkflow {
         // Workflow logic here
     }
 }
-```
+````
 
 ## Retry Policy
 
@@ -251,7 +265,8 @@ cargo test --package temporal-worker --test workflow_integration
 3. **Timeout**: Always set reasonable timeouts
 4. **Saga**: Use compensation for distributed transactions
 5. **Local activity**: For < 30s synchronous work, use `#[activity(local)]`
-```
+
+````
 
 ### 4. `docs/infra/temporal/TROUBLESHOOT.md` — Troubleshooting Guide
 
@@ -268,7 +283,7 @@ tctl workflow show {workflow_id} | grep -E "EventType|State"
 
 # Check if activity is retrying
 tctl workflow describe {workflow_id} | grep -A5 "PendingActivities"
-```
+````
 
 ### Resolution
 
@@ -310,18 +325,19 @@ docker logs temporal-worker --since=5m | grep -E "ERROR|panic"
 
 ### Common Causes
 
-| Error | Cause | Fix |
-|-------|-------|-----|
-| `Activity task timeout` | Activity taking too long | Increase timeout or optimize activity |
-| `Exceeded retry policy` | Activity failed after all retries | Fix activity bug, then reset workflow |
-| `Panic in workflow` | Unhandled panic | Check worker logs, fix code, restart |
-| `Non-deterministic error` | Workflow code changed | Do NOT update running workflows; cancel and restart |
+| Error                     | Cause                             | Fix                                                 |
+| ------------------------- | --------------------------------- | --------------------------------------------------- |
+| `Activity task timeout`   | Activity taking too long          | Increase timeout or optimize activity               |
+| `Exceeded retry policy`   | Activity failed after all retries | Fix activity bug, then reset workflow               |
+| `Panic in workflow`       | Unhandled panic                   | Check worker logs, fix code, restart                |
+| `Non-deterministic error` | Workflow code changed             | Do NOT update running workflows; cancel and restart |
 
 ## Reset vs Cancel
 
 - **Cancel**: Ends the workflow immediately. Use for stuck/abort workflows.
 - **Reset**: Erases history and restarts from the beginning. Use after fixing a bug in the workflow code.
-```
+
+````
 
 ### 5. `docs/infra/hatchet/README.md` — Hatchet Overview
 
@@ -342,7 +358,7 @@ graph LR
     HatchetWorker --> Step1[Step 1:<br/>Checkout]
     HatchetWorker --> Step2[Step 2:<br/>Lint]
     HatchetWorker --> Step3[Step 3:<br/>Test]
-```
+````
 
 ## Use Cases
 
@@ -352,19 +368,20 @@ graph LR
 
 ## Key Metrics
 
-| Metric | Target |
-|--------|--------|
-| CI trigger time | < 30 seconds from webhook |
-| Step success rate | > 99% |
-| Failed job alert | Within 5 minutes |
+| Metric            | Target                    |
+| ----------------- | ------------------------- |
+| CI trigger time   | < 30 seconds from webhook |
+| Step success rate | > 99%                     |
+| Failed job alert  | Within 5 minutes          |
 
 ## Environment Variables
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| HATCHET_API_URL | https://hatchet.internal | Hatchet API endpoint |
-| HATCHET_DB_PASSWORD | (from .env) | PostgreSQL password |
-```
+| Variable            | Default                  | Purpose              |
+| ------------------- | ------------------------ | -------------------- |
+| HATCHET_API_URL     | https://hatchet.internal | Hatchet API endpoint |
+| HATCHET_DB_PASSWORD | (from .env)              | PostgreSQL password  |
+
+````
 
 ### 6. `docs/infra/nats/README.md` — NATS Role
 
@@ -413,7 +430,8 @@ curl http://localhost:8222/healthz
 
 # Check connections
 nats server info
-```
+````
+
 ```
 
 ## Acceptance Criteria
@@ -431,3 +449,4 @@ nats server info
 - [ ] All documents linked from `docs/infra/README.md`
 - [ ] Architecture diagram (Mermaid) embedded in README
 - [ ] Legacy NATS JetStream documentation archived to `.archive/`
+```

@@ -3,9 +3,11 @@
 ## Rule: `merge_conflict_markers`
 
 ### Severity
+
 FAIL (blocks commit)
 
 ### Trigger
+
 Any source file (`.rs`, `.toml`, `.yml`, `.md`, `.json`, `.js`, `.ts`) is
 staged and contains unresolved merge conflict markers:
 

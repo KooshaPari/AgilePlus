@@ -58,9 +58,11 @@ Each WP file contains:
 # WP01: Database Schema & Migrations
 
 ## Overview
+
 Create the database tables needed for email support: email queue, preferences, templates.
 
 ## Subtasks
+
 - [ ] Create migration up: 001_email_schema.sql
 - [ ] Define email table with proper indexes
 - [ ] Define email_preferences table with constraints
@@ -70,20 +72,24 @@ Create the database tables needed for email support: email queue, preferences, t
 - [ ] Document schema design rationale
 
 ## Dependencies
+
 None. This work package can start immediately.
 
 ## Deliverables
 
 ### Files to Create
+
 - `src/db/migrations/001_email_schema.sql` (up migration)
 - `src/db/migrations/001_email_schema.down.sql` (down migration)
 
 ### Files to Modify
+
 None
 
 ### No Files to Delete
 
 ## Definition of Done
+
 - [ ] All subtasks completed
 - [ ] Migration runs without errors
 - [ ] Migration can be reverted cleanly
@@ -91,15 +97,18 @@ None
 - [ ] Tests pass
 
 ## Acceptance Criteria
+
 - Email table exists with all required columns
 - Indexes created on frequently queried columns (user_id, status)
 - Foreign key constraints defined
 - Both up and down migrations work
 
 ## Estimated Effort
+
 2-3 hours
 
 ## Lane
+
 planned → doing → for_review → done
 ```
 
@@ -126,6 +135,7 @@ These models will be used throughout the system for database operations and API 
 ## Requirements from Spec
 
 From spec 001, these models must support:
+
 - Sending different email types (welcome, mention, receipt)
 - Tracking email status (pending, sent, failed, bounced)
 - Retrying failed emails with attempt tracking
@@ -135,58 +145,60 @@ From spec 001, these models must support:
 ## Subtasks
 
 - [ ] Create Email struct with all required fields
-  - id, user_id, event_type, recipient
-  - subject, body, status
-  - attempts, retry_at, last_error
-  - created_at, sent_at, bounced_at
+    - id, user_id, event_type, recipient
+    - subject, body, status
+    - attempts, retry_at, last_error
+    - created_at, sent_at, bounced_at
 
 - [ ] Implement EmailStatus enum
-  - Pending, Sent, Failed, Bounced
-  - Implement Display and serde traits
+    - Pending, Sent, Failed, Bounced
+    - Implement Display and serde traits
 
 - [ ] Create EmailPreference struct
-  - user_id, category (marketing/transactional/account)
-  - enabled (boolean)
-  - unsubscribe_token for links
+    - user_id, category (marketing/transactional/account)
+    - enabled (boolean)
+    - unsubscribe_token for links
 
 - [ ] Create EmailTemplate struct
-  - id, event_type, subject, body_template
-  - version tracking for templates
+    - id, event_type, subject, body_template
+    - version tracking for templates
 
 - [ ] Implement FromRow trait for sqlx
-  - Custom deserialization from database rows
+    - Custom deserialization from database rows
 
 - [ ] Add validation methods
-  - validate_email() — valid email addresses
-  - validate_preference_category() — valid categories
+    - validate_email() — valid email addresses
+    - validate_preference_category() — valid categories
 
 - [ ] Write unit tests for models
-  - Test serialization/deserialization
-  - Test validation logic
-  - Test enum conversions
+    - Test serialization/deserialization
+    - Test validation logic
+    - Test enum conversions
 
 - [ ] Document model fields and purpose
 
 ## Deliverables
 
 ### Files to Create
+
 - `src/models/email.rs` (~150 lines)
-  - Email struct with all fields
-  - EmailStatus enum with FromRow impl
-  - Validation methods
+    - Email struct with all fields
+    - EmailStatus enum with FromRow impl
+    - Validation methods
 
 - `src/models/email_preference.rs` (~100 lines)
-  - EmailPreference struct
-  - Category validation
+    - EmailPreference struct
+    - Category validation
 
 - `src/models/email_template.rs` (~80 lines)
-  - EmailTemplate struct
-  - Template field validation
+    - EmailTemplate struct
+    - Template field validation
 
 ### Files to Modify
+
 - `src/models/mod.rs` — Add exports for new models
-  - Add: `pub mod email;`
-  - Add: `pub use email::{Email, EmailStatus};`
+    - Add: `pub mod email;`
+    - Add: `pub use email::{Email, EmailStatus};`
 
 ### No Files to Delete
 
@@ -216,16 +228,19 @@ From spec 001, these models must support:
 ## Implementation Notes
 
 **Pattern**: Follow existing model pattern in codebase
+
 - Look at `src/models/user.rs` for style
 - Use same derive macros
 - Same error handling approach
 
 **Testing**: Create comprehensive unit tests
+
 - Test Email creation and status transitions
 - Test EmailPreference category validation
 - Test serialization with serde
 
 **Database Mapping**: Implement custom sqlx::FromRow
+
 - Handle status enum conversion from string
 - Handle datetime fields properly (created_at, sent_at)
 
@@ -235,6 +250,7 @@ From spec 001, these models must support:
 - **Unblocks**: WP03, WP04, WP06 (all use these models)
 
 ## Lane
+
 planned → doing → for_review → done
 ```
 
@@ -267,6 +283,7 @@ graph TD
 ```
 
 **Rules**:
+
 - WP01 can start immediately (no dependencies)
 - WP02 can start once WP01 is done
 - WP03, WP04, WP06 can run in parallel (once WP02 done)
@@ -289,12 +306,12 @@ done
 (unblocks dependent WPs)
 ```
 
-| Lane | Meaning | Who Actions | Notes |
-|------|---------|------------|-------|
-| `planned` | Ready to implement (deps met) | Implementer | Can start implementing |
-| `doing` | Currently being implemented | Implementer | Work in progress |
-| `for_review` | Ready for code review | Reviewer | All subtasks done, code written |
-| `done` | Approved and merged | Team | Unblocks dependent WPs |
+| Lane         | Meaning                       | Who Actions | Notes                           |
+| ------------ | ----------------------------- | ----------- | ------------------------------- |
+| `planned`    | Ready to implement (deps met) | Implementer | Can start implementing          |
+| `doing`      | Currently being implemented   | Implementer | Work in progress                |
+| `for_review` | Ready for code review         | Reviewer    | All subtasks done, code written |
+| `done`       | Approved and merged           | Team        | Unblocks dependent WPs          |
 
 ## Work Package Sizing
 
@@ -303,6 +320,7 @@ Good WP sizing is critical for parallel work:
 **Target size**: 1-4 hours of work
 
 **Too large** (>4 hours):
+
 ```
 ❌ "WP01: Entire feature"
    - Single implementer blocked for days
@@ -313,6 +331,7 @@ Good WP sizing is critical for parallel work:
 ```
 
 **Too small** (<30 minutes):
+
 ```
 ❌ "WP01: Import module"
    - Overhead of code review > actual work
@@ -322,6 +341,7 @@ Good WP sizing is critical for parallel work:
 ```
 
 **Just right**:
+
 ```
 ✓ WP01: Database schema (2 hours)
 ✓ WP02: Models (3 hours)
@@ -333,24 +353,28 @@ Good WP sizing is critical for parallel work:
 Each subtask should be:
 
 **Specific and actionable**:
+
 ```
 ❌ "Create email service"
 ✓ "Create SendGrid HTTP client with authentication"
 ```
 
 **Testable**:
+
 ```
 ❌ "Handle errors"
 ✓ "Add retry logic: exponential backoff, 5 attempts over 72 hours"
 ```
 
 **Completable within an hour**:
+
 ```
 ❌ "Implement entire email system"
 ✓ "Create Email struct with sqlx FromRow implementation"
 ```
 
 **Measurable**:
+
 ```
 ❌ "Make it fast"
 ✓ "Reduce email send latency to <5ms via caching"
@@ -418,19 +442,23 @@ Each WP gets a prompt file for agent dispatch:
 You are implementing work package WP02 for feature 001.
 
 ## Context
+
 - Spec: `kitty-specs/001-email-notifications/spec.md`
 - Plan: `kitty-specs/001-email-notifications/plan.md`
 - Related WPs: WP01 (completed), WP03 (waiting on you)
 
 ## Your Task
+
 Implement the Email, EmailPreference, and EmailTemplate data models.
 
 ## Deliverables
+
 - `src/models/email.rs`
 - `src/models/email_preference.rs`
 - `src/models/email_template.rs`
 
 ## Subtasks
+
 1. Create Email struct matching database schema
 2. Implement EmailStatus enum
 3. Add sqlx FromRow implementations
@@ -438,18 +466,21 @@ Implement the Email, EmailPreference, and EmailTemplate data models.
 5. Verify integration with database
 
 ## Definition of Done
+
 - All subtasks completed
 - Code compiles without warnings
 - All tests pass
 - Models match database schema from WP01
 
 ## Files Changed
+
 - src/models/email.rs (CREATE)
 - src/models/email_preference.rs (CREATE)
 - src/models/email_template.rs (CREATE)
 - src/models/mod.rs (MODIFY - add exports)
 
 ## Command to Start
+
 agileplus implement WP02
 ```
 

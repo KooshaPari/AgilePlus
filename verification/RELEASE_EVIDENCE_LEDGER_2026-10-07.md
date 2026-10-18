@@ -44,7 +44,7 @@ Use this ledger with `AGENTS.md`, `spec/product/AUTHORITY_INDEX.md`,
   SQLite WAL backup/restore smoke tests. This does not prove a deployed host
   vhost, real DNS-01 TLS certificate, live browser authentication, or tailnet
   reachability.
-- A passing deploy *contract* does not mean live DNS, TLS, Tailscale, Vercel,
+- A passing deploy _contract_ does not mean live DNS, TLS, Tailscale, Vercel,
   or a running desktop backend was tested.
 
 ## Release modes
@@ -160,5 +160,5 @@ remain open. No live infrastructure configuration was performed here.
 ## Reporting rule
 
 Every future status report must state the exact branch SHA, CI run, deployed
-environment, which journeys were *executed*, and time-to-next-release. Never
+environment, which journeys were _executed_, and time-to-next-release. Never
 count a static design, a URL, or a mock response as a usable release.

@@ -10,6 +10,7 @@ The pre-commit "end-of-file-fixer" hook keeps failing. Fix this permanently.
 5. Report total count fixed
 
 RULES:
+
 - No git stash. No force-push. No push to main. No worktrees.
 - Actually DO the work. Report real counts.
 - Working dir: C:/Users/koosh/Dev/AgilePlus

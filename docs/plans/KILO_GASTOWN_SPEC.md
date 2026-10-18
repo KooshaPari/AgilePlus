@@ -14,6 +14,7 @@ Gastown is Kilo's multi-agent orchestration system for coordinating software dev
 ### Towns
 
 A **town** is a top-level organizational unit representing a single project or repository. Each town has:
+
 - A unique town ID (UUID)
 - A name derived from the repository name
 - Multiple **rigs** for different types of work
@@ -22,6 +23,7 @@ A **town** is a top-level organizational unit representing a single project or r
 ### Rigs
 
 A **rig** is a working cluster within a town containing agents that collaborate on related work. Rigs are identified by their rig ID (UUID) and contain:
+
 - **Polecat agents**: Execute tasks assigned to them via hooked beads
 - **Refinery agents**: Review completed work and merge changes
 - Shared context from the town's projects
@@ -30,19 +32,20 @@ A **rig** is a working cluster within a town containing agents that collaborate 
 
 Agents are the fundamental execution units in Gastown:
 
-| Agent Type | Role | Capabilities |
-|------------|------|--------------|
-| **Polecat** | Task executor | Implements features, fixes bugs, writes tests and docs |
-| **Clover** | Quality verifier | Runs linters, type checkers, test suites |
-| **Birch** | Documentation specialist | Writes and maintains documentation |
-| **Ember** | Research analyst | Investigates options, gathers context |
-| **Maple** | Secondary implementer | Parallel implementation work |
-| **Refinery** | Code reviewer | Reviews PRs, merges to default branch |
-| **Patrol** | Triage coordinator | Routes issues to appropriate agents |
+| Agent Type   | Role                     | Capabilities                                           |
+| ------------ | ------------------------ | ------------------------------------------------------ |
+| **Polecat**  | Task executor            | Implements features, fixes bugs, writes tests and docs |
+| **Clover**   | Quality verifier         | Runs linters, type checkers, test suites               |
+| **Birch**    | Documentation specialist | Writes and maintains documentation                     |
+| **Ember**    | Research analyst         | Investigates options, gathers context                  |
+| **Maple**    | Secondary implementer    | Parallel implementation work                           |
+| **Refinery** | Code reviewer            | Reviews PRs, merges to default branch                  |
+| **Patrol**   | Triage coordinator       | Routes issues to appropriate agents                    |
 
 ### Beads
 
 **Beads** are the atomic work units in Gastown. Each bead represents:
+
 - A discrete, completable unit of work
 - An assigned agent (via `assignee_agent_bead_id`)
 - A status lifecycle: `pending` → `in_progress` → `in_review` → `closed`
@@ -50,12 +53,12 @@ Agents are the fundamental execution units in Gastown:
 
 #### Bead Types
 
-| Type | Purpose | Example |
-|------|---------|---------|
-| `issue` | Task or bug | "Implement feature X" |
-| `escalation` | Blocked or problematic work | "Branch does not exist" |
-| `merge_request` | Code review request | PR review from agent |
-| `triage` | Routing decision needed | "GUPP force stop" |
+| Type            | Purpose                     | Example                 |
+| --------------- | --------------------------- | ----------------------- |
+| `issue`         | Task or bug                 | "Implement feature X"   |
+| `escalation`    | Blocked or problematic work | "Branch does not exist" |
+| `merge_request` | Code review request         | PR review from agent    |
+| `triage`        | Routing decision needed     | "GUPP force stop"       |
 
 #### Bead Lifecycle
 
@@ -83,6 +86,7 @@ Gastown agents work in **isolated git worktrees** to prevent interference betwee
 ### Convoys
 
 **Convoys** group related beads that need to be developed together:
+
 - A convoy has a feature branch: `convoy/{convoy-id}/head`
 - All beads in a convoy share this branch
 - Individual agent branches are children of the convoy head
@@ -95,6 +99,7 @@ Convoy branch naming: `convoy/{feature-spec-id}/{agent-id}/{bead-id}`
 ### 1. Prime (Orientation)
 
 At the start of each session, agents call `gt_prime` to receive:
+
 - Their agent identity and status
 - The currently hooked bead (their assigned task)
 - Any undelivered mail from other agents
@@ -103,6 +108,7 @@ At the start of each session, agents call `gt_prime` to receive:
 ### 2. Work (Execution)
 
 Agents execute their hooked bead following the **GUPP principle**:
+
 > **G**rab the bead, **U**nderstand it, **P**rime your context, **P**erform the work
 
 - Implement the solution completely
@@ -113,11 +119,12 @@ Agents execute their hooked bead following the **GUPP principle**:
 ### 3. Checkpoint (Recovery)
 
 Periodically call `gt_checkpoint` to save progress:
+
 ```json
 {
-  "completed": "function X implemented",
-  "next": "write tests for function X",
-  "blockers": []
+    "completed": "function X implemented",
+    "next": "write tests for function X",
+    "blockers": []
 }
 ```
 
@@ -126,6 +133,7 @@ If the container restarts, the agent can resume from the checkpoint.
 ### 4. Done (Submission)
 
 When the bead is complete:
+
 1. Push the branch to remote
 2. Call `gt_done` with the branch name
 3. The bead transitions to `in_review`
@@ -136,12 +144,13 @@ When the bead is complete:
 Before calling `gt_done`, agents must verify:
 
 1. **`task quality`** — Run the quality gate command to validate:
-   - Linting passes
-   - Type checking passes
-   - Tests pass
-   - Code follows project conventions
+    - Linting passes
+    - Type checking passes
+    - Tests pass
+    - Code follows project conventions
 
 If a gate fails:
+
 - Fix the issue and re-run the failing gate
 - Repeat until all gates pass
 - If unfixable after a few attempts, call `gt_escalate`
@@ -151,6 +160,7 @@ If a gate fails:
 ### Mail
 
 Agents communicate via typed mail messages:
+
 - `gt_mail_send` — Send a message to another agent
 - `gt_mail_check` — Read undelivered mail
 
@@ -159,36 +169,39 @@ Mail is persistent and queued until acknowledged.
 ### Nudges
 
 For time-sensitive coordination:
+
 - `gt_nudge` — Deliver an immediate wake-up call to an idle agent
 
 ### Escalations
 
 When stuck or blocked:
+
 - `gt_escalate` — Create an escalation bead with context
 - Escalations are routed to the mayor for resolution
 
 ### Triage Requests
 
 Beads with the `gt:triage-request` label require human/mayor input:
+
 - `gt_triage_resolve` — Take action on a triage request
 
 ## Gastown Tools Reference
 
-| Tool | Purpose |
-|------|---------|
-| `gt_prime` | Get full context: identity, hooked bead, mail, open beads |
-| `gt_bead_status` | Inspect any bead by ID |
-| `gt_bead_close` | Close a completed bead |
-| `gt_done` | Signal bead completion and push to review queue |
-| `gt_mail_send` | Send a typed message to another agent |
-| `gt_mail_check` | Read pending mail |
-| `gt_nudge` | Send real-time nudge to wake an agent |
-| `gt_escalate` | Create escalation for blocked/problematic work |
-| `gt_checkpoint` | Write crash-recovery data |
-| `gt_status` | Emit plain-language status for dashboard |
-| `gt_mol_current` | Get current molecule step (if applicable) |
-| `gt_mol_advance` | Complete molecule step and advance |
-| `gt_triage_resolve` | Resolve a triage request |
+| Tool                | Purpose                                                   |
+| ------------------- | --------------------------------------------------------- |
+| `gt_prime`          | Get full context: identity, hooked bead, mail, open beads |
+| `gt_bead_status`    | Inspect any bead by ID                                    |
+| `gt_bead_close`     | Close a completed bead                                    |
+| `gt_done`           | Signal bead completion and push to review queue           |
+| `gt_mail_send`      | Send a typed message to another agent                     |
+| `gt_mail_check`     | Read pending mail                                         |
+| `gt_nudge`          | Send real-time nudge to wake an agent                     |
+| `gt_escalate`       | Create escalation for blocked/problematic work            |
+| `gt_checkpoint`     | Write crash-recovery data                                 |
+| `gt_status`         | Emit plain-language status for dashboard                  |
+| `gt_mol_current`    | Get current molecule step (if applicable)                 |
+| `gt_mol_advance`    | Complete molecule step and advance                        |
+| `gt_triage_resolve` | Resolve a triage request                                  |
 
 ## Gastown in AgilePlus
 
@@ -201,6 +214,7 @@ Beads with the `gt:triage-request` label require human/mayor input:
 ### Rig Structure
 
 The AgilePlus rig contains:
+
 - Polecat agents (Shadow, Clover, Birch, Maple, Ember) for implementation
 - Refinery agents for code review and merging
 - Patrol for triage coordination

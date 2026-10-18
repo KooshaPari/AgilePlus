@@ -2,8 +2,8 @@
 
 Single-repo SOTA index. Dimension docs under `docs/sota/`.
 
-| Dimension | Path |
-|-----------|------|
+| Dimension | Path                                   |
+| --------- | -------------------------------------- |
 | Technical | [technical.md](docs/sota/technical.md) |
 
 ## Summary

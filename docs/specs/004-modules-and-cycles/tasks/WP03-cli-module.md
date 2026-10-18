@@ -55,9 +55,9 @@ All commands wire into `crates/agileplus-cli/src/commands/mod.rs` and the CLI en
 - **Tree rendering**: For `list --tree`, use a simple recursive ASCII tree. No external crates.
   Pattern: print `+-- slug` with increasing indent per level.
 - **Files**:
-  - NEW: `crates/agileplus-cli/src/commands/module.rs`
-  - MODIFIED: `crates/agileplus-cli/src/commands/mod.rs` -- add `pub mod module;`
-  - MODIFIED: `crates/agileplus-cli/src/main.rs` (or top-level Commands enum) -- add `Module` variant
+    - NEW: `crates/agileplus-cli/src/commands/module.rs`
+    - MODIFIED: `crates/agileplus-cli/src/commands/mod.rs` -- add `pub mod module;`
+    - MODIFIED: `crates/agileplus-cli/src/main.rs` (or top-level Commands enum) -- add `Module` variant
 
 ---
 
@@ -75,103 +75,103 @@ All commands wire into `crates/agileplus-cli/src/commands/mod.rs` and the CLI en
 
 2. Define the top-level args struct and subcommand enum:
 
-   ```rust
-   use clap::{Args, Subcommand};
+    ```rust
+    use clap::{Args, Subcommand};
 
-   #[derive(Debug, Args)]
-   pub struct ModuleArgs {
-       #[command(subcommand)]
-       pub command: ModuleCommand,
-   }
+    #[derive(Debug, Args)]
+    pub struct ModuleArgs {
+        #[command(subcommand)]
+        pub command: ModuleCommand,
+    }
 
-   #[derive(Debug, Subcommand)]
-   pub enum ModuleCommand {
-       /// Create a new module
-       Create(CreateArgs),
-       /// List modules (optionally as a tree)
-       List(ListArgs),
-       /// Show a module with its features and children
-       Show(ShowArgs),
-       /// Set a feature's owning module
-       Assign(AssignArgs),
-       /// Add a secondary tag between a feature and a module
-       Tag(TagArgs),
-       /// Remove a secondary tag between a feature and a module
-       Untag(UntagArgs),
-       /// Delete a module (fails if it has children or owned features)
-       Delete(DeleteArgs),
-   }
-   ```
+    #[derive(Debug, Subcommand)]
+    pub enum ModuleCommand {
+        /// Create a new module
+        Create(CreateArgs),
+        /// List modules (optionally as a tree)
+        List(ListArgs),
+        /// Show a module with its features and children
+        Show(ShowArgs),
+        /// Set a feature's owning module
+        Assign(AssignArgs),
+        /// Add a secondary tag between a feature and a module
+        Tag(TagArgs),
+        /// Remove a secondary tag between a feature and a module
+        Untag(UntagArgs),
+        /// Delete a module (fails if it has children or owned features)
+        Delete(DeleteArgs),
+    }
+    ```
 
 3. Define each args struct (placeholders for now; flesh out in T015-T017):
 
-   ```rust
-   #[derive(Debug, Args)]
-   pub struct CreateArgs {
-       /// Display name for the new module
-       pub name: String,
-       /// Slug of the parent module (creates a child if provided)
-       #[arg(long)]
-       pub parent: Option<String>,
-   }
+    ```rust
+    #[derive(Debug, Args)]
+    pub struct CreateArgs {
+        /// Display name for the new module
+        pub name: String,
+        /// Slug of the parent module (creates a child if provided)
+        #[arg(long)]
+        pub parent: Option<String>,
+    }
 
-   #[derive(Debug, Args)]
-   pub struct ListArgs {
-       /// Render as recursive ASCII tree
-       #[arg(long)]
-       pub tree: bool,
-   }
+    #[derive(Debug, Args)]
+    pub struct ListArgs {
+        /// Render as recursive ASCII tree
+        #[arg(long)]
+        pub tree: bool,
+    }
 
-   #[derive(Debug, Args)]
-   pub struct ShowArgs {
-       /// Module slug to show
-       pub slug: String,
-   }
+    #[derive(Debug, Args)]
+    pub struct ShowArgs {
+        /// Module slug to show
+        pub slug: String,
+    }
 
-   #[derive(Debug, Args)]
-   pub struct AssignArgs {
-       /// Feature slug to assign
-       pub feature_slug: String,
-       /// Module slug to assign it to
-       pub module_slug: String,
-   }
+    #[derive(Debug, Args)]
+    pub struct AssignArgs {
+        /// Feature slug to assign
+        pub feature_slug: String,
+        /// Module slug to assign it to
+        pub module_slug: String,
+    }
 
-   #[derive(Debug, Args)]
-   pub struct TagArgs {
-       pub feature_slug: String,
-       pub module_slug: String,
-   }
+    #[derive(Debug, Args)]
+    pub struct TagArgs {
+        pub feature_slug: String,
+        pub module_slug: String,
+    }
 
-   #[derive(Debug, Args)]
-   pub struct UntagArgs {
-       pub feature_slug: String,
-       pub module_slug: String,
-   }
+    #[derive(Debug, Args)]
+    pub struct UntagArgs {
+        pub feature_slug: String,
+        pub module_slug: String,
+    }
 
-   #[derive(Debug, Args)]
-   pub struct DeleteArgs {
-       /// Module slug to delete
-       pub slug: String,
-   }
-   ```
+    #[derive(Debug, Args)]
+    pub struct DeleteArgs {
+        /// Module slug to delete
+        pub slug: String,
+    }
+    ```
 
 4. Define the top-level dispatch function signature:
 
-   ```rust
-   pub async fn run(args: ModuleArgs, storage: &dyn StoragePort) -> anyhow::Result<()> {
-       match args.command {
-           ModuleCommand::Create(a) => create(a, storage).await,
-           ModuleCommand::List(a)   => list(a, storage).await,
-           ModuleCommand::Show(a)   => show(a, storage).await,
-           ModuleCommand::Assign(a) => assign(a, storage).await,
-           ModuleCommand::Tag(a)    => tag(a, storage).await,
-           ModuleCommand::Untag(a)  => untag(a, storage).await,
-           ModuleCommand::Delete(a) => delete(a, storage).await,
-       }
-   }
-   ```
+    ```rust
+    pub async fn run(args: ModuleArgs, storage: &dyn StoragePort) -> anyhow::Result<()> {
+        match args.command {
+            ModuleCommand::Create(a) => create(a, storage).await,
+            ModuleCommand::List(a)   => list(a, storage).await,
+            ModuleCommand::Show(a)   => show(a, storage).await,
+            ModuleCommand::Assign(a) => assign(a, storage).await,
+            ModuleCommand::Tag(a)    => tag(a, storage).await,
+            ModuleCommand::Untag(a)  => untag(a, storage).await,
+            ModuleCommand::Delete(a) => delete(a, storage).await,
+        }
+    }
+    ```
 
-   Leave all inner `async fn` bodies as `todo!()` stubs for now.
+    Leave all inner `async fn` bodies as `todo!()` stubs for now.
 
 5. Add `pub mod module;` to `crates/agileplus-cli/src/commands/mod.rs`.
 
@@ -189,32 +189,30 @@ resolution) and deletion (with guard enforcement).
 **Steps**:
 
 1. Implement `async fn create(args: CreateArgs, storage: &dyn StoragePort) -> anyhow::Result<()>`:
+    - If `args.parent` is `Some(parent_slug)`:
+        - Call `storage.get_module_by_slug(&parent_slug, None).await?`.
+        - If `None`, return `Err(anyhow::anyhow!("Parent module '{}' not found", parent_slug))`.
+        - Use the found parent's `id` as `parent_module_id`.
+    - Build `Module::new(&args.name, parent_module_id)`.
+    - Call `storage.create_module(&module).await?`.
+    - Print: `"Created module '{}' (slug: {}, id: {})"`.
 
-   - If `args.parent` is `Some(parent_slug)`:
-     - Call `storage.get_module_by_slug(&parent_slug, None).await?`.
-     - If `None`, return `Err(anyhow::anyhow!("Parent module '{}' not found", parent_slug))`.
-     - Use the found parent's `id` as `parent_module_id`.
-   - Build `Module::new(&args.name, parent_module_id)`.
-   - Call `storage.create_module(&module).await?`.
-   - Print: `"Created module '{}' (slug: {}, id: {})"`.
-
-   Note: `get_module_by_slug` takes a `parent_module_id` scope parameter. For the CLI `--parent`
-   flag, first look up the parent by slug with `parent_module_id = None` (root search). If the
-   user's system has deeply nested parents with duplicate slugs, they must provide the full path
-   -- document this limitation in a CLI help note.
+    Note: `get_module_by_slug` takes a `parent_module_id` scope parameter. For the CLI `--parent`
+    flag, first look up the parent by slug with `parent_module_id = None` (root search). If the
+    user's system has deeply nested parents with duplicate slugs, they must provide the full path
+    -- document this limitation in a CLI help note.
 
 2. Implement `async fn delete(args: DeleteArgs, storage: &dyn StoragePort) -> anyhow::Result<()>`:
-
-   - Resolve slug to id: call `get_module_by_slug(&args.slug, None).await?`.
-   - If `None`, return `Err(anyhow::anyhow!("Module '{}' not found", args.slug))`.
-   - Call `storage.delete_module(module.id).await`.
-   - Map `DomainError::ModuleHasDependents(msg)` to a human message:
-     `"Cannot delete: {msg} -- remove owned features and child modules first"`.
-   - On success, print: `"Deleted module '{}'."`.
+    - Resolve slug to id: call `get_module_by_slug(&args.slug, None).await?`.
+    - If `None`, return `Err(anyhow::anyhow!("Module '{}' not found", args.slug))`.
+    - Call `storage.delete_module(module.id).await`.
+    - Map `DomainError::ModuleHasDependents(msg)` to a human message:
+      `"Cannot delete: {msg} -- remove owned features and child modules first"`.
+    - On success, print: `"Deleted module '{}'."`.
 
 3. Write unit tests for the guard messages:
-   - Mock a storage that returns `Err(DomainError::ModuleHasDependents("has 2 child modules".into()))`.
-   - Verify the error message contains actionable wording.
+    - Mock a storage that returns `Err(DomainError::ModuleHasDependents("has 2 child modules".into()))`.
+    - Verify the error message contains actionable wording.
 
 **Validation**: Manual `agileplus module create "Test"` and `agileplus module delete "test"` work end-to-end.
 
@@ -229,69 +227,69 @@ resolution) and deletion (with guard enforcement).
 **Steps**:
 
 1. Implement `async fn list(args: ListArgs, storage: &dyn StoragePort) -> anyhow::Result<()>`:
-
-   - Fetch root modules: `storage.list_root_modules().await?`.
-   - If `!args.tree`:
-     - Print each module as one line: `"  {slug}  {friendly_name}"`.
-   - If `args.tree`:
-     - For each root module, call `print_module_tree(module, storage, 0).await?`.
+    - Fetch root modules: `storage.list_root_modules().await?`.
+    - If `!args.tree`:
+        - Print each module as one line: `"  {slug}  {friendly_name}"`.
+    - If `args.tree`:
+        - For each root module, call `print_module_tree(module, storage, 0).await?`.
 
 2. Implement the recursive tree printer:
 
-   ```rust
-   async fn print_module_tree(
-       module: &Module,
-       storage: &dyn StoragePort,
-       depth: usize,
-   ) -> anyhow::Result<()> {
-       let indent = "  ".repeat(depth);
-       let connector = if depth == 0 { "" } else { "+-- " };
-       // Count owned features
-       let mwf = storage.get_module_with_features(module.id).await?;
-       let owned_count = mwf.as_ref().map(|m| m.owned_features.len()).unwrap_or(0);
-       let tagged_count = mwf.as_ref().map(|m| m.tagged_features.len()).unwrap_or(0);
-       println!(
-           "{}{}{} ({} owned, {} tagged)",
-           indent, connector, module.slug, owned_count, tagged_count
-       );
-       let children = storage.list_child_modules(module.id).await?;
-       for child in &children {
-           Box::pin(print_module_tree(child, storage, depth + 1)).await?;
-       }
-       Ok(())
-   }
-   ```
+    ```rust
+    async fn print_module_tree(
+        module: &Module,
+        storage: &dyn StoragePort,
+        depth: usize,
+    ) -> anyhow::Result<()> {
+        let indent = "  ".repeat(depth);
+        let connector = if depth == 0 { "" } else { "+-- " };
+        // Count owned features
+        let mwf = storage.get_module_with_features(module.id).await?;
+        let owned_count = mwf.as_ref().map(|m| m.owned_features.len()).unwrap_or(0);
+        let tagged_count = mwf.as_ref().map(|m| m.tagged_features.len()).unwrap_or(0);
+        println!(
+            "{}{}{} ({} owned, {} tagged)",
+            indent, connector, module.slug, owned_count, tagged_count
+        );
+        let children = storage.list_child_modules(module.id).await?;
+        for child in &children {
+            Box::pin(print_module_tree(child, storage, depth + 1)).await?;
+        }
+        Ok(())
+    }
+    ```
 
-   Note: use `Box::pin` for recursive async functions to avoid infinite size at compile time.
+    Note: use `Box::pin` for recursive async functions to avoid infinite size at compile time.
 
-   Example output for `--tree`:
-   ```
-   authentication (3 owned, 0 tagged)
-     +-- oauth-providers (0 owned, 0 tagged)
-   content (5 owned, 1 tagged)
-   notifications (2 owned, 2 tagged)
-   ```
+    Example output for `--tree`:
+
+    ```
+    authentication (3 owned, 0 tagged)
+      +-- oauth-providers (0 owned, 0 tagged)
+    content (5 owned, 1 tagged)
+    notifications (2 owned, 2 tagged)
+    ```
 
 3. Implement `async fn show(args: ShowArgs, storage: &dyn StoragePort) -> anyhow::Result<()>`:
+    - Resolve slug to module (same root-search pattern as `delete`).
+    - Call `storage.get_module_with_features(module.id).await?`.
+    - Print sections:
 
-   - Resolve slug to module (same root-search pattern as `delete`).
-   - Call `storage.get_module_with_features(module.id).await?`.
-   - Print sections:
-     ```
-     Module: authentication
-     Description: Handles all auth flows
+        ```
+        Module: authentication
+        Description: Handles all auth flows
 
-     Owned Features (3):
-       login         -- implementing
-       sso           -- specified
-       password-reset -- planned
+        Owned Features (3):
+          login         -- implementing
+          sso           -- specified
+          password-reset -- planned
 
-     Tagged Features (1):
-       unified-search -- researched
+        Tagged Features (1):
+          unified-search -- researched
 
-     Child Modules (1):
-       oauth-providers
-     ```
+        Child Modules (1):
+          oauth-providers
+        ```
 
 **Validation**: `agileplus module list --tree` renders correct ASCII tree; `agileplus module show` shows correct sections.
 
@@ -306,27 +304,24 @@ resolution) and deletion (with guard enforcement).
 **Steps**:
 
 1. Implement `async fn assign(args: AssignArgs, storage: &dyn StoragePort) -> anyhow::Result<()>`:
+    - Resolve feature slug: `storage.get_feature_by_slug(&args.feature_slug).await?`. If `None`, error.
+    - Resolve module slug: `storage.get_module_by_slug(&args.module_slug, None).await?`. If `None`, error.
+    - Call `storage.assign_feature_to_module(feature.id, module.id).await?`.
+    - Print: `"Assigned feature '{}' to module '{}'."`.
 
-   - Resolve feature slug: `storage.get_feature_by_slug(&args.feature_slug).await?`. If `None`, error.
-   - Resolve module slug: `storage.get_module_by_slug(&args.module_slug, None).await?`. If `None`, error.
-   - Call `storage.assign_feature_to_module(feature.id, module.id).await?`.
-   - Print: `"Assigned feature '{}' to module '{}'."`.
-
-   Edge case: if the feature already has a different `module_id`, the storage will overwrite it.
-   Print a warning: `"Warning: feature '{}' was previously assigned to another module -- ownership transferred."`.
-   Check `feature.module_id != Some(module.id)` before the call to detect this.
+    Edge case: if the feature already has a different `module_id`, the storage will overwrite it.
+    Print a warning: `"Warning: feature '{}' was previously assigned to another module -- ownership transferred."`.
+    Check `feature.module_id != Some(module.id)` before the call to detect this.
 
 2. Implement `async fn tag(args: TagArgs, ...)`:
-
-   - Same resolution pattern as `assign`.
-   - Call `storage.tag_feature_to_module(module.id, feature.id).await?`.
-   - Print: `"Tagged feature '{}' to module '{}'."`.
+    - Same resolution pattern as `assign`.
+    - Call `storage.tag_feature_to_module(module.id, feature.id).await?`.
+    - Print: `"Tagged feature '{}' to module '{}'."`.
 
 3. Implement `async fn untag(args: UntagArgs, ...)`:
-
-   - Same resolution pattern.
-   - Call `storage.untag_feature_from_module(module.id, feature.id).await?`.
-   - Print: `"Untagged feature '{}' from module '{}'."`.
+    - Same resolution pattern.
+    - Call `storage.untag_feature_from_module(module.id, feature.id).await?`.
+    - Print: `"Untagged feature '{}' from module '{}'."`.
 
 **Validation**: All three commands succeed against a real SQLite DB; second tagging the same pair is idempotent (INSERT OR IGNORE).
 
@@ -337,34 +332,34 @@ resolution) and deletion (with guard enforcement).
 **Purpose**: Expose `agileplus module` at the top level and cover command dispatch with tests.
 
 **Files**:
+
 - MODIFIED: `crates/agileplus-cli/src/main.rs` (or wherever the top-level `Commands` enum lives)
 
 **Steps**:
 
 1. Locate the top-level `Commands` enum. Add:
 
-   ```rust
-   /// Module management (FR-CLI01)
-   Module(commands::module::ModuleArgs),
-   ```
+    ```rust
+    /// Module management (FR-CLI01)
+    Module(commands::module::ModuleArgs),
+    ```
 
 2. In the match dispatch block, add:
 
-   ```rust
-   Commands::Module(args) => commands::module::run(args, &storage).await?,
-   ```
+    ```rust
+    Commands::Module(args) => commands::module::run(args, &storage).await?,
+    ```
 
 3. Verify `agileplus --help` shows `module` as a subcommand with its description.
 
 4. Write unit tests (in `module.rs` under `#[cfg(test)]`):
+    - `create_args_parse_no_parent`: verify clap parses `["create", "My Module"]` correctly with
+      `parent = None`.
+    - `create_args_parse_with_parent`: verify `["create", "Sub", "--parent", "auth"]` sets
+      `parent = Some("auth".into())`.
+    - `list_args_tree_flag`: verify `["list", "--tree"]` sets `tree = true`.
+    - `delete_args_slug`: verify `["delete", "my-module"]` sets `slug = "my-module"`.
 
-   - `create_args_parse_no_parent`: verify clap parses `["create", "My Module"]` correctly with
-     `parent = None`.
-   - `create_args_parse_with_parent`: verify `["create", "Sub", "--parent", "auth"]` sets
-     `parent = Some("auth".into())`.
-   - `list_args_tree_flag`: verify `["list", "--tree"]` sets `tree = true`.
-   - `delete_args_slug`: verify `["delete", "my-module"]` sets `slug = "my-module"`.
-
-   Use clap's `try_parse_from` for these tests.
+    Use clap's `try_parse_from` for these tests.
 
 **Validation**: `cargo test -p agileplus-cli` all green; `cargo clippy -p agileplus-cli -- -D warnings` zero warnings.

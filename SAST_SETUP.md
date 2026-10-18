@@ -5,6 +5,7 @@ This document describes the Static Application Security Testing (SAST) infrastru
 ## Overview
 
 The SAST foundation includes:
+
 - **Semgrep**: Custom rule engine for code patterns, secrets, and architecture violations
 - **CodeQL**: GitHub's advanced code analysis (nightly)
 - **TruffleHog**: Secret scanning (verified only)
@@ -15,7 +16,9 @@ The SAST foundation includes:
 ## Workflows
 
 ### sast-quick.yml (PR checks, ~3-5 min)
+
 Runs on every PR and push to main:
+
 - Semgrep with security-audit, owasp-top-ten, cwe-top-25 profiles
 - TruffleHog secret scanning (verified findings only)
 - Language-specific linting (Clippy for Rust)
@@ -24,16 +27,19 @@ Runs on every PR and push to main:
 **Configuration**: `.semgrep.yml`, `.semgrep-rules/`
 
 **Suppress a finding**:
+
 ```yaml
 # .semgrep.yml
 rules:
-  - id: custom-rule
-    # Add justification
-    patterns: [...]
+    - id: custom-rule
+      # Add justification
+      patterns: [...]
 ```
 
 ### sast-full.yml (Nightly, ~15-40 min)
+
 Runs on schedule (2 AM UTC):
+
 - CodeQL analysis (multi-language)
 - Trivy repository scan
 - Full Semgrep analysis with misconfigurations + CI/CD checks
@@ -44,23 +50,27 @@ Runs on schedule (2 AM UTC):
 ### Pre-commit Setup
 
 Install pre-commit hooks (one-time):
+
 ```bash
 pre-commit install
 pre-commit install --hook-type pre-push
 ```
 
 Hooks run before:
+
 - **pre-commit**: Semgrep, trailing whitespace, YAML validation, detect-private-key
 - **pre-push**: TruffleHog full git history
 
 ### Run Quality Gate Locally
 
 Before pushing:
+
 ```bash
 ./scripts/quality-gate.sh verify
 ```
 
 This runs:
+
 1. Semgrep scan
 2. Secret scanning
 3. Clippy + format checks (Rust)
@@ -82,12 +92,14 @@ git push --no-verify    # Skip pre-push hooks
 **View on GitHub**: Settings → Security → Code scanning → Filter by tool:Semgrep
 
 **Dismiss a false positive**:
+
 1. Go to the alert on GitHub
 2. Click "Dismiss" and select reason
 3. Provide justification in comment
 4. Alert is dismissed for that branch
 
 **Suppress in code** (last resort):
+
 ```rust
 // nosemgrep
 let unsafe_value = serde_json::from_str(input)?;
@@ -102,6 +114,7 @@ let unsafe_value = serde_json::from_str(input)?;
 ### TruffleHog Secrets
 
 If a secret is committed:
+
 ```bash
 # 1. Revoke the secret immediately (on the service)
 # 2. Remove from git history
@@ -112,6 +125,7 @@ git filter-branch --tree-filter 'grep -r "SECRET"' -- --all
 ## Architecture Violations
 
 Custom Semgrep rules detect:
+
 - Hardcoded secrets (AWS keys, API tokens, GitHub tokens)
 - Unsafe deserialization
 - Unwrap without context
@@ -120,6 +134,7 @@ Custom Semgrep rules detect:
 - Layer violations (adapters accessing domain directly)
 
 **Example violation**:
+
 ```rust
 // ❌ BAD: Direct deserialization
 let data = serde_json::from_str(&input)?;
@@ -134,6 +149,7 @@ let data: MyType = serde_json::from_str(&input)
 ### Status Checks
 
 PRs require:
+
 - ✅ Semgrep (quick)
 - ✅ TruffleHog
 - ✅ Language-specific linting
@@ -152,6 +168,7 @@ CodeQL findings trigger auto-issues labeled `security` and `critical` on high-se
 ## Tool Installation (Local)
 
 ### macOS
+
 ```bash
 # Semgrep
 brew install semgrep
@@ -168,6 +185,7 @@ pip install bandit ruff
 ```
 
 ### Linux (Ubuntu)
+
 ```bash
 # Semgrep
 sudo apt install -y python3-pip python3-dev
@@ -189,14 +207,15 @@ cargo install clippy
 1. Verify it's actually a false positive (test it)
 2. Open issue with label `sast-false-positive`
 3. Include:
-   - Rule ID (e.g., `hardcoded-api-key-env`)
-   - Code snippet
-   - Why it's a false positive
-   - Suggested fix
+    - Rule ID (e.g., `hardcoded-api-key-env`)
+    - Code snippet
+    - Why it's a false positive
+    - Suggested fix
 
 ### Adjust Rule Severity
 
 Edit `.semgrep-rules/*.yml`:
+
 ```yaml
 - id: my-rule
   severity: MEDIUM  # LOW, MEDIUM, HIGH, CRITICAL
@@ -210,6 +229,7 @@ Lower severity = not blocking PRs, still reported.
 ### Timeout Issues
 
 If workflows timeout (>30 min):
+
 1. Check for large files (>50 MB binary)
 2. Exclude in `.semgrep.yml`: `paths.exclude`
 3. Split workflow into parallel jobs
@@ -217,8 +237,9 @@ If workflows timeout (>30 min):
 ### Caching
 
 GitHub Actions caches:
+
 - Rust dependencies (Swatinem/rust-cache)
-- Npm/Python package managers (actions/setup-*)
+- Npm/Python package managers (actions/setup-\*)
 
 Cache is automatically invalidated on `Cargo.lock`/`package-lock.json` changes.
 

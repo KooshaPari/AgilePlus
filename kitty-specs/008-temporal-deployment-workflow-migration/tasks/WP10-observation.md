@@ -19,12 +19,14 @@ Run Temporal + Hatchet in production alongside the rollback branch for 48 hours.
 ## Context
 
 The 48-hour window is based on:
+
 - Full diurnal cycle covered (2 day/night ops periods)
 - CI runs (hourly) + data syncs (every 6h) covered multiple times
 - Agent dispatches (sporadic) observed over enough volume
 - Temporal history retention default is 7 days — 48h is well within retention
 
 During this period:
+
 - Temporal is the primary workflow engine
 - `rollback/nats-workflow-logic` branch is archived (not deleted)
 - GitHub release tag `v1.0.0-temporal` is created on success
@@ -37,37 +39,42 @@ During this period:
 # 48-Hour Observation Runbook
 
 ## Start Time
+
 Record the exact start time: `date -u +"%Y-%m-%dT%H:%M:%SZ"`
 
 ## Monitoring Dashboard
+
 Open Grafana: https://grafana.internal/d/temporal-slos
 
 Key panels to watch:
+
 1. Workflow Completion Rate (target: > 99.9%)
 2. p99 Latency (target: < 5 minutes)
 3. Error Rate by Workflow Type (target: < 0.1%)
 
 ## Alert Contacts
-| Role | Name | Contact |
-|------|------|---------|
-| Primary On-Call | [NAME] | [SLACK/PHONE] |
-| Backup On-Call | [NAME] | [SLACK/PHONE] |
+
+| Role                | Name   | Contact       |
+| ------------------- | ------ | ------------- |
+| Primary On-Call     | [NAME] | [SLACK/PHONE] |
+| Backup On-Call      | [NAME] | [SLACK/PHONE] |
 | Infrastructure Lead | [NAME] | [SLACK/PHONE] |
 
 ## Checkpoints
 
-| Time | Checkpoint | Sign-off |
-|------|-----------|----------|
-| T+0h | Start observation | [NAME] |
-| T+4h | First checkpoint: CI run successful | [NAME] |
-| T+12h | Second checkpoint: data sync successful | [NAME] |
-| T+24h | Third checkpoint: 1 full day complete | [NAME] |
-| T+36h | Fourth checkpoint: no issues | [NAME] |
-| T+48h | Final sign-off: migration complete | [NAME] |
+| Time  | Checkpoint                              | Sign-off |
+| ----- | --------------------------------------- | -------- |
+| T+0h  | Start observation                       | [NAME]   |
+| T+4h  | First checkpoint: CI run successful     | [NAME]   |
+| T+12h | Second checkpoint: data sync successful | [NAME]   |
+| T+24h | Third checkpoint: 1 full day complete   | [NAME]   |
+| T+36h | Fourth checkpoint: no issues            | [NAME]   |
+| T+48h | Final sign-off: migration complete      | [NAME]   |
 
 ## Critical Failure Triggers
 
 Rollback immediately if ANY of:
+
 - [ ] Temporal completion rate < 95% for > 15 consecutive minutes
 - [ ] NATS cannot be restored within 10 minutes (SC-007)
 - [ ] Data integrity issue detected (source/dest record count mismatch)
@@ -77,6 +84,7 @@ Rollback immediately if ANY of:
 ## Rollback Procedure
 
 If critical failure detected:
+
 1. Toggle `WORKFLOW_ENGINE=nats` in process-compose.yml
 2. Restart workers: `docker compose up -d nats-worker-*`
 3. Verify NATS accepting work: `nats sub agent.dispatch --count=1`
@@ -86,6 +94,7 @@ If critical failure detected:
 ## Success Procedure
 
 If 48 hours pass with zero critical failures:
+
 1. Create GitHub release: `git tag v1.0.0-temporal && git push origin v1.0.0-temporal`
 2. Archive rollback branch (do not delete): `git branch -m rollback/nats-workflow-logic archived/rollback/nats-workflow-logic`
 3. Notify team: "Migration complete — Temporal is now primary"
@@ -154,27 +163,27 @@ Add to Grafana dashboard:
 
 ```json
 {
-  "title": "48-Hour Observation Status",
-  "type": "stat",
-  "gridPos": { "x": 0, "y": 0, "w": 24, "h": 4 },
-  "targets": [
-    {
-      "expr": "floor((time() - $(date -d \"$OBSERVATION_START_TIME\" +%s)) / 3600)",
-      "legendFormat": "Hours Elapsed"
+    "title": "48-Hour Observation Status",
+    "type": "stat",
+    "gridPos": { "x": 0, "y": 0, "w": 24, "h": 4 },
+    "targets": [
+        {
+            "expr": "floor((time() - $(date -d \"$OBSERVATION_START_TIME\" +%s)) / 3600)",
+            "legendFormat": "Hours Elapsed"
+        }
+    ],
+    "fieldConfig": {
+        "defaults": {
+            "unit": "none",
+            "thresholds": {
+                "steps": [
+                    { "color": "green", "value": null },
+                    { "color": "yellow", "value": 40 },
+                    { "color": "green", "value": 48 }
+                ]
+            }
+        }
     }
-  ],
-  "fieldConfig": {
-    "defaults": {
-      "unit": "none",
-      "thresholds": {
-        "steps": [
-          {"color": "green", "value": null},
-          {"color": "yellow", "value": 40},
-          {"color": "green", "value": 48}
-        ]
-      }
-    }
-  }
 }
 ```
 

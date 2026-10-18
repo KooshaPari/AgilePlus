@@ -23,10 +23,10 @@ requirement may appear under incompatible paths and ids.
 1. **Canonical feature root:** `kitty-specs/<feature-id>/` is the sole authoritative
    per-feature directory for spec, plan, tasks, `wps.yaml`, and linked deltas.
 2. **Ingress, not duplication:** External framework artifacts are **imported or linked**:
-   - OpenSpec: `openspec/changes/<id>/` linked from `kitty-specs/<id>/openspec-ref.yaml`
-   - Spec-Kit: `constitution.md` at repo root; per-feature content merged via harmonizer
-   - GSD: `.planning/STATE.md` and phase files referenced by id; REQ-XX mapped to FR-xxx
-   - BMAD: `_bmad-output/` shards referenced; epics map to feature ids
+    - OpenSpec: `openspec/changes/<id>/` linked from `kitty-specs/<id>/openspec-ref.yaml`
+    - Spec-Kit: `constitution.md` at repo root; per-feature content merged via harmonizer
+    - GSD: `.planning/STATE.md` and phase files referenced by id; REQ-XX mapped to FR-xxx
+    - BMAD: `_bmad-output/` shards referenced; epics map to feature ids
 3. **Harmonizer is mandatory ingress** for non-kitty formats (`agileplus-spec-harmonizer`,
    ADR-0006). No parallel hand-maintained `WorkPackage` YAML outside `wps.yaml`.
 4. **FR/NFR authority:** `docs/requirements/*-frnfr.md` plus in-spec acceptance criteria;

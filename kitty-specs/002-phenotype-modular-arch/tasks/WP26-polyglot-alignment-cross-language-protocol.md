@@ -1,13 +1,13 @@
 ---
 work_package_id: WP26
-title: 'Polyglot Alignment + Cross-Language Protocol'
+title: "Polyglot Alignment + Cross-Language Protocol"
 lane: planned
 dependencies: [WP01, WP07, WP09]
 subtasks: [T078, T079, T080]
 history:
-- date: '2026-03-03'
-  event: created
-  by: spec-kitty.tasks
+    - date: "2026-03-03"
+      event: created
+      by: spec-kitty.tasks
 ---
 
 # WP26: Polyglot Alignment + Cross-Language Protocol
@@ -30,6 +30,7 @@ Align cross-language implementations that duplicate the same logic in different 
 ### T078: PTY protocol alignment
 
 **Steps**:
+
 1. Define a shared PTY session protocol format (protobuf or JSON schema) covering: session start/end, keystroke events, screen state snapshots, command detection
 2. Update `agentapi++/lib/screentracker/` (Go) to emit/consume the shared format
 3. Update `portage/terminus_2/` (Python) to emit/consume the shared format
@@ -37,6 +38,7 @@ Align cross-language implementations that duplicate the same logic in different 
 5. Document the protocol in `phenotype-proto` or a dedicated spec file
 
 **Validation**:
+
 - Shared PTY protocol schema exists and is versioned
 - Both Go and Python implementations pass cross-language compatibility tests
 - Protocol format is documented with examples
@@ -44,14 +46,16 @@ Align cross-language implementations that duplicate the same logic in different 
 ### T079: Python cliproxy SDK + governance PolicyPort
 
 **Steps**:
+
 1. Publish `phenotype-py-cliproxy` Python SDK that consumes the same auth contracts as the Go SDK
 2. Migrate thegent `cliproxy_adapter.py` (1,253L) to use the published SDK instead of reimplementing Go SDK logic
 3. Define `PolicyPort` interface in thegent `governance/` that is consumable cross-language:
-   - Option A: OPA Rego policies served via OPA REST API (language-agnostic)
-   - Option B: gRPC service wrapping governance logic (generated clients in Go, Rust, TS)
+    - Option A: OPA Rego policies served via OPA REST API (language-agnostic)
+    - Option B: gRPC service wrapping governance logic (generated clients in Go, Rust, TS)
 4. Document the chosen cross-language governance consumption pattern
 
 **Validation**:
+
 - `phenotype-py-cliproxy` published and installable via pip
 - thegent `cliproxy_adapter.py` reduced to <200 LOC (thin SDK consumer)
 - At least one non-Python consumer can invoke policy checks via the defined interface
@@ -60,6 +64,7 @@ Align cross-language implementations that duplicate the same logic in different 
 ### T080: Routing alignment
 
 **Steps**:
+
 1. Identify canonical routing implementation between `agentapi++/internal/routing/agent_bifrost.go` and `thegent/cliproxy_adapter.py`
 2. Designate one as the canonical source of truth (likely Go, given Bifrost is Go-native)
 3. Reduce the non-canonical implementation to a thin client calling the canonical one (via gRPC, REST, or SDK)
@@ -67,6 +72,7 @@ Align cross-language implementations that duplicate the same logic in different 
 5. Add cross-language routing integration tests
 
 **Validation**:
+
 - Only one codebase contains routing decision logic
 - The other codebase is a thin client (<300 LOC)
 - Cross-language routing tests pass

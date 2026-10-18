@@ -1,28 +1,28 @@
-name: 'Close Stale Issues / PRs'
+name: "Close Stale Issues / PRs"
 
 on:
-  schedule:
-    - cron: '0 0 * * *'  # Daily at 00:00 UTC
-  workflow_dispatch:
+    schedule:
+        - cron: "0 0 * * *" # Daily at 00:00 UTC
+    workflow_dispatch:
 
 permissions:
-  issues: write
-  pull-requests: write
+    issues: write
+    pull-requests: write
 
 jobs:
-  stale:
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Mark and close stale issues / PRs
-        uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93  # v11.0.0
-        with:
-          days-before-stale: 30
-          days-before-close: 7
-          stale-issue-label: 'stale'
-          close-issue-label: 'closed-stale'
-          exempt-issue-labels: 'security,pinned,in-progress'
-          exempt-pr-labels: 'security,pinned,in-progress'
-          operations-per-run: 100
-          remove-stale-when-updated: true
-          # Mark both issues and PRs
-          only: 'issues, pulls'
+    stale:
+        runs-on: ubuntu-24.04
+        steps:
+            - name: Mark and close stale issues / PRs
+              uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93 # v11.0.0
+              with:
+                  days-before-stale: 30
+                  days-before-close: 7
+                  stale-issue-label: "stale"
+                  close-issue-label: "closed-stale"
+                  exempt-issue-labels: "security,pinned,in-progress"
+                  exempt-pr-labels: "security,pinned,in-progress"
+                  operations-per-run: 100
+                  remove-stale-when-updated: true
+                  # Mark both issues and PRs
+                  only: "issues, pulls"

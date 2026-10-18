@@ -53,6 +53,7 @@ filtering and descending sort, trace read preferring `.jsonl` over `.md`,
 `open_project` rejecting a non-project dir, and uninitialized-database errors.
 
 Two behaviors were discovered by writing assertions rather than assuming them:
+
 - Tauri maps `snake_case` command params to `camelCase` over IPC (`feature_id` →
   `featureId`).
 - `list_adrs` sorts the id **string** descending, so unprefixed `notes` outranks
@@ -70,11 +71,11 @@ tauri's features with no `test` entry. This was initially committed into
 
 Two bases are reported and they disagree structurally. This is not a bug in either:
 
-| Basis | Meaning | Before (other tree) | After (this HEAD) | Delta |
-|---|---|---|---|---|
-| production-only | non-test rlib objects only | 50.17% (15625/31145) | 50.71% (16575/32685) | +0.54pp |
-| test-inclusive | harness objects, counts a file's own `#[cfg(test)]` | 93.10% (82271/88370) | 93.67% (83016/88630) | +0.57pp |
-| `desktop/src-tauri` (test-inclusive) | — | 0.00% | 36.50% (438/1200) | +36.50pp |
+| Basis                                | Meaning                                             | Before (other tree)  | After (this HEAD)    | Delta    |
+| ------------------------------------ | --------------------------------------------------- | -------------------- | -------------------- | -------- |
+| production-only                      | non-test rlib objects only                          | 50.17% (15625/31145) | 50.71% (16575/32685) | +0.54pp  |
+| test-inclusive                       | harness objects, counts a file's own `#[cfg(test)]` | 93.10% (82271/88370) | 93.67% (83016/88630) | +0.57pp  |
+| `desktop/src-tauri` (test-inclusive) | —                                                   | 0.00%                | 36.50% (438/1200)    | +36.50pp |
 
 The "after" column was re-measured on `49a3862d`, i.e. after the
 `Cargo.toml` dependency-scope fix, not on the tree that produced the earlier
@@ -123,56 +124,56 @@ Documented in `scripts/coverage-complete.sh` lines 104-111.
    earlier note in this document called it dead code, which was wrong in two
    ways and is corrected here.
 
-   First, it is *not* unused. Two exhaustive `match` sites handle it with real
-   side effects, not as no-op arms:
-   - `commands/implement.rs:416` and `commands/implement/worker.rs:210` each
-     call `storage.update_wp_state(wp.id, WpState::Blocked)` and print a
-     cancellation line. Removing the variant without touching these would be a
-     compile error, not a cleanup.
+    First, it is _not_ unused. Two exhaustive `match` sites handle it with real
+    side effects, not as no-op arms:
+    - `commands/implement.rs:416` and `commands/implement/worker.rs:210` each
+      call `storage.update_wp_state(wp.id, WpState::Blocked)` and print a
+      cancellation line. Removing the variant without touching these would be a
+      compile error, not a cleanup.
 
-   Second, the only place it is *constructed* is its own assertion at
-   `review_loop.rs:190-191`, which is exactly the tautological test this
-   campaign is meant to eliminate: it asserts that a value it just assigned to
-   that value matches that value, and it cannot fail.
+    Second, the only place it is _constructed_ is its own assertion at
+    `review_loop.rs:190-191`, which is exactly the tautological test this
+    campaign is meant to eliminate: it asserts that a value it just assigned to
+    that value matches that value, and it cannot fail.
 
-   The real finding is narrower: the variant encodes a cancellation path that
-   no caller can trigger, and the surrounding test in the source file asserts a
-   tautology to give the variant a coverage line. Note that
-   `tests/review_loop_flow.rs` already drives the function through 11 real
-   tests; an earlier note in this document implied no test called
-   `run_review_loop` at all, which was wrong. Either the cancellation path
-   should be wired up, or the variant and its two handler arms should go. That
-   is a production-file change and is out of scope for this test-only wave.
+    The real finding is narrower: the variant encodes a cancellation path that
+    no caller can trigger, and the surrounding test in the source file asserts a
+    tautology to give the variant a coverage line. Note that
+    `tests/review_loop_flow.rs` already drives the function through 11 real
+    tests; an earlier note in this document implied no test called
+    `run_review_loop` at all, which was wrong. Either the cancellation path
+    should be wired up, or the variant and its two handler arms should go. That
+    is a production-file change and is out of scope for this test-only wave.
 
-   A PCRE2 search across the workspace (`crates/`, excluding `tests/`) for the
-   shape `let x = <Enum>::<Variant>;` followed on the next line by
-   `assert!(matches!(x, <same Enum>::<same Variant>))` returns exactly two hits,
-   both at `review_loop.rs:176-177` and `190-191`. So this pattern is contained
-   to the one file, and the coverage it inflates is confined to
-   `review_loop.rs`. It is worth knowing that the harness-basis figure for that
-   file includes lines that no test could ever falsify.
+    A PCRE2 search across the workspace (`crates/`, excluding `tests/`) for the
+    shape `let x = <Enum>::<Variant>;` followed on the next line by
+    `assert!(matches!(x, <same Enum>::<same Variant>))` returns exactly two hits,
+    both at `review_loop.rs:176-177` and `190-191`. So this pattern is contained
+    to the one file, and the coverage it inflates is confined to
+    `review_loop.rs`. It is worth knowing that the harness-basis figure for that
+    file includes lines that no test could ever falsify.
 
 2. **Two network tests are intermittently fragile.** Both target `192.0.2.1`
-   (RFC 5737 TEST-NET-1) and assume the failure mode is a *connection timeout*.
+   (RFC 5737 TEST-NET-1) and assume the failure mode is a _connection timeout_.
    When the OS instead returns `ENETUNREACH` first, the premise is wrong:
-   - `agileplus-api` `probe_tcp_url_reports_timeout_for_unroutable_address`
-     expects `"192.0.2.1:80: connection timed out"` but received
-     `"192.0.2.1:80: Network is unreachable (os error 51)"`.
-   - `agileplus-p2p` `probe_agileplus_unroutable_ip_times_out_to_unknown`
-     expects `PeerStatus::Unknown` but received `PeerStatus::Offline`.
+    - `agileplus-api` `probe_tcp_url_reports_timeout_for_unroutable_address`
+      expects `"192.0.2.1:80: connection timed out"` but received
+      `"192.0.2.1:80: Network is unreachable (os error 51)"`.
+    - `agileplus-p2p` `probe_agileplus_unroutable_ip_times_out_to_unknown`
+      expects `PeerStatus::Unknown` but received `PeerStatus::Offline`.
 
-   Observed exactly once, in the first full instrumented workspace run. The
-   second full run passed both. They also pass in a normal build, and passed 3x
-   each under `cargo llvm-cov` in isolation (`agileplus-api` 200/200 three
-   times, `agileplus-p2p` 224/224 three times). So the trigger is
-   nondeterministic rather than strictly load-dependent, and the honest
-   characterisation is an environment-dependent assumption, not a
-   reproducible defect in these tests. The underlying fragility is real: the
-   test hard-codes one of two legitimate failure modes for an unroutable
-   address.
+    Observed exactly once, in the first full instrumented workspace run. The
+    second full run passed both. They also pass in a normal build, and passed 3x
+    each under `cargo llvm-cov` in isolation (`agileplus-api` 200/200 three
+    times, `agileplus-p2p` 224/224 three times). So the trigger is
+    nondeterministic rather than strictly load-dependent, and the honest
+    characterisation is an environment-dependent assumption, not a
+    reproducible defect in these tests. The underlying fragility is real: the
+    test hard-codes one of two legitimate failure modes for an unroutable
+    address.
 
-   Neither crate is touched by this campaign, and the fix would be a
-   production-file edit, so it is left for a separate change.
+    Neither crate is touched by this campaign, and the fix would be a
+    production-file edit, so it is left for a separate change.
 
 ## Environment notes
 
@@ -188,21 +189,21 @@ Documented in `scripts/coverage-complete.sh` lines 104-111.
   This repository carries two editions, verified from each manifest's
   `edition` field:
 
-  | Edition | Crates |
-  |---|---|
-  | `2024` | all `crates/*`, `agileplus-agents/crates/*`, `tests/{e2e,transport,bdd}` — i.e. the workspace default at `Cargo.toml:49` |
-  | `2021` | `desktop/src-tauri`, `tests/e2e-desktop`, `crates/agileplus-governance` |
+    | Edition | Crates                                                                                                                   |
+    | ------- | ------------------------------------------------------------------------------------------------------------------------ |
+    | `2024`  | all `crates/*`, `agileplus-agents/crates/*`, `tests/{e2e,transport,bdd}` — i.e. the workspace default at `Cargo.toml:49` |
+    | `2021`  | `desktop/src-tauri`, `tests/e2e-desktop`, `crates/agileplus-governance`                                                  |
 
-  Run `rustup run stable rustfmt --edition <N> <file>` with that crate's N.
-  Cargo derives `style_edition` from the package edition, so CI's
-  `cargo fmt --check` rejects a file formatted with the wrong one — and
-  direct `rustfmt --edition 2024` will report a 2021 file clean while
-  `cargo fmt --check` rejects it, because the two ask for opposite import
-  orderings (`{MockRuntime, INVOKE_KEY}` under 2021, reversed under 2024).
+    Run `rustup run stable rustfmt --edition <N> <file>` with that crate's N.
+    Cargo derives `style_edition` from the package edition, so CI's
+    `cargo fmt --check` rejects a file formatted with the wrong one — and
+    direct `rustfmt --edition 2024` will report a 2021 file clean while
+    `cargo fmt --check` rejects it, because the two ask for opposite import
+    orderings (`{MockRuntime, INVOKE_KEY}` under 2021, reversed under 2024).
 
-  An earlier version of this note said to always use `--edition 2021`. That
-  was wrong for every workspace crate and is what put this campaign's files
-  on CI's failing fmt list for three waves.
+    An earlier version of this note said to always use `--edition 2021`. That
+    was wrong for every workspace crate and is what put this campaign's files
+    on CI's failing fmt list for three waves.
 
 ## Verification record
 

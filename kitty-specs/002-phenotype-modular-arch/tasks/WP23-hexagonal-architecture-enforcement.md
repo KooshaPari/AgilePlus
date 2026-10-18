@@ -1,13 +1,13 @@
 ---
 work_package_id: WP23
-title: 'Hexagonal Architecture Enforcement (Cross-Repo)'
+title: "Hexagonal Architecture Enforcement (Cross-Repo)"
 lane: planned
 dependencies: [WP06, WP09]
 subtasks: [T069, T070, T071]
 history:
-- date: '2026-03-03'
-  event: created
-  by: spec-kitty.tasks
+    - date: "2026-03-03"
+      event: created
+      by: spec-kitty.tasks
 ---
 
 # WP23: Hexagonal Architecture Enforcement (Cross-Repo)
@@ -33,6 +33,7 @@ Introduce hexagonal port/adapter boundaries across all repos where domain logic 
 ### T069: heliosCLI hexagonal ports
 
 **Steps**:
+
 1. Define `HttpPort` trait in `codex-rs/core/` — `web_search.rs` consumes it instead of direct reqwest calls
 2. Define `StatePort` and `SecretsPort` traits — `codex-rs/state/` and `codex-rs/secrets/` become adapters implementing these traits; domain code depends only on the trait
 3. Define `SandboxPort` trait abstracting seatbelt (macOS), landlock (Linux), and Windows sandbox policy behind a unified interface
@@ -40,6 +41,7 @@ Introduce hexagonal port/adapter boundaries across all repos where domain logic 
 5. Add mock implementations for each port in test modules
 
 **Validation**:
+
 - `cargo build --workspace` succeeds
 - `cargo test --workspace` passes
 - No direct `reqwest::` usage in domain modules (only in adapter impls)
@@ -49,6 +51,7 @@ Introduce hexagonal port/adapter boundaries across all repos where domain logic 
 ### T070: cliproxy++ hexagonal ports
 
 **Steps**:
+
 1. Define `HTTPClient` interface — executors accept it instead of constructing `http.Client` inline
 2. Define `ConfigProvider` interface — executors accept it instead of concrete `*config.Config`
 3. Extract `ThinkingBehavior` port from `internal/thinking/` — eliminate duplicated provider switch statements
@@ -56,6 +59,7 @@ Introduce hexagonal port/adapter boundaries across all repos where domain logic 
 5. Add mock implementations for testing
 
 **Validation**:
+
 - `go build ./...` succeeds
 - `go test ./...` passes
 - `grep -r 'http.Client{' internal/runtime/executor/` returns 0 matches
@@ -64,6 +68,7 @@ Introduce hexagonal port/adapter boundaries across all repos where domain logic 
 ### T071: thegent + portage + trace hexagonal ports
 
 **Steps**:
+
 1. thegent: Route all direct `httpx` calls in doctor/checks.py, tools/borrow.py, and 6+ other files through the existing port system
 2. thegent: Extract `ProcessExecutionPort` — `clode_main.py` calls port instead of inline `os.execvpe()`
 3. portage: Define `CloudProviderPort` interface — `gke.py` and `daytona.py` become adapters behind the port
@@ -72,6 +77,7 @@ Introduce hexagonal port/adapter boundaries across all repos where domain logic 
 6. trace: Split `temporal_repository.go` (1,095L) — separate query/persistence from business logic
 
 **Validation**:
+
 - All test suites pass in thegent, portage, and trace
 - `grep -r 'httpx\.' src/thegent/ --include='*.py'` only matches files under adapters/
 - `grep -r 'gorm.DB' internal/handler/` returns 0 matches in trace

@@ -10,11 +10,11 @@
 
 ## Review tiers
 
-| Tier | Action | Rules |
-|------|--------|-------|
-| **Block** | Fail PR | Secrets; scope outside charter; domain logic in wrong role owner |
-| **Warn** | Comment | Doc drift from SOTA; incomplete OKF update |
-| **Info** | Optional | Style |
+| Tier      | Action   | Rules                                                            |
+| --------- | -------- | ---------------------------------------------------------------- |
+| **Block** | Fail PR  | Secrets; scope outside charter; domain logic in wrong role owner |
+| **Warn**  | Comment  | Doc drift from SOTA; incomplete OKF update                       |
+| **Info**  | Optional | Style                                                            |
 
 ## Agent autonomy
 

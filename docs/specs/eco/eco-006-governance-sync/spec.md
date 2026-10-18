@@ -6,6 +6,7 @@ last_audit: 2026-05-02
 ---
 
 # Specification: Governance Sync Automation
+
 **Slug**: eco-006-governance-sync | **Date**: 2026-05-02 | **State**: in_progress
 
 ## Problem Statement
@@ -20,21 +21,21 @@ The Phenotype/AgilePlus ecosystem spans 61+ Rust repos, multiple worktrees, and 
 
 ## Functional Requirements
 
-| ID | Requirement |
-|----|-------------|
+| ID        | Requirement                                                                                             |
+| --------- | ------------------------------------------------------------------------------------------------------- |
 | FR-GOV-01 | Inventory all governance artifacts (CLAUDE.md, kitty-specs, worklogs, policy docs) across the ecosystem |
-| FR-GOV-02 | Generate canonical fingerprints for each governance artifact |
-| FR-GOV-03 | Detect drift between current inventory and canonical baseline |
-| FR-GOV-04 | Classify drift by severity: BREAKING, MINOR, DOCUMENTATION, ORPHANED |
-| FR-GOV-05 | Trigger governance sync on every PR via CI workflow |
-| FR-GOV-06 | Block merge on BREAKING drift (GitHub status check) |
-| FR-GOV-07 | Route notifications based on drift type and severity |
-| FR-GOV-08 | Suppress repeat alerts for same drift within 24h window |
-| FR-GOV-09 | Hold BREAKING drift in ReviewQueue for human approval |
-| FR-GOV-10 | Auto-fix MINOR/DOCUMENTATION drift without human intervention |
-| FR-GOV-11 | Rollback applied fixes via `agileplus governance rollback` |
-| FR-GOV-12 | Maintain hash-chained evidence ledger of all sync events |
-| FR-GOV-13 | Audit query CLI for compliance reporting |
+| FR-GOV-02 | Generate canonical fingerprints for each governance artifact                                            |
+| FR-GOV-03 | Detect drift between current inventory and canonical baseline                                           |
+| FR-GOV-04 | Classify drift by severity: BREAKING, MINOR, DOCUMENTATION, ORPHANED                                    |
+| FR-GOV-05 | Trigger governance sync on every PR via CI workflow                                                     |
+| FR-GOV-06 | Block merge on BREAKING drift (GitHub status check)                                                     |
+| FR-GOV-07 | Route notifications based on drift type and severity                                                    |
+| FR-GOV-08 | Suppress repeat alerts for same drift within 24h window                                                 |
+| FR-GOV-09 | Hold BREAKING drift in ReviewQueue for human approval                                                   |
+| FR-GOV-10 | Auto-fix MINOR/DOCUMENTATION drift without human intervention                                           |
+| FR-GOV-11 | Rollback applied fixes via `agileplus governance rollback`                                              |
+| FR-GOV-12 | Maintain hash-chained evidence ledger of all sync events                                                |
+| FR-GOV-13 | Audit query CLI for compliance reporting                                                                |
 
 ## Non-Functional Requirements
 
@@ -53,12 +54,12 @@ The Phenotype/AgilePlus ecosystem spans 61+ Rust repos, multiple worktrees, and 
 
 ## Acceptance Criteria
 
-| AC | Criterion |
-|----|-----------|
+| AC   | Criterion                                                                                        |
+| ---- | ------------------------------------------------------------------------------------------------ |
 | AC01 | `agileplus governance sync --dry-run` produces valid JSON/CSV output without modifying any files |
-| AC02 | CI workflow triggers on every PR and blocks merge on BREAKING drift |
-| AC03 | iMessege alert fires for BREAKING drift within 60s of detection |
-| AC04 | ReviewQueue holds BREAKING drift until approved |
-| AC05 | Hash-chain ledger is tamper-evident (modified event breaks chain) |
-| AC06 | Audit query returns correct event history for a given repo |
-| AC07 | Orphaned kitty-spec entries are detected and flagged |
+| AC02 | CI workflow triggers on every PR and blocks merge on BREAKING drift                              |
+| AC03 | iMessege alert fires for BREAKING drift within 60s of detection                                  |
+| AC04 | ReviewQueue holds BREAKING drift until approved                                                  |
+| AC05 | Hash-chain ledger is tamper-evident (modified event breaks chain)                                |
+| AC06 | Audit query returns correct event history for a given repo                                       |
+| AC07 | Orphaned kitty-spec entries are detected and flagged                                             |

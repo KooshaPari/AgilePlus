@@ -13,14 +13,14 @@ on a dark rounded app tile.
 
 ## Files
 
-| File | Purpose |
-|------|---------|
-| `logo.svg` | Source of truth (hand-coded vector) |
-| `logo-{16,32,48,128,256,512}.png` | Raster sizes |
-| `logo.png` | Canonical 512px PNG |
-| `logo.jpg` | 512px, white matte |
-| `app.ico` | Multi-resolution Windows icon (16/32/48/256) — feeds the Start-Menu / desktop shortcut |
-| `logo-animated.svg` | L101 motion variant — SMIL rotating sprint-loop + sequential velocity bars (no JS) |
+| File                              | Purpose                                                                                |
+| --------------------------------- | -------------------------------------------------------------------------------------- |
+| `logo.svg`                        | Source of truth (hand-coded vector)                                                    |
+| `logo-{16,32,48,128,256,512}.png` | Raster sizes                                                                           |
+| `logo.png`                        | Canonical 512px PNG                                                                    |
+| `logo.jpg`                        | 512px, white matte                                                                     |
+| `app.ico`                         | Multi-resolution Windows icon (16/32/48/256) — feeds the Start-Menu / desktop shortcut |
+| `logo-animated.svg`               | L101 motion variant — SMIL rotating sprint-loop + sequential velocity bars (no JS)     |
 
 ## Regenerating
 

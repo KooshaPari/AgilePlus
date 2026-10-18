@@ -5,16 +5,16 @@ lane: "done"
 dependencies: []
 base_branch: main
 base_commit: e34fef4c66a8f5abee0afeafb9110eb8e0f440c0
-created_at: '2026-03-02T12:06:07.348910+00:00'
+created_at: "2026-03-02T12:06:07.348910+00:00"
 subtasks: [T059, T060, T061, T062, T063]
 shell_pid: "35783"
 agent: "claude-opus"
 reviewed_by: "Koosha Paridehpour"
 review_status: "approved"
 history:
-- date: '2026-03-02'
-  action: created
-  by: spec-kitty
+    - date: "2026-03-02"
+      action: created
+      by: spec-kitty
 ---
 
 ## Objective
@@ -30,13 +30,15 @@ Implementation command: `spec-kitty implement WP10 --base WP09`
 Push all local features/WPs that have changed since last sync to Plane.so.
 
 **Behavior:**
+
 - Use `SyncMapping` to determine what changed
 - Display `SyncReport` on completion
 - Options:
-  - `--feature <slug>` (single feature)
-  - `--dry-run` (show what would sync without actually syncing)
+    - `--feature <slug>` (single feature)
+    - `--dry-run` (show what would sync without actually syncing)
 
 **Output:**
+
 ```
 Pushing 3 features to Plane.so...
 ✓ Feature 'auth-flow' created (plane_issue_id: #42)
@@ -50,13 +52,15 @@ Duration: 2.3s
 Pull all Plane.so changes since last sync.
 
 **Behavior:**
+
 - Process pending webhook events if any queued
 - Display `SyncReport`
 - Options:
-  - `--feature <slug>`
-  - `--dry-run`
+    - `--feature <slug>`
+    - `--dry-run`
 
 **Output:**
+
 ```
 Pulling changes from Plane.so...
 ✓ Feature 'auth-flow' updated
@@ -70,12 +74,14 @@ Duration: 1.8s
 Enable/disable auto-sync mode.
 
 **Behavior:**
+
 - `on`: Enable auto-sync. Every feature/WP mutation automatically triggers a push.
 - `off`: Disable auto-sync.
 - `status`: Show current auto-sync setting.
 - Store setting in config file.
 
 **Output:**
+
 ```
 agileplus sync auto status
 Auto-sync is ON
@@ -89,6 +95,7 @@ Auto-sync disabled
 Display sync status for all tracked entities.
 
 **Output (table):**
+
 ```
 Entity                    | Local State  | Remote State | Last Synced | Match | Conflicts
 ─────────────────────────────────────────────────────────────────────────────────────
@@ -104,11 +111,13 @@ Color-code: green=synced, yellow=pending, red=conflict.
 Interactive conflict resolution.
 
 **Behavior:**
+
 - Show local vs remote values side-by-side
 - Prompt user to choose: `(L)ocal wins`, `(R)emote wins`, `(M)erge manually`
 - Apply chosen resolution via `SyncOrchestrator`
 
 **Example:**
+
 ```
 agileplus sync resolve feature 5
 Conflict in Feature 'api-design':

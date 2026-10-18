@@ -1,13 +1,13 @@
 ---
 work_package_id: WP14
-title: 'agentapi++: Domain Extraction + Shared Consumption'
+title: "agentapi++: Domain Extraction + Shared Consumption"
 lane: planned
 dependencies: []
 subtasks: [T045, T046]
 history:
-- date: '2026-03-03'
-  event: created
-  by: spec-kitty.tasks
+    - date: "2026-03-03"
+      event: created
+      by: spec-kitty.tasks
 ---
 
 # WP14: agentapi++ — Domain Extraction + Shared Consumption
@@ -29,11 +29,12 @@ Extract `internal/domain/` package with formal domain entities from agentapi++. 
 ### T045: Extract internal/domain/ package
 
 **Steps**:
+
 1. Create `internal/domain/`:
-   - `agent.go` — Agent entity with ID, name, type, capabilities
-   - `session.go` — Session entity with lifecycle state
-   - `routing.go` — RoutingRule, RoutingDecision
-   - `benchmark.go` — BenchmarkData (if applicable)
+    - `agent.go` — Agent entity with ID, name, type, capabilities
+    - `session.go` — Session entity with lifecycle state
+    - `routing.go` — RoutingRule, RoutingDecision
+    - `benchmark.go` — BenchmarkData (if applicable)
 2. Move entity definitions from handler code into domain types
 3. Handlers reference domain types instead of inline structs
 
@@ -42,11 +43,12 @@ Extract `internal/domain/` package with formal domain entities from agentapi++. 
 ### T046: Consume shared Go packages
 
 **Steps**:
+
 1. Add dependencies:
-   ```
-   go get github.com/KooshaPari/phenotype-go-authkit
-   go get github.com/KooshaPari/phenotype-go-httpkit
-   ```
+    ```
+    go get github.com/KooshaPari/phenotype-go-authkit
+    go get github.com/KooshaPari/phenotype-go-httpkit
+    ```
 2. Replace local auth logic with authkit imports
 3. Replace local HTTP helpers with httpkit imports
 4. Remove duplicated local code

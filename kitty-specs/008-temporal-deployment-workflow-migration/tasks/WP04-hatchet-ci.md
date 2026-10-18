@@ -19,6 +19,7 @@ Deploy Hatchet on Hetzner alongside Temporal. Migrate CI pipeline trigger workfl
 ## Context
 
 Hatchet is a lightweight workflow dispatcher built on Postgres. It has:
+
 - A React dashboard for job visibility
 - Go and Python SDKs
 - Cron scheduling and webhook triggers
@@ -33,66 +34,70 @@ Deploy it in the same `infra/hatchet/` directory structure as Temporal. Can reus
 
 ```yaml
 services:
-  hatchet-db:
-    image: postgres:16-alpine
-    container_name: hatchet-db
-    environment:
-      POSTGRES_DB: hatchet
-      POSTGRES_USER: hatchet
-      POSTGRES_PASSWORD: ${HATCHET_DB_PASSWORD}
-    volumes:
-      - hatchet_pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hatchet"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    hatchet-db:
+        image: postgres:16-alpine
+        container_name: hatchet-db
+        environment:
+            POSTGRES_DB: hatchet
+            POSTGRES_USER: hatchet
+            POSTGRES_PASSWORD: ${HATCHET_DB_PASSWORD}
+        volumes:
+            - hatchet_pgdata:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U hatchet"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
-  hatchet:
-    image: ghcr.io/hatchet-dev/hatchet:latest
-    container_name: hatchet
-    depends_on:
-      hatchet-db:
-        condition: service_healthy
-    environment:
-      - DATABASE_URL=postgresql://hatchet:${HATCHET_DB_PASSWORD}@hatchet-db:5432/hatchet
-      - SERVER_URL=${HATCHET_PUBLIC_URL}
-      - SERVER_TLS_CERT_FILE=/etc/hatchet/certs/server.crt
-      - SERVER_TLS_KEY_FILE=/etc/hatchet/certs/server.key
-      - NUM_WORKERS=4
-      - WORKER_TLS=true
-      - WORKER_TLS_CERT_FILE=/etc/hatchet/certs/worker.crt
-      - WORKER_TLS_KEY_FILE=/etc/hatchet/certs/worker.key
-    ports:
-      - "8080:8080"   # API
-      - "8081:8081"   # Dashboard
-    volumes:
-      - ./certs:/etc/hatchet/certs
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-    mem_limit: 1g
+    hatchet:
+        image: ghcr.io/hatchet-dev/hatchet:latest
+        container_name: hatchet
+        depends_on:
+            hatchet-db:
+                condition: service_healthy
+        environment:
+            - DATABASE_URL=postgresql://hatchet:${HATCHET_DB_PASSWORD}@hatchet-db:5432/hatchet
+            - SERVER_URL=${HATCHET_PUBLIC_URL}
+            - SERVER_TLS_CERT_FILE=/etc/hatchet/certs/server.crt
+            - SERVER_TLS_KEY_FILE=/etc/hatchet/certs/server.key
+            - NUM_WORKERS=4
+            - WORKER_TLS=true
+            - WORKER_TLS_CERT_FILE=/etc/hatchet/certs/worker.crt
+            - WORKER_TLS_KEY_FILE=/etc/hatchet/certs/worker.key
+        ports:
+            - "8080:8080" # API
+            - "8081:8081" # Dashboard
+        volumes:
+            - ./certs:/etc/hatchet/certs
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
+                ]
+            interval: 15s
+            timeout: 10s
+            retries: 5
+        mem_limit: 1g
 
-  hatchet-worker:
-    image: ghcr.io/hatchet-dev/hatchet:latest
-    container_name: hatchet-worker
-    depends_on:
-      - hatchet
-    command: ["worker", "--run-server-tls"]
-    environment:
-      - DATABASE_URL=postgresql://hatchet:${HATCHET_DB_PASSWORD}@hatchet-db:5432/hatchet
-      - SERVER_URL=${HATCHET_PUBLIC_URL}
-      - SERVER_TLS_CERT_FILE=/etc/hatchet/certs/server.crt
-      - WORKER_TLS=true
-      - WORKER_TLS_CERT_FILE=/etc/hatchet/certs/worker.crt
-      - WORKER_TLS_KEY_FILE=/etc/hatchet/certs/worker.key
-    volumes:
-      - ./certs:/etc/hatchet/certs
+    hatchet-worker:
+        image: ghcr.io/hatchet-dev/hatchet:latest
+        container_name: hatchet-worker
+        depends_on:
+            - hatchet
+        command: ["worker", "--run-server-tls"]
+        environment:
+            - DATABASE_URL=postgresql://hatchet:${HATCHET_DB_PASSWORD}@hatchet-db:5432/hatchet
+            - SERVER_URL=${HATCHET_PUBLIC_URL}
+            - SERVER_TLS_CERT_FILE=/etc/hatchet/certs/server.crt
+            - WORKER_TLS=true
+            - WORKER_TLS_CERT_FILE=/etc/hatchet/certs/worker.crt
+            - WORKER_TLS_KEY_FILE=/etc/hatchet/certs/worker.key
+        volumes:
+            - ./certs:/etc/hatchet/certs
 
 volumes:
-  hatchet_pgdata:
+    hatchet_pgdata:
 ```
 
 ### 2. Generate Self-Signed TLS Certs (for internal use)
@@ -131,60 +136,60 @@ name: ci-pipeline
 description: CI pipeline triggered by GitHub webhook
 
 on:
-  cron: "0 * * * *"  # Hourly
-  events:
-    - github.push
-    - github.pull_request
+    cron: "0 * * * *" # Hourly
+    events:
+        - github.push
+        - github.pull_request
 
 concurrency:
-  limit: 5  # Max 5 concurrent CI runs
+    limit: 5 # Max 5 concurrent CI runs
 
 steps:
-  - name: checkout
-    image: ghcr.io/actions/checkout@v4
-    timeout: 120s
-    retries: 2
+    - name: checkout
+      image: ghcr.io/actions/checkout@v4
+      timeout: 120s
+      retries: 2
 
-  - name: lint
-    run: |
-      echo "Running linters..."
-      cargo clippy --all-targets --all-features -- -D warnings
-    timeout: 300s
-    retries: 3
-    backoff: exponential
-
-  - name: test
-    run: |
-      echo "Running tests..."
-      cargo test --workspace
-    timeout: 600s
-    retries: 3
-    backoff: exponential
-
-  - name: build
-    run: |
-      echo "Building..."
-      cargo build --release
-    timeout: 900s
-    retries: 2
-
-  - name: notify
-    run: |
-      echo "Sending Slack notification..."
-      curl -X POST "$SLACK_WEBHOOK_URL" \
-        -H 'Content-type: application/json' \
-        -d "{\"text\":\"CI pipeline $STATUS for $BRANCH\"}"
-    timeout: 30s
-    on_failure:
+    - name: lint
       run: |
-        echo "Notify failure..."
+          echo "Running linters..."
+          cargo clippy --all-targets --all-features -- -D warnings
+      timeout: 300s
+      retries: 3
+      backoff: exponential
+
+    - name: test
+      run: |
+          echo "Running tests..."
+          cargo test --workspace
+      timeout: 600s
+      retries: 3
+      backoff: exponential
+
+    - name: build
+      run: |
+          echo "Building..."
+          cargo build --release
+      timeout: 900s
+      retries: 2
+
+    - name: notify
+      run: |
+          echo "Sending Slack notification..."
+          curl -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-type: application/json' \
+            -d "{\"text\":\"CI pipeline $STATUS for $BRANCH\"}"
+      timeout: 30s
+      on_failure:
+          run: |
+              echo "Notify failure..."
 
 failure:
-  step: notify-failure
-  run: |
-    curl -X POST "$SLACK_WEBHOOK_URL" \
-      -H 'Content-type: application/json' \
-      -d "{\"text\":\"CI pipeline FAILED for $BRANCH\"}"
+    step: notify-failure
+    run: |
+        curl -X POST "$SLACK_WEBHOOK_URL" \
+          -H 'Content-type: application/json' \
+          -d "{\"text\":\"CI pipeline FAILED for $BRANCH\"}"
 ```
 
 ### 5. Register Hatchet with Caddy
@@ -200,11 +205,11 @@ hatchet.internal {
 
 ```yaml
 hatchet:
-  command: docker compose -f infra/hatchet/docker-compose.yml up -d
+    command: docker compose -f infra/hatchet/docker-compose.yml up -d
 hatchet-worker:
-  command: docker compose -f infra/hatchet/docker-compose.yml up -d worker
-  depends_on:
-    - hatchet
+    command: docker compose -f infra/hatchet/docker-compose.yml up -d worker
+    depends_on:
+        - hatchet
 ```
 
 ## Testing

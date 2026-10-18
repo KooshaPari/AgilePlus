@@ -5,16 +5,16 @@ lane: "done"
 dependencies: []
 base_branch: main
 base_commit: 6480046aaf890b6cd67e6f88cd4ec44d737067d4
-created_at: '2026-03-02T11:55:34.889965+00:00'
+created_at: "2026-03-02T11:55:34.889965+00:00"
 subtasks: [T046, T047, T048, T049, T050, T051, T052]
 shell_pid: "61759"
 agent: "claude-opus"
 reviewed_by: "Koosha Paridehpour"
 review_status: "approved"
 history:
-- date: '2026-03-02'
-  action: created
-  by: spec-kitty
+    - date: "2026-03-02"
+      action: created
+      by: spec-kitty
 ---
 
 ## Objective
@@ -36,6 +36,7 @@ Create a configurable mapping between Plane.so state groups and AgilePlus Featur
 - Cancelled → (terminal, no AgilePlus equivalent — log warning)
 
 Store mapping in a `PlaneStateMapper` struct with:
+
 - `from_plane(state_group, state_name) → FeatureState`
 - `to_plane(FeatureState) → (state_group, state_id)`
 

@@ -18,15 +18,15 @@ generated automatically for every published release using
 hosted OIDC token and stored in the [GitHub Artifact Attestations][ghaa]
 log alongside the artifact.
 
-| Requirement                                 | Status       |
-| ------------------------------------------- | ------------ |
-| Provenance generated automatically          | ✅ L2        |
-| Provenance distributed alongside artifact   | ✅ L2        |
-| Build platform hosted and isolated          | ✅ L2        |
-| Provenance authenticity (OIDC-signed)       | ✅ L2        |
+| Requirement                                | Status       |
+| ------------------------------------------ | ------------ |
+| Provenance generated automatically         | ✅ L2        |
+| Provenance distributed alongside artifact  | ✅ L2        |
+| Build platform hosted and isolated         | ✅ L2        |
+| Provenance authenticity (OIDC-signed)      | ✅ L2        |
 | Build platform isolated from build request | ⏭ L3 target |
-| Hardened build platform                     | ⏭ L3 target |
-| Provenance non-forgeable (sigstore/cosign)  | ⏭ L3 target |
+| Hardened build platform                    | ⏭ L3 target |
+| Provenance non-forgeable (sigstore/cosign) | ⏭ L3 target |
 
 ## Workflow
 

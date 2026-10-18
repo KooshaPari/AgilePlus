@@ -20,6 +20,7 @@ The synthesis must be **adaptive**. Small changes should not require heavyweight
 ## Assignment/autograder mental model
 
 A useful AgilePlus work unit resembles a rigorous interactive assignment:
+
 - objective and why;
 - exact scope/exclusions;
 - prerequisites/context bundle;
@@ -49,6 +50,7 @@ AgilePlus can consume a Tracera product delta or dissatisfaction finding as work
 ## Required semantic review areas
 
 The mature AgilePlus specification must cover at least the actually applicable behaviors discovered under:
+
 - exploration/idea shaping and brownfield understanding;
 - research and ambiguity resolution;
 - behavior specification and scenarios;

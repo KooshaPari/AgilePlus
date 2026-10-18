@@ -12,16 +12,17 @@
 - **Sequence:** 1
 - **File Scope:** 19 private repositories (template-lang-go, template-commons, Schemaforge, Flagward, phenotype-docs-engine, phenotype-evaluation, phenotype-skills, Prismal, Cursora, phenotype-patch, phenotype-sentinel, phenotype-agent-core, phenotype-vessel, phenotype-config, Parpoura, Civis, phenotype-agents, Holdr, Flowra)
 - **Acceptance Criteria:**
-  - Complete catalog of all 19 private repos with: name, language, purpose, owner, access controls
-  - Dependency map showing relationships between private repos
-  - Sensitive content inventory for each repo (credentials, keys, internal data)
-  - Public equivalent mapping for each private repo
-  - Catalog published as structured document (JSON + markdown)
+    - Complete catalog of all 19 private repos with: name, language, purpose, owner, access controls
+    - Dependency map showing relationships between private repos
+    - Sensitive content inventory for each repo (credentials, keys, internal data)
+    - Public equivalent mapping for each private repo
+    - Catalog published as structured document (JSON + markdown)
 - **Estimated Effort:** M
 
 Conduct a comprehensive catalog of all 19 private repositories. Each repo is documented with its purpose, ownership, access controls, dependencies, and relationship to public repos. Sensitive content is inventoried for security review.
 
 ### Subtasks
+
 - [ ] T001 Query GitHub API for all private repos with metadata (size, language, last activity)
 - [ ] T002 Document each repo's purpose and functionality from README and code analysis
 - [ ] T003 Identify ownership and access controls for each repo (who has access, permission levels)
@@ -33,9 +34,11 @@ Conduct a comprehensive catalog of all 19 private repositories. Each repo is doc
 - [ ] T009 Validate catalog accuracy: cross-reference with repo owners
 
 ### Dependencies
+
 - None (starting WP for this spec)
 
 ### Risks & Mitigations
+
 - Access limitations: Ensure proper credentials for all private repos before starting
 - Sensitive content exposure: Handle with care, document findings securely, do not log sensitive data
 
@@ -47,17 +50,18 @@ Conduct a comprehensive catalog of all 19 private repositories. Each repo is doc
 - **Sequence:** 2
 - **File Scope:** phenotype-agent-core (private), phenotype-vessel (private), phenotype-sentinel (private)
 - **Acceptance Criteria:**
-  - phenotype-agent-core: complete agent core with dispatch, lifecycle, and communication
-  - phenotype-vessel: complete container utilities with build, run, and management
-  - phenotype-sentinel: complete security monitoring with threat detection and alerting
-  - All three repos have ≥80% test coverage
-  - All three repos have comprehensive documentation
-  - All quality checks passing
+    - phenotype-agent-core: complete agent core with dispatch, lifecycle, and communication
+    - phenotype-vessel: complete container utilities with build, run, and management
+    - phenotype-sentinel: complete security monitoring with threat detection and alerting
+    - All three repos have ≥80% test coverage
+    - All three repos have comprehensive documentation
+    - All quality checks passing
 - **Estimated Effort:** L
 
 Complete the three core agent infrastructure private repositories. phenotype-agent-core provides agent dispatch and lifecycle management, phenotype-vessel provides container utilities, and phenotype-sentinel provides security monitoring. These are foundational private repos that other private and public repos depend on.
 
 ### Subtasks
+
 - [ ] T010 Audit phenotype-agent-core: existing code, gaps, dependencies
 - [ ] T011 Complete agent dispatch: create, start, stop, monitor agents
 - [ ] T012 Complete agent lifecycle management: state machine, health checks, recovery
@@ -73,9 +77,11 @@ Complete the three core agent infrastructure private repositories. phenotype-age
 - [ ] T022 Run quality checks across all three repos
 
 ### Dependencies
+
 - WP-001 (catalog complete, understanding of repo purposes and dependencies)
 
 ### Risks & Mitigations
+
 - Scope creep in core repos: Strict scope enforcement, defer additional features to future specs
 - Security sensitivity in sentinel: Handle threat detection rules carefully, review before committing
 
@@ -87,19 +93,20 @@ Complete the three core agent infrastructure private repositories. phenotype-age
 - **Sequence:** 3
 - **File Scope:** Schemaforge (private, Rust), Flagward (private, TypeScript), Prismal (private, Rust), Cursora (private, TypeScript), Civis (private, Go)
 - **Acceptance Criteria:**
-  - Schemaforge: complete schema generation with validation and export
-  - Flagward: complete feature flag service with UI and API
-  - Prismal: complete database utilities with migration and query tools
-  - Cursora: complete Cursor integration with extension support
-  - Civis: complete civic data tools with data processing and visualization
-  - All five repos have ≥80% test coverage
-  - All five repos have comprehensive documentation
-  - All quality checks passing
+    - Schemaforge: complete schema generation with validation and export
+    - Flagward: complete feature flag service with UI and API
+    - Prismal: complete database utilities with migration and query tools
+    - Cursora: complete Cursor integration with extension support
+    - Civis: complete civic data tools with data processing and visualization
+    - All five repos have ≥80% test coverage
+    - All five repos have comprehensive documentation
+    - All quality checks passing
 - **Estimated Effort:** L
 
 Complete the five application/tool private repositories. Each provides distinct functionality: schema generation, feature flags, database utilities, Cursor integration, and civic data tools. These are standalone tools that serve specific purposes within the Phenotype ecosystem.
 
 ### Subtasks
+
 - [ ] T023 Audit Schemaforge: existing schema generation code, gaps
 - [ ] T024 Complete Schemaforge: schema validation, export formats (JSON Schema, Protobuf, OpenAPI)
 - [ ] T025 Audit Flagward: existing feature flag code, gaps
@@ -115,9 +122,11 @@ Complete the five application/tool private repositories. Each provides distinct 
 - [ ] T035 Run quality checks across all five repos
 
 ### Dependencies
+
 - WP-001 (catalog complete, understanding of repo purposes)
 
 ### Risks & Mitigations
+
 - Multi-language complexity: Rust (Schemaforge, Prismal), TypeScript (Flagward, Cursora), Go (Civis)
 - UI components in Flagward: Keep UI minimal, focus on API completeness first
 
@@ -129,16 +138,17 @@ Complete the five application/tool private repositories. Each provides distinct 
 - **Sequence:** 4
 - **File Scope:** All 19 private repos cross-referenced with public repos
 - **Acceptance Criteria:**
-  - Duplicate analysis for each private repo with public equivalent
-  - Specific duplicates identified: template-lang-go, template-commons, phenotype-docs-engine, phenotype-agent-core, phenotype-config, phenotype-agents
-  - For each duplicate: recommendation (merge, archive private, archive public, or keep both)
-  - Rationale documented for each recommendation
-  - Stakeholder review of duplicate resolution plan
+    - Duplicate analysis for each private repo with public equivalent
+    - Specific duplicates identified: template-lang-go, template-commons, phenotype-docs-engine, phenotype-agent-core, phenotype-config, phenotype-agents
+    - For each duplicate: recommendation (merge, archive private, archive public, or keep both)
+    - Rationale documented for each recommendation
+    - Stakeholder review of duplicate resolution plan
 - **Estimated Effort:** M
 
 Identify and analyze duplicates between private and public repositories. Six private repos have public equivalents that may contain overlapping functionality. Each duplicate pair is analyzed and a resolution recommendation is made.
 
 ### Subtasks
+
 - [ ] T036 Compare template-lang-go (private) vs template-lang-go (public): overlap analysis
 - [ ] T037 Compare template-commons (private) vs template-lang-commons (public): overlap analysis
 - [ ] T038 Compare phenotype-docs-engine (private) vs phenotype-docs-engine (public): overlap analysis
@@ -151,9 +161,11 @@ Identify and analyze duplicates between private and public repositories. Six pri
 - [ ] T045 Incorporate stakeholder feedback into resolution plan
 
 ### Dependencies
+
 - WP-001 (catalog complete, all repos documented)
 
 ### Risks & Mitigations
+
 - Stakeholder disagreement: Clear rationale, data-driven recommendations, appeal process
 - Hidden functionality differences: Deep code comparison, not just surface-level analysis
 
@@ -165,17 +177,18 @@ Identify and analyze duplicates between private and public repositories. Six pri
 - **Sequence:** 5
 - **File Scope:** Sync plan documentation, governance model for private repos
 - **Acceptance Criteria:**
-  - Sync plan for each private-public repo pair with: direction, frequency, conflict resolution
-  - Governance model for private repo lifecycle management
-  - Access control procedures documented
-  - Security requirements documented for private repos
-  - Maintenance schedules defined for all private repos
-  - Comprehensive private repo catalog published
+    - Sync plan for each private-public repo pair with: direction, frequency, conflict resolution
+    - Governance model for private repo lifecycle management
+    - Access control procedures documented
+    - Security requirements documented for private repos
+    - Maintenance schedules defined for all private repos
+    - Comprehensive private repo catalog published
 - **Estimated Effort:** M
 
 Create a governance model and sync plan for managing private repositories going forward. This includes sync strategies for private-public repo pairs, access control procedures, security requirements, and maintenance schedules. The comprehensive private repo catalog is published as the final deliverable.
 
 ### Subtasks
+
 - [ ] T046 Design sync plan for each private-public pair: one-way sync, two-way sync, or manual
 - [ ] T047 Define sync frequency: per-repo schedule based on change velocity
 - [ ] T048 Define conflict resolution: how to handle divergent changes between private and public
@@ -188,9 +201,11 @@ Create a governance model and sync plan for managing private repositories going 
 - [ ] T055 Implement approved governance procedures
 
 ### Dependencies
+
 - WP-004 (duplicate analysis complete, sync targets identified)
 
 ### Risks & Mitigations
+
 - Sync complexity: Start with manual sync, automate incrementally
 - Security requirements: Involve security team in requirements definition
 - Governance adoption: Clear documentation, training for team members

@@ -11,20 +11,21 @@
 
 The existing desktop app is a step-1 Electrobun shell with offline-first local repo browsing:
 
-| File | Lines | Purpose |
-|------|-------|---------|
-| `src/index.ts` | 26 | Main process: creates BrowserWindow, wires RPC |
-| `src/views/index.ts` | 59 | RPC schema definition + handler (getRepoState) |
-| `src/views/main.ts` | 120 | Renderer: tab switching, list rendering, bootstrap |
-| `src/views/main.html` | 39 | Shell HTML: header, 3 tabs (Specs/ADRs/Traces), footer |
-| `src/views/main.css` | 90 | Dark theme CSS with CSS variables |
-| `src/repo-bridge.ts` | 170+ | Filesystem reads + CLI shell-out for feature state |
-| `src/cli.ts` | 47 | CLI wrapper: `agileplus <args>` via child_process |
-| `src/paths.ts` | 55 | Path resolution: repoRoot → specsDir, adrDir, tracesDir |
-| `electrobun.config.ts` | — | Electrobun build config |
-| `package.json` | — | Dependencies: electrobun |
+| File                   | Lines | Purpose                                                 |
+| ---------------------- | ----- | ------------------------------------------------------- |
+| `src/index.ts`         | 26    | Main process: creates BrowserWindow, wires RPC          |
+| `src/views/index.ts`   | 59    | RPC schema definition + handler (getRepoState)          |
+| `src/views/main.ts`    | 120   | Renderer: tab switching, list rendering, bootstrap      |
+| `src/views/main.html`  | 39    | Shell HTML: header, 3 tabs (Specs/ADRs/Traces), footer  |
+| `src/views/main.css`   | 90    | Dark theme CSS with CSS variables                       |
+| `src/repo-bridge.ts`   | 170+  | Filesystem reads + CLI shell-out for feature state      |
+| `src/cli.ts`           | 47    | CLI wrapper: `agileplus <args>` via child_process       |
+| `src/paths.ts`         | 55    | Path resolution: repoRoot → specsDir, adrDir, tracesDir |
+| `electrobun.config.ts` | —     | Electrobun build config                                 |
+| `package.json`         | —     | Dependencies: electrobun                                |
 
 **Key patterns from desktop-bun:**
+
 - **RPC bridge**: Renderer calls `getRepoState` → main process reads filesystem → returns specs/adrs/traces
 - **CLI shell-out**: Write operations (specify, advance) spawn `agileplus` CLI
 - **Tab-based UI**: 3 tabs (Specs, ADRs, Traces) with simple list rendering
@@ -33,27 +34,27 @@ The existing desktop app is a step-1 Electrobun shell with offline-first local r
 
 ### 1.2 desktop/ (Tauri — Target)
 
-| File | Lines | Purpose |
-|------|-------|---------|
-| `src-tauri/src/main.rs` | 5 | Entry point |
-| `src-tauri/src/lib.rs` | 55 | Tauri setup: tray icon, menu, window, commands |
-| `src-tauri/src/commands.rs` | 170 | 5 Tauri commands (list_features, get_feature, create_feature, update_feature_state, get_dashboard_stats) |
-| `src-tauri/src/db.rs` | 48 | SQLite schema: features, work_packages, evidence |
-| `src/index.html` | 154 | Placeholder dashboard (static HTML, no invoke calls wired) |
-| `src-tauri/tauri.conf.json` | — | Tauri config |
+| File                        | Lines | Purpose                                                                                                  |
+| --------------------------- | ----- | -------------------------------------------------------------------------------------------------------- |
+| `src-tauri/src/main.rs`     | 5     | Entry point                                                                                              |
+| `src-tauri/src/lib.rs`      | 55    | Tauri setup: tray icon, menu, window, commands                                                           |
+| `src-tauri/src/commands.rs` | 170   | 5 Tauri commands (list_features, get_feature, create_feature, update_feature_state, get_dashboard_stats) |
+| `src-tauri/src/db.rs`       | 48    | SQLite schema: features, work_packages, evidence                                                         |
+| `src/index.html`            | 154   | Placeholder dashboard (static HTML, no invoke calls wired)                                               |
+| `src-tauri/tauri.conf.json` | —     | Tauri config                                                                                             |
 
 **What exists vs what's needed:**
 
-| Capability | desktop-bun | desktop/ Tauri | Gap |
-|------------|-------------|----------------|-----|
-| Feature list | `agileplus list --json` via CLI | `list_features` command | ✅ Command exists, needs UI |
-| Dashboard stats | None | `get_dashboard_stats` command | ✅ Command exists, needs UI |
-| Create feature | `agileplus specify` via CLI | `create_feature` command | ✅ Command exists, needs UI |
-| Update state | `agileplus status` via CLI | `update_feature_state` command | ✅ Command exists, needs UI |
-| ADR browsing | Filesystem read | Not implemented | ❌ Needs new command or CLI bridge |
-| Trace browsing | Filesystem read | Not implemented | ❌ Needs new command or CLI bridge |
-| Spec content | Filesystem read | Not implemented | ❌ Needs new command or CLI bridge |
-| Tab navigation | HTML tabs | Placeholder only | ❌ Needs implementation |
+| Capability      | desktop-bun                     | desktop/ Tauri                 | Gap                                |
+| --------------- | ------------------------------- | ------------------------------ | ---------------------------------- |
+| Feature list    | `agileplus list --json` via CLI | `list_features` command        | ✅ Command exists, needs UI        |
+| Dashboard stats | None                            | `get_dashboard_stats` command  | ✅ Command exists, needs UI        |
+| Create feature  | `agileplus specify` via CLI     | `create_feature` command       | ✅ Command exists, needs UI        |
+| Update state    | `agileplus status` via CLI      | `update_feature_state` command | ✅ Command exists, needs UI        |
+| ADR browsing    | Filesystem read                 | Not implemented                | ❌ Needs new command or CLI bridge |
+| Trace browsing  | Filesystem read                 | Not implemented                | ❌ Needs new command or CLI bridge |
+| Spec content    | Filesystem read                 | Not implemented                | ❌ Needs new command or CLI bridge |
+| Tab navigation  | HTML tabs                       | Placeholder only               | ❌ Needs implementation            |
 
 ---
 
@@ -61,28 +62,28 @@ The existing desktop app is a step-1 Electrobun shell with offline-first local r
 
 ### 2.1 Components to Migrate from desktop-bun
 
-| Component | Source | Complexity | Notes |
-|-----------|--------|------------|-------|
-| **App Shell** | main.html | Low | Header + tabs + content area + footer |
-| **Tab Navigation** | main.ts `wireTabs()` | Low | Pure DOM, no framework needed |
-| **Spec List** | main.ts `renderSpecs()` | Low | List of spec summaries with state badges |
-| **ADR List** | main.ts `renderAdrs()` | Low | List of ADR summaries with status |
-| **Trace List** | main.ts `renderTraces()` | Low | List of trace files with type badges |
-| **Repo Bridge** | repo-bridge.ts | High | Replace with Tauri invoke() calls |
-| **CLI Wrapper** | cli.ts | Medium | Replace with Tauri invoke() or tray CLI bridge |
-| **Path Resolution** | paths.ts | Low | Replace with Tauri app paths |
+| Component           | Source                   | Complexity | Notes                                          |
+| ------------------- | ------------------------ | ---------- | ---------------------------------------------- |
+| **App Shell**       | main.html                | Low        | Header + tabs + content area + footer          |
+| **Tab Navigation**  | main.ts `wireTabs()`     | Low        | Pure DOM, no framework needed                  |
+| **Spec List**       | main.ts `renderSpecs()`  | Low        | List of spec summaries with state badges       |
+| **ADR List**        | main.ts `renderAdrs()`   | Low        | List of ADR summaries with status              |
+| **Trace List**      | main.ts `renderTraces()` | Low        | List of trace files with type badges           |
+| **Repo Bridge**     | repo-bridge.ts           | High       | Replace with Tauri invoke() calls              |
+| **CLI Wrapper**     | cli.ts                   | Medium     | Replace with Tauri invoke() or tray CLI bridge |
+| **Path Resolution** | paths.ts                 | Low        | Replace with Tauri app paths                   |
 
 ### 2.2 New Components (Not in desktop-bun)
 
-| Component | Purpose | Complexity |
-|-----------|---------|------------|
-| **Dashboard View** | Stats cards (total features, in-progress, shipped) | Low |
-| **Feature Detail View** | Full feature info with spec, evidence, work packages | Medium |
-| **Feature State Machine UI** | Visual state progression with advance button | Medium |
-| **Work Package List** | List work packages for a feature | Medium |
-| **Evidence Viewer** | Display evidence items (test results, screenshots) | Low |
-| **Create Feature Dialog** | Modal/form for creating new features | Low |
-| **Settings/Preferences** | App preferences (repo path, theme) | Low |
+| Component                    | Purpose                                              | Complexity |
+| ---------------------------- | ---------------------------------------------------- | ---------- |
+| **Dashboard View**           | Stats cards (total features, in-progress, shipped)   | Low        |
+| **Feature Detail View**      | Full feature info with spec, evidence, work packages | Medium     |
+| **Feature State Machine UI** | Visual state progression with advance button         | Medium     |
+| **Work Package List**        | List work packages for a feature                     | Medium     |
+| **Evidence Viewer**          | Display evidence items (test results, screenshots)   | Low        |
+| **Create Feature Dialog**    | Modal/form for creating new features                 | Low        |
+| **Settings/Preferences**     | App preferences (repo path, theme)                   | Low        |
 
 ---
 
@@ -90,31 +91,34 @@ The existing desktop app is a step-1 Electrobun shell with offline-first local r
 
 ### 3.1 Architecture Mapping
 
-| desktop-bun Pattern | Tauri Equivalent | Notes |
-|---------------------|------------------|-------|
-| `Electrobun.Electroview` | `window.__TAURI__` | Tauri JS API |
-| `electrobun.rpc.request.getRepoState` | `invoke('list_features')` | Direct command call |
-| `RepoBridge.listSpecs()` | `invoke('list_features')` | SQLite-backed |
-| `RepoBridge.listAdrs()` | New: `list_adrs` command or CLI bridge | Filesystem read |
-| `RepoBridge.listTraces()` | New: `list_traces` command or CLI bridge | Filesystem read |
-| `RepoBridge.readText()` | New: `read_file` command or CLI bridge | Filesystem read |
-| `CLI.run()` | `invoke('run_cli', { args })` or tray CLI bridge | Shell-out |
-| `AppPaths.fromCwd()` | `invoke('get_app_paths')` | Tauri path resolution |
+| desktop-bun Pattern                   | Tauri Equivalent                                 | Notes                 |
+| ------------------------------------- | ------------------------------------------------ | --------------------- |
+| `Electrobun.Electroview`              | `window.__TAURI__`                               | Tauri JS API          |
+| `electrobun.rpc.request.getRepoState` | `invoke('list_features')`                        | Direct command call   |
+| `RepoBridge.listSpecs()`              | `invoke('list_features')`                        | SQLite-backed         |
+| `RepoBridge.listAdrs()`               | New: `list_adrs` command or CLI bridge           | Filesystem read       |
+| `RepoBridge.listTraces()`             | New: `list_traces` command or CLI bridge         | Filesystem read       |
+| `RepoBridge.readText()`               | New: `read_file` command or CLI bridge           | Filesystem read       |
+| `CLI.run()`                           | `invoke('run_cli', { args })` or tray CLI bridge | Shell-out             |
+| `AppPaths.fromCwd()`                  | `invoke('get_app_paths')`                        | Tauri path resolution |
 
 ### 3.2 Data Access Strategy
 
 **Phase 1: SQLite-backed data (immediate)**
+
 - Use existing Tauri commands for features, work_packages, dashboard stats
 - Frontend calls `invoke('list_features')`, `invoke('get_dashboard_stats')`, etc.
 - All data comes from the SQLite database via Rust commands
 
 **Phase 2: Filesystem-backed data (follow-up)**
+
 - ADRs, traces, and spec content are filesystem-based
 - Option A: Add Tauri commands that read the filesystem (e.g., `list_adrs`, `read_spec`)
 - Option B: Shell out to `agileplus` CLI for these operations
 - **Recommended: Option A** for performance, Option B as fallback
 
 **Phase 3: CLI bridge for write operations**
+
 - Write operations (specify, advance, triage) shell out to `agileplus` CLI
 - This matches the tray-cli design in `TRAY_CLI.md`
 - Avoids duplicating complex orchestration logic
@@ -124,6 +128,7 @@ The existing desktop app is a step-1 Electrobun shell with offline-first local r
 **Recommendation: Vanilla JS/TS (no framework)**
 
 Rationale:
+
 - The existing desktop-bun UI is vanilla JS (no React/Vue/Svelte)
 - The UI is simple: tabs, lists, forms, dialogs
 - No build step needed (Tauri serves static files directly)
@@ -131,6 +136,7 @@ Rationale:
 - Easy to maintain and debug
 
 **If framework is desired later:**
+
 - React + Vite: Best Tauri ecosystem support, largest community
 - Svelte: Smallest bundle, closest to vanilla DOM
 - Vue: Good middle ground
@@ -175,12 +181,14 @@ desktop/src/
 ### 4.2 View Descriptions
 
 #### Dashboard View (Home)
+
 - **Stats cards**: Total Features, In Progress, Shipped, Total Work Packages
 - **Recent features**: Last 5 features with state badges
 - **Quick actions**: Create Feature, Refresh
 - **Data source**: `invoke('get_dashboard_stats')`, `invoke('list_features')`
 
 #### Feature List View
+
 - **List**: All features with name, state badge, created date
 - **Filter**: By state (dropdown or tabs)
 - **Sort**: By name, state, created date
@@ -188,6 +196,7 @@ desktop/src/
 - **Data source**: `invoke('list_features')`
 
 #### Feature Detail View
+
 - **Header**: Feature name, state badge, created/updated dates
 - **Tabs**: Spec, Evidence, Work Packages
 - **Spec tab**: Markdown content (from filesystem or CLI)
@@ -197,11 +206,13 @@ desktop/src/
 - **Data source**: `invoke('get_feature', { id })`, `invoke('list_work_packages', { feature_id })`
 
 #### ADR List View
+
 - **List**: All ADRs with title and status
 - **Click**: Opens ADR content in detail panel
 - **Data source**: `invoke('list_adrs')` or `invoke('run_cli', { args: ['list', '--type', 'adr'] })`
 
 #### Trace List View
+
 - **List**: All trace files with name and type (jsonl/md)
 - **Click**: Opens trace content in detail panel
 - **Data source**: `invoke('list_traces')` or `invoke('run_cli', { args: ['list', '--type', 'trace'] })`
@@ -228,11 +239,11 @@ Tray Actions (write) ← CLI shell-out ← agileplus binary
 
 ### 5.3 Shared Components
 
-| Component | UI Usage | Tray Usage |
-|-----------|----------|------------|
-| `tauri-bridge.js` | `invoke('list_features')` | Direct SQLite via Rust |
+| Component          | UI Usage                  | Tray Usage                        |
+| ------------------ | ------------------------- | --------------------------------- |
+| `tauri-bridge.js`  | `invoke('list_features')` | Direct SQLite via Rust            |
 | `state-machine.js` | Display valid next states | Menu only shows next valid action |
-| `escape-html.js` | Render feature names | Not used (native menu) |
+| `escape-html.js`   | Render feature names      | Not used (native menu)            |
 
 ---
 
@@ -285,13 +296,13 @@ desktop/
 
 ### 6.2 New Rust Modules Needed
 
-| Module | Purpose | Priority |
-|--------|---------|----------|
-| `adrs.rs` | `list_adrs`, `read_adr` commands | P1 |
-| `traces.rs` | `list_traces`, `read_trace` commands | P1 |
-| `cli_bridge.rs` | `run_cli` command (shell-out to agileplus) | P2 |
-| `work_packages.rs` | `list_work_packages`, `create_work_package` commands | P2 |
-| `evidence.rs` | `list_evidence`, `create_evidence` commands | P2 |
+| Module             | Purpose                                              | Priority |
+| ------------------ | ---------------------------------------------------- | -------- |
+| `adrs.rs`          | `list_adrs`, `read_adr` commands                     | P1       |
+| `traces.rs`        | `list_traces`, `read_trace` commands                 | P1       |
+| `cli_bridge.rs`    | `run_cli` command (shell-out to agileplus)           | P2       |
+| `work_packages.rs` | `list_work_packages`, `create_work_package` commands | P2       |
+| `evidence.rs`      | `list_evidence`, `create_evidence` commands          | P2       |
 
 ---
 
@@ -301,8 +312,8 @@ desktop/
 
 ```javascript
 // Frontend (js/services/tauri-bridge.js)
-const features = await invoke('list_features');
-const stats = await invoke('get_dashboard_stats');
+const features = await invoke("list_features");
+const stats = await invoke("get_dashboard_stats");
 ```
 
 ```
@@ -316,8 +327,8 @@ const stats = await invoke('get_dashboard_stats');
 
 ```javascript
 // Frontend (js/services/cli-bridge.js)
-const result = await invoke('run_cli', {
-  args: ['specify', '--feature', 'auth', '--from-file', specContent]
+const result = await invoke("run_cli", {
+    args: ["specify", "--feature", "auth", "--from-file", specContent],
 });
 ```
 
@@ -332,8 +343,8 @@ const result = await invoke('run_cli', {
 
 ```javascript
 // Frontend (js/services/tauri-bridge.js)
-const adrs = await invoke('list_adrs');
-const specContent = await invoke('read_spec', { featureId: 'auth' });
+const adrs = await invoke("list_adrs");
+const specContent = await invoke("read_spec", { featureId: "auth" });
 ```
 
 ```
@@ -350,6 +361,7 @@ const specContent = await invoke('read_spec', { featureId: 'auth' });
 ### 8.1 CSS Approach: Vanilla CSS with Custom Properties
 
 **Rationale:**
+
 - Matches existing desktop-bun `main.css` pattern
 - No build step required
 - CSS custom properties enable theming
@@ -359,54 +371,56 @@ const specContent = await invoke('read_spec', { featureId: 'auth' });
 
 ```css
 :root {
-  /* Colors */
-  --bg: #0f1115;
-  --bg-elev: #161a22;
-  --bg-surface: #1c2333;
-  --fg: #e6e8eb;
-  --fg-dim: #8a92a3;
-  --accent: #4f8cff;
-  --accent-hover: #6ba0ff;
-  --border: #232836;
-  --success: #4ade80;
-  --warning: #fbbf24;
-  --error: #f87171;
+    /* Colors */
+    --bg: #0f1115;
+    --bg-elev: #161a22;
+    --bg-surface: #1c2333;
+    --fg: #e6e8eb;
+    --fg-dim: #8a92a3;
+    --accent: #4f8cff;
+    --accent-hover: #6ba0ff;
+    --border: #232836;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --error: #f87171;
 
-  /* State colors */
-  --state-created: #374151;
-  --state-specified: #1e40af;
-  --state-researched: #7c3aed;
-  --state-planned: #b45309;
-  --state-implementing: #047857;
-  --state-validated: #0369a1;
-  --state-shipped: #15803d;
-  --state-retrospected: #6b21a8;
+    /* State colors */
+    --state-created: #374151;
+    --state-specified: #1e40af;
+    --state-researched: #7c3aed;
+    --state-planned: #b45309;
+    --state-implementing: #047857;
+    --state-validated: #0369a1;
+    --state-shipped: #15803d;
+    --state-retrospected: #6b21a8;
 
-  /* Spacing */
-  --pad-xs: 4px;
-  --pad-sm: 8px;
-  --pad-md: 12px;
-  --pad-lg: 18px;
-  --pad-xl: 24px;
+    /* Spacing */
+    --pad-xs: 4px;
+    --pad-sm: 8px;
+    --pad-md: 12px;
+    --pad-lg: 18px;
+    --pad-xl: 24px;
 
-  /* Typography */
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
-  --font-size-sm: 11px;
-  --font-size-base: 13px;
-  --font-size-lg: 16px;
+    /* Typography */
+    --font-sans:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-size-sm: 11px;
+    --font-size-base: 13px;
+    --font-size-lg: 16px;
 
-  /* Borders */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-full: 9999px;
+    /* Borders */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-full: 9999px;
 }
 ```
 
 ### 8.3 Component Styles
 
 Reuse patterns from desktop-bun `main.css`:
+
 - **Lists**: `border: 1px solid var(--border)`, `border-radius: var(--radius-md)`
 - **Tabs**: `aria-selected` attribute for active state
 - **Cards**: `background: var(--bg-elev)`, `padding: var(--pad-lg)`
@@ -433,6 +447,7 @@ pnpm tauri dev
 **No build step for vanilla JS.** Tauri serves `src/` directly.
 
 If adding a framework later:
+
 ```bash
 # With Vite + React (example)
 cd desktop
@@ -463,6 +478,7 @@ pnpm tauri build    # Outputs: src-tauri/target/release/bundle/
 ## 10. Migration Phases
 
 ### Phase 1: Foundation (Current → Next)
+
 **Goal: Replace placeholder HTML with functional UI**
 
 - [ ] Replace `src/index.html` with proper app shell (header, nav, content area)
@@ -476,6 +492,7 @@ pnpm tauri build    # Outputs: src-tauri/target/release/bundle/
 **Deliverable:** Functional dashboard + feature list with real data from SQLite
 
 ### Phase 2: Feature Detail (Week 2)
+
 **Goal: Full feature management**
 
 - [ ] Implement `js/views/feature-detail.js` (spec/evidence/WP tabs)
@@ -487,6 +504,7 @@ pnpm tauri build    # Outputs: src-tauri/target/release/bundle/
 **Deliverable:** Create features, view details, advance state
 
 ### Phase 3: ADR/Trace Browsing (Week 3)
+
 **Goal: Filesystem-backed views**
 
 - [ ] Add `list_adrs`, `read_adr` commands to Rust backend
@@ -497,6 +515,7 @@ pnpm tauri build    # Outputs: src-tauri/target/release/bundle/
 **Deliverable:** Browse ADRs and traces from the UI
 
 ### Phase 4: Tray Integration (Week 4)
+
 **Goal: Dynamic tray menu + UI coordination**
 
 - [ ] Implement `src/tray/mod.rs` (module root)
@@ -508,6 +527,7 @@ pnpm tauri build    # Outputs: src-tauri/target/release/bundle/
 **Deliverable:** Dynamic tray menu with feature list and lifecycle actions
 
 ### Phase 5: Polish & Package (Week 5+)
+
 **Goal: Production-ready distribution**
 
 - [ ] Design AgilePlus icon (1024x1024)
@@ -523,13 +543,13 @@ pnpm tauri build    # Outputs: src-tauri/target/release/bundle/
 
 ## 11. Risks & Mitigations
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| **ADR/Trace commands not implemented** | Phase 3 blocked | Start with CLI bridge as fallback, add native commands in parallel |
-| **CLI binary not found** | Write operations fail | Graceful fallback: gray out lifecycle items, show "CLI not installed" |
-| **SQLite schema changes** | Data loss | Use migrations, test upgrade path |
-| **Frontend complexity grows** | Maintainability | Consider React/Svelte migration if >500 LOC of vanilla JS |
-| **Cross-platform CSS issues** | Visual bugs | Test on all platforms, use system fonts, avoid platform-specific CSS |
+| Risk                                   | Impact                | Mitigation                                                            |
+| -------------------------------------- | --------------------- | --------------------------------------------------------------------- |
+| **ADR/Trace commands not implemented** | Phase 3 blocked       | Start with CLI bridge as fallback, add native commands in parallel    |
+| **CLI binary not found**               | Write operations fail | Graceful fallback: gray out lifecycle items, show "CLI not installed" |
+| **SQLite schema changes**              | Data loss             | Use migrations, test upgrade path                                     |
+| **Frontend complexity grows**          | Maintainability       | Consider React/Svelte migration if >500 LOC of vanilla JS             |
+| **Cross-platform CSS issues**          | Visual bugs           | Test on all platforms, use system fonts, avoid platform-specific CSS  |
 
 ---
 

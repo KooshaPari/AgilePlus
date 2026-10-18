@@ -3,23 +3,23 @@ work_package_id: WP09
 title: CLI Bootstrap Command
 lane: "done"
 dependencies:
-- WP01
+    - WP01
 base_branch: 002-org-wide-release-governance-dx-automation-WP01
 base_commit: 50c5fe5c522c6cec9f56b7d88f9628b7ff80b5cc
-created_at: '2026-03-01T18:23:09.121447+00:00'
+created_at: "2026-03-01T18:23:09.121447+00:00"
 subtasks: [T049, T050, T051, T052, T053, T054, T055, T056]
 phase: Phase 3 - DX Tooling
-assignee: ''
+assignee: ""
 agent: "wp09-bootstrap"
 shell_pid: "18560"
 review_status: "approved"
 reviewed_by: "Koosha Paridehpour"
 history:
-- timestamp: '2026-03-01T13:00:00Z'
-  lane: planned
-  agent: system
-  shell_pid: ''
-  action: Prompt generated via /spec-kitty.tasks
+    - timestamp: "2026-03-01T13:00:00Z"
+      lane: planned
+      agent: system
+      shell_pid: ""
+      action: Prompt generated via /spec-kitty.tasks
 ---
 
 # Work Package Prompt: WP09 – CLI Bootstrap Command
@@ -52,122 +52,129 @@ This work package implements the `pheno bootstrap` command to automate DX scaffo
 ## Subtasks & Detailed Guidance
 
 ### Subtask T049 – Bootstrap Command Implementation
+
 - **Purpose**: Create the `pheno bootstrap` command with language detection and artifact generation
 - **Steps**:
-  1. Create `cmd/bootstrap.go` with Cobra command definition:
-     ```go
-     var bootstrapCmd = &cobra.Command{
-         Use:   "bootstrap [flags]",
-         Short: "Bootstrap project with DX configuration",
-         Long:  "Generate mise.toml, pre-commit hooks, CI workflows, and other DX artifacts",
-         RunE:  runBootstrap,
-     }
+    1. Create `cmd/bootstrap.go` with Cobra command definition:
 
-     func init() {
-         bootstrapCmd.Flags().StringVar(&languageOverride, "language", "", "Override language detection (go|rust|python|typescript)")
-         bootstrapCmd.Flags().StringVar(&riskProfile, "risk-profile", "low", "Default risk profile (low|medium|high)")
-         bootstrapCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show what would be generated without writing")
-         bootstrapCmd.Flags().BoolVar(&force, "force", false, "Overwrite existing files")
-         rootCmd.AddCommand(bootstrapCmd)
-     }
-     ```
-  2. Implement `runBootstrap` function flow:
-     - Detect languages in current directory (or use --language override)
-     - For each language: generate language-specific templates (see T051–T055)
-     - Generate common artifacts (pre-commit, pre-push, .gitignore)
-     - If dry-run: print file list and exit
-     - If not dry-run:
-       a. Check for existing files (warn if not --force)
-       b. Write all files
-       c. Make shell scripts executable (chmod +x)
-       d. Run `git add` on generated files (optional, configurable)
-     - Output: "✓ Generated 7 files (mise.toml, pre-commit, pre-push, ci.yml, release.yml, cliff.toml, .pre-commit-config.yaml)"
-  3. Language detection heuristics:
-     - Go: presence of `go.mod`
-     - Rust: presence of `Cargo.toml`
-     - Python: presence of `setup.py`, `pyproject.toml`, or `requirements.txt`
-     - TypeScript/JavaScript: presence of `package.json` with type field or `tsconfig.json`
-  4. Error handling:
-     - No manifests found: error "Could not detect language. Use --language to override."
-     - Template loading fails: error with details
-     - File write fails: error with path and reason
-  5. Support interactive mode (future): prompt for choices if ambiguous
+        ```go
+        var bootstrapCmd = &cobra.Command{
+            Use:   "bootstrap [flags]",
+            Short: "Bootstrap project with DX configuration",
+            Long:  "Generate mise.toml, pre-commit hooks, CI workflows, and other DX artifacts",
+            RunE:  runBootstrap,
+        }
+
+        func init() {
+            bootstrapCmd.Flags().StringVar(&languageOverride, "language", "", "Override language detection (go|rust|python|typescript)")
+            bootstrapCmd.Flags().StringVar(&riskProfile, "risk-profile", "low", "Default risk profile (low|medium|high)")
+            bootstrapCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show what would be generated without writing")
+            bootstrapCmd.Flags().BoolVar(&force, "force", false, "Overwrite existing files")
+            rootCmd.AddCommand(bootstrapCmd)
+        }
+        ```
+
+    2. Implement `runBootstrap` function flow:
+        - Detect languages in current directory (or use --language override)
+        - For each language: generate language-specific templates (see T051–T055)
+        - Generate common artifacts (pre-commit, pre-push, .gitignore)
+        - If dry-run: print file list and exit
+        - If not dry-run:
+          a. Check for existing files (warn if not --force)
+          b. Write all files
+          c. Make shell scripts executable (chmod +x)
+          d. Run `git add` on generated files (optional, configurable)
+        - Output: "✓ Generated 7 files (mise.toml, pre-commit, pre-push, ci.yml, release.yml, cliff.toml, .pre-commit-config.yaml)"
+    3. Language detection heuristics:
+        - Go: presence of `go.mod`
+        - Rust: presence of `Cargo.toml`
+        - Python: presence of `setup.py`, `pyproject.toml`, or `requirements.txt`
+        - TypeScript/JavaScript: presence of `package.json` with type field or `tsconfig.json`
+    4. Error handling:
+        - No manifests found: error "Could not detect language. Use --language to override."
+        - Template loading fails: error with details
+        - File write fails: error with path and reason
+    5. Support interactive mode (future): prompt for choices if ambiguous
 
 - **Files**: `/Users/<REDACTED>/CodeProjects/Phenotype/repos/AgilePlus/cmd/bootstrap.go`
 - **Parallel?**: No (prerequisite for T050–T055)
 - **Notes**: Use `os.Stat` to check if files exist before writing; provide clear error messages; respect existing configurations when possible (merge rather than overwrite)
 
 ### Subtask T050 – Template System with Embedded Files
+
 - **Purpose**: Implement Go template system with embedded template files
 - **Steps**:
-  1. Create `internal/templates/templates.go` to manage template loading and rendering:
-     ```go
-     package templates
+    1. Create `internal/templates/templates.go` to manage template loading and rendering:
 
-     import (
-         "embed"
-         "text/template"
-     )
+        ```go
+        package templates
 
-     //go:embed files/*.toml files/*.sh files/*.yml files/*.yaml
-     var templateFS embed.FS
+        import (
+            "embed"
+            "text/template"
+        )
 
-     type TemplateContext struct {
-         RepoName     string
-         Language     string
-         Registry     string
-         RiskProfile  string
-         Author       string
-         Email        string
-     }
+        //go:embed files/*.toml files/*.sh files/*.yml files/*.yaml
+        var templateFS embed.FS
 
-     func RenderTemplate(name string, ctx TemplateContext) (string, error) {
-         tmpl, err := template.ParseFS(templateFS, "files/"+name)
-         if err != nil {
-             return "", err
-         }
-         var buf bytes.Buffer
-         err = tmpl.Execute(&buf, ctx)
-         return buf.String(), err
-     }
-     ```
-  2. Create `internal/templates/files/` directory for template files:
-     - `files/mise.toml.tpl` (see T051)
-     - `files/pre-commit.sh.tpl` (see T052)
-     - `files/pre-push.sh.tpl` (see T053)
-     - `files/ci.yml.tpl` (see T054)
-     - `files/release.yml.tpl` (see T054)
-     - `files/cliff.toml.tpl` (see T055)
-  3. Implement template variable substitution:
+        type TemplateContext struct {
+            RepoName     string
+            Language     string
+            Registry     string
+            RiskProfile  string
+            Author       string
+            Email        string
+        }
+
+        func RenderTemplate(name string, ctx TemplateContext) (string, error) {
+            tmpl, err := template.ParseFS(templateFS, "files/"+name)
+            if err != nil {
+                return "", err
+            }
+            var buf bytes.Buffer
+            err = tmpl.Execute(&buf, ctx)
+            return buf.String(), err
+        }
+        ```
+
+    2. Create `internal/templates/files/` directory for template files:
+        - `files/mise.toml.tpl` (see T051)
+        - `files/pre-commit.sh.tpl` (see T052)
+        - `files/pre-push.sh.tpl` (see T053)
+        - `files/ci.yml.tpl` (see T054)
+        - `files/release.yml.tpl` (see T054)
+        - `files/cliff.toml.tpl` (see T055)
+    3. Implement template variable substitution:
     - `\{\{ .RepoName \}\}` → package name or directory name
     - `\{\{ .Language \}\}` → detected language
     - `\{\{ .Registry \}\}` → auto-detected or configured (npm, pypi, crates)
     - `\{\{ .RiskProfile \}\}` → from --risk-profile flag
     - `\{\{ .Author \}\}` → from git config or env
     - `\{\{ .Email \}\}` → from git config or env
-  4. Template functions for common operations:
+    4. Template functions for common operations:
     - `\{\{ upper .Language \}\}` → uppercase language name
     - `\{\{ eq .Language "go" \}\}` → conditional rendering per language
-  5. Error handling: wrap template errors with file name and context
+    5. Error handling: wrap template errors with file name and context
 
 - **Files**: `/Users/<REDACTED>/CodeProjects/Phenotype/repos/AgilePlus/internal/templates/templates.go`, `/Users/<REDACTED>/CodeProjects/Phenotype/repos/AgilePlus/internal/templates/files/*.tpl`
 - **Parallel?**: No (prerequisite for T051–T055)
 - **Notes**: Use `//go:embed` to embed files at compile time; ensure template files are valid Go templates; test template rendering with sample contexts
 
 ### Subtask T051 – Mise Task Templates
+
 - **Purpose**: Generate language-specific mise task definitions
 - **Steps**:
-  1. Create `internal/templates/files/mise.toml.tpl` with common tasks:
-<pre v-pre><code class="language-gotemplate">
-{{- if eq .Language "go" }}
-run = "gofmt -w ."
-{{- else if eq .Language "rust" }}
-run = "cargo fmt"
-{{- else if eq .Language "python" }}
-run = "ruff format ."
-{{- else if eq .Language "typescript" }}
-run = "prettier --write ."
-{{- end }}
+    1. Create `internal/templates/files/mise.toml.tpl` with common tasks:
+     <pre v-pre><code class="language-gotemplate">
+     {{- if eq .Language "go" }}
+     run = "gofmt -w ."
+     {{- else if eq .Language "rust" }}
+     run = "cargo fmt"
+     {{- else if eq .Language "python" }}
+     run = "ruff format ."
+     {{- else if eq .Language "typescript" }}
+     run = "prettier --write ."
+     {{- end }}
 
 [tasks.lint]
 description = "Lint code"
@@ -227,7 +234,8 @@ run = "npm audit --audit-level=moderate || true"
 [tasks."test:integration"]
 description = "Run integration tests"
 </code></pre>
-```
+
+````
      run = "cargo test --test '*' --release"
 
      [tasks.audit]
@@ -592,3 +600,4 @@ When reviewing WP09 completion:
 - 2026-03-01T18:23:09Z – wp09-bootstrap – shell_pid=18560 – lane=doing – Assigned agent via workflow command
 - 2026-03-01T20:27:19Z – wp09-bootstrap – shell_pid=18560 – lane=for_review – Ready: bootstrap command with templates
 - 2026-03-01T21:40:13Z – wp09-bootstrap – shell_pid=18560 – lane=done – Implementation complete, reviewed
+````

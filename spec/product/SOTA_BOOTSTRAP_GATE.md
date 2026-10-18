@@ -8,6 +8,7 @@ AgilePlus cannot reach 100% design/spec verification until its methodology, exec
 ## Required comparison families
 
 ### Spec-driven / agent-development methods
+
 - OpenSpec
 - GitHub Spec Kit
 - BMAD Method
@@ -19,6 +20,7 @@ AgilePlus cannot reach 100% design/spec verification until its methodology, exec
 - other credible current SDD systems discovered during the review
 
 ### Execution/orchestration
+
 - coding-agent harnesses and multi-agent orchestration systems;
 - worktree/branch/claim isolation systems;
 - issue/DAG/task execution systems;
@@ -26,6 +28,7 @@ AgilePlus cannot reach 100% design/spec verification until its methodology, exec
 - agent context compilation and repository-intelligence approaches.
 
 ### Verification/grading
+
 - SWE-bench-style executable task evaluation;
 - coding-agent benchmark harnesses;
 - mutation/property/contract testing approaches;
@@ -33,6 +36,7 @@ AgilePlus cannot reach 100% design/spec verification until its methodology, exec
 - evidence/provenance and reproducible execution systems.
 
 ### Established engineering methods
+
 - requirements engineering and EARS/Gherkin where useful;
 - ADR/design/architecture practices;
 - WBS/DAG/PERT and dependency planning;

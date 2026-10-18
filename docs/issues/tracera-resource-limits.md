@@ -24,42 +24,42 @@ Add resource limits to `docker-compose.prod.yml`:
 
 ```yaml
 services:
-  go-backend:
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-  postgres:
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-  dragonfly:
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-  nats:
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-  nginx:
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 128M
+    go-backend:
+        deploy:
+            resources:
+                limits:
+                    cpus: "2.0"
+                    memory: 1G
+                reservations:
+                    cpus: "0.5"
+                    memory: 256M
+    postgres:
+        deploy:
+            resources:
+                limits:
+                    cpus: "2.0"
+                    memory: 2G
+                reservations:
+                    cpus: "0.5"
+                    memory: 512M
+    dragonfly:
+        deploy:
+            resources:
+                limits:
+                    cpus: "1.0"
+                    memory: 1G
+    nats:
+        deploy:
+            resources:
+                limits:
+                    cpus: "0.5"
+                    memory: 256M
+    nginx:
+        deploy:
+            resources:
+                limits:
+                    cpus: "0.5"
+                    memory: 128M
 ```
 
 ## Acceptance Criteria

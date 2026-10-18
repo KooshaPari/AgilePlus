@@ -8,11 +8,11 @@ Scanned 97 repos in `/Users/<REDACTED>/CodeProjects/Phenotype/repos`. The "97 re
 
 These repos had source files but no CI workflows at all:
 
-| Repo | Source Files | Build System | Priority | Status |
-|------|-------------|--------------|----------|--------|
-| `pheno-cli/` | 50 Go files | `go.mod` present | **HIGH** | **RESOLVED** — CI added |
-| `PhenoEvents/` | 13 files | submodule (`pheno-events`) | **LOW** |
-| `PhenoSchema/` | 23+ files | spec/layout repo | **LOW** |
+| Repo           | Source Files | Build System               | Priority | Status                  |
+| -------------- | ------------ | -------------------------- | -------- | ----------------------- |
+| `pheno-cli/`   | 50 Go files  | `go.mod` present           | **HIGH** | **RESOLVED** — CI added |
+| `PhenoEvents/` | 13 files     | submodule (`pheno-events`) | **LOW**  |
+| `PhenoSchema/` | 23+ files    | spec/layout repo           | **LOW**  |
 
 Repos with 0 source files (placeholders/stubs): `PhenoContracts/`, `PhenoControl/`, `portage-adapter-core/`
 
@@ -22,29 +22,29 @@ These repos have workflows but some are `workflow_dispatch`/`schedule`-only (no 
 
 ### High Priority (10+ missing triggers)
 
-| Repo | Missing Triggers | Total Workflows | Gap % |
-|------|-----------------|-----------------|-------|
-| `cliproxyapi-plusplus/` | 15 | 25 | 60% |
-| `phenoShared/` | 15 | 33 | 45% |
-| `helios-cli/` | 12 | 36 | 33% |
-| `helioscope/` | 15 | 51 | 29% |
-| `pheno/` | 11 | 48 | 23% |
-| `HexaKit/` | 11 | 51 | 22% |
-| `PhenoDevOps/` | 6 | 41 | 15% |
+| Repo                    | Missing Triggers | Total Workflows | Gap % |
+| ----------------------- | ---------------- | --------------- | ----- |
+| `cliproxyapi-plusplus/` | 15               | 25              | 60%   |
+| `phenoShared/`          | 15               | 33              | 45%   |
+| `helios-cli/`           | 12               | 36              | 33%   |
+| `helioscope/`           | 15               | 51              | 29%   |
+| `pheno/`                | 11               | 48              | 23%   |
+| `HexaKit/`              | 11               | 51              | 22%   |
+| `PhenoDevOps/`          | 6                | 41              | 15%   |
 
 ### Medium Priority (3-9 missing triggers)
 
-| Repo | Missing Triggers | Total Workflows | Gap % |
-|------|-----------------|-----------------|-------|
-| `portage/` | 2 | 29 | 7% |
-| `Tokn/` | 2 | 28 | 7% |
-| `phenoDesign/` | 3 | 11 | 27% |
-| `Tracera/` | 3 | 38 | 8% |
-| `phenotype-tooling/` | 3 | 13 | 23% |
-| `phenoData/` | 1 | 14 | 7% |
-| `PhenoKits/` | 1 | 13 | 8% |
-| `PhenoObservability/` | 2 | 17 | 12% |
-| `Sidekick/` | 1 | 12 | 8% |
+| Repo                  | Missing Triggers | Total Workflows | Gap % |
+| --------------------- | ---------------- | --------------- | ----- |
+| `portage/`            | 2                | 29              | 7%    |
+| `Tokn/`               | 2                | 28              | 7%    |
+| `phenoDesign/`        | 3                | 11              | 27%   |
+| `Tracera/`            | 3                | 38              | 8%    |
+| `phenotype-tooling/`  | 3                | 13              | 23%   |
+| `phenoData/`          | 1                | 14              | 7%    |
+| `PhenoKits/`          | 1                | 13              | 8%    |
+| `PhenoObservability/` | 2                | 17              | 12%   |
+| `Sidekick/`           | 1                | 12              | 8%    |
 
 ### Low Priority (1-2 missing triggers)
 

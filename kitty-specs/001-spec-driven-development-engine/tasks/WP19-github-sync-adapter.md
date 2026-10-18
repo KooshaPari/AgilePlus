@@ -3,28 +3,28 @@ work_package_id: WP19
 title: GitHub Sync Adapter (agileplus-integrations)
 lane: "done"
 dependencies:
-- WP17
+    - WP17
 base_branch: 001-spec-driven-development-engine-WP17
 base_commit: 2df69d4d7fa7363fc68caade1ca49438eb272f15
-created_at: '2026-02-28T13:25:29.000372+00:00'
+created_at: "2026-02-28T13:25:29.000372+00:00"
 subtasks:
-- T109
-- T110
-- T111
-- T112
-- T113
+    - T109
+    - T110
+    - T111
+    - T112
+    - T113
 phase: Phase 5 - Triage, Sync & Sub-Commands
-assignee: ''
+assignee: ""
 agent: "claude-opus"
 shell_pid: "78956"
 review_status: "approved"
 reviewed_by: "Koosha Paridehpour"
 history:
-- timestamp: '2026-02-27T00:00:00Z'
-  lane: planned
-  agent: system
-  shell_pid: ''
-  action: Prompt generated via /spec-kitty.tasks
+    - timestamp: "2026-02-27T00:00:00Z"
+      lane: planned
+      agent: system
+      shell_pid: ""
+      action: Prompt generated via /spec-kitty.tasks
 ---
 
 # WP19 — GitHub Sync Adapter (agileplus-integrations)
@@ -57,10 +57,10 @@ All outbound GitHub API calls must go through the `GitHubClient` struct. The syn
 
 - Add `octocrab` to `Cargo.toml`. Use the `octocrab::OctocrabBuilder` to construct a client with a personal access token.
 - `octocrab` wraps the GitHub REST API v3. Relevant methods:
-  - `octocrab.issues(owner, repo).create(title).body(body).labels(labels).send().await` — create an issue.
-  - `octocrab.issues(owner, repo).get(issue_number).await` — fetch a single issue.
-  - `octocrab.issues(owner, repo).update(issue_number).state(state).send().await` — update an issue's state.
-  - `octocrab.issues(owner, repo).list().state(params::State::Open).since(since).send().await` — list issues modified since a timestamp.
+    - `octocrab.issues(owner, repo).create(title).body(body).labels(labels).send().await` — create an issue.
+    - `octocrab.issues(owner, repo).get(issue_number).await` — fetch a single issue.
+    - `octocrab.issues(owner, repo).update(issue_number).state(state).send().await` — update an issue's state.
+    - `octocrab.issues(owner, repo).list().state(params::State::Open).since(since).send().await` — list issues modified since a timestamp.
 - `octocrab` models: `octocrab::models::issues::Issue` (fields: `number: u64`, `title: String`, `body: Option<String>`, `state: IssueState`, `labels: Vec<Label>`, `updated_at: DateTime<Utc>`).
 - For wiremock-based testing, `octocrab` can be constructed with a custom `base_uri`. Pass the wiremock server URI as the base URI.
 
@@ -275,12 +275,12 @@ CREATE INDEX IF NOT EXISTS idx_github_sync_issue_number
 
 ## AgilePlus Cross-References
 
-| Field | Value |
-|-------|-------|
-| Backlog Item ID | `{item.id}` |
-| Feature | `{item.feature_slug_or_none}` |
-| Classified by | AgilePlus Triage (rule-based classifier) |
-| Reported at | {item.created_at} |
+| Field           | Value                                    |
+| --------------- | ---------------------------------------- |
+| Backlog Item ID | `{item.id}`                              |
+| Feature         | `{item.feature_slug_or_none}`            |
+| Classified by   | AgilePlus Triage (rule-based classifier) |
+| Reported at     | {item.created_at}                        |
 
 ---
 
@@ -290,7 +290,7 @@ CREATE INDEX IF NOT EXISTS idx_github_sync_issue_number
 
 ---
 
-*This issue was created automatically by [AgilePlus](https://github.com/your-org/agileplus). Do not edit the cross-reference table — changes will be detected as a conflict.*
+_This issue was created automatically by [AgilePlus](https://github.com/your-org/agileplus). Do not edit the cross-reference table — changes will be detected as a conflict._
 ```
 
 Replace `{item.title}`, `{item.description_or_empty}` (empty string if `None`), `{item.feature_slug_or_none}` (`"none"` if `None`), `{item.created_at}`.
@@ -348,9 +348,9 @@ pub struct StatusChange {
    b. Map `GitHubIssueState::Closed` → `BacklogState::Closed`; `GitHubIssueState::Open` → `BacklogState::Open`.
    c. Fetch current `BacklogItem` from `BacklogAdapter`.
    d. If the state has changed:
-      - Call `backlog.close(item_id)` (if closed) or a new `backlog.reopen(item_id)` method (add to `BacklogAdapter` in WP17 as a follow-up, or define it inline here temporarily).
-      - Update `last_synced_at` in `github_sync_state`.
-      - Push `StatusChange` to results vec.
+    - Call `backlog.close(item_id)` (if closed) or a new `backlog.reopen(item_id)` method (add to `BacklogAdapter` in WP17 as a follow-up, or define it inline here temporarily).
+    - Update `last_synced_at` in `github_sync_state`.
+    - Push `StatusChange` to results vec.
 4. Return results.
 
 **`backlog.reopen` temporary definition** (if not provided by WP17): Add `BacklogAdapter::reopen` in `crates/agileplus-triage/src/backlog.rs` as part of WP19's scope if WP17 did not include it. This is a permissible cross-subtask edit; document it in the WP19 PR description.
@@ -384,10 +384,10 @@ pub struct BodyConflictReport {
    b. Compute `current_hash = hex(sha256(issue.body.unwrap_or_default().as_bytes()))`.
    c. Compare with `stored body_hash` from `github_sync_state`.
    d. If hashes differ:
-      - Build `summary = format!("Issue #{} body edited externally (stored hash {:.8} != current hash {:.8})", number, stored_hash, current_hash)`.
-      - Call `tracing::warn!(backlog_item_id = %row.entity_id, github_issue_number = row.github_issue_number, stored_hash = %row.body_hash, current_hash = %current_hash, "GitHub issue body was externally edited — skipping sync update")`.
-      - Push `BodyConflictReport` to results.
-      - Do NOT call any write endpoint. Do NOT update `body_hash` in storage.
+    - Build `summary = format!("Issue #{} body edited externally (stored hash {:.8} != current hash {:.8})", number, stored_hash, current_hash)`.
+    - Call `tracing::warn!(backlog_item_id = %row.entity_id, github_issue_number = row.github_issue_number, stored_hash = %row.body_hash, current_hash = %current_hash, "GitHub issue body was externally edited — skipping sync update")`.
+    - Push `BodyConflictReport` to results.
+    - Do NOT call any write endpoint. Do NOT update `body_hash` in storage.
 3. Return results.
 
 **Design rationale**: Using a body hash rather than `updated_at` comparison is more reliable because `updated_at` changes on label additions, assignee changes, and comment additions — none of which indicate a body conflict. The hash only changes when the body text changes.
@@ -417,48 +417,48 @@ Add `sha2` (features: `default`) and `hex` to `Cargo.toml`.
 **Test scenarios**:
 
 1. **`test_create_bug_issue`**:
-   - Mock `POST /repos/{owner}/{repo}/issues` → 201 with a valid GitHub issue JSON (`number: 42`, `html_url: "..."`, etc.).
-   - Call `sync_bug` with a `BacklogItem` of kind `Bug`, no `feature_slug`.
-   - Assert: `create_issue` called once; response `number == 42`; `github_sync_state` row inserted; `body_hash` is non-empty.
+    - Mock `POST /repos/{owner}/{repo}/issues` → 201 with a valid GitHub issue JSON (`number: 42`, `html_url: "..."`, etc.).
+    - Call `sync_bug` with a `BacklogItem` of kind `Bug`, no `feature_slug`.
+    - Assert: `create_issue` called once; response `number == 42`; `github_sync_state` row inserted; `body_hash` is non-empty.
 
 2. **`test_idempotent_sync`**:
-   - Pre-insert a `github_sync_state` row for a `BacklogItem`.
-   - Call `sync_bug` again with the same item.
-   - Assert: no HTTP calls made to wiremock; existing `GitHubIssueRef` returned.
+    - Pre-insert a `github_sync_state` row for a `BacklogItem`.
+    - Call `sync_bug` again with the same item.
+    - Assert: no HTTP calls made to wiremock; existing `GitHubIssueRef` returned.
 
 3. **`test_labels_include_feature_slug`**:
-   - Construct a `BacklogItem` with `feature_slug = Some("feat-auth")`.
-   - Mock `POST /repos/.../issues` to capture request body.
-   - Call `sync_bug`. Assert: captured request JSON contains `"labels": ["bug", "agileplus", "feat-auth"]`.
+    - Construct a `BacklogItem` with `feature_slug = Some("feat-auth")`.
+    - Mock `POST /repos/.../issues` to capture request body.
+    - Call `sync_bug`. Assert: captured request JSON contains `"labels": ["bug", "agileplus", "feat-auth"]`.
 
 4. **`test_poll_status_changes_closed`**:
-   - Pre-insert a `github_sync_state` row with a known `github_issue_number`.
-   - Pre-insert a `BacklogItem` with `state = Open`.
-   - Mock `GET /repos/.../issues?state=open&since=...` → returns issue with `state: "closed"`.
-   - Call `poll_status_changes`. Assert: one `StatusChange` returned; `BacklogItem` now has `state = Closed`.
+    - Pre-insert a `github_sync_state` row with a known `github_issue_number`.
+    - Pre-insert a `BacklogItem` with `state = Open`.
+    - Mock `GET /repos/.../issues?state=open&since=...` → returns issue with `state: "closed"`.
+    - Call `poll_status_changes`. Assert: one `StatusChange` returned; `BacklogItem` now has `state = Closed`.
 
 5. **`test_poll_status_changes_no_change`**:
-   - Same setup but mock returns the issue with `state: "open"`.
-   - Assert: empty `StatusChange` vec returned; `BacklogItem` state unchanged.
+    - Same setup but mock returns the issue with `state: "open"`.
+    - Assert: empty `StatusChange` vec returned; `BacklogItem` state unchanged.
 
 6. **`test_conflict_detection_body_edited`**:
-   - Pre-insert a `github_sync_state` row with a known `body_hash`.
-   - Mock `GET /repos/.../issues/42` → returns issue with a body that produces a different hash.
-   - Call `detect_conflicts`. Assert: one `BodyConflictReport` returned; no write endpoints called; `body_hash` in storage unchanged.
+    - Pre-insert a `github_sync_state` row with a known `body_hash`.
+    - Mock `GET /repos/.../issues/42` → returns issue with a body that produces a different hash.
+    - Call `detect_conflicts`. Assert: one `BodyConflictReport` returned; no write endpoints called; `body_hash` in storage unchanged.
 
 7. **`test_conflict_detection_no_conflict`**:
-   - Same setup but mock returns the same body (same hash).
-   - Assert: empty `BodyConflictReport` vec returned.
+    - Same setup but mock returns the same body (same hash).
+    - Assert: empty `BodyConflictReport` vec returned.
 
 8. **`test_rate_limit_enforced`**:
-   - Construct a `GitHubClient` with `max_tokens = 1` on the token bucket.
-   - Make two rapid `create_issue` calls.
-   - Assert: second call returns `Err(GitHubError::RateLimited)` without hitting wiremock.
+    - Construct a `GitHubClient` with `max_tokens = 1` on the token bucket.
+    - Make two rapid `create_issue` calls.
+    - Assert: second call returns `Err(GitHubError::RateLimited)` without hitting wiremock.
 
 9. **`test_stack_trace_extracted_in_body`**:
-   - Construct a `BacklogItem` with `description = Some("Traceback (most recent call last):\n  File foo.py, line 42\nValueError: bad input")`.
-   - Mock `POST /repos/.../issues` to capture request body.
-   - Assert: captured request body contains a fenced code block with the stack trace text.
+    - Construct a `BacklogItem` with `description = Some("Traceback (most recent call last):\n  File foo.py, line 42\nValueError: bad input")`.
+    - Mock `POST /repos/.../issues` to capture request body.
+    - Assert: captured request body contains a fenced code block with the stack trace text.
 
 10. **`test_http_error_wrapped`**:
     - Mock `POST /repos/.../issues` → 422 with GitHub error JSON.
@@ -470,33 +470,33 @@ Add dev-dependencies: `wiremock`, `tokio` (features: `macros`, `rt-multi-thread`
 
 ## Validation Criteria
 
-| Criterion | Pass Condition |
-|-----------|----------------|
-| Compilation | `cargo build -p agileplus-github` exits 0 |
-| Lint | `cargo clippy -p agileplus-github -- -D warnings` exits 0 |
-| Unit tests | All inline `#[cfg(test)]` tests pass |
-| Integration tests | All 10 wiremock-based tests in `tests/integration.rs` pass |
-| Idempotency | Calling `sync_bug` twice on the same `BacklogItem` results in exactly one row in `github_sync_state` and one `create_issue` call |
-| Rate limiter | Token bucket never permits more than 60 requests/minute |
-| Conflict safety | `detect_conflicts` never calls any write endpoint; `body_hash` in storage unchanged after detection |
-| Token security | GitHub token never appears in tracing output at any log level |
-| Label correctness | Created issues always have all `default_labels` plus the feature slug label |
-| Stack trace extraction | Issues created from bugs with stack traces include the trace in a fenced code block |
+| Criterion              | Pass Condition                                                                                                                   |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Compilation            | `cargo build -p agileplus-github` exits 0                                                                                        |
+| Lint                   | `cargo clippy -p agileplus-github -- -D warnings` exits 0                                                                        |
+| Unit tests             | All inline `#[cfg(test)]` tests pass                                                                                             |
+| Integration tests      | All 10 wiremock-based tests in `tests/integration.rs` pass                                                                       |
+| Idempotency            | Calling `sync_bug` twice on the same `BacklogItem` results in exactly one row in `github_sync_state` and one `create_issue` call |
+| Rate limiter           | Token bucket never permits more than 60 requests/minute                                                                          |
+| Conflict safety        | `detect_conflicts` never calls any write endpoint; `body_hash` in storage unchanged after detection                              |
+| Token security         | GitHub token never appears in tracing output at any log level                                                                    |
+| Label correctness      | Created issues always have all `default_labels` plus the feature slug label                                                      |
+| Stack trace extraction | Issues created from bugs with stack traces include the trace in a fenced code block                                              |
 
 ---
 
 ## Risks & Mitigations
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| GitHub API rate limit: 5000/hr (83/min) exceeded during heavy sync | Low | High | Token bucket capped at 60/min; bulk `poll_status_changes` uses a single list endpoint rather than per-issue fetches |
-| `octocrab` version incompatibility with workspace resolver | Medium | Medium | Pin `octocrab` to a specific version in workspace `Cargo.toml`; test with `cargo check --workspace` after adding |
-| Issue body grows too large (GitHub limit: 65536 chars) | Low | Medium | Truncate description to 60 000 chars with a `[truncated]` notice; add assertion in body builder |
-| `list_issues_updated_since` returns paginated results; first page may miss older changed issues | Medium | Medium | Use `octocrab`'s auto-pagination (`.page(1).per_page(100)`) and loop until all pages consumed |
-| SHA-256 hash collision producing false negative conflict detection | Negligible | Low | Accept theoretical risk; SHA-256 collision probability is negligible for issue body lengths |
-| `BacklogAdapter::reopen` not available from WP17 | Medium | Medium | Define temporarily in WP19 scope; file a follow-up backlog task to move it to WP17's crate |
-| wiremock tests fail if octocrab adds required headers not present in mock | Low | Medium | Use `wiremock::matchers::any()` for header matching in mock setup; only assert on path and method |
-| Integrations service config unavailable during CI testing | Low | High | Tests use a test token string injected directly into `GitHubClient::new`; integrations service config is not required in tests |
+| Risk                                                                                            | Likelihood | Impact | Mitigation                                                                                                                     |
+| ----------------------------------------------------------------------------------------------- | ---------- | ------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| GitHub API rate limit: 5000/hr (83/min) exceeded during heavy sync                              | Low        | High   | Token bucket capped at 60/min; bulk `poll_status_changes` uses a single list endpoint rather than per-issue fetches            |
+| `octocrab` version incompatibility with workspace resolver                                      | Medium     | Medium | Pin `octocrab` to a specific version in workspace `Cargo.toml`; test with `cargo check --workspace` after adding               |
+| Issue body grows too large (GitHub limit: 65536 chars)                                          | Low        | Medium | Truncate description to 60 000 chars with a `[truncated]` notice; add assertion in body builder                                |
+| `list_issues_updated_since` returns paginated results; first page may miss older changed issues | Medium     | Medium | Use `octocrab`'s auto-pagination (`.page(1).per_page(100)`) and loop until all pages consumed                                  |
+| SHA-256 hash collision producing false negative conflict detection                              | Negligible | Low    | Accept theoretical risk; SHA-256 collision probability is negligible for issue body lengths                                    |
+| `BacklogAdapter::reopen` not available from WP17                                                | Medium     | Medium | Define temporarily in WP19 scope; file a follow-up backlog task to move it to WP17's crate                                     |
+| wiremock tests fail if octocrab adds required headers not present in mock                       | Low        | Medium | Use `wiremock::matchers::any()` for header matching in mock setup; only assert on path and method                              |
+| Integrations service config unavailable during CI testing                                       | Low        | High   | Tests use a test token string injected directly into `GitHubClient::new`; integrations service config is not required in tests |
 
 ---
 
@@ -521,12 +521,13 @@ The reviewer should:
 
 ```yaml
 history:
-- timestamp: '2026-02-27T00:00:00Z'
-  lane: planned
-  agent: system
-  shell_pid: ''
-  action: Prompt generated via /spec-kitty.tasks
+    - timestamp: "2026-02-27T00:00:00Z"
+      lane: planned
+      agent: system
+      shell_pid: ""
+      action: Prompt generated via /spec-kitty.tasks
 ```
+
 - 2026-02-28T13:25:29Z – claude-opus – shell_pid=41285 – lane=doing – Assigned agent via workflow command
 - 2026-02-28T13:31:16Z – claude-opus – shell_pid=41285 – lane=for_review – GitHub sync crate: client, sync, conflict detection. 7 tests.
 - 2026-02-28T23:22:19Z – claude-opus – shell_pid=78956 – lane=doing – Started review via workflow command

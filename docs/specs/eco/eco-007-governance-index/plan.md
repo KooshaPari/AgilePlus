@@ -1,23 +1,26 @@
 # Plan: Governance Index
 
 ## Objective
+
 Make kitty-spec coverage live and provably current by generating
 `AgilePlus/kitty-specs/INDEX.md` from `meta.json` on every push, closing
 FR1 from `worklogs/eco-006-compliance-20260605.md`.
 
 ## Scope
+
 - Governance index generation and CI wiring only.
 - No product-code or runtime changes.
 - No migrations of historical `meta.json` files beyond filling
   `reactivated` / `superseded_by` where obviously missing.
 
 ## Implementation Steps
+
 1. **Indexer script** — Add `AgilePlus/tooling/governance_index.py`
    (Python 3.10+, stdlib only). It walks
    `AgilePlus/kitty-specs/*/meta.json`, sorts by `spec_id`, and emits
    `AgilePlus/kitty-specs/INDEX.md` as a Markdown table with columns
    `spec_id | slug | status | created | reactivated | superseded_by |
-   link`. Stable sort and deterministic output.
+link`. Stable sort and deterministic output.
 2. **Emitted `INDEX.md`** — Generated artifact committed to the repo,
    listing every kitty-spec with clickable relative links to each
    spec directory and a clear `status` cell (`active`, `pending`,
@@ -36,6 +39,7 @@ FR1 from `worklogs/eco-006-compliance-20260605.md`.
    missing; the indexer must render `—` in that case.
 
 ## Verification
+
 - `python3 AgilePlus/tooling/governance_index.py` produces
   `AgilePlus/kitty-specs/INDEX.md` that is byte-identical to the
   committed copy (`git diff --exit-code` is clean).

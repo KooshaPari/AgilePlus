@@ -11,6 +11,7 @@
 ## Context
 
 The Batch 13 audit (KaskMan, dotfiles, harnesses, kits, packs, portage, zen) revealed 7 repos in critical condition:
+
 - 5 repos are completely empty or near-empty (KaskMan, kits, packs, portage, zen)
 - 2 repos have partial content but lack basic scaffolding (dotfiles, harnesses)
 - Zero repos have README.md, CI/CD, AgilePlus specs, or changelogs
@@ -20,6 +21,7 @@ The Batch 13 audit (KaskMan, dotfiles, harnesses, kits, packs, portage, zen) rev
 ## Problem Statement
 
 Batch 13 repos are abandoned and consuming shelf space:
+
 - **Empty repos** — 5 repos with zero meaningful content
 - **No documentation** — Zero README files across all 7 repos
 - **No CI/CD** — Zero GitHub Actions workflows
@@ -44,36 +46,40 @@ Batch 13 repos are abandoned and consuming shelf space:
 
 ## Repositories Affected
 
-| Repo | Action | Rationale |
-|------|--------|-----------|
-| KaskMan | Archive | Empty directory, no content |
-| kits | Archive | Not a git repo, empty directory |
-| packs | Archive | Empty directory, warfare-starwars already archived |
-| portage | Archive | Empty directory |
-| zen | Archive | Empty directory |
-| dotfiles | Populate | Has governance/ and hooks/ content, needs scaffolding |
-| harnesses | Populate | Has agent config files, needs scaffolding |
+| Repo      | Action   | Rationale                                             |
+| --------- | -------- | ----------------------------------------------------- |
+| KaskMan   | Archive  | Empty directory, no content                           |
+| kits      | Archive  | Not a git repo, empty directory                       |
+| packs     | Archive  | Empty directory, warfare-starwars already archived    |
+| portage   | Archive  | Empty directory                                       |
+| zen       | Archive  | Empty directory                                       |
+| dotfiles  | Populate | Has governance/ and hooks/ content, needs scaffolding |
+| harnesses | Populate | Has agent config files, needs scaffolding             |
 
 ## Technical Approach
 
 ### Phase 1: Archive Empty Repos
+
 1. Move KaskMan, kits, packs, portage, zen to .archive/
 2. Update projects/INDEX.md to mark as archived
 3. Remove orphaned worktree references
 
 ### Phase 2: Populate dotfiles
+
 1. Create README.md with project description and structure
 2. Create .gitignore for dotfiles/governance/hooks patterns
 3. Create .agileplus/ directory with worklog.md
 4. Create AGENTS.md for agent guidance
 
 ### Phase 3: Populate harnesses
+
 1. Create README.md explaining harness purpose
 2. Create .gitignore for harness patterns
 3. Create .agileplus/ directory with worklog.md
 4. Create AGENTS.md for agent guidance
 
 ### Phase 4: Documentation
+
 1. Update projects/INDEX.md with archival status
 2. Write worklog entry at worklogs/GOVERNANCE.md
 3. Update shelf-level docs if needed
@@ -88,20 +94,20 @@ Batch 13 repos are abandoned and consuming shelf space:
 
 ## Risks
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Losing worktree references | Low | Document before archival |
-| Breaking existing references | Low | Update INDEX.md |
+| Risk                            | Impact | Mitigation                     |
+| ------------------------------- | ------ | ------------------------------ |
+| Losing worktree references      | Low    | Document before archival       |
+| Breaking existing references    | Low    | Update INDEX.md                |
 | Over-scoping dotfiles/harnesses | Medium | Strict scope: scaffolding only |
 
 ## Work Packages
 
-| ID | Description | State |
-|----|-------------|-------|
+| ID    | Description                                              | State     |
+| ----- | -------------------------------------------------------- | --------- |
 | WP001 | Archive empty repos (KaskMan, kits, packs, portage, zen) | specified |
-| WP002 | Populate dotfiles scaffolding | specified |
-| WP003 | Populate harnesses scaffolding | specified |
-| WP004 | Update INDEX.md and write worklog | specified |
+| WP002 | Populate dotfiles scaffolding                            | specified |
+| WP003 | Populate harnesses scaffolding                           | specified |
+| WP004 | Update INDEX.md and write worklog                        | specified |
 
 ## Traces
 

@@ -8,6 +8,7 @@
 Do not invent another AgilePlus methodology until existing generations are classified.
 
 Classification:
+
 - KEEP — current concept/implementation should remain;
 - ADAPT — sound concept needs semantic/interface correction;
 - MERGE — overlapping generations should become one authority;
@@ -19,10 +20,12 @@ Classification:
 ## Generation A — March active PRD / original spec-driven engine
 
 Sources:
+
 - `PRD.md` v2.1, Status Active, 2026-03-27;
 - `docs/specs/001-spec-driven-development-engine/`.
 
 Important concepts:
+
 - Feature FSM;
 - WP decomposition/DAG;
 - governance/evidence;
@@ -34,6 +37,7 @@ Important concepts:
 - broader service/integration architecture.
 
 Disposition:
+
 - Feature/WP durable work identity: **KEEP/ADAPT**.
 - Work DAG: **KEEP**.
 - Governance/evidence concept: **KEEP/ADAPT** to MACE exact-evidence model.
@@ -46,6 +50,7 @@ Disposition:
 ## Generation B — Framework harmonization
 
 Sources:
+
 - `docs/harmonization/FRAMEWORK_ANALYSIS.md`;
 - ADR-0012 unified artifact set;
 - ADR-0013 lifecycle/gates;
@@ -55,45 +60,55 @@ Sources:
 Status warning: these ADRs are **Proposed**, not accepted. They are design candidates, not authority merely because they are newer.
 
 ### ADR-0012 canonical kitty-specs root
+
 Disposition: **ADAPT / likely SUPERSEDE**.
 
 Good:
+
 - one canonical intent authority;
 - ingress/harmonization rather than duplicate hand-maintained roots;
 - explicit derivatives.
 
 Problem:
+
 - hard-coding `kitty-specs/` as permanent product ontology risks coupling AgilePlus to one imported framework's filesystem convention.
 - mature model should define canonical artifact identities/roles and allow a repo profile to choose a materialized path.
 
 ### ADR-0013 eight-stage lifecycle
+
 Disposition: **ADAPT**.
 
 Good:
+
 - one durable lifecycle authority;
 - framework stages map into one spine;
 - quick-mode/adaptive depth;
 - Tracera observes product state rather than mutating work lifecycle.
 
 Problem:
+
 - a single linear eight-stage spine may be too rigid for OpenSpec-like fluid work, experiments, maintenance, incident response and nested loops.
 - likely need stable semantic milestones + partial-order/sub-lifecycles rather than every change physically traversing eight states.
 
 ### ADR-0014 unified traceability
+
 Disposition: **MERGE/ADAPT**.
 
 Good:
+
 - single logical IDs;
 - source intent vs derivative/evidence separation;
 - bidirectional trace;
 - coverage-based acceptance.
 
 Problem:
+
 - RequirementId-only canonical identity is too narrow for the mature product/development ontology.
 - Tracera now owns product-level evidence interpretation; AgilePlus should not duplicate a second product acceptance graph.
 - trace.json/IntentGraph/TraceLink need explicit authority boundaries.
 
 ### ADR-0016 five-layer framework stack
+
 Disposition: **KEEP as explanatory projection, not runtime ontology**.
 
 L0 Evidence → L4 Outcomes is useful for mapping frameworks and navigation.
@@ -102,12 +117,14 @@ Do not force every durable object into exactly one layer or create runtime coupl
 ## Generation C — Runtime work/claim system
 
 Sources:
+
 - `agileplus-triage::claim`;
 - SQLite claim store;
 - `agileplus-application::use_cases::triage`;
 - worktree routes/commands.
 
 Disposition:
+
 - Claim/lease primitive: **KEEP/ADAPT**.
 - TTL/heartbeat/reap: **KEEP**.
 - structured claim reason: **KEEP**.
@@ -123,6 +140,7 @@ The mature application boundary should depend on a claim/lease port, with in-mem
 ## Generation D — Agent-lab / assignment-grader control model
 
 Recovered concepts include:
+
 - subject snapshot;
 - intent;
 - assignment;
@@ -138,6 +156,7 @@ Disposition: **MERGE with MACE / likely canonical seed**.
 This generation is closer to the independently derived ZyBooks/MACE model than the older Feature/WP-only workflow.
 
 Need to determine:
+
 - whether these records are production contract, handbook proposal or assessment-specific schema;
 - how Assignment maps to Feature/WP;
 - whether Epoch is evaluation basis, development spec revision or both;
@@ -149,6 +168,7 @@ Do not duplicate these records in a new schema until this is resolved.
 ## Generation E — Mature-first overlay
 
 Sources on `spec/mature-product-contract-v1`:
+
 - RECOVERED_PRODUCT_INTENT;
 - MACE_AUTOGRADER_DOCTRINE;
 - mature-contract;
@@ -189,12 +209,12 @@ It must reconcile A–D and then promote accepted decisions explicitly.
 4. inspect actual persistence/API/CLI mounting for those identities;
 5. update ADR statuses only after evidence-backed adjudication.
 
-
 ## Provenance correction — shared agent-lab material
 
 The rich `handbook/specs/assessment/agent-lab-dossiers...` assignment/epoch/criterion/claim/evaluator material discovered during portfolio search is shared PhenoRegistry/portfolio prior art, not yet proven to be AgilePlus-owned runtime/schema.
 
 Correct disposition:
+
 - treat it as **ADAPT/MERGE candidate prior art**;
 - compare AgilePlus's own Feature/WP/Governance/Claim models against it;
 - do not cite those shared schemas as current AgilePlus implementation;

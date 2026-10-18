@@ -23,18 +23,18 @@ Build automated release governance infrastructure across all ~47 Phenotype repos
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Gate | Status | Notes |
-|------|--------|-------|
-| Languages match constitution | PASS | Go for CLI (allowed under "Open to: Go for specific components"). Targets all constitution languages. |
-| Testing requirements | PASS | Go tests for CLI. Contract tests for registry adapters. Integration tests for CI workflows. |
-| Performance targets | PASS | CLI startup <50ms matches constitution. No gRPC/SQLite involved. |
-| Cross-platform CI | PASS | macOS + Linux + Windows matrix for CLI binary. |
-| Agent-first design | PASS | CLI is programmatically invocable. `pheno` commands can be called by agents. |
-| Conventional commits | PASS | Pre-commit hooks enforce this — self-reinforcing. |
-| Dependency minimalism | PASS | Cobra/Viper/Lipgloss are standard Go CLI deps. No exotic dependencies. |
-| No unsafe without audit | N/A | Go CLI, not Rust. Rust repos get hooks/CI but no new Rust code. |
+| Gate                         | Status | Notes                                                                                                 |
+| ---------------------------- | ------ | ----------------------------------------------------------------------------------------------------- |
+| Languages match constitution | PASS   | Go for CLI (allowed under "Open to: Go for specific components"). Targets all constitution languages. |
+| Testing requirements         | PASS   | Go tests for CLI. Contract tests for registry adapters. Integration tests for CI workflows.           |
+| Performance targets          | PASS   | CLI startup <50ms matches constitution. No gRPC/SQLite involved.                                      |
+| Cross-platform CI            | PASS   | macOS + Linux + Windows matrix for CLI binary.                                                        |
+| Agent-first design           | PASS   | CLI is programmatically invocable. `pheno` commands can be called by agents.                          |
+| Conventional commits         | PASS   | Pre-commit hooks enforce this — self-reinforcing.                                                     |
+| Dependency minimalism        | PASS   | Cobra/Viper/Lipgloss are standard Go CLI deps. No exotic dependencies.                                |
+| No unsafe without audit      | N/A    | Go CLI, not Rust. Rust repos get hooks/CI but no new Rust code.                                       |
 
 **Post-Phase 1 re-check**: No new violations. Design adds no cloud dependencies, no new languages beyond Go, no database.
 
@@ -111,4 +111,4 @@ phenotypeActions/
 
 ## Complexity Tracking
 
-*No constitution violations requiring justification.*
+_No constitution violations requiring justification._
