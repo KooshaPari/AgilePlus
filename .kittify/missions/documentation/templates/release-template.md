@@ -48,7 +48,8 @@
 
 - {requirement_1}
 - {requirement_2}
-  <!-- Examples: Node.js 18+, Python 3.11+, Sphinx 7.x -->
+
+<!-- Examples: Node.js 18+, Python 3.11+, Sphinx 7.x -->
 
 **Build Time**: ~{build_time} seconds
 
@@ -125,15 +126,19 @@ If automated deployment is not available, follow these steps:
 
 - Login URL: {platform_login_url}
 - Access method: {access_method}
-    <!-- Examples: SSO via GitHub, Email/password, API key -->
+
+<!-- Examples: SSO via GitHub, Email/password, API key -->
+
 - Credentials stored: {credential_location}
-    <!-- Examples: Team password manager, Environment secrets, 1Password vault -->
+
+<!-- Examples: Team password manager, Environment secrets, 1Password vault -->
 
 **Required Permissions**:
 
 - {permission_1}
 - {permission_2}
-  <!-- Examples: Admin access to Read the Docs project, GitHub Pages write permissions -->
+
+<!-- Examples: Admin access to Read the Docs project, GitHub Pages write permissions -->
 
 **Team Members with Access**:
 
@@ -151,17 +156,23 @@ If automated deployment is not available, follow these steps:
 **Maintenance Schedule**:
 
 - Documentation reviews: {review_frequency}
-    <!-- Example: Quarterly, After each release, Monthly -->
+
+<!-- Example: Quarterly, After each release, Monthly -->
+
 - Dependency updates: {dependency_update_frequency}
-    <!-- Example: When major versions release, Annually -->
+
+<!-- Example: When major versions release, Annually -->
+
 - Content refresh: {content_refresh_frequency}
-    <!-- Example: With each product release, As needed -->
+
+<!-- Example: With each product release, As needed -->
 
 **Known Issues**:
 
 - {known_issue_1}
 - {known_issue_2}
-  <!-- Document any current limitations, broken features, or planned improvements -->
+
+<!-- Document any current limitations, broken features, or planned improvements -->
 
 ---
 
@@ -182,9 +193,12 @@ If automated deployment is not available, follow these steps:
 **Monitoring**:
 
 - Uptime monitoring: {uptime_service}
-    <!-- Examples: UptimeRobot, Pingdom, None -->
+
+<!-- Examples: UptimeRobot, Pingdom, None -->
+
 - Build status: {build_status_url}
-    <!-- Link to CI/CD build dashboard -->
+
+<!-- Link to CI/CD build dashboard -->
 
 ---
 

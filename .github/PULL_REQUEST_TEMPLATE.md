@@ -5,6 +5,7 @@
 ## Related Issue / Spec
 
 <!-- Link issue/spec if applicable. Use "Closes #" when this resolves an issue. -->
+
 spec: eco-000-example
 Closes #
 
@@ -18,6 +19,7 @@ Closes #
 ## How Has This Been Tested?
 
 <!-- List local validation performed. Do not rely on billed CI. -->
+
 - [ ] Local lint / format checks pass
 - [ ] Local tests pass
 - [ ] Manual smoke test completed, if applicable
