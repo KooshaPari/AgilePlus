@@ -2,7 +2,7 @@
   "snapshot_id": "ap-sfd-2026-10-18T10-30Z@e2-e5-p1p2-val-cohort",
   "_previous_snapshot_id": "ap-sfd-2026-10-18T10-15Z@by-gitignore-hook-cohort",
   "_delta_reason": "Cohort e2-e5-p1p2-val: t-rex subagent (session_snake_1792352065409_e571d49ceb42da4e; 95s of 120m cap) ran P1+P2 validation per FORWARD_WBS_2026-10-04.md. Verdict: PARTIAL. P1 (HTTP acceptance): 10/10 tests PASS in atomic_acceptance_http.rs (exit 0, 0.25s). P2 (gRPC validation): 6/6 tests PASS in atomic_acceptance_rpc.rs (exit 0, 0.13s). All 5 P1 sub-tasks and all P2 canonical path rules verified. PARTIAL (not PASS) due to 2 carry-forward cheap_closes filed: E.2.P1-422 (test-quality fix, 10m, non-blocking) and E.2.P1-GENERIC (production gap, 60m, BLOCKING — product decision required on where \"generic\" lives: Feature.kind or governance contract). E.2.P1-GENERIC is the only remaining blocker for the P1 exit criterion. cells_pass_any: +2 new test suites pass (P1=10/10, P2=6/6); dim count likely increments. cheap_closes_resolved: 9/14 → 10/16 (E.2/E.5 Val CLOSED-PARTIAL; 2 new entries filed: E.2.P1-422 + E.2.P1-GENERIC). No source mutations; no PRs opened. Operator-gated items unchanged: PRs #1156, #1157, #1161, #1162, #1163 + 2 new cheap_closes (E.2.P1-422 10m, E.2.P1-GENERIC 60m blocking) + F.3 doc gaps (30m, lowest).",
-  "head_sha": "__PENDING__",
+  "head_sha": "3fcb143d",
   "branch": "docs/state-forward-docket-20261017",
   "workspace_members": 38,
   "case_binding": {
