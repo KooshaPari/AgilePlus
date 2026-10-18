@@ -269,18 +269,27 @@
       "cell": "A.4 / E.9 Validation",
       "move": "fix mvp.rs:619 /bin/true \u2192 /usr/bin/true (or Rust-native), then re-run cargo test -p agileplus-cli --lib",
       "eta_min": 5,
-      "note": "NEW REGRESSION 2026-10-18T01:42Z; macOS Sequoia has /usr/bin/true only; this is a portability bug, not a logic bug; one-line fix in 1 file"
+      "note": "NEW REGRESSION 2026-10-18T01:42Z; macOS Sequoia has /usr/bin/true only; this is a portability bug, not a logic bug; one-line fix in 1 file. Fix is staged in PR #1156 (commit 39ee805b, off main, not yet merged). When PR #1156 merges, A.4 / E.9 Val will be CLOSED. Pending operator action (gh pr merge pre_tool-hooked; canonical path is git -c merge.ff=true merge --squash).",
+      "fix_pr": 1156,
+      "fix_commit": "39ee805b",
+      "fix_status": "OPEN_PENDING_PR_MERGE"
     },
     {
       "cell": "B.5 case-level",
       "move": "bind 4 atomic_acceptance*.rs test names to AP-VC-* ids; edit cases file",
-      "eta_min": 30
+      "eta_min": 30,
+      "note": "CLOSED 2026-10-17T22:14Z by parent orchestrator. verification/CASE_BINDING_2026-10-17.md (151 lines) already binds all 4 atomic_acceptance test files to AP-VC-* / AP-RVC-* ids: 9 sqlite tests → 4 STRONG + 4 ADJACENT + 1 gap; 10 api_http tests → 5 STRONG + 1 gap; 3 api_sqlite tests → 3 STRONG; 6 grpc tests → 5 STRONG + 1 ADJACENT. Total: 17 STRONG + 5 ADJACENT case bindings, 5 distinct cases with at least one STRONG witness (AP-RVC-057, AP-RVC-081, AP-VC-028, AP-VC-008, AP-VC-009) + 5 ADJACENT. Gaps filed honestly. Snapshot identity: ap-sfd-2026-10-17T22-14Z@d6b418a6.",
+      "closed_by": "parent-orchestrator-2026-10-17T22:14Z",
+      "closed_at": "2026-10-17T22:14:00Z",
+      "evidence_file": "verification/CASE_BINDING_2026-10-17.md"
     },
     {
       "cell": "B.6 / E.6 Validation",
       "move": "cargo test -p agileplus-events --test event_store_tests + replay_tests + proptest_audit",
       "eta_min": 5,
-      "note": "CLOSED 2026-10-17T23:08Z by cargo audit subagent (20 tests pass, 0 failed)"
+      "note": "CLOSED 2026-10-17T23:08Z by cargo audit subagent (session_turtle_1792276280540_e23e9ee4fff9c99f; 20 tests pass, 0 failed; cargo test -p agileplus-events). Wall-clock 14 min.",
+      "closed_by": "session_turtle_1792276280540_e23e9ee4fff9c99f",
+      "closed_at": "2026-10-17T23:08:00Z"
     },
     {
       "cell": "B.3 / B.4 Usability",
@@ -291,7 +300,9 @@
       "cell": "D.3 Implementation",
       "move": "cargo build -p agileplus-desktop --release; record --help exit",
       "eta_min": 5,
-      "note": "CLOSED 2026-10-17T23:02Z by cargo audit subagent (exit 0, 15m 29s)"
+      "note": "CLOSED 2026-10-17T23:02Z by cargo audit subagent (session_turtle_1792276280540_e23e9ee4fff9c99f; cargo build -p agileplus-desktop --release exit 0, 15m 29s). D.3 / NDR-3 is now FULLY CLOSED with this cohort: Implementation PASS 2026-10-17T23:02Z + Validation PASS 2026-10-18T09:29:11Z (otter).",
+      "closed_by": "session_turtle_1792276280540_e23e9ee4fff9c99f",
+      "closed_at": "2026-10-17T23:02:00Z"
     },
     {
       "cell": "D.3 Validation",
@@ -315,10 +326,10 @@
       "cell": "A.4 / E.9 Validation",
       "move": "merge PR #1156 (mvp.rs:619 /bin/true \u2192 /usr/bin/true via parse_csv(\"true\")), then re-run cargo test -p agileplus-cli --lib on default",
       "eta_min": 5,
-      "note": "NEW REGRESSION from owl cohort (2026-10-18T01:42Z). mvp.rs:619 hardcodes /bin/true (Linux path); macOS has /usr/bin/true only. PR #1156 (snail subagent, commit 39ee805b, off main) ready and unmerged as of 2026-10-18T06:50Z. The fix uses Command::new(\"true\") via parse_csv(\"true\") for PATH-based lookup. Merge PR #1156 to clear this entry.",
+      "note": "NEW REGRESSION from owl cohort (2026-10-18T01:42Z). mvp.rs:619 hardcodes /bin/true (Linux path); macOS has /usr/bin/true only. PR #1156 (snail subagent, commit 39ee805b, off main) ready and unmerged as of 2026-10-18T06:50Z. The fix uses Command::new(\"true\") via parse_csv(\"true\") for PATH-based lookup. Merge PR #1156 to clear this entry. This is the second (duplicate) A.4 / E.9 entry in the docket; both track the same fix.",
       "fix_pr": 1156,
       "fix_commit": "39ee805b",
-      "fix_status": "OPEN"
+      "fix_status": "OPEN_PENDING_PR_MERGE"
     }
   ],
   "operator_gated": [
