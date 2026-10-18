@@ -402,7 +402,12 @@
     "completed_at": "2026-10-18T06:43:43Z",
     "outcome": "FAIL_INFRASTRUCTURE",
     "failure_reason": "ENOSPC (errno 28) during cargo test --no-run --workspace on llvm-cov-target. Disk /Users/kooshapari was at 100% (1.3 GB free of 926 GB) at attempt time. ld linker write() failed in 3 places; cargo fell back to incremental-copy failures (os error 28). Compile-time at compile: agileplus-telemetry (logging_file_output_tests), agileplus-github (sync_adapter_tests), agileplus-cli (--test).",
-    "remediation": "Free disk space; llvm-cov-target dir weighs 2331 entries. Then re-run `cargo llvm-cov --workspace --summary-only` in a fresh subagent. Verdict on E.19 / G19 Val remains NOT_RUN.",
-    "verdict_impact": "E.19 / G19 Validation: NOT_RUN (unchanged from owl cohort). No new verdicts, no regression."
+    "remediation": "Disk freed (13 GiB free). Re-dispatch sloth in a fresh subagent (session_sloth_v2) to re-run `cargo llvm-cov --workspace --summary-only` on a clean build. E.19 / G19 verdict remains NOT_RUN until sloth v2 lands.",
+    "verdict_impact": "E.19 / G19 Validation: NOT_RUN (unchanged from owl cohort). No new verdicts, no regression.",
+    "disk_freed": true,
+    "disk_state_after_cleanup": "13 GiB free of 926 GiB (was 1.3 GiB free at attempt time; target/llvm-cov-target/ removed at 2026-10-18T07:27Z, freed ~12 GiB)",
+    "cleanup_action": "rm -rf target/llvm-cov-target (build artifact, gitignored, derivable)",
+    "remediation_completed_at": "2026-10-18T07:27:54Z",
+    "remediation_status": "READY_TO_REDISPATCH"
   }
 }
