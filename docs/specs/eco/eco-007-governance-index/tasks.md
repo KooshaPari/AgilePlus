@@ -28,7 +28,7 @@
       walk `kitty-specs/*/meta.json`, sort by `spec_id`, emit a
       Markdown table with columns
       `spec_id | slug | status | created | reactivated |
-  superseded_by | link`. Handle missing fields by rendering `—`.
+superseded_by | link`. Handle missing fields by rendering `—`.
 - [ ] T002 — Generate the initial `AgilePlus/kitty-specs/INDEX.md`
       via the indexer and commit it.
 - [ ] T003 — Add `.github/workflows/governance-index.yml` running on
