@@ -3,6 +3,7 @@
 ## Entities
 
 ### RendererStage
+
 - id: string
 - name: string
 - category: enum(input, schedule, compose, draw, flush)
@@ -10,6 +11,7 @@
 - measurable_outputs: list[string]
 
 ### BackendStage
+
 - id: string
 - name: string
 - category: enum(entrypoint, thread, model_client, protocol, ui_dispatch)
@@ -17,6 +19,7 @@
 - measurable_outputs: list[string]
 
 ### EventClass
+
 - id: string
 - source: string
 - priority: enum(critical, normal, low)
@@ -24,6 +27,7 @@
 - coalescible: boolean
 
 ### OptimizationCandidate
+
 - id: string
 - title: string
 - layer: string
@@ -33,6 +37,7 @@
 - evidence_refs: list[string]
 
 ### LayeredPR
+
 - id: string
 - name: string
 - order_index: integer
@@ -41,12 +46,14 @@
 - depends_on: list[string]
 
 ### EvidenceRecord
+
 - evidence_id: string
 - source_id: string
 - claim: string
 - confidence: enum(low, medium, high)
 
 ## Relationships
+
 - RendererStage emits EventClass.
 - BackendStage emits EventClass.
 - OptimizationCandidate targets one or more RendererStage or BackendStage entries.

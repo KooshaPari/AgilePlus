@@ -100,16 +100,16 @@ If you are introducing the first shared crate, keep the scope small and avoid pu
 
 - **Python**: run `pytest` under `dispatch-mcp/`.
 
-  ```powershell
-  cd dispatch-mcp
-  python -m pytest
-  ```
+    ```powershell
+    cd dispatch-mcp
+    python -m pytest
+    ```
 
 - **Rust**: use `cargo test` when the workspace has populated Rust source.
 
-  ```powershell
-  cargo test
-  ```
+    ```powershell
+    cargo test
+    ```
 
 For style and quality checks, the repo guidance still applies:
 

@@ -3,9 +3,11 @@
 ## Rule: `worklog_needs_task_id`
 
 ### Severity
+
 FAIL (blocks commit)
 
 ### Trigger
+
 WORKLOG.md (or any `worklog*.json` / `worklog*.md` file) is staged, but the
 diff does not contain a `V*-*` task ID pattern (e.g., `V3-042`, `V2-007`).
 

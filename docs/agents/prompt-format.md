@@ -39,25 +39,25 @@ Agents receive a multi-section markdown prompt document via the `prompt_path` fi
 
 ```json
 {
-  "job_id": "3a6b8c9d-1e2f-4a5b-8c9d-1e2f4a5b8c9d",
-  "feature_slug": "001-user-login",
-  "wp_sequence": 1,
-  "wp_id": "WP01",
-  "prompt_path": "/path/to/.worktrees/001-login-WP01/WP01.md",
-  "context_paths": [
-    "/path/to/kitty-specs/001-user-login/spec.md",
-    "/path/to/kitty-specs/001-user-login/plan.md",
-    "/path/to/ARCHITECTURE.md",
-    "/path/to/GOVERNANCE.md"
-  ],
-  "worktree_path": "/path/to/.worktrees/001-login-WP01",
-  "config": {
-    "kind": "claude_code",
-    "timeout_secs": 1800,
-    "pr_target_branch": "feat/001-login-WP01",
-    "num_agents": 1,
-    "max_review_cycles": 5
-  }
+    "job_id": "3a6b8c9d-1e2f-4a5b-8c9d-1e2f4a5b8c9d",
+    "feature_slug": "001-user-login",
+    "wp_sequence": 1,
+    "wp_id": "WP01",
+    "prompt_path": "/path/to/.worktrees/001-login-WP01/WP01.md",
+    "context_paths": [
+        "/path/to/kitty-specs/001-user-login/spec.md",
+        "/path/to/kitty-specs/001-user-login/plan.md",
+        "/path/to/ARCHITECTURE.md",
+        "/path/to/GOVERNANCE.md"
+    ],
+    "worktree_path": "/path/to/.worktrees/001-login-WP01",
+    "config": {
+        "kind": "claude_code",
+        "timeout_secs": 1800,
+        "pr_target_branch": "feat/001-login-WP01",
+        "num_agents": 1,
+        "max_review_cycles": 5
+    }
 }
 ```
 
@@ -82,28 +82,32 @@ Build a React login form component that supports email/password authentication w
 ## Deliverables
 
 ### Code
+
 - [ ] `src/components/LoginForm.tsx` — React component with form validation
 - [ ] `src/hooks/useLogin.ts` — Custom hook for login mutation
 - [ ] `src/styles/LoginForm.module.css` — Component styles
 
 ### Tests
+
 - [ ] `src/components/__tests__/LoginForm.test.tsx` — Unit tests (>80% coverage)
 - [ ] `src/hooks/__tests__/useLogin.test.ts` — Hook tests
 
 ### Documentation
+
 - [ ] `src/components/LoginForm.md` — Component storybook
 
 ## Work Scope (File Boundaries)
 
 You are authorized to create or modify **only** these files:
-
 ```
+
 src/components/LoginForm.tsx
-src/components/__tests__/LoginForm.test.tsx
+src/components/**tests**/LoginForm.test.tsx
 src/components/LoginForm.md
 src/hooks/useLogin.ts
-src/hooks/__tests__/useLogin.test.ts
+src/hooks/**tests**/useLogin.test.ts
 src/styles/LoginForm.module.css
+
 ```
 
 Any changes to other files (except lock files) require governance exception.
@@ -195,9 +199,11 @@ Your context includes:
 ### State Diagram
 
 ```
+
 PLANNED ──[your work]──> DOING ──[tests pass]──> FOR_REVIEW ──[approved]──> DONE
-         (git commits)         (PR created)                   (merged)
-```
+(git commits) (PR created) (merged)
+
+````
 
 ## Available Tools & Commands
 
@@ -215,7 +221,7 @@ git commit -m "WP01: Implement form component"
 # Create branches (already done, but shown for reference)
 git branch --list
 git checkout -b feat/001-login-WP02 feat/001-login-WP01
-```
+````
 
 ### Build & Test
 
@@ -262,37 +268,37 @@ When you finish (success or failure), output JSON to stdout:
 
 ```json
 {
-  "job_id": "3a6b8c9d-1e2f-4a5b-8c9d-1e2f4a5b8c9d",
-  "wp_id": "WP01",
-  "success": true,
-  "status": "completed",
-  "summary": "Implemented LoginForm component with full test coverage",
-  "commits": [
-    {
-      "sha": "abc123def456...",
-      "message": "WP01: Implement login form with validation"
-    },
-    {
-      "sha": "def456ghi789...",
-      "message": "WP01: Add tests for LoginForm component"
-    }
-  ],
-  "artifacts": {
-    "files_created": [
-      "src/components/LoginForm.tsx",
-      "src/components/__tests__/LoginForm.test.tsx",
-      "src/hooks/useLogin.ts",
-      "src/styles/LoginForm.module.css"
+    "job_id": "3a6b8c9d-1e2f-4a5b-8c9d-1e2f4a5b8c9d",
+    "wp_id": "WP01",
+    "success": true,
+    "status": "completed",
+    "summary": "Implemented LoginForm component with full test coverage",
+    "commits": [
+        {
+            "sha": "abc123def456...",
+            "message": "WP01: Implement login form with validation"
+        },
+        {
+            "sha": "def456ghi789...",
+            "message": "WP01: Add tests for LoginForm component"
+        }
     ],
-    "test_coverage": "87.5%",
-    "lint_status": "passed"
-  },
-  "pr_url": "https://github.com/org/repo/pull/42",
-  "duration_seconds": 1847,
-  "next_steps": [
-    "Await code review from @reviewer",
-    "WP02 can start in parallel (no dependencies)"
-  ]
+    "artifacts": {
+        "files_created": [
+            "src/components/LoginForm.tsx",
+            "src/components/__tests__/LoginForm.test.tsx",
+            "src/hooks/useLogin.ts",
+            "src/styles/LoginForm.module.css"
+        ],
+        "test_coverage": "87.5%",
+        "lint_status": "passed"
+    },
+    "pr_url": "https://github.com/org/repo/pull/42",
+    "duration_seconds": 1847,
+    "next_steps": [
+        "Await code review from @reviewer",
+        "WP02 can start in parallel (no dependencies)"
+    ]
 }
 ```
 
@@ -300,21 +306,21 @@ When you finish (success or failure), output JSON to stdout:
 
 ```json
 {
-  "job_id": "3a6b8c9d-1e2f-4a5b-8c9d-1e2f4a5b8c9d",
-  "wp_id": "WP01",
-  "success": false,
-  "status": "blocked",
-  "error": "Cannot modify src/services/auth.ts (outside file scope)",
-  "commits": [
-    {
-      "sha": "abc123def456...",
-      "message": "WP01: Implement component (incomplete)"
-    }
-  ],
-  "blocked_reason": "File scope violation",
-  "remediation": "Contact human: Need to refactor auth.ts in separate WP",
-  "duration_seconds": 342,
-  "cleanup_required": true
+    "job_id": "3a6b8c9d-1e2f-4a5b-8c9d-1e2f4a5b8c9d",
+    "wp_id": "WP01",
+    "success": false,
+    "status": "blocked",
+    "error": "Cannot modify src/services/auth.ts (outside file scope)",
+    "commits": [
+        {
+            "sha": "abc123def456...",
+            "message": "WP01: Implement component (incomplete)"
+        }
+    ],
+    "blocked_reason": "File scope violation",
+    "remediation": "Contact human: Need to refactor auth.ts in separate WP",
+    "duration_seconds": 342,
+    "cleanup_required": true
 }
 ```
 
@@ -335,6 +341,7 @@ Pages with `agents` in audience contain agent-specific instructions.
 ### Recoverable Errors (Retry)
 
 If you hit these, attempt recovery:
+
 - Network timeouts → retry the operation
 - Transient test failures → run again
 - Temporary lock files → wait and retry
@@ -345,11 +352,11 @@ Do NOT retry; instead document and exit with status "blocked":
 
 ```json
 {
-  "success": false,
-  "status": "blocked",
-  "error": "FR-AUTH-001 cannot be satisfied: email regex library required",
-  "blocked_reason": "Dependency not permitted (governance violation)",
-  "remediation": "Human must approve zod library addition"
+    "success": false,
+    "status": "blocked",
+    "error": "FR-AUTH-001 cannot be satisfied: email regex library required",
+    "blocked_reason": "Dependency not permitted (governance violation)",
+    "remediation": "Human must approve zod library addition"
 }
 ```
 
@@ -376,8 +383,8 @@ Always check timeouts in long operations:
 // Check remaining time
 const elapsed = Date.now() - startTime;
 if (elapsed > timeoutMs * 0.9) {
-  console.log("Approaching timeout, finalizing...");
-  process.exit(0); // Clean exit
+    console.log("Approaching timeout, finalizing...");
+    process.exit(0); // Clean exit
 }
 ```
 
@@ -409,13 +416,15 @@ For Rust codebase targets (the primary AgilePlus use case), the prompt includes 
 
 ### Workspace Layout
 ```
+
 crates/
-├── agileplus-domain/   ← Core entities, no external deps
-├── agileplus-cli/      ← Binary crate, uses engine
-├── agileplus-engine/   ← Orchestration, uses adapters
-├── agileplus-sqlite/   ← StoragePort impl
-└── agileplus-git/      ← VcsPort impl
-```
+├── agileplus-domain/ ← Core entities, no external deps
+├── agileplus-cli/ ← Binary crate, uses engine
+├── agileplus-engine/ ← Orchestration, uses adapters
+├── agileplus-sqlite/ ← StoragePort impl
+└── agileplus-git/ ← VcsPort impl
+
+````
 
 ### Dependency Constraints
 - `serde` v1, `tokio` v1, `sqlx` v0.7 — workspace-level, do NOT change versions
@@ -430,15 +439,17 @@ cargo test -p agileplus-domain        # Test a specific crate
 cargo test --all                      # Test entire workspace
 cargo clippy -- -D warnings           # Lint (warnings as errors)
 cargo fmt --check                     # Formatting check
-```
+````
 
 ### Code Style
+
 - No `unwrap()` in library code — use `?` or explicit `match`
 - `thiserror` for error types, `anyhow` only in binary crates
 - `async/await` for all I/O operations
 - `tracing::instrument` on public async functions
 - Test module `#[cfg(test)] mod tests { }` inline with code
-```
+
+````
 
 ### spec-kitty Integration
 
@@ -460,7 +471,7 @@ AgilePlus is integrated with `spec-kitty` — a specification formatting assista
 <!-- sk:fr id="FR-AUTH-002" priority="high" -->
 - Users can log in and receive a JWT token
 <!-- /sk:fr -->
-```
+````
 
 Agents should treat `<!-- sk:fr id="FR-AUTH-001" -->` markers as authoritative requirement identifiers when referencing requirements in commit messages and acceptance criteria:
 
@@ -474,20 +485,18 @@ When `config.num_agents > 1`, multiple instances of the same agent run in parall
 
 ```json
 {
-  "job_id": "3a6b8c9d-...",
-  "wp_id": "WP01",
-  "agent_index": 0,
-  "agent_count": 2,
-  "assigned_deliverables": [
-    "src/auth/models.rs",
-    "src/auth/mod.rs"
-  ]
+    "job_id": "3a6b8c9d-...",
+    "wp_id": "WP01",
+    "agent_index": 0,
+    "agent_count": 2,
+    "assigned_deliverables": ["src/auth/models.rs", "src/auth/mod.rs"]
 }
 ```
 
 Agent 0 (index=0) handles the first half of deliverables. Agent 1 (index=1) handles the second half. The harness merges their outputs before running validation.
 
 Coordination rules for multi-agent:
+
 - Each agent owns its assigned files exclusively
 - No agent may touch another agent's assigned files
 - Both agents commit to the same branch with atomic locking

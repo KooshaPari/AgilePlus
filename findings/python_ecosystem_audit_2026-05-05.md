@@ -10,31 +10,31 @@
 
 ### Repo Summary Table
 
-| Repo | Python | tests/ | pytest | CI Workflows | mypy | ruff | pre-commit |
-|------|--------|--------|--------|-------------|------|------|------------|
-| agent-user-status | >=3.12 | yes | no | 6 | no | no | no |
-| agileplus-mcp | >=3.12 | yes | yes | 1 | yes | yes | no |
-| AuthKit | ? | yes | no | 10 | no | no | no |
-| cheap-llm-mcp | >=3.12 | yes | yes | 10 | no | no | no |
-| dispatch-mcp | >=3.13 | yes | yes | 1 | no | no | no |
-| helios-router | >=3.12 | yes | yes | 16 | yes | yes | no |
-| heliosBench | >=3.12 | yes | yes | 6 | no | yes | no |
-| helioscope | >=3.14 | yes | yes | 54 | yes | yes | no |
-| Httpora | >=3.12 | yes | yes | 7 | no | yes | no |
-| McpKit | ? | yes | no | 6 | no | no | no |
-| Parpoura | >=3.14 | yes | yes | 14 | yes | yes | no |
-| phenodocs | >=3.14 | yes | no | 15 | no | no | yes |
-| phenodocs-scorecard-remediation | >=3.14 | **no** | **no** | 15 | no | no | yes |
-| PhenoMCP | >=3.14 | yes | no | 11 | no | no | no |
-| phenoResearchEngine | >=3.10 | yes | no | 11 | no | no | no |
-| PhenoRuntime | >=3.14 | yes | no | 16 | no | no | no |
-| phenotype-omlx | >=3.10 | yes | yes | 4 | yes | yes | no |
-| PolicyStack | ? | yes | no | 18 | no | no | no |
-| portage | >=3.12 | yes | no | 29 | no | yes | no |
-| python | >=3.14 | yes | no | 1 | no | no | no |
-| QuadSGM | >=3.13 | yes | yes | 20 | yes | yes | no |
-| thegent | >=3.13 | yes | yes | 25 | yes | yes | no |
-| Tracera | >=3.13 | yes | yes | 38 | no | yes | no |
+| Repo                            | Python | tests/ | pytest | CI Workflows | mypy | ruff | pre-commit |
+| ------------------------------- | ------ | ------ | ------ | ------------ | ---- | ---- | ---------- |
+| agent-user-status               | >=3.12 | yes    | no     | 6            | no   | no   | no         |
+| agileplus-mcp                   | >=3.12 | yes    | yes    | 1            | yes  | yes  | no         |
+| AuthKit                         | ?      | yes    | no     | 10           | no   | no   | no         |
+| cheap-llm-mcp                   | >=3.12 | yes    | yes    | 10           | no   | no   | no         |
+| dispatch-mcp                    | >=3.13 | yes    | yes    | 1            | no   | no   | no         |
+| helios-router                   | >=3.12 | yes    | yes    | 16           | yes  | yes  | no         |
+| heliosBench                     | >=3.12 | yes    | yes    | 6            | no   | yes  | no         |
+| helioscope                      | >=3.14 | yes    | yes    | 54           | yes  | yes  | no         |
+| Httpora                         | >=3.12 | yes    | yes    | 7            | no   | yes  | no         |
+| McpKit                          | ?      | yes    | no     | 6            | no   | no   | no         |
+| Parpoura                        | >=3.14 | yes    | yes    | 14           | yes  | yes  | no         |
+| phenodocs                       | >=3.14 | yes    | no     | 15           | no   | no   | yes        |
+| phenodocs-scorecard-remediation | >=3.14 | **no** | **no** | 15           | no   | no   | yes        |
+| PhenoMCP                        | >=3.14 | yes    | no     | 11           | no   | no   | no         |
+| phenoResearchEngine             | >=3.10 | yes    | no     | 11           | no   | no   | no         |
+| PhenoRuntime                    | >=3.14 | yes    | no     | 16           | no   | no   | no         |
+| phenotype-omlx                  | >=3.10 | yes    | yes    | 4            | yes  | yes  | no         |
+| PolicyStack                     | ?      | yes    | no     | 18           | no   | no   | no         |
+| portage                         | >=3.12 | yes    | no     | 29           | no   | yes  | no         |
+| python                          | >=3.14 | yes    | no     | 1            | no   | no   | no         |
+| QuadSGM                         | >=3.13 | yes    | yes    | 20           | yes  | yes  | no         |
+| thegent                         | >=3.13 | yes    | yes    | 25           | yes  | yes  | no         |
+| Tracera                         | >=3.13 | yes    | yes    | 38           | no   | yes  | no         |
 
 ### Findings
 
@@ -50,15 +50,15 @@
 
 ### eval() Findings
 
-| Repo | eval() Count | Type | Risk |
-|------|-------------|------|------|
-| phenotype-omlx | ~50 | `mx.eval()` (MLX framework) | **None** — framework call |
-| phenotype-omlx | 1 | `embedding.py:353` comment | **None** — in comment |
-| portage | ~10 | `ast.literal_eval()` | **None** — safe |
-| portage | ~30 | `llm_eval()` function name | **None** — not Python eval() |
-| QuadSGM | ~3 | test fixtures with hardcoded strings | **Low** |
-| thegent | 0 | `record_eval()` method name | **None** — false positive grep |
-| Tracera | 4 | `frontend/node_modules/gyp/input.py` | **Moderate** — vendored third-party |
+| Repo           | eval() Count | Type                                 | Risk                                |
+| -------------- | ------------ | ------------------------------------ | ----------------------------------- |
+| phenotype-omlx | ~50          | `mx.eval()` (MLX framework)          | **None** — framework call           |
+| phenotype-omlx | 1            | `embedding.py:353` comment           | **None** — in comment               |
+| portage        | ~10          | `ast.literal_eval()`                 | **None** — safe                     |
+| portage        | ~30          | `llm_eval()` function name           | **None** — not Python eval()        |
+| QuadSGM        | ~3           | test fixtures with hardcoded strings | **Low**                             |
+| thegent        | 0            | `record_eval()` method name          | **None** — false positive grep      |
+| Tracera        | 4            | `frontend/node_modules/gyp/input.py` | **Moderate** — vendored third-party |
 
 **Confirmed unsafe eval() locations:**
 
@@ -71,18 +71,19 @@
 
 ### subprocess() Findings (High Volume — Needs Review)
 
-| Repo | subprocess refs | Files | Note |
-|------|----------------|-------|------|
-| thegent | 2145+ | 60+ | Largest user; test harnesses, CLI wrappers |
-| portage | 287 | many | Benchmark runner, test fixtures |
-| Tracera | 266 | many | Build/test harnesses |
-| helioscope | 126+ | many | Dev tooling, npm builds |
-| PolicyStack | 95+ | many | CLI wrappers |
-| phenotype-omlx | 73+ | many | Build scripts |
-| helios-router | 56+ | many | Benchmark runners |
-| agent-user-status | 118+ | many | MCP tool wrappers |
+| Repo              | subprocess refs | Files | Note                                       |
+| ----------------- | --------------- | ----- | ------------------------------------------ |
+| thegent           | 2145+           | 60+   | Largest user; test harnesses, CLI wrappers |
+| portage           | 287             | many  | Benchmark runner, test fixtures            |
+| Tracera           | 266             | many  | Build/test harnesses                       |
+| helioscope        | 126+            | many  | Dev tooling, npm builds                    |
+| PolicyStack       | 95+             | many  | CLI wrappers                               |
+| phenotype-omlx    | 73+             | many  | Build scripts                              |
+| helios-router     | 56+             | many  | Benchmark runners                          |
+| agent-user-status | 118+            | many  | MCP tool wrappers                          |
 
 **Most subprocess usage is in test/benchmark/build tooling.** Review the following production-use subprocess calls for shell injection risk:
+
 - `helioscope/install_native_deps.py` — runs system package installation commands
 - `PolicyStack/policy_lib.py` — runs linting/validation commands
 - `portage/harbor/` — runs benchmark execution commands
@@ -102,6 +103,7 @@
 ### Dependency Tool Fragmentation Risk
 
 Repos using 3+ package managers/lock files:
+
 - `phenodocs` — uv, bun, agents
 - `phenodocs-scorecard-remediation` — uv, bun, agents
 - `Tracera` — uv, bun
@@ -112,16 +114,16 @@ Repos using 3+ package managers/lock files:
 
 ## AUDIT 4: Type-Checking Coverage
 
-| Repo | mypy | pyright | Status |
-|------|------|---------|--------|
-| agileplus-mcp | yes | no | strict mypy |
-| helios-router | yes | no | strict mypy |
-| helioscope | yes | no | strict mypy |
-| Parpoura | yes | no | strict mypy |
-| phenotype-omlx | yes | no | strict mypy |
-| QuadSGM | yes | yes | dual type checking |
-| thegent | yes | yes | dual type checking |
-| (rest) | no | no | **No type checking** |
+| Repo           | mypy | pyright | Status               |
+| -------------- | ---- | ------- | -------------------- |
+| agileplus-mcp  | yes  | no      | strict mypy          |
+| helios-router  | yes  | no      | strict mypy          |
+| helioscope     | yes  | no      | strict mypy          |
+| Parpoura       | yes  | no      | strict mypy          |
+| phenotype-omlx | yes  | no      | strict mypy          |
+| QuadSGM        | yes  | yes     | dual type checking   |
+| thegent        | yes  | yes     | dual type checking   |
+| (rest)         | no   | no      | **No type checking** |
 
 **Coverage gap:** 16 of 23 Python repos have no type checking at all. These include high-activity repos like `heliosBench`, `Httpora`, `PolicyStack`, `portage`, `Tracera`, `phenoResearchEngine`.
 
@@ -129,12 +131,12 @@ Repos using 3+ package managers/lock files:
 
 ## Risk Summary
 
-| Severity | Finding | Affected Repos |
-|----------|---------|---------------|
-| High | No pytest despite tests/ dir | agent-user-status, AuthKit, McpKit, phenodocs, PhenoMCP, phenoResearchEngine, PhenoRuntime, PolicyStack |
-| Medium | vendored `eval()` on untrusted data (third-party) | Tracera (node-gyp) |
-| Medium | No type checking (16 repos) | See table above |
-| Low | subprocess in production code (shell injection surface) | helioscope, PolicyStack, portage, helios-router |
-| Low | eval() in test fixtures (controlled inputs) | QuadSGM, thegent, Parpoura |
-| Info | uv + bun + agents lock fragmentation | phenodocs, phenodocs-scorecard-remediation |
-| Info | 8+ repos missing ruff (linting) | agent-user-status, AuthKit, cheap-llm-mcp, dispatch-mcp, McpKit, PhenoMCP, phenoResearchEngine, PhenoRuntime, PolicyStack, python |
+| Severity | Finding                                                 | Affected Repos                                                                                                                    |
+| -------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| High     | No pytest despite tests/ dir                            | agent-user-status, AuthKit, McpKit, phenodocs, PhenoMCP, phenoResearchEngine, PhenoRuntime, PolicyStack                           |
+| Medium   | vendored `eval()` on untrusted data (third-party)       | Tracera (node-gyp)                                                                                                                |
+| Medium   | No type checking (16 repos)                             | See table above                                                                                                                   |
+| Low      | subprocess in production code (shell injection surface) | helioscope, PolicyStack, portage, helios-router                                                                                   |
+| Low      | eval() in test fixtures (controlled inputs)             | QuadSGM, thegent, Parpoura                                                                                                        |
+| Info     | uv + bun + agents lock fragmentation                    | phenodocs, phenodocs-scorecard-remediation                                                                                        |
+| Info     | 8+ repos missing ruff (linting)                         | agent-user-status, AuthKit, cheap-llm-mcp, dispatch-mcp, McpKit, PhenoMCP, phenoResearchEngine, PhenoRuntime, PolicyStack, python |

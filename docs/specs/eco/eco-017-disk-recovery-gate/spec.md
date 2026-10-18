@@ -9,11 +9,12 @@ superseded_by: null
 title: Disk Recovery Gate
 type: operational
 ---
+
 # Disk Recovery Gate
 
 ## Problem
 
-A dispatched subagent was aborted on 100% disk usage during a cargo build-fix cycle, wasting compute and leaving a half-finished target tree. The fleet lacks a uniform pre-flight disk check, so multi-GB writes (cargo builds, worktree creation, artifact downloads) silently fail or truncate mid-operation. We need a gate that catches low-disk conditions *before* agents commit to write-heavy work.
+A dispatched subagent was aborted on 100% disk usage during a cargo build-fix cycle, wasting compute and leaving a half-finished target tree. The fleet lacks a uniform pre-flight disk check, so multi-GB writes (cargo builds, worktree creation, artifact downloads) silently fail or truncate mid-operation. We need a gate that catches low-disk conditions _before_ agents commit to write-heavy work.
 
 ## Target Users
 

@@ -2,15 +2,15 @@
 
 AgilePlus ships multiple installation channels. Pick whichever fits your workflow.
 
-| Channel | Best for | Command |
-|---------|----------|---------|
-| **curl (macOS/Linux)** | Quick install without Rust | `curl -fsSL ... \| bash` |
-| **PowerShell (Windows)** | One-line Windows install | `irm ... \| iex` |
-| **Bun (cross-platform)** | JavaScript/TypeScript runtime users | `bun run ...` |
-| **cargo install** | Rust developers | `cargo install agileplus-cli` |
-| **Prebuilt binaries** | Manual download | [GitHub Releases](https://github.com/KooshaPari/AgilePlus/releases) |
-| **From source** | Contributors building the workspace | `git clone` + `cargo build` |
-| **Start Menu** (Windows) | Desktop launcher | `packaging/start-menu.ps1` |
+| Channel                  | Best for                            | Command                                                             |
+| ------------------------ | ----------------------------------- | ------------------------------------------------------------------- |
+| **curl (macOS/Linux)**   | Quick install without Rust          | `curl -fsSL ... \| bash`                                            |
+| **PowerShell (Windows)** | One-line Windows install            | `irm ... \| iex`                                                    |
+| **Bun (cross-platform)** | JavaScript/TypeScript runtime users | `bun run ...`                                                       |
+| **cargo install**        | Rust developers                     | `cargo install agileplus-cli`                                       |
+| **Prebuilt binaries**    | Manual download                     | [GitHub Releases](https://github.com/KooshaPari/AgilePlus/releases) |
+| **From source**          | Contributors building the workspace | `git clone` + `cargo build`                                         |
+| **Start Menu** (Windows) | Desktop launcher                    | `packaging/start-menu.ps1`                                          |
 
 ## macOS / Linux (curl)
 
@@ -60,10 +60,10 @@ Tagged releases (`v*`) publish matrix-built archives for Linux, macOS (x86_64 + 
 
 1. Open [Releases](https://github.com/KooshaPari/AgilePlus/releases).
 2. Download the archive for your platform:
-   - `agileplus-<version>-agileplus-linux-x86_64.tar.gz`
-   - `agileplus-<version>-agileplus-macos-aarch64.tar.gz`
-   - `agileplus-<version>-agileplus-macos-x86_64.tar.gz`
-   - `agileplus-<version>-agileplus-windows-x86_64.zip`
+    - `agileplus-<version>-agileplus-linux-x86_64.tar.gz`
+    - `agileplus-<version>-agileplus-macos-aarch64.tar.gz`
+    - `agileplus-<version>-agileplus-macos-x86_64.tar.gz`
+    - `agileplus-<version>-agileplus-windows-x86_64.zip`
 3. Extract and place `agileplus` (or `agileplus.exe`) on your `PATH`.
 
 ## Windows Start Menu shortcut (Phenotype-Apps)
@@ -100,9 +100,9 @@ agileplus platform status
 
 ## Troubleshooting
 
-| Issue | Fix |
-|-------|-----|
-| `agileplus: command not found` | Add `~/.local/bin` or `~/.cargo/bin` to `PATH` |
-| Build fails on `protoc` | Install protobuf compiler 28.x |
-| crates.io publish fails in CI | Ensure `CARGO_REGISTRY_TOKEN` secret is set |
+| Issue                           | Fix                                               |
+| ------------------------------- | ------------------------------------------------- |
+| `agileplus: command not found`  | Add `~/.local/bin` or `~/.cargo/bin` to `PATH`    |
+| Build fails on `protoc`         | Install protobuf compiler 28.x                    |
+| crates.io publish fails in CI   | Ensure `CARGO_REGISTRY_TOKEN` secret is set       |
 | Start Menu shortcut has no icon | Add `packaging/agileplus.ico` or pass `-IconPath` |

@@ -2,8 +2,8 @@
 
 ## Provenance
 
-| File | Source | Maintenance |
-|------|--------|-------------|
+| File                  | Source                            | Maintenance         |
+| --------------------- | --------------------------------- | ------------------- |
 | `registry-adapter.md` | (design doc, no SSOT in `proto/`) | **Hand-maintained** |
 
 ## Note

@@ -36,12 +36,12 @@ Ports define the interface; adapters implement it:
 
 ## Extension Points
 
-| Extension | Trait | Purpose | Example Impl |
-|-----------|-------|---------|--------------|
-| **Storage** | `StoragePort` | Persist specs, plans, tasks | FileStorage, PostgreSQL |
-| **VCS** | `VcsPort` | Git operations, branches | GitVcs, MercurialVcs |
-| **Tracker Sync** | `SyncPort` | Issue tracker integration | PlaneSync, GitHubSync |
-| **Agent Harness** | `AgentPort` | AI agent communication | ClaudeAgent, CodexAgent |
+| Extension         | Trait         | Purpose                     | Example Impl            |
+| ----------------- | ------------- | --------------------------- | ----------------------- |
+| **Storage**       | `StoragePort` | Persist specs, plans, tasks | FileStorage, PostgreSQL |
+| **VCS**           | `VcsPort`     | Git operations, branches    | GitVcs, MercurialVcs    |
+| **Tracker Sync**  | `SyncPort`    | Issue tracker integration   | PlaneSync, GitHubSync   |
+| **Agent Harness** | `AgentPort`   | AI agent communication      | ClaudeAgent, CodexAgent |
 
 ## Adding a Storage Backend
 
@@ -330,26 +330,26 @@ Adapters are registered in `.kittify/config.yaml`:
 # .kittify/config.yaml
 
 storage:
-  backend: postgresql  # or: file, postgresql
-  database_url: postgresql://localhost/agileplus_dev
+    backend: postgresql # or: file, postgresql
+    database_url: postgresql://localhost/agileplus_dev
 
 vcs:
-  backend: git  # or: git, mercurial
+    backend: git # or: git, mercurial
 
 sync:
-  backends:
-    - type: plane
-      api_key: ${PLANE_API_KEY}
-      workspace_id: agileplus
+    backends:
+        - type: plane
+          api_key: ${PLANE_API_KEY}
+          workspace_id: agileplus
 
-    - type: github
-      api_token: ${GITHUB_TOKEN}
-      repo_owner: <REDACTED>
-      repo_name: AgilePlus
+        - type: github
+          api_token: ${GITHUB_TOKEN}
+          repo_owner: <REDACTED>
+          repo_name: AgilePlus
 
 agent:
-  harness: claude-code  # or: claude-code, codex
-  timeout_seconds: 3600
+    harness: claude-code # or: claude-code, codex
+    timeout_seconds: 3600
 ```
 
 ### Runtime Discovery

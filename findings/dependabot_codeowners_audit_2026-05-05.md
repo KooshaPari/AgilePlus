@@ -9,18 +9,18 @@
 
 ### Repos WITH Package Managers but NO Dependabot
 
-| Repo | Package Manager |
-|------|-----------------|
-| agileplus-agents/ | cargo |
-| agileplus-mcp/ | pip |
-| AgilePlus/ | cargo |
-| bdd-integration/ | cargo |
-| dispatch-mcp/ | pip |
-| docs/ | npm |
-| pheno-cli/ | go |
-| PhenoLang/ | go |
-| python/ | pip |
-| rust/ | cargo |
+| Repo              | Package Manager |
+| ----------------- | --------------- |
+| agileplus-agents/ | cargo           |
+| agileplus-mcp/    | pip             |
+| AgilePlus/        | cargo           |
+| bdd-integration/  | cargo           |
+| dispatch-mcp/     | pip             |
+| docs/             | npm             |
+| pheno-cli/        | go              |
+| PhenoLang/        | go              |
+| python/           | pip             |
+| rust/             | cargo           |
 
 **Total: 10 repos missing Dependabot**
 
@@ -34,38 +34,38 @@
 
 ### Repos MISSING .github/CODEOWNERS
 
-| Repo |
-|------|
-| __pycache__/ |
+| Repo                        |
+| --------------------------- |
+| **pycache**/                |
 | agentops-policy-federation/ |
-| agileplus-agents/ |
-| agileplus-landing/ |
-| agileplus-mcp/ |
-| AgilePlus-wtr/ |
-| AgilePlus/ |
-| apps/ |
-| bdd-integration/ |
-| byteport-landing/ |
-| crates/ |
-| default/ |
-| dispatch-mcp/ |
-| fleet-audit/ |
-| frontend/ |
-| harnesses/ |
-| hwledger-landing/ |
-| kitty-specs/ |
-| libs/ |
-| netweave-final2/ |
-| node_modules/ |
-| Observably/ |
-| pheno-cli/ |
-| PhenoContracts/ |
-| PhenoControl/ |
-| PhenoEvents/ |
-| PhenoLang/ |
-| PhenoSchema/ |
-| phenotype-icons/ |
-| phenotype-omlx/ |
+| agileplus-agents/           |
+| agileplus-landing/          |
+| agileplus-mcp/              |
+| AgilePlus-wtr/              |
+| AgilePlus/                  |
+| apps/                       |
+| bdd-integration/            |
+| byteport-landing/           |
+| crates/                     |
+| default/                    |
+| dispatch-mcp/               |
+| fleet-audit/                |
+| frontend/                   |
+| harnesses/                  |
+| hwledger-landing/           |
+| kitty-specs/                |
+| libs/                       |
+| netweave-final2/            |
+| node_modules/               |
+| Observably/                 |
+| pheno-cli/                  |
+| PhenoContracts/             |
+| PhenoControl/               |
+| PhenoEvents/                |
+| PhenoLang/                  |
+| PhenoSchema/                |
+| phenotype-icons/            |
+| phenotype-omlx/             |
 
 **Summary:** Extensive CODEOWNERS gap across the ecosystem.
 
@@ -74,10 +74,10 @@
 ## Action Items
 
 1. **Dependabot Gap (10 repos):** Add `.github/dependabot.yml` to:
-   - Rust/Cargo repos: `agileplus-agents/`, `AgilePlus/`, `bdd-integration/`, `rust/`
-   - Python repos: `agileplus-mcp/`, `dispatch-mcp/`, `python/`
-   - Go repos: `pheno-cli/`, `PhenoLang/`
-   - npm repo: `docs/`
+    - Rust/Cargo repos: `agileplus-agents/`, `AgilePlus/`, `bdd-integration/`, `rust/`
+    - Python repos: `agileplus-mcp/`, `dispatch-mcp/`, `python/`
+    - Go repos: `pheno-cli/`, `PhenoLang/`
+    - npm repo: `docs/`
 
 2. **CODEOWNERS Gap:** Add `.github/CODEOWNERS` to all listed repos, particularly canonical repos (`AgilePlus/`, `PhenoLang/`, `pheno-cli/`, etc.)
 

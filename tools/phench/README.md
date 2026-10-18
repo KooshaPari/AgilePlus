@@ -11,11 +11,11 @@ Standalone control-plane repository for Phenotype project-state runtime orchestr
 ## Local usage
 
 - help:
-  - `python -m phench --help`
+    - `python -m phench --help`
 - install editable package:
-  - `python -m pip install -e .`
+    - `python -m pip install -e .`
 - run tests:
-  - `python -m unittest discover -s tests -p 'test_*.py' -v`
+    - `python -m unittest discover -s tests -p 'test_*.py' -v`
 
 ## Current command surface
 

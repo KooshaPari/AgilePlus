@@ -9,6 +9,7 @@ superseded_by: null
 title: UX/DX/AX Richness
 type: operational
 ---
+
 # UX/DX/AX Richness
 
 ## Problem
@@ -31,7 +32,9 @@ contributors cannot onboard from the repo alone.
 ## Functional Requirements
 
 ### FR-1 — `docs/ux.md` (User Experience)
+
 Every public user-facing app MUST ship `docs/ux.md` covering:
+
 1. Primary user journeys (numbered list, each with goal / pre / steps / post).
 2. Mermaid diagram of the happy-path flow.
 3. Empty, loading, error, and success states for each top-level screen.
@@ -39,7 +42,9 @@ Every public user-facing app MUST ship `docs/ux.md` covering:
 5. Dark/light mode behavior where applicable.
 
 ### FR-2 — `docs/dx.md` (Developer Experience)
+
 Every public app MUST ship `docs/dx.md` covering:
+
 1. Local dev bring-up (commands, ports, env vars, seeded data).
 2. Build, test, lint entry points with one-line descriptions.
 3. Code map (key files/folders and their responsibility, ≤12 lines each).
@@ -47,7 +52,9 @@ Every public app MUST ship `docs/dx.md` covering:
 5. Troubleshooting matrix: symptom → cause → fix.
 
 ### FR-3 — `docs/ax.md` (Agent Experience)
+
 Every public app MUST ship `docs/ax.md` covering:
+
 1. Programmatic surfaces: CLI subcommands, MCP tools, HTTP/JSON, IPC, with stable flags.
 2. Output schemas (JSON examples, field types) for each non-trivial surface.
 3. Exit codes / error envelope contract.
@@ -55,6 +62,7 @@ Every public app MUST ship `docs/ax.md` covering:
 5. Structured example: one full agent run end-to-end with the resulting artifacts.
 
 ### FR-4 — Templates
+
 `AgilePlus/docs/templates/ux.md`, `dx.md`, `ax.md` MUST exist as drop-in templates
 specifying required headings, minimum section depth, and a working Mermaid
 example. App authors copy the template and fill in; reviewers diff against it.

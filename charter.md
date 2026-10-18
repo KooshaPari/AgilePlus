@@ -18,31 +18,31 @@ FR authority and spec-driven PM workspace for agent + human teams.
 
 ### Out of scope
 
-| Boundary | Owner repo |
-|----------|------------|
+| Boundary                 | Owner repo           |
+| ------------------------ | -------------------- |
 | Fleet registry authority | `phenotype-registry` |
-| Genesis templates | `HexaKit` |
-| Generic MCP libraries | `PhenoMCP` |
+| Genesis templates        | `HexaKit`            |
+| Generic MCP libraries    | `PhenoMCP`           |
 
 ## Governance artifacts
 
-| Artifact | Path |
-|----------|------|
-| Intent | [intent.md](intent.md) |
-| Review | [review.md](review.md) |
-| SOTA | [SOTA.md](SOTA.md) |
-| OKF | [okf/manifest.okf.yaml](okf/manifest.okf.yaml) |
+| Artifact | Path                                           |
+| -------- | ---------------------------------------------- |
+| Intent   | [intent.md](intent.md)                         |
+| Review   | [review.md](review.md)                         |
+| SOTA     | [SOTA.md](SOTA.md)                             |
+| OKF      | [okf/manifest.okf.yaml](okf/manifest.okf.yaml) |
 
 Authority: [phenotype-registry DOMAIN_ROLES](https://github.com/KooshaPari/phenotype-registry/blob/main/DOMAIN_ROLES.md)
 
 ## Decision rights
 
-| Action | Authority |
-|--------|-----------|
+| Action          | Authority               |
+| --------------- | ----------------------- |
 | Merge to `main` | <REDACTED> + 1 reviewer |
 
 ## Changelog
 
-| Date | Change |
-|------|--------|
+| Date       | Change                 |
+| ---------- | ---------------------- |
 | 2026-06-17 | Genesis rollout Wave 4 |

@@ -53,9 +53,9 @@ assigned Features are Validated or Shipped before accepting the state change.
 - **State filter**: `--state` flag for `list` takes a `CycleState` string (case-insensitive via
   `FromStr` on the enum). If unrecognized, clap exits with a parse error automatically.
 - **Files**:
-  - NEW: `crates/agileplus-cli/src/commands/cycle.rs`
-  - MODIFIED: `crates/agileplus-cli/src/commands/mod.rs` -- add `pub mod cycle;`
-  - MODIFIED: `crates/agileplus-cli/src/main.rs` -- add `Cycle` variant
+    - NEW: `crates/agileplus-cli/src/commands/cycle.rs`
+    - MODIFIED: `crates/agileplus-cli/src/commands/mod.rs` -- add `pub mod cycle;`
+    - MODIFIED: `crates/agileplus-cli/src/main.rs` -- add `Cycle` variant
 
 ---
 
@@ -73,102 +73,102 @@ assigned Features are Validated or Shipped before accepting the state change.
 
 2. Define the top-level args struct and subcommand enum:
 
-   ```rust
-   use clap::{Args, Subcommand};
+    ```rust
+    use clap::{Args, Subcommand};
 
-   #[derive(Debug, Args)]
-   pub struct CycleArgs {
-       #[command(subcommand)]
-       pub command: CycleCommand,
-   }
+    #[derive(Debug, Args)]
+    pub struct CycleArgs {
+        #[command(subcommand)]
+        pub command: CycleCommand,
+    }
 
-   #[derive(Debug, Subcommand)]
-   pub enum CycleCommand {
-       /// Create a new cycle
-       Create(CreateArgs),
-       /// List cycles, optionally filtered by state
-       List(ListArgs),
-       /// Show cycle details with assigned features and WP progress
-       Show(ShowArgs),
-       /// Add a feature to a cycle
-       Add(AddArgs),
-       /// Remove a feature from a cycle
-       Remove(RemoveArgs),
-       /// Transition a cycle to a new state
-       Transition(TransitionArgs),
-   }
-   ```
+    #[derive(Debug, Subcommand)]
+    pub enum CycleCommand {
+        /// Create a new cycle
+        Create(CreateArgs),
+        /// List cycles, optionally filtered by state
+        List(ListArgs),
+        /// Show cycle details with assigned features and WP progress
+        Show(ShowArgs),
+        /// Add a feature to a cycle
+        Add(AddArgs),
+        /// Remove a feature from a cycle
+        Remove(RemoveArgs),
+        /// Transition a cycle to a new state
+        Transition(TransitionArgs),
+    }
+    ```
 
 3. Define each args struct:
 
-   ```rust
-   #[derive(Debug, Args)]
-   pub struct CreateArgs {
-       /// Display name for the cycle
-       pub name: String,
-       /// Start date (YYYY-MM-DD)
-       #[arg(long)]
-       pub start: String,
-       /// End date (YYYY-MM-DD)
-       #[arg(long)]
-       pub end: String,
-       /// Optional module slug to scope this cycle
-       #[arg(long)]
-       pub module: Option<String>,
-   }
+    ```rust
+    #[derive(Debug, Args)]
+    pub struct CreateArgs {
+        /// Display name for the cycle
+        pub name: String,
+        /// Start date (YYYY-MM-DD)
+        #[arg(long)]
+        pub start: String,
+        /// End date (YYYY-MM-DD)
+        #[arg(long)]
+        pub end: String,
+        /// Optional module slug to scope this cycle
+        #[arg(long)]
+        pub module: Option<String>,
+    }
 
-   #[derive(Debug, Args)]
-   pub struct ListArgs {
-       /// Filter by state (Draft, Active, Review, Shipped, Archived)
-       #[arg(long)]
-       pub state: Option<String>,
-   }
+    #[derive(Debug, Args)]
+    pub struct ListArgs {
+        /// Filter by state (Draft, Active, Review, Shipped, Archived)
+        #[arg(long)]
+        pub state: Option<String>,
+    }
 
-   #[derive(Debug, Args)]
-   pub struct ShowArgs {
-       /// Cycle name to show
-       pub name: String,
-   }
+    #[derive(Debug, Args)]
+    pub struct ShowArgs {
+        /// Cycle name to show
+        pub name: String,
+    }
 
-   #[derive(Debug, Args)]
-   pub struct AddArgs {
-       /// Cycle name
-       pub cycle_name: String,
-       /// Feature slug to add
-       pub feature_slug: String,
-   }
+    #[derive(Debug, Args)]
+    pub struct AddArgs {
+        /// Cycle name
+        pub cycle_name: String,
+        /// Feature slug to add
+        pub feature_slug: String,
+    }
 
-   #[derive(Debug, Args)]
-   pub struct RemoveArgs {
-       /// Cycle name
-       pub cycle_name: String,
-       /// Feature slug to remove
-       pub feature_slug: String,
-   }
+    #[derive(Debug, Args)]
+    pub struct RemoveArgs {
+        /// Cycle name
+        pub cycle_name: String,
+        /// Feature slug to remove
+        pub feature_slug: String,
+    }
 
-   #[derive(Debug, Args)]
-   pub struct TransitionArgs {
-       /// Cycle name
-       pub cycle_name: String,
-       /// Target state (Active, Review, Shipped, Archived, Draft)
-       pub target_state: String,
-   }
-   ```
+    #[derive(Debug, Args)]
+    pub struct TransitionArgs {
+        /// Cycle name
+        pub cycle_name: String,
+        /// Target state (Active, Review, Shipped, Archived, Draft)
+        pub target_state: String,
+    }
+    ```
 
 4. Define the dispatch function with `todo!()` stubs:
 
-   ```rust
-   pub async fn run(args: CycleArgs, storage: &dyn StoragePort) -> anyhow::Result<()> {
-       match args.command {
-           CycleCommand::Create(a)     => create(a, storage).await,
-           CycleCommand::List(a)       => list(a, storage).await,
-           CycleCommand::Show(a)       => show(a, storage).await,
-           CycleCommand::Add(a)        => add(a, storage).await,
-           CycleCommand::Remove(a)     => remove(a, storage).await,
-           CycleCommand::Transition(a) => transition(a, storage).await,
-       }
-   }
-   ```
+    ```rust
+    pub async fn run(args: CycleArgs, storage: &dyn StoragePort) -> anyhow::Result<()> {
+        match args.command {
+            CycleCommand::Create(a)     => create(a, storage).await,
+            CycleCommand::List(a)       => list(a, storage).await,
+            CycleCommand::Show(a)       => show(a, storage).await,
+            CycleCommand::Add(a)        => add(a, storage).await,
+            CycleCommand::Remove(a)     => remove(a, storage).await,
+            CycleCommand::Transition(a) => transition(a, storage).await,
+        }
+    }
+    ```
 
 5. Add `pub mod cycle;` to `commands/mod.rs`.
 
@@ -185,42 +185,40 @@ assigned Features are Validated or Shipped before accepting the state change.
 **Steps**:
 
 1. Implement `async fn create(args: CreateArgs, storage: &dyn StoragePort) -> anyhow::Result<()>`:
-
-   - Parse `start_date`:
-     ```rust
-     let start = chrono::NaiveDate::parse_from_str(&args.start, "%Y-%m-%d")
-         .map_err(|_| anyhow::anyhow!("Invalid start date '{}': expected YYYY-MM-DD", args.start))?;
-     ```
-   - Parse `end_date` identically.
-   - Resolve optional module scope:
-     - If `args.module = Some(slug)`, look up `storage.get_module_by_slug(&slug, None).await?`.
-       If `None`, return error `"Module '{}' not found"`.
-       Extract `Some(module.id)` as `module_scope_id`.
-     - If `None`, `module_scope_id = None`.
-   - Build `Cycle::new(&args.name, start, end, module_scope_id)?` (may return `DomainError` for
-     invalid date range -- map with `.map_err(|e| anyhow::anyhow!(e))?`).
-   - Call `storage.create_cycle(&cycle).await?`.
-   - Print: `"Created cycle '{}' (id: {}, state: Draft, {} to {})"`.
+    - Parse `start_date`:
+        ```rust
+        let start = chrono::NaiveDate::parse_from_str(&args.start, "%Y-%m-%d")
+            .map_err(|_| anyhow::anyhow!("Invalid start date '{}': expected YYYY-MM-DD", args.start))?;
+        ```
+    - Parse `end_date` identically.
+    - Resolve optional module scope:
+        - If `args.module = Some(slug)`, look up `storage.get_module_by_slug(&slug, None).await?`.
+          If `None`, return error `"Module '{}' not found"`.
+          Extract `Some(module.id)` as `module_scope_id`.
+        - If `None`, `module_scope_id = None`.
+    - Build `Cycle::new(&args.name, start, end, module_scope_id)?` (may return `DomainError` for
+      invalid date range -- map with `.map_err(|e| anyhow::anyhow!(e))?`).
+    - Call `storage.create_cycle(&cycle).await?`.
+    - Print: `"Created cycle '{}' (id: {}, state: Draft, {} to {})"`.
 
 2. Implement `async fn list(args: ListArgs, storage: &dyn StoragePort) -> anyhow::Result<()>`:
-
-   - Parse optional state filter:
-     ```rust
-     let state_filter = args.state
-         .map(|s| s.parse::<CycleState>()
-             .map_err(|e| anyhow::anyhow!("Unknown state '{}': {}", s, e)))
-         .transpose()?;
-     ```
-   - Call `storage.list_cycles(state_filter).await?`.
-   - If empty, print `"No cycles found."`.
-   - Otherwise, print a table:
-     ```
-     NAME                    STATE    START        END          SCOPE
-     Sprint W10              Active   2026-03-03   2026-03-14   (all)
-     Notif Refactor          Draft    2026-03-15   2026-03-28   notifications
-     ```
-   - Resolve scope slug: fetch module name from `storage.get_module_by_id(scope_id)` for display;
-     show `"(all)"` when `module_scope_id = None`.
+    - Parse optional state filter:
+        ```rust
+        let state_filter = args.state
+            .map(|s| s.parse::<CycleState>()
+                .map_err(|e| anyhow::anyhow!("Unknown state '{}': {}", s, e)))
+            .transpose()?;
+        ```
+    - Call `storage.list_cycles(state_filter).await?`.
+    - If empty, print `"No cycles found."`.
+    - Otherwise, print a table:
+        ```
+        NAME                    STATE    START        END          SCOPE
+        Sprint W10              Active   2026-03-03   2026-03-14   (all)
+        Notif Refactor          Draft    2026-03-15   2026-03-28   notifications
+        ```
+    - Resolve scope slug: fetch module name from `storage.get_module_by_id(scope_id)` for display;
+      show `"(all)"` when `module_scope_id = None`.
 
 **Validation**: `agileplus cycle create` and `agileplus cycle list` work end-to-end.
 
@@ -235,38 +233,37 @@ assigned Features are Validated or Shipped before accepting the state change.
 **Steps**:
 
 1. Implement `async fn show(args: ShowArgs, storage: &dyn StoragePort) -> anyhow::Result<()>`:
+    - Resolve cycle by name: `storage.get_cycle_by_name(&args.name).await?`. If `None`, error.
+    - Call `storage.get_cycle_with_features(cycle.id).await?`. If `None`, error
+      (shouldn't happen since we just found it -- handle defensively).
+    - Print:
 
-   - Resolve cycle by name: `storage.get_cycle_by_name(&args.name).await?`. If `None`, error.
-   - Call `storage.get_cycle_with_features(cycle.id).await?`. If `None`, error
-     (shouldn't happen since we just found it -- handle defensively).
-   - Print:
+        ```
+        Cycle: Sprint W10
+        State: Active
+        Dates: 2026-03-03 to 2026-03-14 (11 days)
+        Scope: (all modules)
 
-     ```
-     Cycle: Sprint W10
-     State: Active
-     Dates: 2026-03-03 to 2026-03-14 (11 days)
-     Scope: (all modules)
+        WP Progress:
+          Total:       23
+          Done:         8  (35%)
+          In Progress:  5  (22%)
+          Planned:     10  (43%)
+          Blocked:      0   (0%)
 
-     WP Progress:
-       Total:       23
-       Done:         8  (35%)
-       In Progress:  5  (22%)
-       Planned:     10  (43%)
-       Blocked:      0   (0%)
+        Assigned Features (5):
+          login           implementing
+          sso             specified
+          password-reset  planned
+          mfa             implementing
+          session-mgmt    validated
+        ```
 
-     Assigned Features (5):
-       login           implementing
-       sso             specified
-       password-reset  planned
-       mfa             implementing
-       session-mgmt    validated
-     ```
-
-   - Compute "days" as `(end_date - start_date).num_days()`.
-   - Compute WP percentage as `(count * 100) / total` using integer division; guard against
-     `total == 0` (show `0%` for all).
-   - Sort features by slug alphabetically.
-   - Mark scope as `"Module: {slug}"` or `"(all modules)"`.
+    - Compute "days" as `(end_date - start_date).num_days()`.
+    - Compute WP percentage as `(count * 100) / total` using integer division; guard against
+      `total == 0` (show `0%` for all).
+    - Sort features by slug alphabetically.
+    - Mark scope as `"Module: {slug}"` or `"(all modules)"`.
 
 2. Edge case: empty cycle with no features: print `"Assigned Features (0): (none)"` and all WP
    counts as 0.
@@ -284,24 +281,22 @@ assigned Features are Validated or Shipped before accepting the state change.
 **Steps**:
 
 1. Implement `async fn add(args: AddArgs, storage: &dyn StoragePort) -> anyhow::Result<()>`:
-
-   - Resolve cycle by name. If `None`, error `"Cycle '{}' not found"`.
-   - Resolve feature by slug. If `None`, error `"Feature '{}' not found"`.
-   - Call `storage.add_feature_to_cycle(cycle.id, feature.id).await`.
-   - On `Err(DomainError::FeatureNotInModuleScope { feature_slug, module_slug })`, return:
-     ```
-     "Cannot add: feature '{}' is not owned by or tagged to module '{}' (cycle scope).
-      Use 'agileplus module assign {}' or 'agileplus module tag {}' first."
-     ```
-   - On success, print: `"Added feature '{}' to cycle '{}'."`.
+    - Resolve cycle by name. If `None`, error `"Cycle '{}' not found"`.
+    - Resolve feature by slug. If `None`, error `"Feature '{}' not found"`.
+    - Call `storage.add_feature_to_cycle(cycle.id, feature.id).await`.
+    - On `Err(DomainError::FeatureNotInModuleScope { feature_slug, module_slug })`, return:
+        ```
+        "Cannot add: feature '{}' is not owned by or tagged to module '{}' (cycle scope).
+         Use 'agileplus module assign {}' or 'agileplus module tag {}' first."
+        ```
+    - On success, print: `"Added feature '{}' to cycle '{}'."`.
 
 2. Implement `async fn remove(args: RemoveArgs, storage: &dyn StoragePort) -> anyhow::Result<()>`:
+    - Resolve cycle and feature by name/slug.
+    - Call `storage.remove_feature_from_cycle(cycle.id, feature.id).await?`.
+    - Print: `"Removed feature '{}' from cycle '{}'. Feature state is unchanged."`.
 
-   - Resolve cycle and feature by name/slug.
-   - Call `storage.remove_feature_from_cycle(cycle.id, feature.id).await?`.
-   - Print: `"Removed feature '{}' from cycle '{}'. Feature state is unchanged."`.
-
-   Note: the trailing message reinforces the spec edge case that remove does not change Feature state.
+    Note: the trailing message reinforces the spec edge case that remove does not change Feature state.
 
 3. Edge case for `add`: if feature is already in the cycle, the storage uses `INSERT OR IGNORE`
    so it returns `Ok(())` silently. The CLI prints `"Feature '{}' is already in cycle '{}'."` if
@@ -326,66 +321,66 @@ entry point and add unit tests.
 **Steps**:
 
 1. Implement `async fn transition(args: TransitionArgs, storage: &dyn StoragePort) -> anyhow::Result<()>`:
+    - Resolve cycle by name. If `None`, error.
+    - Parse `target_state`:
+        ```rust
+        let target: CycleState = args.target_state.parse()
+            .map_err(|e| anyhow::anyhow!("Unknown cycle state '{}': {}", args.target_state, e))?;
+        ```
+    - Validate the edge is allowed at the domain level: call `cycle.state.transition(target)`.
+      On `Err(DomainError::InvalidTransition { from, to, reason })`, return:
+      `"Cannot transition from {} to {}: {}"`.
+      On `Err(DomainError::NoOpTransition(_))`, print `"Cycle is already in '{}' state."` and
+      return `Ok(())`.
 
-   - Resolve cycle by name. If `None`, error.
-   - Parse `target_state`:
-     ```rust
-     let target: CycleState = args.target_state.parse()
-         .map_err(|e| anyhow::anyhow!("Unknown cycle state '{}': {}", args.target_state, e))?;
-     ```
-   - Validate the edge is allowed at the domain level: call `cycle.state.transition(target)`.
-     On `Err(DomainError::InvalidTransition { from, to, reason })`, return:
-     `"Cannot transition from {} to {}: {}"`.
-     On `Err(DomainError::NoOpTransition(_))`, print `"Cycle is already in '{}' state."` and
-     return `Ok(())`.
+    - Special gate for `CycleState::Shipped` (Traces to FR-C07):
 
-   - Special gate for `CycleState::Shipped` (Traces to FR-C07):
-     ```rust
-     if target == CycleState::Shipped {
-         let cwf = storage.get_cycle_with_features(cycle.id).await?
-             .ok_or_else(|| anyhow::anyhow!("Cycle data not found"))?;
-         if !cwf.is_shippable() {
-             let blockers: Vec<String> = cwf.features.iter()
-                 .filter(|f| {
-                     f.state != FeatureState::Validated && f.state != FeatureState::Shipped
-                 })
-                 .map(|f| format!("'{}' ({})", f.slug, f.state))
-                 .collect();
-             return Err(anyhow::anyhow!(
-                 "Cannot transition to Shipped: the following features are not yet Validated or Shipped:\n  {}",
-                 blockers.join("\n  ")
-             ));
-         }
-     }
-     ```
+        ```rust
+        if target == CycleState::Shipped {
+            let cwf = storage.get_cycle_with_features(cycle.id).await?
+                .ok_or_else(|| anyhow::anyhow!("Cycle data not found"))?;
+            if !cwf.is_shippable() {
+                let blockers: Vec<String> = cwf.features.iter()
+                    .filter(|f| {
+                        f.state != FeatureState::Validated && f.state != FeatureState::Shipped
+                    })
+                    .map(|f| format!("'{}' ({})", f.slug, f.state))
+                    .collect();
+                return Err(anyhow::anyhow!(
+                    "Cannot transition to Shipped: the following features are not yet Validated or Shipped:\n  {}",
+                    blockers.join("\n  ")
+                ));
+            }
+        }
+        ```
 
-   - If gate passes, call `storage.update_cycle_state(cycle.id, target).await?`.
-   - Print: `"Cycle '{}' transitioned: {} -> {}"`.
+    - If gate passes, call `storage.update_cycle_state(cycle.id, target).await?`.
+    - Print: `"Cycle '{}' transitioned: {} -> {}"`.
 
 2. Wire into `main.rs` / top-level Commands enum:
 
-   ```rust
-   /// Cycle management (FR-CLI02)
-   Cycle(commands::cycle::CycleArgs),
-   ```
+    ```rust
+    /// Cycle management (FR-CLI02)
+    Cycle(commands::cycle::CycleArgs),
+    ```
 
-   In dispatch:
-   ```rust
-   Commands::Cycle(args) => commands::cycle::run(args, &storage).await?,
-   ```
+    In dispatch:
+
+    ```rust
+    Commands::Cycle(args) => commands::cycle::run(args, &storage).await?,
+    ```
 
 3. Verify `agileplus --help` shows `cycle` subcommand.
 
 4. Write unit tests in `cycle.rs` under `#[cfg(test)]`:
-
-   - `create_args_parses_dates`: clap parses `["create", "Sprint", "--start", "2026-03-03", "--end", "2026-03-14"]`
-     correctly; `start = "2026-03-03"`, `end = "2026-03-14"`, `module = None`.
-   - `create_args_with_module`: `["create", "S", "--start", "2026-03-03", "--end", "2026-03-14", "--module", "auth"]`
-     sets `module = Some("auth".into())`.
-   - `list_args_state_filter`: `["list", "--state", "active"]` sets `state = Some("active".into())`.
-   - `transition_args_parses`: `["transition", "Sprint W10", "shipped"]` sets `cycle_name = "Sprint W10"`,
-     `target_state = "shipped"`.
-   - `shipped_gate_error_message`: construct a `CycleWithFeatures` with one Implementing feature,
-     call `is_shippable()`, verify returns false.
+    - `create_args_parses_dates`: clap parses `["create", "Sprint", "--start", "2026-03-03", "--end", "2026-03-14"]`
+      correctly; `start = "2026-03-03"`, `end = "2026-03-14"`, `module = None`.
+    - `create_args_with_module`: `["create", "S", "--start", "2026-03-03", "--end", "2026-03-14", "--module", "auth"]`
+      sets `module = Some("auth".into())`.
+    - `list_args_state_filter`: `["list", "--state", "active"]` sets `state = Some("active".into())`.
+    - `transition_args_parses`: `["transition", "Sprint W10", "shipped"]` sets `cycle_name = "Sprint W10"`,
+      `target_state = "shipped"`.
+    - `shipped_gate_error_message`: construct a `CycleWithFeatures` with one Implementing feature,
+      call `is_shippable()`, verify returns false.
 
 **Validation**: `cargo test -p agileplus-cli` all green; `cargo clippy -p agileplus-cli -- -D warnings` zero warnings.

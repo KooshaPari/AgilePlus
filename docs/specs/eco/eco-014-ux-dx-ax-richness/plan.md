@@ -9,11 +9,13 @@ reusable templates and a local-first checker.
 ## Scope
 
 In scope:
+
 - Three templates under `AgilePlus/docs/templates/`.
 - Checker logic in the `task` runner (local, no CI billing).
 - Backfill audit listing all public apps with a 3/3 or 0/3 score.
 
 Out of scope:
+
 - Migrating or rewriting existing app documentation content.
 - Enforcing content quality beyond template-section coverage.
 - CI workflow changes (billing-blocked).

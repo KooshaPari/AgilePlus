@@ -16,22 +16,22 @@
 # which is merged on top of this file.
 
 include:
-  - .semgrep-rules/
-  - p/security-audit
-  - p/owasp-top-ten
-  - p/cwe-top-25
+    - .semgrep-rules/
+    - p/security-audit
+    - p/owasp-top-ten
+    - p/cwe-top-25
 
 exclude:
-  - tests/
-  - "**/*_test.rs"
-  - "**/__pycache__"
-  - node_modules/
-  - target/
+    - tests/
+    - "**/*_test.rs"
+    - "**/__pycache__"
+    - node_modules/
+    - target/
 
 max-lines-per-finding: 10
 
 paths:
-  exclude:
-    - ".git/"
-    - "target/"
-    - ".archive/"
+    exclude:
+        - ".git/"
+        - "target/"
+        - ".archive/"

@@ -370,8 +370,10 @@ let spec = Spec::from_file("tests/fixtures/oauth-spec.md").unwrap();
 # tests/fixtures/oauth-spec.md
 
 ---
+
 title: OAuth2 Authentication
 audience: [developers, agents, pms]
+
 ---
 
 # OAuth2 Authentication
@@ -406,12 +408,8 @@ cargo tarpaulin --out Html --minimum 85
 
 ```html
 <!-- Generated report -->
-agileplus-core:     92% coverage
-agileplus-engine:   88% coverage
-agileplus-adapters: 74% coverage
-agileplus-cli:      55% coverage
-
-Overall: 82% (meets target of 80%+)
+agileplus-core: 92% coverage agileplus-engine: 88% coverage agileplus-adapters:
+74% coverage agileplus-cli: 55% coverage Overall: 82% (meets target of 80%+)
 ```
 
 ## Property-Based Testing
@@ -497,25 +495,25 @@ name: Tests
 on: [push, pull_request]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: stable
 
-      - name: Run tests
-        run: cargo test --all --verbose
+            - name: Run tests
+              run: cargo test --all --verbose
 
-      - name: Check formatting
-        run: cargo fmt --check
+            - name: Check formatting
+              run: cargo fmt --check
 
-      - name: Run clippy
-        run: cargo clippy -- -D warnings
+            - name: Run clippy
+              run: cargo clippy -- -D warnings
 
-      - name: Code coverage
-        run: cargo tarpaulin --out Xml
+            - name: Code coverage
+              run: cargo tarpaulin --out Xml
 ```
 
 ## Tips
@@ -531,6 +529,7 @@ jobs:
 ## TestHarness: Integration Test Infrastructure
 
 The `TestHarness` struct provides a complete, real-infrastructure test environment without mocks. It spins up:
+
 - An in-memory SQLite database (no file I/O)
 - A temporary git repository
 - A NATS test server (embedded)

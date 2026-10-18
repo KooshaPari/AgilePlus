@@ -5,16 +5,16 @@ lane: "done"
 dependencies: []
 base_branch: main
 base_commit: 4bf2e82137fe0ad91bd6bda6d0d07e79e5139784
-created_at: '2026-03-02T12:25:32.828328+00:00'
+created_at: "2026-03-02T12:25:32.828328+00:00"
 subtasks: [T100, T101, T102, T103]
 shell_pid: "2538"
 agent: "claude-opus"
 reviewed_by: "Koosha Paridehpour"
 review_status: "approved"
 history:
-- date: '2026-03-02'
-  action: created
-  by: spec-kitty
+    - date: "2026-03-02"
+      action: created
+      by: spec-kitty
 ---
 
 # WP17: Git-Backed State Sync
@@ -61,52 +61,56 @@ Define the export format for git-backed state at `.agileplus/sync/` in the repos
 **File format rules:**
 
 - **Event files (.jsonl)**: One JSON object per line, ordered by `sequence` number (ascending)
-  ```json
-  {"entity_type":"Feature","entity_id":"1","sequence":1,"event_type":"Created","data":{...},"timestamp":"2026-03-02T10:00:00Z"}
-  {"entity_type":"Feature","entity_id":"1","sequence":2,"event_type":"Transitioned","data":{...},"timestamp":"2026-03-02T10:00:05Z"}
-  ```
+
+    ```json
+    {"entity_type":"Feature","entity_id":"1","sequence":1,"event_type":"Created","data":{...},"timestamp":"2026-03-02T10:00:00Z"}
+    {"entity_type":"Feature","entity_id":"1","sequence":2,"event_type":"Transitioned","data":{...},"timestamp":"2026-03-02T10:00:05Z"}
+    ```
 
 - **Snapshot files (.json)**: Latest snapshot only, pretty-printed with sorted keys
-  ```json
-  {
-    "entity_type": "Feature",
-    "entity_id": "1",
-    "event_sequence": 2,
-    "state": { ... },
-    "created_at": "2026-03-02T10:00:00Z",
-    "updated_at": "2026-03-02T10:00:05Z"
-  }
-  ```
+
+    ```json
+    {
+      "entity_type": "Feature",
+      "entity_id": "1",
+      "event_sequence": 2,
+      "state": { ... },
+      "created_at": "2026-03-02T10:00:00Z",
+      "updated_at": "2026-03-02T10:00:05Z"
+    }
+    ```
 
 - **sync_state.json**: SyncMapping entries (vector clocks per peer)
-  ```json
-  {
-    "sync_mappings": [
-      {
-        "local_device_id": "uuid-1",
-        "peer_device_id": "uuid-2",
-        "sync_vector": {
-          "Feature/1": 2,
-          "Feature/2": 1,
-          "WorkPackage/3": 5
-        },
-        "last_sync": "2026-03-02T10:15:00Z"
-      }
-    ]
-  }
-  ```
+
+    ```json
+    {
+        "sync_mappings": [
+            {
+                "local_device_id": "uuid-1",
+                "peer_device_id": "uuid-2",
+                "sync_vector": {
+                    "Feature/1": 2,
+                    "Feature/2": 1,
+                    "WorkPackage/3": 5
+                },
+                "last_sync": "2026-03-02T10:15:00Z"
+            }
+        ]
+    }
+    ```
 
 - **device.json**: Local device information
-  ```json
-  {
-    "device_id": "uuid-1",
-    "hostname": "my-laptop",
-    "tailscale_ip": "100.x.x.x",
-    "created_at": "2026-03-02T09:00:00Z"
-  }
-  ```
+    ```json
+    {
+        "device_id": "uuid-1",
+        "hostname": "my-laptop",
+        "tailscale_ip": "100.x.x.x",
+        "created_at": "2026-03-02T09:00:00Z"
+    }
+    ```
 
 **Deterministic output:**
+
 - All JSON objects use sorted keys (alphabetical order)
 - Pretty-printed with 2-space indentation
 - UTF-8 encoding
@@ -143,6 +147,7 @@ pub struct ExportStats {
 ```
 
 Implementation details:
+
 - Create output directories if missing
 - Use `serde_json::to_string_pretty()` with custom serializer for sorted keys (or use `indexmap` with `sort_keys` feature)
 - Handle large event files by streaming writes (don't load entire JSONL into memory)
@@ -187,6 +192,7 @@ pub struct ImportStats {
 ```
 
 Implementation details:
+
 - Use transaction for atomic import
 - Rollback on error (no partial imports)
 - Skip duplicate events without error
@@ -200,18 +206,18 @@ Implement conflict resolution in `crates/agileplus-p2p/src/git_merge.rs`:
 **Strategy per file type:**
 
 1. **Event files (.jsonl)**: Append-only
-   - Git merge automatically resolves: new lines added to both sides are appended
-   - No conflict expected; if git reports conflict, take both sides and deduplicate by event hash
+    - Git merge automatically resolves: new lines added to both sides are appended
+    - No conflict expected; if git reports conflict, take both sides and deduplicate by event hash
 
 2. **Snapshot files (.json)**: Latest-wins
-   - If both sides modified: parse both, compare `event_sequence`
-   - Apply the snapshot with higher sequence
-   - Provide helper: `resolve_snapshot_conflict(local_json, remote_json) -> json`
+    - If both sides modified: parse both, compare `event_sequence`
+    - Apply the snapshot with higher sequence
+    - Provide helper: `resolve_snapshot_conflict(local_json, remote_json) -> json`
 
 3. **sync_state.json**: Field-level merge
-   - Each `sync_mapping` (identified by `local_device_id + peer_device_id`) is independent
-   - Merge: take each mapping from both sides, keep highest `event_sequence` per entity
-   - Resolve time: use the later `last_sync` timestamp
+    - Each `sync_mapping` (identified by `local_device_id + peer_device_id`) is independent
+    - Merge: take each mapping from both sides, keep highest `event_sequence` per entity
+    - Resolve time: use the later `last_sync` timestamp
 
 Provide CLI command:
 

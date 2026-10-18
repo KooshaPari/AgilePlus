@@ -10,6 +10,7 @@ The product program spans many repositories, agents, chats, years, aliases, disc
 Chat/model memory is not the authoritative long-term memory system.
 
 The limiting failure is not only "an agent may forget." The human sponsor/operator cannot be expected to retain:
+
 - every historical rationale;
 - every alternative already investigated;
 - every subtle constraint;
@@ -33,6 +34,7 @@ A capable new agent with no prior chat context can reconstruct enough accepted p
 ### Human recovery
 
 The product owner can return after months or years, having retained only the broad product idea, and recover:
+
 - what the product is;
 - why it exists;
 - how the idea evolved;
@@ -51,6 +53,7 @@ Human recoverability is a first-class acceptance criterion, not a side effect of
 Some artifacts are **Genesis documents**: unusually high-fidelity records of product origin and governing intent.
 
 Genesis should preserve:
+
 - original problem and personal pain that motivated the product;
 - earliest known formulation;
 - historical names/aliases;
@@ -69,6 +72,7 @@ Genesis is not a README and not a chronological transcript dump. It is a curated
 A product dossier is the high-level recoverability hub.
 
 It should answer:
+
 - identity / aliases;
 - one-paragraph and deep product definitions;
 - canonical role and ownership boundary;
@@ -101,6 +105,7 @@ The dossier may be an index/folder rather than one giant document.
 ## Specialized documents must be substantive
 
 Files such as:
+
 - INTENT
 - GENESIS
 - SOTA
@@ -127,6 +132,7 @@ Each specialized artifact should contain the depth warranted by the product and 
 ## Preserve rationale, not private chain-of-thought
 
 The durable record should capture **decision rationale and evidence**:
+
 - problem;
 - alternatives;
 - observations;
@@ -143,6 +149,7 @@ It does not need hidden/private model reasoning. It needs enough explicit ration
 Large user-authored product-intent dumps are high-value source artifacts.
 
 When practical:
+
 1. preserve a faithful source record or durable citation/reference;
 2. create a curated synthesis;
 3. distinguish verbatim/raw user intent from assistant interpretation;
@@ -157,6 +164,7 @@ Do not rely on future memory retrieval to rediscover the dump.
 Never silently rewrite history.
 
 When a decision changes:
+
 - retain the old decision;
 - mark superseded;
 - state replacement;
@@ -189,6 +197,7 @@ Before a repository can reach specification/design completion, run fresh-context
 ### Human-oriented test
 
 Given only the dossier and linked repo/registry docs, can a technically capable product owner who remembers only the big picture explain:
+
 - what the product is and is not;
 - why it exists;
 - its key historical pivots;
@@ -200,6 +209,7 @@ Given only the dossier and linked repo/registry docs, can a technically capable 
 ### Agent-oriented test
 
 A fresh agent receives the dossier without conversation history and must:
+
 - reconstruct the product boundary;
 - identify accepted vs proposed architecture;
 - avoid a known rejected approach;
@@ -211,6 +221,7 @@ Failures become documentation defects.
 ## Freshness and drift
 
 Each important document should expose:
+
 - status: accepted/proposed/historical/superseded/incomplete;
 - last substantive review date;
 - source revision where applicable;
@@ -222,9 +233,11 @@ Automated checks can detect broken links/schema/staleness indicators, but semant
 ## Registry vs repository
 
 ### Product repository
+
 Owns detailed canonical product contract, architecture, requirements, implementation mappings and executable verification assets.
 
 ### PhenoRegistry
+
 Owns cross-repository identity, lineage/indexing, portfolio context, high-level dossier navigation, shared research and durable pointers into repo-local truth.
 
 Do not duplicate huge mutable specifications in both places.
@@ -232,6 +245,7 @@ Do not duplicate huge mutable specifications in both places.
 ## Completion gate
 
 No repository reaches 100% specification/design completion while:
+
 - major user intent exists only in chat;
 - Genesis is materially incomplete;
 - important aliases/history are unrecovered;

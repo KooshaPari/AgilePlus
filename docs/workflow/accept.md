@@ -60,6 +60,7 @@ The accept phase validates:
 
 ```markdown
 ## WP Completion Check
+
 - [ ] WP01 status: done (database schema)
 - [ ] WP02 status: done (email models)
 - [ ] WP03 status: done (SendGrid integration)
@@ -75,33 +76,35 @@ All WPs complete? → YES, proceed
 
 ```markdown
 ## Requirement Implementation
+
 - [ ] REQ-1: Send welcome email on signup
-  - Implemented in: WP03, WP05
-  - Test coverage: test_welcome_email()
-  - Status: VERIFIED
+    - Implemented in: WP03, WP05
+    - Test coverage: test_welcome_email()
+    - Status: VERIFIED
 
 - [ ] REQ-2: Send mention notifications
-  - Implemented in: WP05 (event handler)
-  - Test coverage: test_mention_notification()
-  - Status: VERIFIED
+    - Implemented in: WP05 (event handler)
+    - Test coverage: test_mention_notification()
+    - Status: VERIFIED
 
 - [ ] REQ-3: User email preferences
-  - Implemented in: WP02, WP06 (API endpoint)
-  - Test coverage: test_email_preferences()
-  - Status: VERIFIED
+    - Implemented in: WP02, WP06 (API endpoint)
+    - Test coverage: test_email_preferences()
+    - Status: VERIFIED
 
 - [ ] REQ-4: 24-hour retry with exponential backoff
-  - Implemented in: WP04 (queue processor)
-  - Test coverage: test_retry_backoff()
-  - Status: VERIFIED
+    - Implemented in: WP04 (queue processor)
+    - Test coverage: test_retry_backoff()
+    - Status: VERIFIED
 
 - [ ] REQ-5: Unsubscribe support
-  - Implemented in: WP06 (unsubscribe endpoint)
-  - Test coverage: test_unsubscribe_link()
-  - Status: VERIFIED
+    - Implemented in: WP06 (unsubscribe endpoint)
+    - Test coverage: test_unsubscribe_link()
+    - Status: VERIFIED
 ```
 
 Every requirement must have:
+
 - ✓ Implementation in code
 - ✓ Test coverage
 - ✓ Verification status
@@ -114,28 +117,29 @@ From spec:
 ## Success Criteria
 
 ✓ 95% of emails sent within 5 minutes
-  Measured: 98.5% (99 of 101 test emails)
-  Status: PASSED
+Measured: 98.5% (99 of 101 test emails)
+Status: PASSED
 
 ✓ Unsubscribe links work and are respected
-  Tested: 5 unsubscribe flows
-  Status: PASSED
+Tested: 5 unsubscribe flows
+Status: PASSED
 
 ✓ No performance impact to API
-  Baseline latency: 45ms
-  With email feature: 46ms (1ms added)
-  Status: PASSED (<5ms acceptable)
+Baseline latency: 45ms
+With email feature: 46ms (1ms added)
+Status: PASSED (<5ms acceptable)
 
 ✓ Email delivery rate >98%
-  Measured: 99.2% (1 bounce out of 131)
-  Status: PASSED
+Measured: 99.2% (1 bounce out of 131)
+Status: PASSED
 
 ✓ Proper error handling for API failures
-  Tested: SendGrid timeout scenarios
-  Status: PASSED
+Tested: SendGrid timeout scenarios
+Status: PASSED
 ```
 
 All success criteria must be:
+
 - Measured or tested
 - Show passing status
 - Have supporting evidence
@@ -144,34 +148,37 @@ All success criteria must be:
 
 ```markdown
 ## Specification Clarity
+
 - [ ] No [NEEDS CLARIFICATION] markers in spec
 - [ ] All questions answered and integrated
 - [ ] Edge cases documented
 - [ ] Assumptions validated
 
 Check spec:
-  cat kitty-specs/001-email-notifications/spec.md | grep NEEDS
-  # Should return: (no results)
+cat kitty-specs/001-email-notifications/spec.md | grep NEEDS
+
+# Should return: (no results)
 ```
 
 ### 5. Code Quality Standards
 
 ```markdown
 ## Quality Gates
+
 - [ ] All tests pass
-  cargo test --all → 127/127 passed
+      cargo test --all → 127/127 passed
 
 - [ ] No compiler warnings
-  cargo clippy → 0 warnings
+      cargo clippy → 0 warnings
 
 - [ ] Code follows conventions
-  cargo fmt --check → clean
+      cargo fmt --check → clean
 
 - [ ] Security audit passes
-  cargo audit → 0 vulnerabilities
+      cargo audit → 0 vulnerabilities
 
 - [ ] Documentation complete
-  All public items have doc comments
+      All public items have doc comments
 ```
 
 ## Manual Acceptance Process
@@ -255,11 +262,13 @@ Document your findings:
 # Acceptance Report: 001-Email Notifications
 
 ## Feature Overview
+
 Email notifications feature to send transactional emails on user events.
 
 ## Verification Summary
 
 ### Work Packages
+
 - [x] WP01 Database: DONE
 - [x] WP02 Models: DONE
 - [x] WP03 SendGrid: DONE
@@ -269,6 +278,7 @@ Email notifications feature to send transactional emails on user events.
 - [x] WP07 Tests: DONE
 
 ### Requirements Coverage
+
 - [x] REQ-1 Welcome email: IMPLEMENTED
 - [x] REQ-2 Mention notification: IMPLEMENTED
 - [x] REQ-3 User preferences: IMPLEMENTED
@@ -276,18 +286,21 @@ Email notifications feature to send transactional emails on user events.
 - [x] REQ-5 Unsubscribe: IMPLEMENTED
 
 ### Success Criteria
+
 - [x] 95% delivery within 5 min: PASSED (98.5%)
 - [x] Unsubscribe works: PASSED
 - [x] No API latency impact: PASSED (<1ms)
-- [x] >98% delivery rate: PASSED (99.2%)
+- [x] > 98% delivery rate: PASSED (99.2%)
 
 ### Quality Gates
+
 - [x] Tests pass: 127/127 ✓
 - [x] No compiler warnings: 0 ✓
 - [x] Format OK: ✓
 - [x] Security audit: 0 vulns ✓
 
 ### Recommendation
+
 ✅ ACCEPT — Feature is ready for production merge.
 
 Acceptance Date: 2026-03-05
@@ -397,6 +410,7 @@ If you discover edge cases, document them:
 
 ```markdown
 ## Known Limitations
+
 - SendGrid sandbox mode has 1/second rate limit (production: 100/sec)
 - Very large emails (>5MB) may timeout
 - Unsubscribe links expire after 30 days of inactivity

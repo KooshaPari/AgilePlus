@@ -20,16 +20,16 @@ This is the master index for the <REDACTED> repo consolidation pass dated 2026-0
 
 ## Group-Level Dockets
 
-| Group | Docket | Members | Risk |
-|---|---|---|---|
-| 1. Thegent | [`thegent-family-consolidation.md`](./thegent-family-consolidation.md) | thegent, thegent-workspace, thegent-sharecli, zz-archive-thegent-dispatch, thegent-pr2-v2-...-07-14 | Low |
-| 2. vibeproxy | [`vibeproxy-monitoring-unified-consolidation.md`](./vibeproxy-monitoring-unified-consolidation.md) | vibeproxy-monitoring-unified, vibeproxy | Very Low |
-| 3. phenotype-omlx | [`phenotype-omlx-upstream-sync.md`](./phenotype-omlx-upstream-sync.md) | phenotype-omlx, zz-archive-phenotype-omlx-{recovered,temp,tmp} | **CRITICAL** |
-| 4. forge | [`forge-family-consolidation.md`](./forge-family-consolidation.md) | forgecode, pheno-forge-{smoke,plugins}, forgecode-tmp, phenoForge, PlusForges, MCPForge, Tasken-phenoforge-final, dinoforge-packs-archive-2026-07-14, DINOForge-UnityDoorstop | Medium |
-| 5. substrate | [`substrate-family-consolidation.md`](./substrate-family-consolidation.md) | substrate, substrate-adapters-bundle | Low (collision) / High (squash complexity) |
-| 6. AgilePlus | [`agileplus-family-consolidation.md`](./agileplus-family-consolidation.md) | AgilePlus, zz-archive-AgilePlus-{recovery-20260714,spec-harmonizer-tool} | Medium |
-| 7. PlusForges | [`plusforges-fork-index.md`](./plusforges-fork-index.md) | agentapi-plusplus, cliproxyapi-plusplus, context-mode-plusplus, PlusForges | Low |
-| 8. Empty/404 | [`empty-repo-404-receipt.md`](./empty-repo-404-receipt.md) | 17 deleted/empty repos | None (already clear) |
+| Group             | Docket                                                                                             | Members                                                                                                                                                                       | Risk                                       |
+| ----------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| 1. Thegent        | [`thegent-family-consolidation.md`](./thegent-family-consolidation.md)                             | thegent, thegent-workspace, thegent-sharecli, zz-archive-thegent-dispatch, thegent-pr2-v2-...-07-14                                                                           | Low                                        |
+| 2. vibeproxy      | [`vibeproxy-monitoring-unified-consolidation.md`](./vibeproxy-monitoring-unified-consolidation.md) | vibeproxy-monitoring-unified, vibeproxy                                                                                                                                       | Very Low                                   |
+| 3. phenotype-omlx | [`phenotype-omlx-upstream-sync.md`](./phenotype-omlx-upstream-sync.md)                             | phenotype-omlx, zz-archive-phenotype-omlx-{recovered,temp,tmp}                                                                                                                | **CRITICAL**                               |
+| 4. forge          | [`forge-family-consolidation.md`](./forge-family-consolidation.md)                                 | forgecode, pheno-forge-{smoke,plugins}, forgecode-tmp, phenoForge, PlusForges, MCPForge, Tasken-phenoforge-final, dinoforge-packs-archive-2026-07-14, DINOForge-UnityDoorstop | Medium                                     |
+| 5. substrate      | [`substrate-family-consolidation.md`](./substrate-family-consolidation.md)                         | substrate, substrate-adapters-bundle                                                                                                                                          | Low (collision) / High (squash complexity) |
+| 6. AgilePlus      | [`agileplus-family-consolidation.md`](./agileplus-family-consolidation.md)                         | AgilePlus, zz-archive-AgilePlus-{recovery-20260714,spec-harmonizer-tool}                                                                                                      | Medium                                     |
+| 7. PlusForges     | [`plusforges-fork-index.md`](./plusforges-fork-index.md)                                           | agentapi-plusplus, cliproxyapi-plusplus, context-mode-plusplus, PlusForges                                                                                                    | Low                                        |
+| 8. Empty/404      | [`empty-repo-404-receipt.md`](./empty-repo-404-receipt.md)                                         | 17 deleted/empty repos                                                                                                                                                        | None (already clear)                       |
 
 ## Audit Artifacts (preserved)
 
@@ -48,16 +48,16 @@ This is the master index for the <REDACTED> repo consolidation pass dated 2026-0
 
 Before any squash/delete on a group, the user must approve:
 
-| Group | Action | State |
-|---|---|---|
-| 1 (Thegent) | squash each to 1 commit + retire stubs | ✅ audit complete, awaiting approval |
-| 2 (vibeproxy) | squash monitoring-unified to 1 commit | ✅ audit complete, awaiting approval |
-| 3 (omlx) | **select option A/B/C** | ✅ critical audit complete, awaiting strategy choice |
-| 4 (forge) | import + squash | ✅ audit complete, awaiting approval |
-| 5 (substrate) | squash each + branches-manifest export | ✅ audit complete, awaiting approval |
-| 6 (AgilePlus) | remove src-* + branches-manifest + squash | ✅ audit complete, awaiting approval |
-| 7 (PlusForges) | upstream-sync verify + squash each | ✅ audit complete, awaiting approval |
-| 8 (Empty/404) | none — already gone | ✅ cleared |
+| Group          | Action                                     | State                                                |
+| -------------- | ------------------------------------------ | ---------------------------------------------------- |
+| 1 (Thegent)    | squash each to 1 commit + retire stubs     | ✅ audit complete, awaiting approval                 |
+| 2 (vibeproxy)  | squash monitoring-unified to 1 commit      | ✅ audit complete, awaiting approval                 |
+| 3 (omlx)       | **select option A/B/C**                    | ✅ critical audit complete, awaiting strategy choice |
+| 4 (forge)      | import + squash                            | ✅ audit complete, awaiting approval                 |
+| 5 (substrate)  | squash each + branches-manifest export     | ✅ audit complete, awaiting approval                 |
+| 6 (AgilePlus)  | remove src-\* + branches-manifest + squash | ✅ audit complete, awaiting approval                 |
+| 7 (PlusForges) | upstream-sync verify + squash each         | ✅ audit complete, awaiting approval                 |
+| 8 (Empty/404)  | none — already gone                        | ✅ cleared                                           |
 
 ## What Will NOT Happen Without Explicit Approval
 
@@ -87,6 +87,7 @@ G8: cleared
 ```
 
 Or per-line:
+
 ```
 G1 + G2: approved
 G3: option A

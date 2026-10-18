@@ -1,13 +1,13 @@
 ---
 work_package_id: WP19
-title: 'thegent: Migration Cleanup + God Function Decomposition'
+title: "thegent: Migration Cleanup + God Function Decomposition"
 lane: planned
 dependencies: [WP09]
 subtasks: [T056, T057, T058]
 history:
-- date: '2026-03-03'
-  event: created
-  by: spec-kitty.tasks
+    - date: "2026-03-03"
+      event: created
+      by: spec-kitty.tasks
 ---
 
 # WP19: thegent — Migration Cleanup + God Function Decomposition
@@ -32,20 +32,22 @@ Complete the stalled thegent package migration by deleting 469 duplicate files, 
 ### T056: Delete 469 duplicate files from src/thegent/
 
 **Steps**:
+
 1. Generate the definitive list of byte-identical files between `src/thegent/` and `packages/thegent-*/`:
-   - Use `diff -rq src/thegent packages/` or equivalent checksum comparison
-   - Catalog each duplicate pair: src path, packages path, byte count
+    - Use `diff -rq src/thegent packages/` or equivalent checksum comparison
+    - Catalog each duplicate pair: src path, packages path, byte count
 2. Delete the `src/thegent/` copy for all 469 confirmed duplicates
 3. Update all import statements across the codebase to point to `packages/` locations:
-   - Search for `from thegent.` and `import thegent.` patterns
-   - Update to the corresponding `packages/thegent-*` import path
+    - Search for `from thegent.` and `import thegent.` patterns
+    - Update to the corresponding `packages/thegent-*` import path
 4. Fix the tri-copy of `run_execution_core_helpers.py`:
-   - Identify which of the 3 copies is canonical (most recent, most complete)
-   - Delete the other 2 copies
-   - Update all imports to point to the canonical location
+    - Identify which of the 3 copies is canonical (most recent, most complete)
+    - Delete the other 2 copies
+    - Update all imports to point to the canonical location
 5. Remove any now-empty directories under `src/thegent/`
 
 **Validation**:
+
 - `diff -rq src/thegent packages/` shows no remaining identical files
 - Estimated LOC reduction: ~100K (duplicate elimination)
 - All tests pass (`pytest` or equivalent test runner)
@@ -55,22 +57,24 @@ Complete the stalled thegent package migration by deleting 469 duplicate files, 
 ### T057: Decompose run_impl_core (1,022 lines)
 
 **Steps**:
+
 1. Analyze `run_impl_core` to identify logical segments:
-   - Step execution logic
-   - Context and state management
-   - Result collection and aggregation
-   - Error handling and recovery
+    - Step execution logic
+    - Context and state management
+    - Result collection and aggregation
+    - Error handling and recovery
 2. Extract into focused modules:
-   - `run_impl_core()` — orchestration only, <100 lines, calls into extracted modules
-   - `step_executor.py` — individual step execution logic
-   - `context_manager.py` — context accumulation, state tracking, window management
-   - `result_aggregator.py` — result collection, formatting, output handling
+    - `run_impl_core()` — orchestration only, <100 lines, calls into extracted modules
+    - `step_executor.py` — individual step execution logic
+    - `context_manager.py` — context accumulation, state tracking, window management
+    - `result_aggregator.py` — result collection, formatting, output handling
 3. Also decompose `bg_impl_core` (513 lines) in the same file:
-   - Apply the same extraction pattern
-   - Share common utilities with `run_impl_core` decomposition where applicable
+    - Apply the same extraction pattern
+    - Share common utilities with `run_impl_core` decomposition where applicable
 4. Ensure all extracted functions have type annotations and docstrings
 
 **Validation**:
+
 - No function exceeds 200 lines in the decomposed modules
 - `run_impl_core()` orchestration body is <100 lines
 - All tests pass
@@ -80,22 +84,24 @@ Complete the stalled thegent package migration by deleting 469 duplicate files, 
 ### T058: Break circular dependency surface (221 TYPE_CHECKING files)
 
 **Steps**:
+
 1. Map the circular dependency graph:
-   - Identify which modules import from each other via TYPE_CHECKING
-   - Cluster by dependency group: cli<->agents, execution<->orchestration, governance<->core
-   - Rank files by import count (most-imported files first)
+    - Identify which modules import from each other via TYPE_CHECKING
+    - Cluster by dependency group: cli<->agents, execution<->orchestration, governance<->core
+    - Rank files by import count (most-imported files first)
 2. Extract shared types into `packages/thegent-core/types/`:
-   - Create type-only modules for shared data classes, protocols, and type aliases
-   - Move type definitions that cause circular imports into the shared types package
-   - Update TYPE_CHECKING imports to regular imports from the new shared location
+    - Create type-only modules for shared data classes, protocols, and type aliases
+    - Move type definitions that cause circular imports into the shared types package
+    - Update TYPE_CHECKING imports to regular imports from the new shared location
 3. Phase approach — fix top 50 files by import count first:
-   - Prioritize files that are imported by the most other TYPE_CHECKING blocks
-   - Each fix should eliminate TYPE_CHECKING usage in multiple downstream files
+    - Prioritize files that are imported by the most other TYPE_CHECKING blocks
+    - Each fix should eliminate TYPE_CHECKING usage in multiple downstream files
 4. Document remaining legitimate TYPE_CHECKING uses:
-   - Forward references within the same package
-   - Genuinely optional type hints for rarely-used integrations
+    - Forward references within the same package
+    - Genuinely optional type hints for rarely-used integrations
 
 **Validation**:
+
 - `grep -r 'TYPE_CHECKING' --include='*.py' | wc -l` shows <50 files (down from 221)
 - All remaining TYPE_CHECKING uses have an inline comment explaining why they are necessary
 - No new circular imports introduced — `import-linter` or equivalent passes

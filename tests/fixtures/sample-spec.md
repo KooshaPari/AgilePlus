@@ -19,6 +19,7 @@ Each feature entry shall include slug, friendly_name, state, spec_hash,
 target_branch, created_at, and updated_at fields.
 
 **Acceptance criteria**:
+
 - A feature can be created with a valid slug.
 - The slug must be unique across all features.
 - spec_hash is derived from the SHA-256 digest of the specification content.
@@ -29,6 +30,7 @@ The system shall enforce a linear state machine:
 `created -> specified -> researched -> planned -> implementing -> validated -> shipped -> retrospected`.
 
 **Acceptance criteria**:
+
 - Forward transitions to the immediate next state are always allowed.
 - Backward transitions are rejected with an `InvalidTransition` error.
 - Skip-forward transitions produce a warning but are allowed.
@@ -41,6 +43,7 @@ Each entry shall include a SHA-256 hash that chains to the previous entry,
 forming a tamper-evident log.
 
 **Acceptance criteria**:
+
 - Every state transition creates one audit entry.
 - The audit chain can be verified by recomputing all entry hashes.
 - Tampering with any entry causes chain verification to fail.

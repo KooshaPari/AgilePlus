@@ -34,12 +34,12 @@ Next: agileplus queue show 42
 
 The classifier detects four intent categories using keyword matching:
 
-| Intent | Keywords | Default Priority | Example |
-|--------|----------|------------------|---------|
-| **Bug** | crash, error, fail, broken, exception, bug | High | "login fails for Gmail accounts" |
-| **Feature** | add, new, implement, support, enable | Medium | "add dark mode support" |
-| **Task** | update, migrate, refactor, optimize, clean | Medium | "update dependencies to latest" |
-| **Idea** | what if, could we, brainstorm, consider | Low | "could we cache API responses?" |
+| Intent      | Keywords                                   | Default Priority | Example                          |
+| ----------- | ------------------------------------------ | ---------------- | -------------------------------- |
+| **Bug**     | crash, error, fail, broken, exception, bug | High             | "login fails for Gmail accounts" |
+| **Feature** | add, new, implement, support, enable       | Medium           | "add dark mode support"          |
+| **Task**    | update, migrate, refactor, optimize, clean | Medium           | "update dependencies to latest"  |
+| **Idea**    | what if, could we, brainstorm, consider    | Low              | "could we cache API responses?"  |
 
 ### Override Classification
 
@@ -75,13 +75,13 @@ agileplus triage "slow database queries" --output json
 
 ```json
 {
-  "text": "slow database queries",
-  "intent": "Bug",
-  "confidence": 0.88,
-  "matched_keywords": ["slow", "database"],
-  "suggested_priority": "High",
-  "suggested_type": "Bug",
-  "categorized_as": ["Performance", "Database"]
+    "text": "slow database queries",
+    "intent": "Bug",
+    "confidence": 0.88,
+    "matched_keywords": ["slow", "database"],
+    "suggested_priority": "High",
+    "suggested_type": "Bug",
+    "categorized_as": ["Performance", "Database"]
 }
 ```
 

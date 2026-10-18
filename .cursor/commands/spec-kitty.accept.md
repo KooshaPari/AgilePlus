@@ -7,8 +7,8 @@ description: DEPRECATED — use `ap ship` instead. See docs/design/SPECKITTY-MIG
 
 ## Migration
 
-| SpecKitty | AgilePlus (`ap`) |
-|-----------|-------------------|
+| SpecKitty            | AgilePlus (`ap`)       |
+| -------------------- | ---------------------- |
 | `/spec-kitty.accept` | `ap ship <feature-id>` |
 
 ```bash

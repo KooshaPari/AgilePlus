@@ -890,118 +890,119 @@ async fn request_logging_middleware(
 version: "0.5"
 
 environment:
-  - RUST_LOG=info,agileplus=debug
-  - LOG_LEVEL=debug
-  - LOCAL_DEV=true
+    - RUST_LOG=info,agileplus=debug
+    - LOG_LEVEL=debug
+    - LOCAL_DEV=true
 
 processes:
-  # ===== INFRASTRUCTURE =====
+    # ===== INFRASTRUCTURE =====
 
-  nats:
-    command: "nats-server -js -m 8222"
-    working_dir: "."
-    ports:
-      - "4222:4222"
-      - "8222:8222"
-    environment:
-      - NATS_JETSTREAM_DOMAIN=local
-    health_check:
-      test: ["CMD", "curl", "-f", "http://localhost:8222/varz"]
-      interval: 5s
-      timeout: 2s
-      retries: 3
-    is_daemon: true
-    restart_policy:
-      backoff: 1s
-      max_restarts: 5
+    nats:
+        command: "nats-server -js -m 8222"
+        working_dir: "."
+        ports:
+            - "4222:4222"
+            - "8222:8222"
+        environment:
+            - NATS_JETSTREAM_DOMAIN=local
+        health_check:
+            test: ["CMD", "curl", "-f", "http://localhost:8222/varz"]
+            interval: 5s
+            timeout: 2s
+            retries: 3
+        is_daemon: true
+        restart_policy:
+            backoff: 1s
+            max_restarts: 5
 
-  dragonfly:
-    command: "dragonfly --bind=0.0.0.0 --port=6379"
-    ports:
-      - "6379:6379"
-    depends_on:
-      nats: complete
-    health_check:
-      test: ["CMD", "redis-cli", "PING"]
-      interval: 5s
-      timeout: 2s
-      retries: 3
-    is_daemon: true
+    dragonfly:
+        command: "dragonfly --bind=0.0.0.0 --port=6379"
+        ports:
+            - "6379:6379"
+        depends_on:
+            nats: complete
+        health_check:
+            test: ["CMD", "redis-cli", "PING"]
+            interval: 5s
+            timeout: 2s
+            retries: 3
+        is_daemon: true
 
-  neo4j:
-    command: "neo4j console"
-    working_dir: "/var/lib/neo4j"
-    ports:
-      - "7687:7687"
-      - "7474:7474"
-    environment:
-      - NEO4J_AUTH=neo4j/password
-      - NEO4J_server_memory_heap_initial__size=512m
-      - NEO4J_server_memory_heap_max__size=1g
-    depends_on:
-      dragonfly: complete
-    health_check:
-      test: ["CMD", "curl", "-f", "http://localhost:7474/browser/"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    is_daemon: true
+    neo4j:
+        command: "neo4j console"
+        working_dir: "/var/lib/neo4j"
+        ports:
+            - "7687:7687"
+            - "7474:7474"
+        environment:
+            - NEO4J_AUTH=neo4j/password
+            - NEO4J_server_memory_heap_initial__size=512m
+            - NEO4J_server_memory_heap_max__size=1g
+        depends_on:
+            dragonfly: complete
+        health_check:
+            test: ["CMD", "curl", "-f", "http://localhost:7474/browser/"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        is_daemon: true
 
-  minio:
-    command: "minio server /data --console-address :9001"
-    environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    depends_on:
-      neo4j: complete
-    health_check:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    is_daemon: true
+    minio:
+        command: "minio server /data --console-address :9001"
+        environment:
+            - MINIO_ROOT_USER=minioadmin
+            - MINIO_ROOT_PASSWORD=minioadmin
+        ports:
+            - "9000:9000"
+            - "9001:9001"
+        depends_on:
+            neo4j: complete
+        health_check:
+            test:
+                ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+        is_daemon: true
 
-  # ===== APPLICATION =====
+    # ===== APPLICATION =====
 
-  agileplus-api:
-    command: "cargo run -p agileplus-api"
-    working_dir: "."
-    environment:
-      - NATS_URL=nats://localhost:4222
-      - REDIS_URL=redis://localhost:6379
-      - NEO4J_URL=bolt://localhost:7687
-      - NEO4J_USER=neo4j
-      - NEO4J_PASSWORD=password
-      - S3_ENDPOINT=http://localhost:9000
-      - S3_ACCESS_KEY=minioadmin
-      - S3_SECRET_KEY=minioadmin
-      - S3_BUCKET=artifacts
-      - SERVER_HOST=0.0.0.0
-      - SERVER_PORT=8080
-    ports:
-      - "8080:8080"
-    depends_on:
-      nats: healthy
-      dragonfly: healthy
-      neo4j: healthy
-      minio: healthy
-    health_check:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    readiness_probe:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/ready"]
-      interval: 5s
-      timeout: 2s
-      retries: 3
-    file_watch:
-      enabled: true
-      paths:
-        - "crates/agileplus-api/src"
+    agileplus-api:
+        command: "cargo run -p agileplus-api"
+        working_dir: "."
+        environment:
+            - NATS_URL=nats://localhost:4222
+            - REDIS_URL=redis://localhost:6379
+            - NEO4J_URL=bolt://localhost:7687
+            - NEO4J_USER=neo4j
+            - NEO4J_PASSWORD=password
+            - S3_ENDPOINT=http://localhost:9000
+            - S3_ACCESS_KEY=minioadmin
+            - S3_SECRET_KEY=minioadmin
+            - S3_BUCKET=artifacts
+            - SERVER_HOST=0.0.0.0
+            - SERVER_PORT=8080
+        ports:
+            - "8080:8080"
+        depends_on:
+            nats: healthy
+            dragonfly: healthy
+            neo4j: healthy
+            minio: healthy
+        health_check:
+            test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        readiness_probe:
+            test: ["CMD", "curl", "-f", "http://localhost:8080/ready"]
+            interval: 5s
+            timeout: 2s
+            retries: 3
+        file_watch:
+            enabled: true
+            paths:
+                - "crates/agileplus-api/src"
 ```
 
 ---

@@ -14,6 +14,7 @@ Leaving them in the workspace causes confusion for new contributors and inflates
 ## Evidence
 
 `tracely-core/Cargo.toml`:
+
 ```toml
 # Core tracing (from helix-tracing)
 # Core logging (from helix-logging)

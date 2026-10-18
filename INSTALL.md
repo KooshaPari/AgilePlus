@@ -5,21 +5,25 @@ Phenotype-org spec-driven development framework for AI agents.
 ## Quick Install
 
 ### One-liner (Windows PowerShell)
+
 ```powershell
 irm https://raw.githubusercontent.com/<REDACTED>/AgilePlus/main/install.ps1 | iex
 ```
 
 ### Chocolatey
+
 ```powershell
 choco install agileplus
 ```
 
 ### WinGet
+
 ```powershell
 winget install <REDACTED>.AgilePlus
 ```
 
 ### From Source
+
 ```bash
 git clone https://github.com/KooshaPari/AgilePlus
 cd AgilePlus

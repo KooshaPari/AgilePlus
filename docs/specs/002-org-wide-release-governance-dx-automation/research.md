@@ -13,15 +13,15 @@
 
 Scored candidates against org requirements (47 repos, Rust/Python/TypeScript/Go, standardized targets, language auto-detection, CI+local, plugin architecture):
 
-| Tool | Standardized Targets | Auto-detection | CI/Local | Plugins | Monorepo | Overall |
-|------|---------------------|----------------|----------|---------|----------|---------|
-| **mise** | 8/10 | 6/10 | 9/10 | 10/10 | 8/10 | **8.2/10** |
-| **moon** | 9/10 | 9/10 | 9/10 | 2/10 | 10/10 | **7.8/10** |
-| **Taskfile** | 7/10 | 3/10 | 9/10 | 1/10 | 4/10 | **4.8/10** |
-| **just** | 6/10 | 2/10 | 8/10 | 1/10 | 2/10 | **3.8/10** |
-| **xc** | 5/10 | 1/10 | 5/10 | 1/10 | 2/10 | **2.8/10** |
-| **earthly** | — | — | — | — | — | **Unmaintained** |
-| **teax** | — | — | — | — | — | **Not found** |
+| Tool         | Standardized Targets | Auto-detection | CI/Local | Plugins | Monorepo | Overall          |
+| ------------ | -------------------- | -------------- | -------- | ------- | -------- | ---------------- |
+| **mise**     | 8/10                 | 6/10           | 9/10     | 10/10   | 8/10     | **8.2/10**       |
+| **moon**     | 9/10                 | 9/10           | 9/10     | 2/10    | 10/10    | **7.8/10**       |
+| **Taskfile** | 7/10                 | 3/10           | 9/10     | 1/10    | 4/10     | **4.8/10**       |
+| **just**     | 6/10                 | 2/10           | 8/10     | 1/10    | 2/10     | **3.8/10**       |
+| **xc**       | 5/10                 | 1/10           | 5/10     | 1/10    | 2/10     | **2.8/10**       |
+| **earthly**  | —                    | —              | —        | —       | —        | **Unmaintained** |
+| **teax**     | —                    | —              | —        | —       | —        | **Not found**    |
 
 **mise** wins on plugin architecture (1000+ asdf plugins) and polyglot tool version management. New monorepo tasks feature (Oct 2025, experimental) enables unified task discovery across repos. TOML config familiar to Rust/Python devs.
 
@@ -44,15 +44,15 @@ Scored candidates against org requirements (47 repos, Rust/Python/TypeScript/Go,
 
 ### Channel → Version Mapping
 
-| Registry | alpha | canary | beta | rc | prod |
-|----------|-------|--------|------|----|------|
-| **npm** | `X.Y.Z-alpha.N` `--tag alpha` | `X.Y.Z-canary.N` `--tag canary` | `X.Y.Z-beta.N` `--tag beta` | `X.Y.Z-rc.N` `--tag rc` | `X.Y.Z` `--tag latest` |
-| **PyPI** | `X.Y.ZaN` | `X.Y.Z.devN` | `X.Y.ZbN` | `X.Y.ZrcN` | `X.Y.Z` |
-| **crates.io** | `X.Y.Z-alpha.N` | `X.Y.Z-canary.N` | `X.Y.Z-beta.N` | `X.Y.Z-rc.N` | `X.Y.Z` |
-| **Go proxy** | `vX.Y.Z-alpha.N` | `vX.Y.Z-canary.N` | `vX.Y.Z-beta.N` | `vX.Y.Z-rc.N` | `vX.Y.Z` |
-| **Hex.pm** | `X.Y.Z-alpha.N` | `X.Y.Z-canary.N` | `X.Y.Z-beta.N` | `X.Y.Z-rc.N` | `X.Y.Z` |
-| **Zig** | Git tags (no registry) | Git tags | Git tags | Git tags | Git tags |
-| **Mojo** | N/A (no registry) | N/A | N/A | N/A | Manual |
+| Registry      | alpha                         | canary                          | beta                        | rc                      | prod                   |
+| ------------- | ----------------------------- | ------------------------------- | --------------------------- | ----------------------- | ---------------------- |
+| **npm**       | `X.Y.Z-alpha.N` `--tag alpha` | `X.Y.Z-canary.N` `--tag canary` | `X.Y.Z-beta.N` `--tag beta` | `X.Y.Z-rc.N` `--tag rc` | `X.Y.Z` `--tag latest` |
+| **PyPI**      | `X.Y.ZaN`                     | `X.Y.Z.devN`                    | `X.Y.ZbN`                   | `X.Y.ZrcN`              | `X.Y.Z`                |
+| **crates.io** | `X.Y.Z-alpha.N`               | `X.Y.Z-canary.N`                | `X.Y.Z-beta.N`              | `X.Y.Z-rc.N`            | `X.Y.Z`                |
+| **Go proxy**  | `vX.Y.Z-alpha.N`              | `vX.Y.Z-canary.N`               | `vX.Y.Z-beta.N`             | `vX.Y.Z-rc.N`           | `vX.Y.Z`               |
+| **Hex.pm**    | `X.Y.Z-alpha.N`               | `X.Y.Z-canary.N`                | `X.Y.Z-beta.N`              | `X.Y.Z-rc.N`            | `X.Y.Z`                |
+| **Zig**       | Git tags (no registry)        | Git tags                        | Git tags                    | Git tags                | Git tags               |
+| **Mojo**      | N/A (no registry)             | N/A                             | N/A                         | N/A                     | Manual                 |
 
 ### Key Notes
 
@@ -105,13 +105,13 @@ pheno
 
 ### Workflow Catalog (centralized)
 
-| Workflow | Trigger | Purpose |
-|----------|---------|---------|
-| `publish.yml` | Called by per-repo | Registry-specific publishing with retry/backoff |
-| `gate-check.yml` | Called by per-repo | Run channel-specific gate criteria |
-| `promote.yml` | Tag push or dispatch | Orchestrate gate-check → publish |
-| `changelog.yml` | Release tag | Generate changelog via git-cliff |
-| `audit.yml` | Scheduled/dispatch | Org-wide release status report |
+| Workflow         | Trigger              | Purpose                                         |
+| ---------------- | -------------------- | ----------------------------------------------- |
+| `publish.yml`    | Called by per-repo   | Registry-specific publishing with retry/backoff |
+| `gate-check.yml` | Called by per-repo   | Run channel-specific gate criteria              |
+| `promote.yml`    | Tag push or dispatch | Orchestrate gate-check → publish                |
+| `changelog.yml`  | Release tag          | Generate changelog via git-cliff                |
+| `audit.yml`      | Scheduled/dispatch   | Org-wide release status report                  |
 
 ---
 
@@ -130,12 +130,12 @@ The Phenotype CLI needs to support 4 active registries now (npm, PyPI, crates.io
 
 ### Adapter Manifest Detection
 
-| Language | Manifest | Registry | Adapter Status |
-|----------|----------|----------|---------------|
-| Rust | `Cargo.toml` | crates.io | Active |
-| Python | `pyproject.toml` | PyPI | Active |
-| TypeScript/Node | `package.json` | npm | Active |
-| Go | `go.mod` | Go proxy | Active |
-| Elixir | `mix.exs` | Hex.pm | Pre-wired |
-| Zig | `build.zig.zon` | Git tags | Pre-wired |
-| Mojo | `mojoproject.toml` | N/A | Pre-wired (stub) |
+| Language        | Manifest           | Registry  | Adapter Status   |
+| --------------- | ------------------ | --------- | ---------------- |
+| Rust            | `Cargo.toml`       | crates.io | Active           |
+| Python          | `pyproject.toml`   | PyPI      | Active           |
+| TypeScript/Node | `package.json`     | npm       | Active           |
+| Go              | `go.mod`           | Go proxy  | Active           |
+| Elixir          | `mix.exs`          | Hex.pm    | Pre-wired        |
+| Zig             | `build.zig.zon`    | Git tags  | Pre-wired        |
+| Mojo            | `mojoproject.toml` | N/A       | Pre-wired (stub) |

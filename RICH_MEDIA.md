@@ -9,18 +9,20 @@ Insert stubs using this **exact** HTML-comment pair so fill-agents can grep them
 
 ```html
 <!-- RICH-MEDIA-STUB type="annotated-screenshot|recording-mp4|recording-gif" subject="<what>" journey="<flow>" status="TODO" -->
-> **[RICH MEDIA PLACEHOLDER]** *<short human description of what will go here>*
-<!-- END-RICH-MEDIA-STUB -->
+> **[RICH MEDIA PLACEHOLDER]** *<short human description of what will go here
+    >*
+    <!-- END-RICH-MEDIA-STUB --></short
+>
 ```
 
 ### Attribute reference
 
-| attribute | values | notes |
-|-----------|--------|-------|
-| `type` | `annotated-screenshot` \| `recording-mp4` \| `recording-gif` | pick the most appropriate |
-| `subject` | free text | what the media shows (e.g. `"VRAM plan slider UI"`) |
-| `journey` | phenotype-journeys manifest name or `""` | e.g. `"first-plan"`, `"fleet-register"` |
-| `status` | `TODO` \| `CAPTURED` \| `PUBLISHED` | fill-agent updates to `CAPTURED`/`PUBLISHED` |
+| attribute | values                                                       | notes                                               |
+| --------- | ------------------------------------------------------------ | --------------------------------------------------- |
+| `type`    | `annotated-screenshot` \| `recording-mp4` \| `recording-gif` | pick the most appropriate                           |
+| `subject` | free text                                                    | what the media shows (e.g. `"VRAM plan slider UI"`) |
+| `journey` | phenotype-journeys manifest name or `""`                     | e.g. `"first-plan"`, `"fleet-register"`             |
+| `status`  | `TODO` \| `CAPTURED` \| `PUBLISHED`                          | fill-agent updates to `CAPTURED`/`PUBLISHED`        |
 
 ## Grep Targets
 

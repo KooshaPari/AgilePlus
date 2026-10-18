@@ -11,20 +11,20 @@ Complete all 12 template repositories from Foundation (v0.1.0) to Alpha (v0.2.0)
 
 ## Templates in Scope
 
-| Template | Current State | Target v0.2.0 |
-|----------|---------------|---------------|
-| template-lang-python | pyproject.toml only | FastAPI + pytest + uv |
-| template-lang-rust | Cargo.toml only | Hexagonal workspace + Tokio |
-| template-lang-go | go.mod only | chi router + hexagonal |
-| template-lang-kotlin | build.gradle.kts only | Koin DI + Coroutines |
-| template-lang-typescript | package.json only | Express/Hono + full types |
-| template-lang-elixir-hex | mix.exs only | Phoenix + Ecto |
-| template-lang-swift | Package.swift only | XcodeGen + MVVM |
-| template-lang-zig | build.zig only | Comptime + hexagonal |
-| template-lang-mojo | main.mojo only | MAX + ML patterns |
-| template-domain-webapp | Compose only | React + auth |
-| template-domain-service-api | Compose only | REST API + domain |
-| template-program-ops | shell only | Typer + logging |
+| Template                    | Current State         | Target v0.2.0               |
+| --------------------------- | --------------------- | --------------------------- |
+| template-lang-python        | pyproject.toml only   | FastAPI + pytest + uv       |
+| template-lang-rust          | Cargo.toml only       | Hexagonal workspace + Tokio |
+| template-lang-go            | go.mod only           | chi router + hexagonal      |
+| template-lang-kotlin        | build.gradle.kts only | Koin DI + Coroutines        |
+| template-lang-typescript    | package.json only     | Express/Hono + full types   |
+| template-lang-elixir-hex    | mix.exs only          | Phoenix + Ecto              |
+| template-lang-swift         | Package.swift only    | XcodeGen + MVVM             |
+| template-lang-zig           | build.zig only        | Comptime + hexagonal        |
+| template-lang-mojo          | main.mojo only        | MAX + ML patterns           |
+| template-domain-webapp      | Compose only          | React + auth                |
+| template-domain-service-api | Compose only          | REST API + domain           |
+| template-program-ops        | shell only            | Typer + logging             |
 
 ## User Scenarios
 
@@ -33,6 +33,7 @@ Complete all 12 template repositories from Foundation (v0.1.0) to Alpha (v0.2.0)
 A Python developer uses the template to scaffold a new API project with FastAPI, pytest, and proper tooling.
 
 **Acceptance Criteria**:
+
 1. `phenotype-py-api` template generates complete FastAPI project
 2. pytest configuration with async support
 3. pyright strict mode configuration
@@ -43,6 +44,7 @@ A Python developer uses the template to scaffold a new API project with FastAPI,
 A Rust developer uses the template to scaffold a new microservice with hexagonal architecture.
 
 **Acceptance Criteria**:
+
 1. Hexagonal workspace layout with domain/application/adapters/ports
 2. Tokio runtime configuration
 3. thiserror + anyhow templates
@@ -53,6 +55,7 @@ A Rust developer uses the template to scaffold a new microservice with hexagonal
 A Go developer uses the template to scaffold a new HTTP service.
 
 **Acceptance Criteria**:
+
 1. HTTP service template with chi router
 2. Middleware patterns (logging, auth)
 3. Repository interface patterns
@@ -63,6 +66,7 @@ A Go developer uses the template to scaffold a new HTTP service.
 A Kotlin developer uses the template to scaffold a new domain service.
 
 **Acceptance Criteria**:
+
 1. Hexagonal architecture template
 2. Koin dependency injection
 3. Coroutines support
@@ -71,54 +75,64 @@ A Kotlin developer uses the template to scaffold a new domain service.
 ## Functional Requirements
 
 ### FR-PYTHON-001: FastAPI Template
+
 - Generate FastAPI application with Pydantic models
 - Include health check endpoints
 - Async request handlers
 - OpenAPI documentation
 
 ### FR-PYTHON-002: Testing Infrastructure
+
 - pytest configuration
 - pytest-asyncio for async
 - pytest-cov for coverage
 - Test fixtures
 
 ### FR-PYTHON-003: Type System
+
 - pyright strict mode configuration
 - All public APIs typed
 - Type stubs for external libraries
 
 ### FR-RUST-001: Hexagonal Workspace
+
 - Cargo workspace with domain/application/adapters/ports crates
 - Shared workspace dependencies
 - Inter-crate dependency rules
 
 ### FR-RUST-002: Async Runtime
+
 - Tokio configuration
 - async-trait for port traits
 - `#[tokio::main]` entrypoint
 
 ### FR-RUST-003: Error Handling
+
 - thiserror for domain errors
 - anyhow for application errors
 - No-unwrap policy
 
 ### FR-GO-001: HTTP Service
+
 - chi router integration
 - Middleware patterns
 - Request validation
 - Error handling
 
 ### FR-GO-002: Architecture
+
 - Repository interfaces
 - Service layer patterns
 - Dependency injection
 
 ### FR-KOTLIN-001: Hexagonal Architecture
+
 - Domain/application/adapters/ports structure
 - Repository interfaces
 - Service interfaces
 
 ### FR-KOTLIN-002: DI & Async
+
 - Koin module configuration
 - Coroutines integration
 - Flow for streaming

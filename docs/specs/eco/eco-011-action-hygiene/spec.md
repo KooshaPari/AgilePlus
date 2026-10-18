@@ -9,6 +9,7 @@ superseded_by: null
 title: Action Hygiene
 type: operational
 ---
+
 # Action Hygiene
 
 ## Problem
@@ -17,13 +18,13 @@ type: operational
 GitHub Actions `uses:` refs across the Phenotype org. The five most-frequent
 offenders account for the majority of unpinned refs:
 
-| Action | Count | Form |
-|---|---|---|
-| `actions/checkout@v4` | 136 | tag, unpinned |
-| `actions/checkout@v6` | 92 | tag, unpinned |
-| `dtolnay/rust-toolchain@stable` | 70 | tag, unpinned |
-| `github/codeql-action/upload-sarif@v4` | 45 | tag, unpinned |
-| `Swatinem/rust-cache@v2` | 38 | tag, unpinned |
+| Action                                 | Count | Form          |
+| -------------------------------------- | ----- | ------------- |
+| `actions/checkout@v4`                  | 136   | tag, unpinned |
+| `actions/checkout@v6`                  | 92    | tag, unpinned |
+| `dtolnay/rust-toolchain@stable`        | 70    | tag, unpinned |
+| `github/codeql-action/upload-sarif@v4` | 45    | tag, unpinned |
+| `Swatinem/rust-cache@v2`               | 38    | tag, unpinned |
 
 The 384 malformed refs are consistent with a botched bulk rewrite (truncated
 SHAs, missing `@` separator, and refs that lost the `action.yml` path). They

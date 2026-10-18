@@ -22,6 +22,7 @@ The AgilePlus storage layer consists of three backend implementations (SQLite, N
 **Location**: `crates/agileplus-sqlite/`
 
 **Current Implementation**:
+
 - ✅ Adapter class: `SqliteStorageAdapter` in `src/lib/adapter.rs`
 - ✅ Connection pooling: Single write-serialized `Arc<Mutex<Connection>>`
 - ✅ Configuration: `configure_and_migrate()` pattern
@@ -29,6 +30,7 @@ The AgilePlus storage layer consists of three backend implementations (SQLite, N
 - ✅ Full `StoragePort` trait implementation
 
 **Key Code Pattern** (lines 51-82):
+
 ```rust
 impl SqliteStorageAdapter {
     pub fn new(db_path: &Path) -> Result<Self, DomainError> {
@@ -67,6 +69,7 @@ impl SqliteStorageAdapter {
 **Location**: `crates/agileplus-graph/`
 
 **Current Implementation**:
+
 - ⚠️ Framework: Trait-based `GraphBackend` with in-memory test implementation
 - ⚠️ Connection pooling: Not yet implemented (blueprint only)
 - ⚠️ Configuration: `GraphConfig` exists but Neo4j client not integrated
@@ -74,6 +77,7 @@ impl SqliteStorageAdapter {
 - ❌ StoragePort trait: **NOT YET IMPLEMENTED**
 
 **Key Code Pattern** (src/store.rs, lines 22-27):
+
 ```rust
 #[async_trait]
 pub trait GraphBackend: Send + Sync {
@@ -92,6 +96,7 @@ pub trait GraphBackend: Send + Sync {
 **Location**: `crates/agileplus-plane/`
 
 **Current Implementation**:
+
 - ⚠️ HTTP Client: Basic request transport layer exists
 - ⚠️ Connection pooling: Uses `reqwest::Client` (stateless, no explicit pooling)
 - ⚠️ Error handling: Uses `anyhow` (needs alignment to `DomainError`)
@@ -99,6 +104,7 @@ pub trait GraphBackend: Send + Sync {
 - ❌ Configuration: No unified adapter config pattern
 
 **Key Code Pattern** (src/client/transport.rs):
+
 ```rust
 pub(super) async fn request_json<T: Serialize + ?Sized>(
     client: &reqwest::Client,
@@ -124,39 +130,43 @@ pub(super) async fn request_json<T: Serialize + ?Sized>(
 ## Common Patterns Identified
 
 ### 1. Connection Pooling & Management
+
 All three adapters need connection lifecycle management but implement it differently:
 
-| Adapter | Approach | Status |
-|---------|----------|--------|
-| SQLite | `Arc<Mutex<Connection>>` | Single write-serialized |
-| Neo4j | Not yet implemented | Needs `neo4rs::Driver` pooling |
+| Adapter  | Approach                     | Status                         |
+| -------- | ---------------------------- | ------------------------------ |
+| SQLite   | `Arc<Mutex<Connection>>`     | Single write-serialized        |
+| Neo4j    | Not yet implemented          | Needs `neo4rs::Driver` pooling |
 | Plane.so | `reqwest::Client` (implicit) | Connection pooling via reqwest |
 
 **Unification Opportunity**: Create `StorageConnectionPool` trait abstraction.
 
 ### 2. Error Handling
+
 Each adapter maps backend errors differently:
 
-| Adapter | Error Type | Maps To | Status |
-|---------|-----------|---------|--------|
-| SQLite | `rusqlite::Error` | `DomainError::Storage(String)` | ✅ Consistent |
-| Neo4j | `GraphError` (custom) | `DomainError::?` | ❌ Not aligned |
-| Plane.so | `anyhow::Error` | Not yet mapped | ❌ Not aligned |
+| Adapter  | Error Type            | Maps To                        | Status         |
+| -------- | --------------------- | ------------------------------ | -------------- |
+| SQLite   | `rusqlite::Error`     | `DomainError::Storage(String)` | ✅ Consistent  |
+| Neo4j    | `GraphError` (custom) | `DomainError::?`               | ❌ Not aligned |
+| Plane.so | `anyhow::Error`       | Not yet mapped                 | ❌ Not aligned |
 
 **Unification Opportunity**: Create `StorageAdapterErrorHandler` trait with standard error mapping.
 
 ### 3. Configuration & Initialization
+
 Each adapter requires different configuration:
 
-| Adapter | Config Type | Initialization | Status |
-|---------|------------|-----------------|--------|
-| SQLite | `Path` (file) | `new(db_path)` + migrations | ✅ Consistent |
-| Neo4j | `GraphConfig` (URI) | `GraphStore::new(config, backend)` | ⚠️ Incomplete |
-| Plane.so | Scattered (client, auth, base_url) | Not yet unified | ❌ Missing |
+| Adapter  | Config Type                        | Initialization                     | Status        |
+| -------- | ---------------------------------- | ---------------------------------- | ------------- |
+| SQLite   | `Path` (file)                      | `new(db_path)` + migrations        | ✅ Consistent |
+| Neo4j    | `GraphConfig` (URI)                | `GraphStore::new(config, backend)` | ⚠️ Incomplete |
+| Plane.so | Scattered (client, auth, base_url) | Not yet unified                    | ❌ Missing    |
 
 **Unification Opportunity**: Create `StorageAdapterConfig` trait for standardized initialization.
 
 ### 4. Health Checks & Diagnostics
+
 Only Neo4j has explicit health checking:
 
 ```rust
@@ -359,12 +369,14 @@ pub struct HealthStatus {
 #### 2.1: SQLite Adapter Refactoring
 
 **Before** (current):
+
 - `SqliteStorageAdapter::new(path)` handles config/init directly
 - Error mapping scattered in repository functions
 - No retry logic
 - No health checks
 
 **After**:
+
 - Implement `StorageAdapterConfig` trait
 - Implement `StorageConnectionPool` trait wrapping `Arc<Mutex<Connection>>`
 - Implement `StorageAdapterHealthCheck` trait
@@ -375,12 +387,14 @@ pub struct HealthStatus {
 #### 2.2: Neo4j Adapter Refactoring
 
 **Before** (current):
+
 - `GraphStore` with in-memory backend only
 - Custom `GraphError` not aligned
 - No `StoragePort` implementation
 - No retry logic
 
 **After**:
+
 - Complete Neo4j client backend using `neo4rs::Driver`
 - Implement `StorageAdapterConfig` for Neo4j (URI, auth)
 - Implement `StorageConnectionPool` wrapping `neo4rs::Driver`
@@ -392,6 +406,7 @@ pub struct HealthStatus {
 #### 2.3: Plane.so Adapter Refactoring
 
 **Before** (current):
+
 - HTTP client transport layer only
 - No unified config
 - Error handling not aligned
@@ -399,6 +414,7 @@ pub struct HealthStatus {
 - No retry logic
 
 **After**:
+
 - Create `PlaneStorageAdapter` struct implementing `StoragePort`
 - Implement `StorageAdapterConfig` for Plane (auth, base_url, workspace)
 - Wrap `reqwest::Client` in `StorageConnectionPool` trait
@@ -435,11 +451,13 @@ pub struct HealthStatus {
 ### Prerequisite: Complete Neo4j & Plane Adapters
 
 **BLOCKED until**:
+
 1. ✅ `agileplus-graph` has full Neo4j client implementation
 2. ✅ `agileplus-plane` has full `StoragePort` implementation with retry logic
 3. ✅ Both adapters tested with integration tests
 
 ### Phase 1: Create Base Framework (2-3 hours)
+
 - [x] Design traits (config, pool, error, retry, health)
 - [x] Create `storage-adapter-base` crate
 - [x] Implement error mapping utilities
@@ -447,6 +465,7 @@ pub struct HealthStatus {
 - [ ] Write integration tests for base framework
 
 ### Phase 2: Refactor SQLite (1-2 hours)
+
 - [ ] Implement `StorageAdapterConfig` for SQLite
 - [ ] Implement `StorageConnectionPool` wrapper
 - [ ] Add health check support
@@ -454,6 +473,7 @@ pub struct HealthStatus {
 - [ ] Update tests
 
 ### Phase 3: Refactor Neo4j (3-4 hours)
+
 - [ ] Complete Neo4j client backend
 - [ ] Implement `StorageAdapterConfig` for Neo4j
 - [ ] Implement `StoragePort` trait
@@ -461,6 +481,7 @@ pub struct HealthStatus {
 - [ ] Integrate `RetryPolicy`
 
 ### Phase 4: Refactor Plane.so (3-4 hours)
+
 - [ ] Create `PlaneStorageAdapter` struct
 - [ ] Implement `StorageAdapterConfig` for Plane
 - [ ] Implement `StoragePort` trait
@@ -468,6 +489,7 @@ pub struct HealthStatus {
 - [ ] Integrate `RetryPolicy`
 
 ### Phase 5: Integration & Testing (2-3 hours)
+
 - [ ] Run all storage tests
 - [ ] Add cross-adapter integration tests
 - [ ] Measure code savings (target: 932 LOC)
@@ -479,28 +501,28 @@ pub struct HealthStatus {
 
 ### Eliminated Duplications
 
-| Area | SQLite | Neo4j | Plane.so | Total Reduction |
-|------|--------|-------|----------|-----------------|
-| Connection pooling logic | 45 LOC | 80 LOC | 60 LOC | ~185 LOC |
-| Error mapping | 30 LOC | 45 LOC | 50 LOC | ~125 LOC |
-| Retry logic | 0 LOC | 60 LOC | 70 LOC | ~130 LOC |
-| Config initialization | 25 LOC | 35 LOC | 40 LOC | ~100 LOC |
-| Health checks | 0 LOC | 20 LOC | 20 LOC | ~40 LOC |
-| Timeout handling | 15 LOC | 25 LOC | 30 LOC | ~70 LOC |
-| **SUBTOTAL** | **115 LOC** | **265 LOC** | **270 LOC** | **~650 LOC** |
-| Shared base framework (new) | -282 LOC (one-time) | - | - | -282 LOC (offset) |
-| **NET SAVINGS** | | | | **~932 LOC** |
+| Area                        | SQLite              | Neo4j       | Plane.so    | Total Reduction   |
+| --------------------------- | ------------------- | ----------- | ----------- | ----------------- |
+| Connection pooling logic    | 45 LOC              | 80 LOC      | 60 LOC      | ~185 LOC          |
+| Error mapping               | 30 LOC              | 45 LOC      | 50 LOC      | ~125 LOC          |
+| Retry logic                 | 0 LOC               | 60 LOC      | 70 LOC      | ~130 LOC          |
+| Config initialization       | 25 LOC              | 35 LOC      | 40 LOC      | ~100 LOC          |
+| Health checks               | 0 LOC               | 20 LOC      | 20 LOC      | ~40 LOC           |
+| Timeout handling            | 15 LOC              | 25 LOC      | 30 LOC      | ~70 LOC           |
+| **SUBTOTAL**                | **115 LOC**         | **265 LOC** | **270 LOC** | **~650 LOC**      |
+| Shared base framework (new) | -282 LOC (one-time) | -           | -           | -282 LOC (offset) |
+| **NET SAVINGS**             |                     |             |             | **~932 LOC**      |
 
 ---
 
 ## Risk Assessment
 
-| Risk | Likelihood | Mitigation |
-|------|------------|-----------|
-| Breaking existing SQLite tests | Medium | Backward-compatible adapter wrapper, comprehensive test suite |
-| Neo4j incomplete at unification time | High | Block unification until WP05 fully complete |
-| Plane.so missing retry logic | Medium | Implement retry as core requirement before unification |
-| Performance regression from trait indirection | Low | Benchmark before/after with typical workloads |
+| Risk                                          | Likelihood | Mitigation                                                    |
+| --------------------------------------------- | ---------- | ------------------------------------------------------------- |
+| Breaking existing SQLite tests                | Medium     | Backward-compatible adapter wrapper, comprehensive test suite |
+| Neo4j incomplete at unification time          | High       | Block unification until WP05 fully complete                   |
+| Plane.so missing retry logic                  | Medium     | Implement retry as core requirement before unification        |
+| Performance regression from trait indirection | Low        | Benchmark before/after with typical workloads                 |
 
 ---
 

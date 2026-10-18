@@ -24,22 +24,23 @@
 
 All 40+ routes in the router are registered and respond:
 
-| Route | Method | Status | Response Type | Notes |
-|-------|--------|--------|-----------------|-------|
-| `/` | GET | 200 | HTML | Dashboard root page |
-| `/dashboard` | GET | 200 | HTML | Full dashboard page |
-| `/features` | GET | 200 | HTML | Features page |
-| `/events` | GET | 200 | HTML | Events timeline page |
-| `/settings` | GET | 200 | HTML | Settings page |
-| `/api/dashboard/health.json` | GET | 200 | JSON | All 8 service health checks (NATS, Dragonfly, Neo4j, MinIO, SQLite, API, Plane API, Plane Web) |
-| `/api/dashboard/kanban.json` | GET | 200 | HTML | Kanban board partial (HTMX-compatible) |
-| `/api/dashboard/agents.json` | GET | 200 | JSON | Agent process list (18 agents detected) |
+| Route                        | Method | Status | Response Type | Notes                                                                                          |
+| ---------------------------- | ------ | ------ | ------------- | ---------------------------------------------------------------------------------------------- |
+| `/`                          | GET    | 200    | HTML          | Dashboard root page                                                                            |
+| `/dashboard`                 | GET    | 200    | HTML          | Full dashboard page                                                                            |
+| `/features`                  | GET    | 200    | HTML          | Features page                                                                                  |
+| `/events`                    | GET    | 200    | HTML          | Events timeline page                                                                           |
+| `/settings`                  | GET    | 200    | HTML          | Settings page                                                                                  |
+| `/api/dashboard/health.json` | GET    | 200    | JSON          | All 8 service health checks (NATS, Dragonfly, Neo4j, MinIO, SQLite, API, Plane API, Plane Web) |
+| `/api/dashboard/kanban.json` | GET    | 200    | HTML          | Kanban board partial (HTMX-compatible)                                                         |
+| `/api/dashboard/agents.json` | GET    | 200    | JSON          | Agent process list (18 agents detected)                                                        |
 
 ## Health Status (via `/api/dashboard/health.json`)
 
 **Overall**: ✅ **All Healthy**
 
 Services reporting:
+
 - **NATS**: healthy (2ms latency)
 - **Dragonfly**: healthy (1ms latency)
 - **Neo4j**: healthy (8ms latency)
@@ -54,21 +55,21 @@ Services reporting:
 The dashboard relies on:
 
 1. **Services (Mocked/Seeded)**:
-   - NATS (broker) — responding via seeded mock state
-   - Dragonfly (cache) — responding via seeded mock state
-   - Neo4j (graph DB) — responding via seeded mock state
-   - MinIO (object storage) — responding via seeded mock state
-   - SQLite (local DB) — responding via seeded mock state
+    - NATS (broker) — responding via seeded mock state
+    - Dragonfly (cache) — responding via seeded mock state
+    - Neo4j (graph DB) — responding via seeded mock state
+    - MinIO (object storage) — responding via seeded mock state
+    - SQLite (local DB) — responding via seeded mock state
 
 2. **External APIs**:
-   - Plane API (project management) — responding via seeded state
-   - Plane Web (frontend) — responding via seeded state
+    - Plane API (project management) — responding via seeded state
+    - Plane Web (frontend) — responding via seeded state
 
 3. **Database**:
-   - SQLite is seeded via `DashboardStore::seeded()` — no external setup required
+    - SQLite is seeded via `DashboardStore::seeded()` — no external setup required
 
 4. **Environment Variables**:
-   - `AGILEPLUS_DASHBOARD_PORT` (optional, defaults to 3000)
+    - `AGILEPLUS_DASHBOARD_PORT` (optional, defaults to 3000)
 
 ## Configuration Findings
 
@@ -108,6 +109,6 @@ For integration with production services (NATS, Dragonfly, Neo4j, MinIO, etc.), 
 
 ---
 
-*Verification performed 2026-04-24 at 22:10 UTC*
-*Verified by: Agent verification suite*
-*Build: Rust 1.75+ (edition 2021)*
+_Verification performed 2026-04-24 at 22:10 UTC_
+_Verified by: Agent verification suite_
+_Build: Rust 1.75+ (edition 2021)_

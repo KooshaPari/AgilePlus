@@ -2,82 +2,81 @@
 # Docs: https://docs.mergify.com/
 
 pull_request_rules:
-  # Auto-merge when all CI checks pass and PR is approved
-  - name: Auto-merge when approved + CI green
-    conditions:
-      - "#review-requested=0"
-      - "#approved-reviews-by>=1"
-      - check-success=ci
-      - check-success=lint
-      - check-success=test
-      - -conflict
-      - -closed
-    actions:
-      merge:
-        method: squash
-        commit_message_format:
-          title: pr-title
+    # Auto-merge when all CI checks pass and PR is approved
+    - name: Auto-merge when approved + CI green
+      conditions:
+          - "#review-requested=0"
+          - "#approved-reviews-by>=1"
+          - check-success=ci
+          - check-success=lint
+          - check-success=test
+          - -conflict
+          - -closed
+      actions:
+          merge:
+              method: squash
+              commit_message_format:
+                  title: pr-title
 
-  # Auto-merge dependabot PRs when CI passes
-  - name: Auto-merge dependency updates
-    conditions:
-      - author=dependabot[bot]
-      - check-success=ci
-      - -conflict
-      - -closed
-    actions:
-      merge:
-        method: squash
-        commit_message_format:
-          title: pr-title
+    # Auto-merge dependabot PRs when CI passes
+    - name: Auto-merge dependency updates
+      conditions:
+          - author=dependabot[bot]
+          - check-success=ci
+          - -conflict
+          - -closed
+      actions:
+          merge:
+              method: squash
+              commit_message_format:
+                  title: pr-title
 
-  # Auto-merge bot PRs (CI configs, formatting) when CI passes
-  - name: Auto-merge bot housekeeping PRs
-    conditions:
-      - or:
-          - author=mergify[bot]
-          - author=github-actions[bot]
-      - check-success=ci
-      - check-success=lint
-      - -conflict
-      - -closed
-    actions:
-      merge:
-        method: squash
+    # Auto-merge bot PRs (CI configs, formatting) when CI passes
+    - name: Auto-merge bot housekeeping PRs
+      conditions:
+          - or:
+                - author=mergify[bot]
+                - author=github-actions[bot]
+          - check-success=ci
+          - check-success=lint
+          - -conflict
+          - -closed
+      actions:
+          merge:
+              method: squash
 
-  # Label PRs based on changed files
-  - name: Label Python changes
-    conditions:
-      - files~=\.py$
-    actions:
-      label:
-        add:
-          - python
+    # Label PRs based on changed files
+    - name: Label Python changes
+      conditions:
+          - files~=\.py$
+      actions:
+          label:
+              add:
+                  - python
 
-  - name: Label Rust changes
-    conditions:
-      - files~=\.rs$|Cargo\.
-    actions:
-      label:
-        add:
-          - rust
+    - name: Label Rust changes
+      conditions:
+          - files~=\.rs$|Cargo\.
+      actions:
+          label:
+              add:
+                  - rust
 
-  - name: Label Go changes
-    conditions:
-      - files~=\.go$|go\.
-    actions:
-      label:
-        add:
-          - go
+    - name: Label Go changes
+      conditions:
+          - files~=\.go$|go\.
+      actions:
+          label:
+              add:
+                  - go
 
-  - name: Label TypeScript changes
-    conditions:
-      - files~=\.ts$|\.tsx$|package\.json
-    actions:
-      label:
-        add:
-          - typescript
-
+    - name: Label TypeScript changes
+      conditions:
+          - files~=\.ts$|\.tsx$|package\.json
+      actions:
+          label:
+              add:
+                  - typescript
 # Stale PR closing is handled by .github/workflows/stale.yml
 # (actions/stale v11, daily cron). Do not duplicate here — keeping an
 # empty rule in .mergify.yml will silently fail to match anything and

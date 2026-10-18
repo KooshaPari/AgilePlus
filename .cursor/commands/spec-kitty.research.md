@@ -7,8 +7,8 @@ description: DEPRECATED — use `ap plan research` instead. See docs/design/SPEC
 
 ## Migration
 
-| SpecKitty | AgilePlus (`ap`) |
-|-----------|-------------------|
+| SpecKitty              | AgilePlus (`ap`)                           |
+| ---------------------- | ------------------------------------------ |
 | `/spec-kitty.research` | `ap plan research "<feature description>"` |
 
 ```bash
