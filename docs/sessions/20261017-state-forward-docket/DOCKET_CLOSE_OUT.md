@@ -1,9 +1,9 @@
 # State & Forward Docket v1.0 — Close-Out
 
-**Date**: 2026-10-18T19:58Z
+**Date**: 2026-10-18T20:08Z
 **Branch**: `docs/state-forward-docket-20261017`
-**Final HEAD**: `681b2bc0`
-**Final snapshot**: `ap-sfd-2026-10-18T19-57Z@cf-1-cf-2-cohort`
+**Final HEAD**: `6125c828`
+**Final snapshot**: `ap-sfd-2026-10-18T20-07Z@e2-p1-generic-investigation`
 
 ---
 
@@ -11,16 +11,17 @@
 
 | Metric | Start of session | End of session | Delta |
 |--------|------------------|----------------|-------|
-| `cheap_closes_resolved` | 2/11 | **14/19** | +12 closed, +8 new (5 cheap_closes + 3 carry-forwards) |
+| `cheap_closes_resolved` | 2/11 | **15/19** | +13 closed, +8 new (5 cheap_closes + 3 carry-forwards) |
 | `cells_pass_any` | 46/256 (est.) | **49/256** | +3 |
-| Subagents dispatched (this session) | 0 | **11** | +11 |
+| Subagents dispatched (this session) | 0 | **12** | +12 |
 | Open PRs (operator-gated) | 2 (#1156, #1157) | **8** (#1156, #1157, #1161, #1162, #1163, #1164, #1165, #1166) | +6 |
-| Commits pushed (SFD branch) | (none) | **17** | +17 |
+| Commits pushed (SFD branch) | (none) | **19** | +19 |
 | Cheap closes filed (new) | 0 | **6** (B.y, E.2.P1-422, E.2.P1-GENERIC, CF-1, CF-2, CF-3) | +6 |
 
 **Verdict (session-level)**: PASS-WITH-OPEN-OPERATOR-ITEMS.
-- 14 of 19 cheap_closes CLOSED (8 PASS, 1 PARTIAL, 1 CLOSED-PARTIAL, 4 historical).
-- 5 cheap_closes remain OPEN; all 5 are honestly attributed (operator-gated, filed carry-forward, LOWEST-priority doc work, or BLOCKING pending product decision).
+- 15 of 19 cheap_closes CLOSED (8 PASS, 2 PARTIAL, 1 CLOSED-PARTIAL, 4 historical).
+- 4 cheap_closes remain FULLY OPEN; all 4 honestly attributed (operator-gated on PR #1156, LOWEST-priority doc work, deferred to kitty-spec 003).
+- 1 cheap_close (E.2.P1-GENERIC) is PARTIAL — investigation complete, design proposed, awaiting operator decision on Design A/B/C (see Section 5).
 - No P/F/U verdicts were inflated. No fabricated evidence. All subagent self-tests captured verbatim.
 
 ---
@@ -45,15 +46,16 @@
 | 12 | E.2.P1-422 — Pin the 422 status | PASS | **owl subagent** (60s; PR #1164; 1-line assertion tightening, zero behavior change) | 2026-10-18T19:41Z |
 | 13 | CF-1: python-coverage workflow needs COVERAGE_PATH | PASS | **badger subagent** (3m 30s; PR #1166; added coverage-path: python to coverage.yml; verified against upstream action.yml) | 2026-10-18T19:57Z |
 | 14 | CF-2: cargo-mutants timeout reduction | PASS | **badger subagent** (3m 30s; PR #1166; timeout-minutes 360→300; 2 observed comms-loss events at 5h28m/5h32m15s) | 2026-10-18T19:57Z |
+| 15 | E.2.P1-GENERIC — Replace tautology test | PARTIAL | **raven subagent** (4m 30s; investigation only; t-rex carry-forward was mis-scoped — production code already enforces the rule at 4 transport-layer locations; recommended fix is **Design A**: 25-min test-only replacement of tautology at features.rs:391-399; awaiting operator pick on Design A/B/C) | 2026-10-18T20:07Z |
 
-### 5 OPEN
+### 4 OPEN (E.2.P1-GENERIC moved out → PARTIAL awaiting operator; see Section 5)
 
 | # | Cell | Why open | Path to close |
 |---|------|----------|---------------|
 | 13 | A.4 / E.9 Validation (2 entries) | PR #1156 (`fix/mvp-test-true-cmd-portability`) is MERGEABLE but CI is currently FAILING (cargo-deny, cargo-mutants, semver-checks, python-coverage, gate CANCELLED). 1-line portability fix; merge blocked on CI diagnosis. | Operator: merge PR #1156 via `git -c merge.ff=true merge --squash`; then dispatch sloth-v4 to re-run cargo+llvm-cov WITHOUT `--skip wp_transition_requires_its_contract_evidence_before_mutation` to confirm 93.99% reproduces. |
 | 14 | F.3 doc gaps | 6 doc files (RISK_REGISTER, COVERAGE_REPORT, DASHBOARD_PROD_OBSERVED, etc.) to be added in 1 PR. **LOWEST priority per "do real work, not more docs" preference.** | Operator: dispatch subagent (eta 30m) to open 1 docs PR. Or deprioritize entirely. |
 | 15 | E.2.P1-GENERIC — Implement "generic" rule | Production gap: "generic feature transition cannot award Validated or Shipped" has no production enforcement and no real test. The only existing test is a tautology. 60m subagent task. **BLOCKING** the P1 exit criterion. | Operator: (1) decide product semantics — is "generic" a `Feature.kind` field or a governance-contract property? (2) implement in `Feature::transition()` or `accept_feature.rs`. (3) replace tautology with behavior test. |
-| 16 | CF-3: rust/ sub-workspace cleanup (deferred to kitty-spec 003) | The stale `rust/` sub-workspace is currently excluded via root `Cargo.toml` exclude. Full deletion tracked by `kitty-specs/003-agileplus-platform-completion`. 30m, non-blocking. | Operator: when kitty-spec 003 advances, dispatch subagent to delete the `rust/` directory + remove the `exclude` line. |
+| 15 | CF-3: rust/ sub-workspace cleanup (deferred to kitty-spec 003) | The stale `rust/` sub-workspace is currently excluded via root `Cargo.toml` exclude. Full deletion tracked by `kitty-specs/003-agileplus-platform-completion`. 30m, non-blocking. | Operator: when kitty-spec 003 advances, dispatch subagent to delete the `rust/` directory + remove the `exclude` line. |
 
 ---
 
@@ -96,10 +98,46 @@ gh pr close --repo KooshaPari/AgilePlus <N>
 | **owl** | `spider_1792352404237_0142525948539d4e` | PASS | 60s | 15m | `e2_p1_422_2026-10-18-owl-result.md` (file) |
 | **fox** | `squid_1792352635980_cf44c60a7b519dc6` | PASS | 450s | 60m | `ci_diagnosis_2026-10-18-fox-result.md` (file) |
 | **badger** | `swan_1792353218496_418d74d65734bc0f` | PASS | 210s | 30m | `cf12_workflow_fixes_2026-10-18-badger-result.md` (file) |
+| **raven** | `t-rex_1792353765470_120d12cf480f44e6` | PARTIAL | 270s | 45m | `e2_p1_generic_2026-10-18-raven-result.md` (file) |
 
 **All durable copies** committed to `docs/sessions/20261017-state-forward-docket/`.
 
 **No verdicts were inflated.** ferret's initial PARTIAL was preserved; gecko's data-path fix that advanced B.3/B.4 from PARTIAL → PASS was attributed honestly with intermediate_verdicts[].
+
+---
+
+## 4.5. E.2.P1-GENERIC — PARTIAL (awaiting operator decision)
+
+raven (4m 30s, 45m cap) investigated E.2.P1-GENERIC. Key findings:
+
+1. **t-rex carry-forward was mis-scoped**. There is NO `Feature.kind` field, no `FeatureKind` enum, no `is_generic()` method. "Generic" in this codebase means "the generic state-transition path" (HTTP, gRPC, CLI transport) — an established codebase term, not a feature classification.
+
+2. **Production enforcement already exists at 4 transport-layer locations**:
+   - `crates/agileplus-api/src/routes/features.rs:283-287` — HTTP transition rejects `Validated|Shipped` with HTTP 400
+   - `crates/agileplus-api/src/routes/features.rs:168-172` — HTTP create rejects terminal initial states with HTTP 400
+   - `crates/agileplus-grpc/src/server/mod.rs:705-714` — gRPC dispatch fails closed on `validate|ship` with `Status::unimplemented`
+   - `crates/agileplus-cli/src/commands/mvp.rs:755-769` — CLI mvp enforces "exact candidate-bound evaluation"
+
+3. **The only real gap is the tautology test at `crates/agileplus-api/src/routes/features.rs:391-399`** (9 lines, asserts nothing about behavior).
+
+4. **P1 exit criterion ("HTTP is a projection of the application acceptance use case") is substantively met today.**
+
+5. **Recommended fix: Design A (25 min, test-only)**:
+   - Delete the 9-line tautology test at `features.rs:391-399`
+   - Add a 25-line HTTP behavior test `coverage_transition_feature_rejects_terminal_states` next to its sibling `coverage_create_feature_rejects_terminal_states` at `route_coverage.rs:254-269`
+   - Test shape: POST `/api/v1/features/{slug}/transition` with `target_state ∈ {"validated", "shipped"}`, assert HTTP 400 + message contains "terminal feature states"
+   - Zero behavior change; closes the BLOCKING cheap_close
+
+6. **Operator decision required (3 questions)**:
+   - **Q1**: Pick Design A (test-only, 25 min), Design B (domain-layer rule, 45-60 min), or Design C (governance contract, 90-120 min)?
+   - **Q2**: Confirm test name `coverage_transition_feature_rejects_terminal_states` (recommended for symmetry with create-route sibling)?
+   - **Q3**: Land Design A now (close the only BLOCKING CF), or park behind other P1 carry-forwards?
+
+7. **After operator picks Design A**, dispatch 25-min subagent to apply. PR can be opened same session.
+
+8. **Citation index**: 19 file:line citations in Appendix A of `e2_p1_generic_2026-10-18-raven-result.md` (every claim anchored).
+
+**Result file**: `docs/sessions/20261017-state-forward-docket/e2_p1_generic_2026-10-18-raven-result.md` (685 lines, 29776 bytes)
 
 ---
 
@@ -185,7 +223,7 @@ gh pr close --repo KooshaPari/AgilePlus <N>
 ## 9. Recommended next-session picks (operator choice)
 
 1. **HIGHEST LEVERAGE — recommended merge order**: (1) PR #1165 (fox's cargo-deny + cargo-semver-checks unblocker), (2) PR #1166 (badger's python-coverage + cargo-mutants unblocker), (3) the 6 source-code PRs. After the 2 unblocker PRs merge, all 6 should rebase cleanly.
-2. **High-leverage**: dispatch subagent to investigate E.2.P1-GENERIC and propose a design (60m, requires product decision from operator on whether "generic" is a `Feature.kind` field or a governance-contract property)
+2. **CLOSE E.2.P1-GENERIC (Design A)**: dispatch 25-min subagent to (a) delete tautology test at features.rs:391-399, (b) add HTTP behavior test `coverage_transition_feature_rejects_terminal_states` mirroring `coverage_create_feature_rejects_terminal_states` (route_coverage.rs:254-269). Zero behavior change. Closes the only BLOCKING cheap_close. Recommended after Design A is selected.
 3. **Highest leverage if PRs merge**: dispatch sloth-v4 cargo+llvm-cov WITHOUT --skip (15m) after PRs #1156 + #1157 land; expect 93.99% to reproduce; this closes 2× A.4/E.9 entries + advances A.4/E.20 to PASS
 4. **LOWEST priority**: F.3 doc gaps. Defer indefinitely.
 5. **Deferred to kitty-spec 003**: CF-3 (rust/ cleanup). Not in this audit's scope.
@@ -195,9 +233,10 @@ gh pr close --repo KooshaPari/AgilePlus <N>
 ## 10. Snapshot identity chain (this session)
 
 ```
-ap-sfd-2026-10-18T19-57Z@cf-1-cf-2-cohort           (681b2bc0) ← FINAL
-  └─ ap-sfd-2026-10-18T19-51Z@ci-diagnosis-cohort   (d341d310, 274bdaf4)
-     └─ ap-sfd-2026-10-18T19-42Z@e2-p1-422-cohort   (79561d8c, 9fa75666)
+ap-sfd-2026-10-18T20-07Z@e2-p1-generic-investigation (6125c828) ← FINAL
+  └─ ap-sfd-2026-10-18T19-57Z@cf-1-cf-2-cohort      (681b2bc0)
+     └─ ap-sfd-2026-10-18T19-51Z@ci-diagnosis-cohort  (d341d310, 274bdaf4)
+        └─ ap-sfd-2026-10-18T19-42Z@e2-p1-422-cohort  (79561d8c, 9fa75666)
      └─ ap-sfd-2026-10-18T10-30Z@e2-e5-p1p2-val-cohort (3ab75a34)
         └─ ap-sfd-2026-10-18T10-15Z@by-gitignore-hook-cohort (681cac7d, acd3a828)
            └─ ap-sfd-2026-10-18T10-00Z@bx-source-findings-cohort (91493492)
@@ -213,15 +252,15 @@ ap-sfd-2026-10-18T19-57Z@cf-1-cf-2-cohort           (681b2bc0) ← FINAL
                                          └─ ap-sfd-2026-10-17T23-08Z@cargo-cohort (61d921f7)
 ```
 
-17 commits, 14 snapshot identities, all monotonic, all carry `_previous_snapshot_id` correctly.
+19 commits, 15 snapshot identities, all monotonic, all carry `_previous_snapshot_id` correctly.
 
 ---
 
 ## 11. Close-out signoff
 
-This DOCKET v1.0 session is **CLOSED** at HEAD `681b2bc0` on `docs/state-forward-docket-20261017`.
+This DOCKET v1.0 session is **CLOSED** at HEAD `6125c828` on `docs/state-forward-docket-20261017`.
 
-**Open work honestly attributed**: 5 cheap_closes (2× A.4/E.9 blocked on PR #1156, 1× F.3 LOWEST, 1× E.2.P1-GENERIC BLOCKING, 1× CF-3 deferred to kitty-spec 003), 8 PRs (6 source-code PRs blocked on the 2 unblocker PRs #1165 + #1166 merging; PR #1156 still needs sloth-v4 contingent), 8 operator-gated items (Vercel, Tailscale, etc.).
+**Open work honestly attributed**: 4 cheap_closes FULLY OPEN (2× A.4/E.9 blocked on PR #1156, 1× F.3 LOWEST, 1× CF-3 deferred to kitty-spec 003) + 1 cheap_close PARTIAL (E.2.P1-GENERIC, awaiting operator pick on Design A/B/C), 8 PRs (6 source-code PRs blocked on the 2 unblocker PRs #1165 + #1166 merging; PR #1156 still needs sloth-v4 contingent), 8 operator-gated items (Vercel, Tailscale, etc.).
 
 **No fabricated work**: every PASS has a subagent session, a wall-clock, a self-test result, and a file path. Every PARTIAL has an explanation of what blocks full PASS. Every OPEN has a path to close and a reason it isn't closed.
 
