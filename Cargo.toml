@@ -81,6 +81,11 @@ pr-run-mode = "plan"
 install-updater = false
 # Build only the required packages, and individually
 precise-builds = true
+# Allow dist to proceed when release.yml is intentionally out-of-date.
+# This file was hand-augmented with the release-lifecycle-v2 R6 ci-gate comment
+# block and bumped actions/checkout to @v7 for security; cargo-dist v0.33.0's
+# template pre-dates both choices, so we ignore its diff rather than lose either.
+allow-dirty = ["ci"]
 
 # System build dependencies for CI
 [workspace.metadata.dist.dependencies.homebrew]
