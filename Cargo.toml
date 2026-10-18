@@ -3,6 +3,12 @@ resolver = "2"
 # Active members — only crates/libs with actual source files.
 # Remaining scaffolding (44 crates, 19 libs) tracked but excluded from
 # workspace until source is implemented. See: kitty-specs/003-agileplus-platform-completion.
+# Exclude `rust/` — a leftover scaffolded sub-workspace that also defines
+# `agileplus-proto`, causing `cargo-semver-checks` (which walks the root
+# path and ignores the `members` list) to fail with "package
+# `agileplus-proto` is ambiguous: it is defined by in multiple manifests".
+# See subagent fox CI diagnosis 2026-10-18 for PRs #1156/#1157/#1161/#1162/#1163/#1164.
+exclude = ["rust"]
 members = [
   "tests/e2e", # installed-CLI round-trip; workflow runs this crate from its manifest directory
   "tests/e2e-desktop", # E2E tests for the Tauri desktop app (DB, CLI bridge, tray, config)
