@@ -25,6 +25,8 @@ defaults:
 jobs:
     lint:
         name: qe / lint
+        env:
+            RUSTFLAGS: "-D warnings"
         runs-on: ubuntu-latest
         timeout-minutes: 60
         steps:
@@ -32,9 +34,7 @@ jobs:
               with:
                   persist-credentials: false
             - name: Install workspace build dependencies
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y build-essential pkg-config libssl-dev protobuf-compiler libglib2.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
+              uses: ./.github/actions/setup-sys-deps
             - name: Require real protobuf generation
               run: |
                   protoc --version
@@ -51,6 +51,7 @@ jobs:
     test:
         name: qe / test
         env:
+            RUSTFLAGS: "-D warnings"
             # Keep workspace test artifacts bounded on constrained hosts.
             CARGO_PROFILE_TEST_DEBUG: "0"
         runs-on: ubuntu-latest
@@ -60,9 +61,7 @@ jobs:
               with:
                   persist-credentials: false
             - name: Install workspace build dependencies
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y build-essential pkg-config libssl-dev protobuf-compiler libglib2.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
+              uses: ./.github/actions/setup-sys-deps
             - name: Require real protobuf generation
               run: |
                   protoc --version
@@ -82,4 +81,4 @@ jobs:
                   done
             # Independent of lint so a lint failure does not skip the test run.
             - name: Rust workspace tests
-              run: cargo test --workspace --locked --no-fail-fast
+              run: cargo test --workspace --locked --all-targets --no-fail-fast
