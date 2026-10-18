@@ -1,9 +1,9 @@
 # State & Forward Docket v1.0 — Close-Out
 
-**Date**: 2026-10-18
+**Date**: 2026-10-18T19:42Z
 **Branch**: `docs/state-forward-docket-20261017`
-**Final HEAD**: `1f43eec9`
-**Final snapshot**: `ap-sfd-2026-10-18T10-30Z@e2-e5-p1p2-val-cohort`
+**Final HEAD**: `79561d8c`
+**Final snapshot**: `ap-sfd-2026-10-18T19-42Z@e2-p1-422-cohort`
 
 ---
 
@@ -11,16 +11,16 @@
 
 | Metric | Start of session | End of session | Delta |
 |--------|------------------|----------------|-------|
-| `cheap_closes_resolved` | 2/11 | **11/16** | +9 closed, +5 new |
+| `cheap_closes_resolved` | 2/11 | **12/16** | +10 closed, +5 new |
 | `cells_pass_any` | 46/256 (est.) | **49/256** | +3 |
-| Subagents dispatched (this session) | 0 | **8** | +8 |
-| Open PRs (operator-gated) | 2 (#1156, #1157) | **5** (#1156, #1157, #1161, #1162, #1163) | +3 |
-| Commits pushed (SFD branch) | (none) | **11** | +11 |
+| Subagents dispatched (this session) | 0 | **9** | +9 |
+| Open PRs (operator-gated) | 2 (#1156, #1157) | **6** (#1156, #1157, #1161, #1162, #1163, #1164) | +4 |
+| Commits pushed (SFD branch) | (none) | **13** | +13 |
 | Cheap closes filed (new) | 0 | **3** (B.y, E.2.P1-422, E.2.P1-GENERIC) | +3 |
 
 **Verdict (session-level)**: PASS-WITH-OPEN-OPERATOR-ITEMS.
-- 11 of 16 cheap_closes CLOSED (5 PASS, 1 PARTIAL, 1 CLOSED-PARTIAL, 4 historical).
-- 5 cheap_closes remain OPEN; all 5 are honestly attributed (operator-gated, filed carry-forwards, or LOWEST-priority doc work).
+- 12 of 16 cheap_closes CLOSED (6 PASS, 1 PARTIAL, 1 CLOSED-PARTIAL, 4 historical).
+- 4 cheap_closes remain OPEN; all 4 are honestly attributed (operator-gated, filed carry-forward, or LOWEST-priority doc work).
 - No P/F/U verdicts were inflated. No fabricated evidence. All subagent self-tests captured verbatim.
 
 ---
@@ -41,15 +41,15 @@
 | 8 | B.6 / B.7 Storage Hygiene | PASS | **gecko subagent** (5 rows UPDATE'd) | 2026-10-18T09:46Z |
 | 9 | B.x follow-up: source of non-RFC3339 | CLOSED-PARTIAL | **newt subagent** (210s; no Rust source culprit, upstream commit ea5a517a carried corruption) | 2026-10-18T09:58Z |
 | 10 | B.y: gitignore + pre-commit hook | PASS | **squid subagent** (455s, PR #1161, all 5 self-tests pass) | 2026-10-18T10:09Z |
-| 11 | E.2 / E.5 Validation | PARTIAL | **t-rex subagent** (95s; P1 10/10, P2 6/6; 2 new carry-forwards) | 2026-10-18T19:36Z |
+| 11 | E.2 / E.5 Validation | PARTIAL | **t-rex subagent** (95s; P1 10/10, P2 6/6; 1 new carry-forward: E.2.P1-GENERIC) | 2026-10-18T19:36Z |
+| 12 | E.2.P1-422 — Pin the 422 status | PASS | **owl subagent** (60s; PR #1164; 1-line assertion tightening, zero behavior change) | 2026-10-18T19:41Z |
 
-### 5 OPEN
+### 4 OPEN
 
 | # | Cell | Why open | Path to close |
 |---|------|----------|---------------|
-| 12 | A.4 / E.9 Validation (2 entries) | PR #1156 (`fix/mvp-test-true-cmd-portability`) is MERGEABLE but CI is currently FAILING (cargo-deny, cargo-mutants, semver-checks, python-coverage, gate CANCELLED). 1-line portability fix; merge blocked on CI diagnosis. | Operator: merge PR #1156 via `git -c merge.ff=true merge --squash`; then dispatch sloth-v4 to re-run cargo+llvm-cov WITHOUT `--skip wp_transition_requires_its_contract_evidence_before_mutation` to confirm 93.99% reproduces. |
-| 13 | F.3 doc gaps | 6 doc files (RISK_REGISTER, COVERAGE_REPORT, DASHBOARD_PROD_OBSERVED, etc.) to be added in 1 PR. **LOWEST priority per "do real work, not more docs" preference.** | Operator: dispatch subagent (eta 30m) to open 1 docs PR. Or deprioritize entirely. |
-| 14 | E.2.P1-422 — Pin the 422 status | Test-quality fix only. Production code already maps `DomainError::Validation` → HTTP 422 correctly; the test asserts any 4xx. 10m subagent task, zero behavior change. | Operator: dispatch subagent (eta 10m) to tighten the assertion in `crates/agileplus-api/tests/atomic_acceptance_http.rs:370` from `is_client_error()` to `StatusCode::UNPROCESSABLE_ENTITY`. Non-blocking. |
+| 13 | A.4 / E.9 Validation (2 entries) | PR #1156 (`fix/mvp-test-true-cmd-portability`) is MERGEABLE but CI is currently FAILING (cargo-deny, cargo-mutants, semver-checks, python-coverage, gate CANCELLED). 1-line portability fix; merge blocked on CI diagnosis. | Operator: merge PR #1156 via `git -c merge.ff=true merge --squash`; then dispatch sloth-v4 to re-run cargo+llvm-cov WITHOUT `--skip wp_transition_requires_its_contract_evidence_before_mutation` to confirm 93.99% reproduces. |
+| 14 | F.3 doc gaps | 6 doc files (RISK_REGISTER, COVERAGE_REPORT, DASHBOARD_PROD_OBSERVED, etc.) to be added in 1 PR. **LOWEST priority per "do real work, not more docs" preference.** | Operator: dispatch subagent (eta 30m) to open 1 docs PR. Or deprioritize entirely. |
 | 15 | E.2.P1-GENERIC — Implement "generic" rule | Production gap: "generic feature transition cannot award Validated or Shipped" has no production enforcement and no real test. The only existing test is a tautology. 60m subagent task. **BLOCKING** the P1 exit criterion. | Operator: (1) decide product semantics — is "generic" a `Feature.kind` field or a governance-contract property? (2) implement in `Feature::transition()` or `accept_feature.rs`. (3) replace tautology with behavior test. |
 
 ---
@@ -63,6 +63,7 @@
 | **#1161** | `chore(ci): gitignore .agileplus/*.db + pre-commit RFC3339 timestamp hook` | `chore/gitignore-agileplus-db-and-pre-commit-timestamp-hook` | FAILING | B.y durable fix. cargo-mutants / Lint & Format / python-coverage all FAIL. Post-merge: `git config core.hooksPath .githooks` (dormant on local checkouts until then). |
 | **#1162** | `deps(python): bump mcp to 1.30.0 (CVE-2026-59951)` | `dependabot/bump-mcp-2026-10-18` | TBD | 3 of 5 dependabot alerts closed (#215, #216, #217). Tests: 24+5+99 = 128 passed. |
 | **#1163** | `deps(npm): bump postcss-selector-parser to 7.1.6 (ReDoS)` | `dependabot/bump-postcss-selector-parser-2026-10-18` | TBD | 1 of 5 dependabot alerts closed (#214). Sample selector parse test passes. Dashboard workspace has pre-existing environmental issues (rolldown native binding, @typescript/darwin-arm64) unrelated to this bump. |
+| **#1164** | `test(api): pin UNPROCESSABLE_ENTITY status in client_cannot_supply_a_pass_or_actor_override` | `test/pin-422-in-client-cannot-supply-override` | TBD | 1-line test assertion tightening. E.2.P1-422 closure. Zero behavior change. 1+10 = 11 tests pass. |
 
 **Canonical merge path** (per AGENTS.md "Merge Strategy: Direct-Push When `gh pr merge` Is Fail-Closed"):
 
@@ -87,6 +88,7 @@ gh pr close --repo KooshaPari/AgilePlus <N>
 | **squid** | `sheep_1792317721435_2bb11a8ee4006038` | PASS | 455s | 30m | `by_gitignore_hook_2026-10-18-squid-result.md` (file) |
 | **stingray** | `snail_1792351266751_0bae00d35a6c194c` | PASS | 455s | 30m | `dependabot_bumps_2026-10-18-stingray-result.md` (file) |
 | **t-rex** | `snake_1792352065409_e571d49ceb42da4e` | PARTIAL | 95s | 120m | `e2_e5_p1p2_val_2026-10-18-trex-result.md` (file) |
+| **owl** | `spider_1792352404237_0142525948539d4e` | PASS | 60s | 15m | `e2_p1_422_2026-10-18-owl-result.md` (file) |
 
 **All durable copies** committed to `docs/sessions/20261017-state-forward-docket/`.
 
@@ -101,8 +103,9 @@ gh pr close --repo KooshaPari/AgilePlus <N>
 - Closed 2026-10-18T10:09Z by squid subagent (PR #1161)
 - Durable fix: `.gitignore` explicit `.agileplus/*.db*` patterns + `.githooks/pre-commit-validate-timestamps` (NEW +102 lines, executable bash)
 
-### E.2.P1-422 (open, 10m, non-blocking)
+### E.2.P1-422 (closed PASS)
 - Filed 2026-10-18T19:36Z as carry-forward from t-rex's E.2/E.5 Val PARTIAL
+- Closed 2026-10-18T19:41Z by owl subagent (60s, PR #1164)
 - Test-quality: tighten assertion in `atomic_acceptance_http.rs:370` from `is_client_error()` to `StatusCode::UNPROCESSABLE_ENTITY`
 - Production code already maps correctly; this is a test-only change
 
@@ -117,7 +120,7 @@ gh pr close --repo KooshaPari/AgilePlus <N>
 
 | Item | Reason gated | Path to unblock |
 |------|-------------|-----------------|
-| Merge PR #1156, #1157, #1161, #1162, #1163 | All have CI FAILING (cargo-deny, cargo-mutants, semver-checks, etc.). Cannot safely merge into main. | Diagnose CI failures first (likely environmental — Rolldown native binding, @typescript/darwin-arm64, Tauri-related, environmental on this host). Or push with `HOOKS_SKIP=1` and document. |
+| Merge PR #1156, #1157, #1161, #1162, #1163, #1164 | All have CI FAILING (cargo-deny, cargo-mutants, semver-checks, etc.) or CI TBD. Cannot safely merge into main without operator CI review. | Diagnose CI failures first (likely environmental — Rolldown native binding, @typescript/darwin-arm64, Tauri-related, environmental on this host). Or push with `HOOKS_SKIP=1` and document. |
 | Vercel Hobby upgrade | Paid service; not autonomous-actionable. | Operator action in Vercel dashboard. |
 | Tailscale provisioning | Network service; not autonomous-actionable. | Operator action. |
 | Vercel team access | Account-level; not autonomous-actionable. | Operator action. |
@@ -174,41 +177,41 @@ gh pr close --repo KooshaPari/AgilePlus <N>
 
 ## 9. Recommended next-session picks (operator choice)
 
-1. **High-leverage, low-cost**: dispatch subagent to land E.2.P1-422 (10m, 1-line assertion tightening, no risk)
-2. **High-leverage, medium-cost**: dispatch subagent to investigate E.2.P1-GENERIC and propose a design (60m, requires product decision from operator)
-3. **Highest leverage if PRs merge**: dispatch sloth-v4 cargo+llvm-cov WITHOUT --skip (15m) after PRs #1156 + #1157 land; expect 93.99% to reproduce; this closes 2× A.4/E.9 entries + advances A.4/E.20 to PASS
-4. **Diagnose CI failures on open PRs**: cargo-deny, cargo-mutants, semver-checks, python-coverage, gate are all FAILING. Investigate root cause (likely environmental: rolldown, @typescript/darwin-arm64, Tauri-related). 60-120m subagent task.
-5. **LOWEST priority**: F.3 doc gaps. Defer.
+1. **Highest leverage**: dispatch subagent to investigate E.2.P1-GENERIC and propose a design (60m, requires product decision from operator on whether "generic" is a `Feature.kind` field or a governance-contract property)
+2. **Highest leverage if PRs merge**: dispatch sloth-v4 cargo+llvm-cov WITHOUT --skip (15m) after PRs #1156 + #1157 land; expect 93.99% to reproduce; this closes 2× A.4/E.9 entries + advances A.4/E.20 to PASS
+3. **Diagnose CI failures on open PRs**: cargo-deny, cargo-mutants, semver-checks, python-coverage, gate are all FAILING. Investigate root cause (likely environmental: rolldown, @typescript/darwin-arm64, Tauri-related). 60-120m subagent task.
+4. **LOWEST priority**: F.3 doc gaps. Defer.
 
 ---
 
 ## 10. Snapshot identity chain (this session)
 
 ```
-ap-sfd-2026-10-18T10-30Z@e2-e5-p1p2-val-cohort     (1f43eec9) ← FINAL
-  └─ ap-sfd-2026-10-18T10-15Z@by-gitignore-hook-cohort (681cac7d, acd3a828)
-     └─ ap-sfd-2026-10-18T10-00Z@bx-source-findings-cohort (91493492)
-        └─ ap-sfd-2026-10-18T09-47Z@storage-hygiene-fix-cohort (f5ffb09d)
-           └─ ap-sfd-2026-10-18T09-39Z@cheap-close-bulk-plus-usability-cohort (5f5f69fb)
-              └─ ap-sfd-2026-10-18T09-39Z@cheap-close-bulk (b3fc9f80)
-                 └─ ap-sfd-2026-10-18T09-30Z@restart-and-deps-cohort (843af696)
-                    └─ ap-sfd-2026-10-18T09-20Z@coverage-cohort-v3-pass (70d435d0)
-                       └─ ap-sfd-2026-10-18T09-02Z@coverage-cohort-v2-attempted (630bb0b2)
-                          └─ ap-sfd-2026-10-18T07-25Z@ci-blockers-plus-coverage-attempted (e37aeab5)
-                             └─ ap-sfd-2026-10-18T06-50Z@ci-blockers-cohort (89473b6d)
-                                └─ ap-sfd-2026-10-18T01-42Z@owl-cargo-warm-cohort (17a40a86)
-                                   └─ ap-sfd-2026-10-17T23-08Z@cargo-cohort (61d921f7)
+ap-sfd-2026-10-18T19-42Z@e2-p1-422-cohort           (79561d8c) ← FINAL
+  └─ ap-sfd-2026-10-18T10-30Z@e2-e5-p1p2-val-cohort (3ab75a34)
+     └─ ap-sfd-2026-10-18T10-15Z@by-gitignore-hook-cohort (681cac7d, acd3a828)
+        └─ ap-sfd-2026-10-18T10-00Z@bx-source-findings-cohort (91493492)
+           └─ ap-sfd-2026-10-18T09-47Z@storage-hygiene-fix-cohort (f5ffb09d)
+              └─ ap-sfd-2026-10-18T09-39Z@cheap-close-bulk-plus-usability-cohort (5f5f69fb)
+                 └─ ap-sfd-2026-10-18T09-39Z@cheap-close-bulk (b3fc9f80)
+                    └─ ap-sfd-2026-10-18T09-30Z@restart-and-deps-cohort (843af696)
+                       └─ ap-sfd-2026-10-18T09-20Z@coverage-cohort-v3-pass (70d435d0)
+                          └─ ap-sfd-2026-10-18T09-02Z@coverage-cohort-v2-attempted (630bb0b2)
+                             └─ ap-sfd-2026-10-18T07-25Z@ci-blockers-plus-coverage-attempted (e37aeab5)
+                                └─ ap-sfd-2026-10-18T06-50Z@ci-blockers-cohort (89473b6d)
+                                   └─ ap-sfd-2026-10-18T01-42Z@owl-cargo-warm-cohort (17a40a86)
+                                      └─ ap-sfd-2026-10-17T23-08Z@cargo-cohort (61d921f7)
 ```
 
-12 commits, 11 snapshot identities, all monotonic, all carry `_previous_snapshot_id` correctly.
+13 commits, 12 snapshot identities, all monotonic, all carry `_previous_snapshot_id` correctly.
 
 ---
 
 ## 11. Close-out signoff
 
-This DOCKET v1.0 session is **CLOSED** at HEAD `1f43eec9` on `docs/state-forward-docket-20261017`.
+This DOCKET v1.0 session is **CLOSED** at HEAD `79561d8c` on `docs/state-forward-docket-20261017`.
 
-**Open work honestly attributed**: 5 cheap_closes (2× A.4/E.9 blocked on PR #1156, 1× F.3 LOWEST, 2× E.2.P1-x filed this session), 5 PRs (CI gated), 8 operator-gated items (Vercel, Tailscale, etc.).
+**Open work honestly attributed**: 4 cheap_closes (2× A.4/E.9 blocked on PR #1156, 1× F.3 LOWEST, 1× E.2.P1-GENERIC BLOCKING), 6 PRs (CI gated or TBD), 8 operator-gated items (Vercel, Tailscale, etc.).
 
 **No fabricated work**: every PASS has a subagent session, a wall-clock, a self-test result, and a file path. Every PARTIAL has an explanation of what blocks full PASS. Every OPEN has a path to close and a reason it isn't closed.
 
