@@ -1,7 +1,7 @@
 {
-  "snapshot_id": "ap-sfd-2026-10-17T23-08Z@cargo-cohort",
-  "_previous_snapshot_id": "ap-sfd-2026-10-17T22-25Z@AP-RVC-056-downgrade",
-  "_delta_reason": "Cargo audit subagent (turtle, session_turtle_1792276280540_e23e9ee4fff9c99f) closed 4 cells on 2026-10-17T23:08Z. B.6/E.6 Validation: NOT_RUN→PASS (cargo test -p agileplus-events: 20 tests pass, 0 failed). D.3/NDR-3 Implementation: UNKNOWN→PASS (cargo build -p agileplus-desktop --release: exit 0, 15m 29s). E.20/G20 Validation: re-validated, FAIL (1 documented RUSTSEC-2024-0429 macOS-ignore intentional; tauri PR #16170 unlanded). E.19/G19 Validation: cold llvm-cov run aborted >20m, no fresh coverage data; verdict remains NOT_RUN.",
+  "snapshot_id": "ap-sfd-2026-10-18T01-42Z@owl-cargo-warm-cohort",
+  "_previous_snapshot_id": "ap-sfd-2026-10-17T23-08Z@cargo-cohort",
+  "_delta_reason": "Owl cargo warm-cache audit subagent (session_vole_1792286565393_45ef575c308938d9, 2026-10-18T01:39Z) ran 4 cargo commands. A.4 / E.9 Validation: UNKNOWN→FAIL (cargo test --workspace: 5515 passed, 1 failed in agileplus-cli at mvp.rs:626 — panics on `/bin/true` ENOENT; macOS has `/usr/bin/true` only, portability bug not a logic bug). E.20 / G20 Validation: re-validated FAIL (cargo deny: advisories FAILED with 3 NEW unmaintained advisories RUSTSEC-2026-0370/0371/0372 about zvariant/zbus_names/zvariant_derive via zbus→keyring→agileplus-domain; existing RUSTSEC-2024-0429 macOS-ignore still intentional). E.19 / G19 Validation: cold + warm-cache llvm-cov not executed in 35-min budget (task 2 SKIPPED); verdict remains NOT_RUN. cargo clippy --workspace --all-targets: PASS (exit 0, 5m 05s, zero warnings, zero errors — fresh lint baseline established).",
   "head_sha": "8179b549",
   "branch": "docs/state-forward-docket-20261017",
   "workspace_members": 38,
@@ -38,7 +38,7 @@
       "STALE": 1, "NOT_APPLICABLE": 1, "dim_not_meaningful": 24, "total": 64
     },
     "Validation": {
-      "PASS": 7, "PARTIAL": 4, "FAIL": 4, "NOT_RUN": 37, "UNKNOWN": 3,
+      "PASS": 7, "PARTIAL": 4, "FAIL": 5, "NOT_RUN": 37, "UNKNOWN": 2,
       "STALE": 0, "NOT_APPLICABLE": 0, "dim_not_meaningful": 9, "total": 64
     },
     "Assurance": {
@@ -70,6 +70,42 @@
     "case_binding": "verification/CASE_BINDING_2026-10-17.md",
     "integration_audit": "docs/sessions/20261017-integration-audit/INTEGRATION.md"
   },
+  "owl_cargo_audit_2026-10-18": {
+    "subagent": "session_vole_1792286565393_45ef575c308938d9",
+    "model": "openai-compatible:MiniMax-M3",
+    "completed_at": "2026-10-18T01:39:58Z",
+    "branch": "docs/state-forward-docket-20261017",
+    "head_before": "61d921f7",
+    "commands": [
+      {"id": 1, "name": "cargo test --workspace", "verdict": "KILLED (timeout/signal at 431s, SIGKILL); per-binary results: 130 test binaries completed before kill; total passed=5515, failed=1, ignored=0 across 15 crates seen; 1 failure in agileplus-cli mvp.rs:626 (macOS /bin/true portability bug)"},
+      {"id": 2, "name": "cargo llvm-cov --workspace --summary-only", "verdict": "SKIPPED (out of 35-min budget after task 1 was killed at 431s); warm cache partially built, no coverage report emitted"},
+      {"id": 3, "name": "cargo deny check", "verdict": "FAIL (advisories: 3 NEW RUSTSEC-2026-0370/0371/0372 unmaintained advisories for zvariant/zbus_names/zvariant_derive via zbus→keyring→agileplus-domain; 1 documented RUSTSEC-2024-0429 macOS-ignore intentional); bans/licenses/sources ok"},
+      {"id": 4, "name": "cargo clippy --workspace --all-targets", "verdict": "PASS (exit 0, 5m 05s, zero warnings, zero errors)"}
+    ],
+    "cell_movements": [
+      {"cell": "A.4 / E.9 Validation", "from": "UNKNOWN", "to": "FAIL"},
+      {"cell": "E.20 / G20 Validation", "from": "FAIL", "to": "FAIL (re-validated, fresh evidence; 3 NEW unmaintained advisories recorded)"},
+      {"cell": "E.19 / G19 Validation", "from": "NOT_RUN", "to": "NOT_RUN (no change; warm-cache llvm-cov not run)"}
+    ],
+    "regressions_detected": [
+      {
+        "type": "test_failure",
+        "test": "agileplus-cli::commands::mvp::tests::wp_transition_requires_its_contract_evidence_before_mutation",
+        "file": "crates/agileplus-cli/src/commands/mvp.rs:619",
+        "panic": "Result::unwrap on Err: executing local test program /bin/true (No such file or directory, os error 2)",
+        "root_cause": "macOS Sequoia has /usr/bin/true, not /bin/true; test hardcodes Linux path",
+        "verified_by": "parent re-ran cargo test -p agileplus-cli --lib wp_transition_requires_its_contract_evidence_before_mutation on 2026-10-18T01:42Z, exit 1, same panic"
+      },
+      {
+        "type": "new_advisories",
+        "ids": ["RUSTSEC-2026-0370", "RUSTSEC-2026-0371", "RUSTSEC-2026-0372"],
+        "category": "unmaintained",
+        "affected_crates": ["zvariant", "zbus_names", "zvariant_derive"],
+        "transitive_path": "zbus → keyring → agileplus-domain",
+        "mitigation": "no safe upgrade available per advisory; tracking zbus 6.0.0+ for upstream migration"
+      }
+    ]
+  },
   "cargo_audit_2026-10-17": {
     "subagent": "session_turtle_1792276280540_e23e9ee4fff9c99f",
     "model": "openai-compatible:MiniMax-M3",
@@ -89,8 +125,9 @@
     ]
   },
   "cheap_closes": [
-    {"cell": "A.4 / E.19 Validation", "move": "cargo llvm-cov --workspace --summary-only --fail-under 85", "eta_min": 15, "note": "ABORTED at >20m on 2026-10-17T23:08Z; needs warm cache or shorter incremental run"},
-    {"cell": "A.4 / E.20 Validation", "move": "cargo deny check advisories sources licenses bans", "eta_min": 5, "note": "RE-VALIDATED FAIL on 2026-10-17T23:08Z; 1 documented RUSTSEC-2024-0429 macOS-ignore is intentional"},
+    {"cell": "A.4 / E.19 Validation", "move": "cargo llvm-cov --workspace --summary-only --fail-under 85", "eta_min": 15, "note": "ABORTED at >20m on 2026-10-17T23:08Z; warm-cache rerun SKIPPED 2026-10-18T01:39Z (owl subagent budget)"},
+    {"cell": "A.4 / E.20 Validation", "move": "cargo deny check advisories sources licenses bans", "eta_min": 5, "note": "RE-VALIDATED FAIL on 2026-10-18T01:33Z; 1 documented RUSTSEC-2024-0429 macOS-ignore + 3 NEW unmaintained advisories RUSTSEC-2026-0370/371/372 (zvariant/zbus_names/zvariant_derive via zbus→keyring→agileplus-domain); no safe upgrade per advisory"},
+    {"cell": "A.4 / E.9 Validation", "move": "fix mvp.rs:619 /bin/true → /usr/bin/true (or Rust-native), then re-run cargo test -p agileplus-cli --lib", "eta_min": 5, "note": "NEW REGRESSION 2026-10-18T01:42Z; macOS Sequoia has /usr/bin/true only; this is a portability bug, not a logic bug; one-line fix in 1 file"},
     {"cell": "B.5 case-level", "move": "bind 4 atomic_acceptance*.rs test names to AP-VC-* ids; edit cases file", "eta_min": 30},
     {"cell": "B.6 / E.6 Validation", "move": "cargo test -p agileplus-events --test event_store_tests + replay_tests + proptest_audit", "eta_min": 5, "note": "CLOSED 2026-10-17T23:08Z by cargo audit subagent (20 tests pass, 0 failed)"},
     {"cell": "B.3 / B.4 Usability", "move": "smoke-run agileplus CLI", "eta_min": 10},

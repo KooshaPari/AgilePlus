@@ -22,7 +22,7 @@
 A.1 Current state vs accepted intent       ✓ _ _ L   DOCKET.md §0; mature-contract.v1.json status=accepted_mature_semantic_contract_runtime_evidence_pending
 A.2 Verification case execution            ✓ ✗ … _   92 cases specified; 0 executed; ATOMIC_ACCEPTANCE_EXECUTION closes target-level only
 A.3 Forward path (operator alpha/MVP/mature)✓ _ … L   FORWARD_WBS, NEXT_DEPLOYABLE_RELEASE, CHARTER
-A.4 Quality gates (cov, e2e, perf, qe)     ~ S ? L   .cargo-test-result.txt is 2026-09-01 Windows snapshot
+A.4 Quality gates (cov, e2e, perf, qe)     ~ S ✗ L   cargo test --workspace: 5515 pass / 1 fail (2026-10-18T01:42Z, owl subagent) — fail is `agileplus-cli::commands::mvp::tests::wp_transition_requires_its_contract_evidence_before_mutation` at mvp.rs:626 (panics on `/bin/true` ENOENT; macOS has `/usr/bin/true` only); cargo clippy --workspace --all-targets: clean (5m 05s, exit 0); .cargo-test-result.txt still 2026-09-01 Windows snapshot (stale)
 A.5 Operator/CLI affordances                ✓ ✓ … _   40+ test targets, target/debug/agileplus builds
 A.6 Acceptance UX                           ~ ✗ … _   cloud browser saw old dashboard, zero data
 A.7 Integration state (Plane/GH/NATS/MinIO/MCP)~ ✗ … L   INTEGRATION.md §3: 1/11 surfaces live
@@ -101,8 +101,8 @@ E.15 G15 8 Git+SQLite recovery witnesses  ✓ … ~ M   promotion_recovery 8/8 i
 E.16 G16 14+10 CLI ship witnesses         ✓ … ~ M   target-level on 00397a59
 E.17 G17 Real Chromium browser journey    ~ ✗ ~ M   CI run on f959fad53; prod FAIL
 E.18 G18 agileplus ship survives boundary ✓ … ~ M   saga exists
-E.19 G19 Coverage ≥85% on current HEAD    ? _ … L   cargo llvm-cov --workspace --summary-only cold-run aborted >20m (2026-10-17T23:08Z); no fresh coverage data
-E.20 G20 cargo deny + OSV clean           ? _ ✗ _   cargo deny: advisories FAILED (1 documented RUSTSEC-2024-0429 macOS-ignore, intentional; tauri PR #16170 unlanded); bans/licenses/sources ok (2026-10-17T23:08Z)
+E.19 G19 Coverage ≥85% on current HEAD    ? _ … L   cargo llvm-cov --workspace --summary-only cold-run aborted >20m (2026-10-17T23:08Z) AND warm-cache rerun not executed in 35-min budget (2026-10-18T01:39Z, owl subagent task 2 SKIPPED); no fresh coverage data; cargo clippy --workspace --all-targets is the only fresh evidence (clean, exit 0)
+E.20 G20 cargo deny + OSV clean           ? _ ✗ _   cargo deny: advisories FAILED (2026-10-18T01:33Z, owl subagent) — 1 documented RUSTSEC-2024-0429 macOS-ignore intentional (Linux-only tauri PR #16170) + 3 NEW unmaintained advisories: RUSTSEC-2026-0370 (zvariant), RUSTSEC-2026-0371 (zbus_names), RUSTSEC-2026-0372 (zvariant_derive); all via zbus→keyring→agileplus-domain transitive; bans/licenses/sources ok
 ```
 
 ---
@@ -113,11 +113,11 @@ E.20 G20 cargo deny + OSV clean           ? _ ✗ _   cargo deny: advisories FAI
 
 | Verdict | Impl | Usab | Val | Assur | Total |
 |---|---|---|---|---|---|
-| ✓ PASS | 32 | 4 | 7 | 3 | **45** |
+| ✓ PASS | 32 | 4 | 7 | 3 | **46** |
 | ~ PARTIAL | 6 | 4 | 4 | 0 | **14** |
-| ✗ FAIL | 4 | 12 | 4 | 0 | **20** |
+| ✗ FAIL | 4 | 12 | 5 | 0 | **21** |
 | … NOT_RUN | 11 | 14 | 37 | 0 | **62** |
-| ? UNKNOWN | 2 | 4 | 3 | 0 | **9** |
+| ? UNKNOWN | 2 | 4 | 2 | 0 | **8** |
 | S STALE | 1 | 1 | 0 | 0 | **2** |
 | N/A NOT_APPLICABLE | 1 | 1 | 0 | 0 | **2** |
 | _ dim-not-meaningful | 7 | 24 | 9 | 61 | **101** |
@@ -132,10 +132,10 @@ E.20 G20 cargo deny + OSV clean           ? _ ✗ _   cargo deny: advisories FAI
 - **0 / 92** verification cases have `executed_with_witness` in the JSON-locked schema (`0.4.0`).
 - **5 / 92** cases have a **STRONG** test witness per `verification/CASE_BINDING_2026-10-17.md`; **5 / 92** have an **ADJACENT** witness. (AP-RVC-056 was downgraded from STRONG to ADJACENT after re-reading the case body — the test proves only the immutability half, not the content-attribution half.) The two numbers are not the same claim.
 - **0 / 67** requirements are `runtime_verified`.
-- **2 / 10** NDR items (NDR-1, NDR-2) have a parent-observed PASS witness at the **target** level.
+- **3 / 10** NDR items (NDR-1, NDR-2, NDR-3) have a parent-observed PASS witness at the **target** level.
 - **1 / 11** integration surfaces is wired for real (SQLite).
 - **1 / 5** Tracera-relevant surfaces (E11 / p2p crate exists but not running) is partially implemented.
-- **3 / 20** gates are clearly PASS (G1 = spec acceptance; G4 = P0 acceptance cohort; G19.Val? — coverage tool aborted, NOT_RUN remains; **E.20 still FAIL** — 1 documented macOS advisory-not-detected ignore). B.6 / E.6 Validation and D.3 / NDR-3 Implementation were closed by the cargo audit subagent on 2026-10-17T23:08Z; E.20 was re-validated (FAIL, no movement).
+- **3 / 20** gates are clearly PASS (G1 = spec acceptance; G4 = P0 acceptance cohort; G19.Val? — coverage tool aborted, NOT_RUN remains; **E.20 still FAIL** — 1 documented macOS advisory-not-detected ignore + 3 NEW unmaintained advisories (RUSTSEC-2026-0370/371/372 zvariant/zbus_names/zvariant_derive via zbus→keyring→agileplus-domain). B.6 / E.6 Validation and D.3 / NDR-3 Implementation were closed by the cargo audit subagent on 2026-10-17T23:08Z; E.20 was re-validated on 2026-10-18T01:33Z (FAIL, no movement; 3 NEW unmaintained advisories recorded). **A.4 / E.9 Validation transitioned UNKNOWN→FAIL on 2026-10-18T01:42Z** (cargo test --workspace 1 fail: `agileplus-cli::commands::mvp::tests::wp_transition_requires_its_contract_evidence_before_mutation` at mvp.rs:626 — panics on `/bin/true` ENOENT; macOS has `/usr/bin/true` only). **E.19 Val still NOT_RUN**; warm-cache `cargo llvm-cov` rerun was budget-cut by owl subagent on 2026-10-18T01:39Z.
 
 > Per the cross-harness cockpit policy (memory `mem_1792275198980_10767103059655466859`, file `~/.jcode/memories/global/cockpit-progress-tree-policy.md`, adopted 2026-10-17T22:12Z), these counts are the **only** quantitative claims in this tree. They are **never** converted to percentages.
 
