@@ -1,8 +1,8 @@
 {
-  "snapshot_id": "ap-sfd-2026-10-18T10-15Z@by-gitignore-hook-cohort",
-  "_previous_snapshot_id": "ap-sfd-2026-10-18T10-00Z@bx-source-findings-cohort",
-  "_delta_reason": "Cohort by-gitignore-hook: squid subagent (session_sheep_1792317721435_2bb11a8ee4006038; 7m 35s of 30m cap) implemented B.y durable fix. Verdict: PASS. PR #1161 opened on chore/gitignore-agileplus-db-and-pre-commit-timestamp-hook (commit 98f87bdf). 4 files changed: .gitignore (+5 explicit .agileplus/*.db* patterns), .githooks/pre-commit (+8 lines chaining new hook), .githooks/pre-commit-validate-timestamps (NEW +102 lines executable bash that scans staged .agileplus/*.db for non-RFC3339 updated_at rows and rejects), .agileplus/agileplus.db (untracked via git rm --cached; working tree preserved). All 5 self-tests PASS: reject_path (synthetic DB → exit 1), pass_path (current 16 tables → exit 0; gecko 5-row fix intact), e2e_git_commit_smoke (commit on corrupt DB → exit 1), HOOKS_SKIP=1 bypass works, core.hooksPath wired to .githooks in .git/config. Push blocker: pre-push cargo clippy hit MacOSX SDK arm64e malformed-file error (tapi, environmental, unrelated); HOOKS_SKIP=1 used. Post-merge operator action: git config core.hooksPath .githooks (dormant on local checkouts). cells_pass_any unchanged (B.y is metadata, not a dimension cell). cheap_closes_resolved: 8/14 → 9/14 (B.y closed). Operator-gated items unchanged: PR #1156 (A.4/E.9 Val), PR #1157 (A.4/E.20 Val), PR #1161 (B.y itself), E.2/E.5 Val P1+P2 (120m big), F.3 doc gaps (30m, lowest). FOLLOW-UP: dependabot-bumps cohort (stingray 7m 15s) added in commit f3004c59. Verdict: PASS. 2 PRs opened: PR #1162 (mcp 1.28.1/1.27.1/1.28.1 -> 1.30.0 across 3 lockfiles; addresses 3 dependabot alerts #215/#216/#217 for CVE-2026-59951), PR #1163 (postcss-selector-parser 6.1.4 -> 7.1.6 in package-lock.json + dashboard web package; addresses alert #214 for ReDoS). 4 of 5 actionable alerts now closed; 5th (RUSTSEC-2026-* glib VariantStrIter) is documented-ignore blocked on Tauri upstream PR #16170. cells_pass_any unchanged (dependabot bumps are security, not dim cells). cheap_closes_resolved still 9/14. Operator-gated items unchanged: PR #1156 (A.4/E.9), PR #1157 (A.4/E.20), PR #1161 (B.y), PR #1162 (mcp), PR #1163 (postcss), E.2/E.5 Val (120m), F.3 doc gaps (30m, lowest).",
-  "head_sha": "f3004c59",
+  "snapshot_id": "ap-sfd-2026-10-18T10-30Z@e2-e5-p1p2-val-cohort",
+  "_previous_snapshot_id": "ap-sfd-2026-10-18T10-15Z@by-gitignore-hook-cohort",
+  "_delta_reason": "Cohort e2-e5-p1p2-val: t-rex subagent (session_snake_1792352065409_e571d49ceb42da4e; 95s of 120m cap) ran P1+P2 validation per FORWARD_WBS_2026-10-04.md. Verdict: PARTIAL. P1 (HTTP acceptance): 10/10 tests PASS in atomic_acceptance_http.rs (exit 0, 0.25s). P2 (gRPC validation): 6/6 tests PASS in atomic_acceptance_rpc.rs (exit 0, 0.13s). All 5 P1 sub-tasks and all P2 canonical path rules verified. PARTIAL (not PASS) due to 2 carry-forward cheap_closes filed: E.2.P1-422 (test-quality fix, 10m, non-blocking) and E.2.P1-GENERIC (production gap, 60m, BLOCKING — product decision required on where \"generic\" lives: Feature.kind or governance contract). E.2.P1-GENERIC is the only remaining blocker for the P1 exit criterion. cells_pass_any: +2 new test suites pass (P1=10/10, P2=6/6); dim count likely increments. cheap_closes_resolved: 9/14 → 10/16 (E.2/E.5 Val CLOSED-PARTIAL; 2 new entries filed: E.2.P1-422 + E.2.P1-GENERIC). No source mutations; no PRs opened. Operator-gated items unchanged: PRs #1156, #1157, #1161, #1162, #1163 + 2 new cheap_closes (E.2.P1-422 10m, E.2.P1-GENERIC 60m blocking) + F.3 doc gaps (30m, lowest).",
+  "head_sha": "__PENDING__",
   "branch": "docs/state-forward-docket-20261017",
   "workspace_members": 38,
   "case_binding": {
@@ -395,7 +395,22 @@
     {
       "cell": "E.2 / E.5 Validation",
       "move": "run P1+P2 command list from FORWARD_WBS_2026-10-04.md",
-      "eta_min": 120
+      "eta_min": 120,
+      "verdict": "PARTIAL",
+      "closed_by": "t-rex subagent 2026-10-18T19:36:07Z (session_snake_1792352065409_e571d49ceb42da4e)",
+      "closed_at": "2026-10-18T19:36:07Z",
+      "evidence_file": "docs/sessions/20261017-state-forward-docket/e2_e5_p1p2_val_2026-10-18-trex-result.md",
+      "note": "CLOSED-PARTIAL 2026-10-18T19:36Z by t-rex subagent (95s of 120m cap). P1 (HTTP acceptance): 10/10 tests PASS in atomic_acceptance_http.rs (runner: cargo test -p agileplus-api --test atomic_acceptance_http --no-fail-fast; exit 0, 0.25s). All 5 P1 sub-tasks verified: auth pre-condition (P1-2), 6 provable cases (P1-3 incl 404 missing, 409 stale governance, 422 bad governance [WEAK assertion — see E.2.P1-422], 500 storage-failure sanitized, exact replay returns original receipt, generic cannot award Validated/Shipped [NO PRODUCTION ENFORCEMENT — see E.2.P1-GENERIC]), receipt identity retrievable after restart (P1-4), restart-backed DB integration (P1-5). P2 (gRPC validation): 6/6 tests PASS in atomic_acceptance_rpc.rs (runner: cargo test -p agileplus-grpc --test atomic_acceptance_rpc --no-fail-fast; exit 0, 0.13s). All P2 canonical path rules verified: resolve feature / durable request identity / AcceptFeatureCommand / accept_feature / AtomicAcceptancePort / AcceptanceOutcome / no gRPC-local governance evaluator / no gRPC-local candidate evaluator / no direct state mutation / stable request identity (same id → same receipt, changed command → conflict, never regrades). No source mutations made during validation. Build: cargo build --workspace --all-targets exit 0 in 13.19s. PARTIAL (not PASS) due to 2 carry-forward cheap_closes: E.2.P1-422 (test-quality fix, 10m, non-blocking) and E.2.P1-GENERIC (production gap, 60m, BLOCKING — product decision required on where \"generic\" lives: Feature.kind or governance contract). P1+2 exit criterion partially met; full P1 exit criterion blocked on E.2.P1-GENERIC.",
+      "new_cheap_closes_filed": [
+        "E.2.P1-422",
+        "E.2.P1-GENERIC"
+      ],
+      "wall_clock_seconds": 95,
+      "cap_seconds": 7200,
+      "p1_tests_passed": 10,
+      "p1_tests_total": 10,
+      "p2_tests_passed": 6,
+      "p2_tests_total": 6
     },
     {
       "cell": "F.3 doc gaps",
@@ -410,6 +425,27 @@
       "fix_pr": 1156,
       "fix_commit": "39ee805b",
       "fix_status": "OPEN_PENDING_PR_MERGE"
+    },
+    {
+      "cell": "E.2.P1-422 — Pin the 422 status in client_cannot_supply_a_pass_or_actor_override",
+      "move": "tighten assertion in crates/agileplus-api/tests/atomic_acceptance_http.rs:370 from response.status_code().is_client_error() to assert_eq!(response.status_code(), StatusCode::UNPROCESSABLE_ENTITY) for the passed:true, authoritative:true, and actor:\"owner\" payloads",
+      "eta_min": 10,
+      "note": "FILED 2026-10-18T19:36:07Z by t-rex subagent (carry-forward from E.2/E.5 Val PARTIAL closure). Production code at crates/agileplus-api/src/routes/acceptance.rs:152-155 already maps DomainError::Validation to HTTP 422 correctly. The test simply does not pin it (asserts any 4xx). Zero behavior change; assertion tightening only. Non-blocking; cheap to land.",
+      "source": "t-rex subagent 2026-10-18T19:36:07Z carry-forward (E.2/E.5 Val PARTIAL)",
+      "verdict": "OPEN",
+      "test_file": "crates/agileplus-api/tests/atomic_acceptance_http.rs:370",
+      "production_evidence": "crates/agileplus-api/src/routes/acceptance.rs:152-155"
+    },
+    {
+      "cell": "E.2.P1-GENERIC — Implement \"generic feature transition cannot award Validated or Shipped\"",
+      "move": "(1) Decide product semantics: is \"generic\" a property of the Feature (new kind field with Generic/Specific) or of the governance contract (missing contract ⇒ transitions to Validated/Shipped are rejected)? (2) Implement the rule in crates/agileplus-domain/src/domain/feature.rs::Feature::transition() (lines 95-115) and/or atomic acceptance port at crates/agileplus-application/src/use_cases/accept_feature.rs. (3) Replace the tautology at crates/agileplus-api/src/routes/features.rs:392 with a behavior test that attempts transition(Implementing, Validated) on a feature whose governance contract is absent (or kind=Generic) and asserts Err(...).",
+      "eta_min": 60,
+      "note": "FILED 2026-10-18T19:36:07Z by t-rex subagent (carry-forward from E.2/E.5 Val PARTIAL closure). BLOCKING. The WBS sub-task 3 sixth case is the only P1-3 case without production enforcement and without a real test. Today, any feature (even one without governance) can be transitioned to Validated/Shipped via the feature-level state machine. Workspace-wide grep for feature_kind/FeatureKind/is_generic/feature_category over crates/: zero hits. Only test (terminal_feature_states_are_not_generic_transition_targets at features.rs:392) is a tautology: it iterates [FeatureState::Validated, FeatureState::Shipped] and asserts matches!(target, FeatureState::Validated | FeatureState::Shipped) which always succeeds. Likely blocks the P1 exit criterion until resolved.",
+      "source": "t-rex subagent 2026-10-18T19:36:07Z carry-forward (E.2/E.5 Val PARTIAL)",
+      "verdict": "OPEN",
+      "blocking": true,
+      "test_file": "crates/agileplus-api/src/routes/features.rs:391-399",
+      "production_evidence": "crates/agileplus-domain/src/domain/feature.rs:57-74 (no kind field)"
     }
   ],
   "operator_gated": [
@@ -1170,5 +1206,62 @@
     "result_file": "/tmp/dependabot_bumps_2026-10-18-result.md",
     "log_file": "/tmp/dependabot_bumps_2026-10-18.log",
     "evidence_durable_copy": "docs/sessions/20261017-state-forward-docket/dependabot_bumps_2026-10-18-stingray-result.md"
+  },
+  "e2_e5_p1p2_val_2026-10-18-trex": {
+    "subagent_session": "session_snake_1792352065409_e571d49ceb42da4e",
+    "subagent_label": "t-rex",
+    "dispatched_at": "2026-10-18T19:34:25Z",
+    "delivered_at": "2026-10-18T19:36:07Z",
+    "wall_clock_seconds": 95,
+    "cap_seconds": 7200,
+    "verdict": "PARTIAL",
+    "carry_forward": null,
+    "cells": [
+      {
+        "cell": "E.2 / E.5 Validation",
+        "before": "NOT_RUN",
+        "after": "PARTIAL"
+      }
+    ],
+    "new_cheap_closes_filed": [
+      {
+        "id": "E.2.P1-422",
+        "eta_min": 10,
+        "type": "test-quality",
+        "blocking": false,
+        "move": "tighten assertion in atomic_acceptance_http.rs:370 to StatusCode::UNPROCESSABLE_ENTITY"
+      },
+      {
+        "id": "E.2.P1-GENERIC",
+        "eta_min": 60,
+        "type": "production-gap",
+        "blocking": true,
+        "move": "decide generic semantics + implement rule in Feature::transition() + replace tautology test"
+      }
+    ],
+    "test_results": {
+      "p1_http_acceptance": {
+        "file": "crates/agileplus-api/tests/atomic_acceptance_http.rs",
+        "runner": "cargo test -p agileplus-api --test atomic_acceptance_http --no-fail-fast",
+        "exit_code": 0,
+        "passed": 10,
+        "failed": 0,
+        "duration_s": 0.25
+      },
+      "p2_grpc_validation": {
+        "file": "crates/agileplus-grpc/tests/atomic_acceptance_rpc.rs",
+        "runner": "cargo test -p agileplus-grpc --test atomic_acceptance_rpc --no-fail-fast",
+        "exit_code": 0,
+        "passed": 6,
+        "failed": 0,
+        "duration_s": 0.13
+      }
+    },
+    "build": "cargo build --workspace --all-targets exit 0 in 13.19s",
+    "no_source_mutations": true,
+    "no_prs_opened": true,
+    "result_file": "/tmp/e2_e5_p1p2_val_2026-10-18-result.md",
+    "log_file": "/tmp/e2_e5_p1p2_val_2026-10-18.log",
+    "evidence_durable_copy": "docs/sessions/20261017-state-forward-docket/e2_e5_p1p2_val_2026-10-18-trex-result.md"
   }
 }
