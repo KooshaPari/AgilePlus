@@ -1,0 +1,222 @@
+?? docs/sessions/20261017-state-forward-docket/dependabot_bumps_2026-10-18-stingray.log
+?? docs/sessions/20261017-state-forward-docket/e2_e5_p1p2_p1_test.out
+?? docs/sessions/20261017-state-forward-docket/e2_e5_p1p2_p2_test.out
+//! Mounted HTTP acceptance witnesses: authentication, real SQLite, commit and rollback.
+use agileplus_api::{AppState, create_router};
+use agileplus_domain::{
+    config::AppConfig,
+    credentials::{CredentialStore, InMemoryCredentialStore},
+    ports::observability::{LogEntry, ObservabilityPort, SpanContext},
+};
+use agileplus_git::GitVcsAdapter;
+use axum::http::StatusCode;
+use axum_test::TestServer;
+use serde_json::{Value, json};
+use std::sync::Arc;
+
+use agileplus_domain::{
+    domain::{
+        execution::{
+            Assignment, AssignmentStatus, Attempt, AttemptStatus, CriterionEvaluation, Evaluation,
+            EvaluationResult, SpecRevision, snapshot_acceptance_criteria,
+        },
+        feature::Feature,
+        governance::{Evidence, EvidenceType, GovernanceContract, GovernanceRule},
+        state_machine::FeatureState,
+        work_package::{WorkPackage, WpState},
+    },
+    ports::{ExecutionRecordPort, StoragePort},
+};
+use agileplus_sqlite::SqliteStorageAdapter;
+use chrono::Utc;
+
+pub(crate) async fn seed(db: &SqliteStorageAdapter) -> i64 {
+    let mut feature = Feature::new("atomic", "Atomic acceptance", [7; 32], None);
+    feature.state = FeatureState::Implementing;
+    let feature_id = StoragePort::create_feature(db, &feature).await.unwrap();
+    let now = Utc::now();
+    let revision = SpecRevision {
+        id: "spec:1".into(),
+        feature_id,
+        content_hash: "sha256:accepted".into(),
+        parent_revision_id: None,
+        accepted_at: now,
+        authority: "owner".into(),
+    };
+    db.create_spec_revision(&revision).await.unwrap();
+    for seq in [1, 2] {
+        let mut wp = WorkPackage::new(feature_id, "Atomic WP", seq, "result meets the contract");
+        wp.state = WpState::Review;
+        let wp_id = StoragePort::create_work_package(db, &wp).await.unwrap();
+        StoragePort::create_evidence(
+            db,
+            &Evidence {
+                id: 0,
+                wp_id,
+                fr_id: format!("FR-{seq}"),
+                evidence_type: EvidenceType::TestResult,
+                artifact_path: "artifact:fixture".into(),
+                metadata: None,
+                created_at: now,
+            },
+        )
+        .await
+        .unwrap();
+        let assignment = Assignment {
+            id: format!("assignment:{seq}"),
+            wp_id,
+            spec_revision_id: revision.id.clone(),
+            created_at: now,
+            supersedes_assignment_id: None,
+            status: AssignmentStatus::Active,
+        };
+        let criteria = snapshot_acceptance_criteria("result meets the contract");
+        db.create_assignment_with_criteria(&assignment, &criteria)
+            .await
+            .unwrap();
+        let candidate_ref = format!("git:{:040x}", seq);
+        let attempt = Attempt {
+            id: format!("attempt:{seq}"),
+            assignment_id: assignment.id.clone(),
+            worker_id: "worker".into(),
+            backend: "test".into(),
+            job_id: None,
+            worktree_path: None,
+            base_candidate_ref: Some(format!("git:{:040x}", 0)),
+            result_candidate_ref: Some(candidate_ref.clone()),
+            status: AttemptStatus::Completed,
+            failure_class: None,
+            started_at: now,
+            ended_at: Some(now),
+        };
+        db.create_attempt(&attempt).await.unwrap();
+        let result = CriterionEvaluation {
+            criterion_id: criteria[0].id.clone(),
+            result: EvaluationResult::Satisfied,
+            evidence_refs: vec![format!("artifact:proof-{seq}")],
+            rationale: Some("fixture".into()),
+        };
+        db.create_evaluation_receipt(
+            &Evaluation {
+                id: format!("evaluation:{seq}"),
+                assignment_id: assignment.id,
+                attempt_id: Some(attempt.id),
+        StoragePort::get_feature_by_id(db.as_ref(), id)
+            .await
+            .unwrap()
+            .unwrap()
+            .state,
+        FeatureState::Implementing
+    );
+    for table in ["audit_log", "events", "feature_acceptance_receipts"] {
+        assert_eq!(count(&db, table), 0);
+    }
+}
+
+#[tokio::test]
+async fn client_cannot_supply_a_pass_or_actor_override() {
+    let (api, db, _) = server(true).await;
+    for extra in [
+        json!({"passed":true}),
+        json!({"authoritative":true}),
+        json!({"actor":"owner"}),
+    ] {
+        let mut payload = request();
+        payload
+            .as_object_mut()
+            .unwrap()
+            .extend(extra.as_object().unwrap().clone());
+        let response = api
+            .post("/api/v1/features/atomic/accept")
+            .add_header("X-API-Key", KEY)
+            .json(&payload)
+            .await;
+        assert!(response.status_code().is_client_error());
+    }
+    assert_eq!(count(&db, "feature_acceptance_receipts"), 0);
+}
+
+#[tokio::test]
+async fn persistence_failure_over_http_leaves_no_terminal_state_or_receipt() {
+    let (api, db, id) = server(true).await;
+    db.conn_for_bench().unwrap().execute_batch("CREATE TRIGGER reject_event BEFORE INSERT ON events BEGIN SELECT RAISE(ABORT,'private database detail'); END;").unwrap();
+    let response = api
+        .post("/api/v1/features/atomic/accept")
+    Ok(Json(outcome))
+}
+
+fn domain_error(error: DomainError) -> HttpError {
+    match error {
+        // A failed precondition (e.g. "WP01 has no Evaluation") is a
+        // semantic unprocessability — the request was well-formed, the
+        // caller is authenticated, but the live work-package state is
+        // not in a shape the acceptance use case can accept. 422 is the
+        // right code: the request cannot succeed until the precondition
+        // is satisfied. Conflict (409) is reserved for genuine state
+        // collisions (concurrent writes, version mismatches).
+        DomainError::Validation(message) => (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({"error":"acceptance_rejected", "message":message})),
+        ),
+        DomainError::Conflict(message) => (
+            StatusCode::CONFLICT,
+            Json(json!({"error":"acceptance_rejected", "message":message})),
+        ),
+        DomainError::NotFound(_) => (StatusCode::NOT_FOUND, Json(json!({"error":"not_found"}))),
+        DomainError::NotImplemented => (
+            StatusCode::NOT_IMPLEMENTED,
+            Json(json!({"error":"atomic_acceptance_not_supported"})),
+        ),
+        other => {
+            tracing::error!(%other, "atomic acceptance persistence failed");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error":"acceptance_persistence_failed"})),
+            )
+   Compiling agileplus-api v0.2.4 (/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/crates/agileplus-api)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.31s
+     Running tests/atomic_acceptance_http.rs (target/debug/build/agileplus-api/70173d3d94d5e26e/out/atomic_acceptance_http-70173d3d94d5e26e)
+
+running 1 test
+test client_cannot_supply_a_pass_or_actor_override ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.02s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+     Running tests/atomic_acceptance_http.rs (target/debug/build/agileplus-api/70173d3d94d5e26e/out/atomic_acceptance_http-70173d3d94d5e26e)
+
+running 10 tests
+test client_cannot_supply_a_pass_or_actor_override ... ok
+test stale_governance_expectation_cannot_accept_over_http ... ok
+test authenticated_http_acceptance_commits_and_replays_one_receipt ... ok
+test unsupported_embedder_returns_501_not_an_optimistic_success ... ok
+test missing_feature_returns_404_without_acceptance_side_effects ... ok
+test receipt_lookup_redacts_storage_failures ... ok
+test persistence_failure_over_http_leaves_no_terminal_state_or_receipt ... ok
+test unauthorized_http_cannot_reach_acceptance ... ok
+test receipt_lookup_requires_auth_and_never_awards_acceptance ... ok
+test mounted_receipt_survives_database_reopen_without_regrading ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+Switched to a new branch 'test/pin-422-in-client-cannot-supply-override'
+branch 'test/pin-422-in-client-cannot-supply-override' set up to track 'docs/state-forward-docket-20261017'.
+M  crates/agileplus-api/tests/atomic_acceptance_http.rs
+?? docs/sessions/20261017-state-forward-docket/dependabot_bumps_2026-10-18-stingray.log
+?? docs/sessions/20261017-state-forward-docket/e2_e5_p1p2_p1_test.out
+?? docs/sessions/20261017-state-forward-docket/e2_e5_p1p2_p2_test.out
+[test/pin-422-in-client-cannot-supply-override 534d7ec9] test(api): pin UNPROCESSABLE_ENTITY status in client_cannot_supply_a_pass_or_actor_override
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+534d7ec910698478267401488c8303aa36d7ce08 test(api): pin UNPROCESSABLE_ENTITY status in client_cannot_supply_a_pass_or_actor_override
+[hooks] HOOKS_SKIP=1; skipping pre-push
+remote: 
+remote: Create a pull request for 'test/pin-422-in-client-cannot-supply-override' on GitHub by visiting:        
+remote:      https://github.com/KooshaPari/AgilePlus/pull/new/test/pin-422-in-client-cannot-supply-override        
+remote: 
+remote: GitHub found 5 vulnerabilities on KooshaPari/AgilePlus's default branch (5 moderate). To find out more, visit:        
+remote:      https://github.com/KooshaPari/AgilePlus/security/dependabot        
+remote: 
+To github.com:KooshaPari/AgilePlus.git
+ * [new branch]        test/pin-422-in-client-cannot-supply-override -> test/pin-422-in-client-cannot-supply-override
+branch 'test/pin-422-in-client-cannot-supply-override' set up to track 'origin/test/pin-422-in-client-cannot-supply-override'.
+https://github.com/KooshaPari/AgilePlus/pull/1164
