@@ -1,8 +1,8 @@
 {
-  "snapshot_id": "ap-sfd-2026-10-18T09-20Z@coverage-cohort-v3-pass",
-  "_previous_snapshot_id": "ap-sfd-2026-10-18T09-02Z@coverage-cohort-v2-attempted",
-  "_delta_reason": "Cohort 3-v3: sloth v3 (session_horse_c9dabe732b1b8b92) ran cargo+nightly llvm-cov with the --skip flag to skip the 1 pre-existing mvp.rs:626 test (PR #1156 fix unmerged). cargo+llvm-cov completed cleanly: 152,319 lines total / 9,161 missed / 93.99% line coverage, 11,990 branches / 1,098 missed / 90.84%, 94,354 regions / 5,291 missed / 94.39%. Exit 0, no test failures, no timeouts, no ENOSPC. E.19 / G19 Validation: NOT_RUN → PASS (93.99% ≥ 85% floor). Validation dimension moved PASS=7→8, NOT_RUN=37→36. gates_pass: 3/20 → 4/20 (added G19). Snapshot ID bumped to coverage-cohort-v3-pass.",
-  "head_sha": "e37aeab5",
+  "snapshot_id": "ap-sfd-2026-10-18T09-30Z@restart-and-deps-cohort",
+  "_previous_snapshot_id": "ap-sfd-2026-10-18T09-20Z@coverage-cohort-v3-pass",
+  "_delta_reason": "Cohort restart-and-deps: 2 subagents in parallel. (1) otter (session_otter_1792315562943_1471cd76404b3050) ran D.3 / NDR-3 Validation: 3 reopen tests passed (file_reopen_preserves_atomic_receipt_and_replay, file_backed_adapter_reopens_existing_database, mounted_receipt_survives_database_reopen_without_regrading) + live binary restart smoke (kill+restart, /health payload identical, SQLite persisted on disk). D.3 / NDR-3 Validation: NOT_RUN → PASS. (2) dolphin (session_panda_1792315603678_d05c8f338e3f0477) enumerated 5 dependabot moderate vulns: 4 actionable (3× mcp CVE-2026-59951 in python/uv.lock+agileplus-mcp/uv.lock+dispatch-mcp/uv.lock → bump mcp to ≥1.30.0; 1× postcss-selector-parser CVE-2026-104844 in package-lock.json → bump to ≥7.1.6) + 1 documented-ignore (glib RUSTSEC-2024-0429 already in deny.toml, blocked by tauri PR #16170). IMPORTANT CORRECTION: the docket's reference to RUSTSEC-2026-0370/0371/0372 zvariant/zbus_names/zvariant_derive was STALE — the actual deny.toml entries are RUSTSEC-2024-0370 (proc-macro-error) and RUSTSEC-2024-0429 (glib). Validation dimension: PASS=8→9, NOT_RUN=36→35. ndr_items_with_target_witness: 3/10 → 4/10 (NDR-3 fully closed). cells_pass_any: 46/256 → 47/256. cells_pass_meaningful: 46/150 → 47/150. Snapshot ID bumped to restart-and-deps-cohort.",
+  "head_sha": "70d435d0",
   "branch": "docs/state-forward-docket-20261017",
   "workspace_members": 38,
   "case_binding": {
@@ -69,10 +69,10 @@
       "total": 64
     },
     "Validation": {
-      "PASS": 8,
+      "PASS": 9,
       "PARTIAL": 5,
       "FAIL": 4,
-      "NOT_RUN": 36,
+      "NOT_RUN": 35,
       "UNKNOWN": 2,
       "STALE": 0,
       "NOT_APPLICABLE": 0,
@@ -92,16 +92,16 @@
     }
   },
   "headline_counts": {
-    "cells_pass_any": "46/256",
-    "cells_pass_meaningful": "46/150",
+    "cells_pass_any": "47/256",
+    "cells_pass_meaningful": "47/150",
     "verification_cases_executed_target_level": "0/92 (current schema 0.4.0; pending 0.5.0 schema-bump)",
     "verification_cases_with_STRONG_witness": "5/92 (per CASE_BINDING_2026-10-17.md; AP-RVC-056 was downgraded from STRONG to ADJACENT after re-reading the case body)",
     "verification_cases_with_ADJACENT_witness": "5/92 (per CASE_BINDING_2026-10-17.md)",
     "requirements_runtime_verified": "0/67",
-    "ndr_items_with_target_witness": "3/10 (NDR-1, NDR-2, NDR-3 \u2014 NDR-3 closed by cargo build -p agileplus-desktop --release PASS at 2026-10-17T23:02Z)",
+    "ndr_items_with_target_witness": "4/10 (NDR-1, NDR-2, NDR-3 \u2014 NDR-3 fully closed 2026-10-18T09:29Z by otter: Implementation PASS cargo build 2026-10-17T23:02Z + Validation PASS 3 reopen tests + live binary restart smoke 2026-10-18T09:29Z)",
     "integration_surfaces_live": "1/11",
-    "gates_pass": "4/20 (G1, G4, +B.6/E.6 Validation closed by cargo test -p agileplus-events 2026-10-17T23:08Z, +E.19/G19 Validation closed by cargo+llvm-cov 93.99% line coverage 2026-10-18T09:17Z via sloth-v3)",
-    "cells_advanced_in_cohort": "2 advanced: 1 FAIL\u2192PARTIAL (E.20 / G20 Validation, ci_blockers_fix_2026-10-18), 1 NOT_RUN\u2192PASS (E.19 / G19 Validation, llvm_cov_2026-10-18-v3; 93.99% line coverage \u2265 85% floor). sloth v1 ENOSPC (infra), sloth v2 test-block (cargo-llvm-cov ran but no summary), sloth v3 PASS via --skip flag (wall-clock 797.61s, exit 0)."
+    "gates_pass": "4/20 (G1, G4, +B.6/E.6 Validation closed by cargo test -p agileplus-events 2026-10-17T23:08Z, +E.19/G19 Validation closed by cargo+llvm-cov 93.99% line coverage 2026-10-18T09:17Z via sloth-v3). D.3 / NDR-3 Validation closed at 2026-10-18T09:29Z by otter; this is an NDR item, not a gate, so gates_pass unchanged.",
+    "cells_advanced_in_cohort": "2 advanced: 1 FAIL\u2192PARTIAL (E.20 / G20 Validation, ci_blockers_fix_2026-10-18), 1 NOT_RUN\u2192PASS (D.3 / NDR-3 Validation, restart_2026-10-18-otter; 3 reopen tests + live binary restart). NDR-3 is fully closed (Implementation was already PASS via cargo build 2026-10-17T23:02Z; Validation now PASS). E.19 / G19 closed in prior cohort (v3-pass) at 2026-10-18T09:17Z. ndr_items_with_target_witness: 3/10 \u2192 4/10."
   },
   "policy_reference": {
     "memory_id": "mem_1792275198980_10767103059655466859",
@@ -261,7 +261,7 @@
       "cell": "A.4 / E.20 Validation",
       "move": "cargo deny check advisories sources licenses bans",
       "eta_min": 5,
-      "note": "RE-VALIDATED FAIL\u2192PARTIAL on 2026-10-18T06:48Z by parrot subagent (PR #1157 commit 070babcd). 3 newly-ignored RUSTSEC-2026-0370/0371/0372 advisories silenced; cargo deny check exits 0. PARTIAL retained (not PASS) because advisories still exist (only their acceptance is declared). Re-evaluate to PASS when zbus 6.0.0+ upstream migration lands. Re-validation block in ci_blockers_fix_2026-10-18.",
+      "note": "RE-VALIDATED FAIL\u2192PARTIAL on 2026-10-18T06:48Z by parrot subagent (PR #1157 commit 070babcd). cargo deny check exits 0 after the allow-dirty + 3 ignore-list updates. PARTIAL retained (not PASS) because advisories still exist (only their acceptance is declared). NOTE (dolphin 2026-10-18T09:28Z): the upstream prompt and prior notes described the silenced advisories as 'RUSTSEC-2026-0370/0371/0372 zvariant/zbus_names/zvariant_derive' — this is STALE. The actual deny.toml entries are RUSTSEC-2024-0370 (proc-macro-error, build-time only via glib-macros 0.18) and RUSTSEC-2024-0429 (glib VariantStrIter, fix only in glib 0.20.0 behind tauri PR #16170). Dependabot separately flags 4 actionable moderate vulns (3× mcp CVE-2026-59951 in three Python lockfiles, 1× postcss-selector-parser CVE-2026-104844 in package-lock.json); see dependabot_2026-10-18-dolphin block. Re-evaluate to PASS when zbus 6.0.0+ upstream migration lands OR when mcp+postcss-selector-parser bumps land.",
       "mitigation_pr": 1157,
       "mitigation_commit": "070babcd8320a4a51bb48b109ec36af9b8f0ca98"
     },
@@ -296,7 +296,10 @@
     {
       "cell": "D.3 Validation",
       "move": "restart agileplus-api, observe atomic_acceptance_sqlite reopen",
-      "eta_min": 10
+      "eta_min": 10,
+      "note": "CLOSED NOT_RUN\u2192PASS on 2026-10-18T09:29:11Z by otter subagent (session_otter_1792315562943_1471cd76404b3050). Wall-clock 188s. 3 reopen tests passed: file_reopen_preserves_atomic_receipt_and_replay (agileplus-sqlite atomic_acceptance), file_backed_adapter_reopens_existing_database (agileplus-sqlite migrations_extra), mounted_receipt_survives_database_reopen_without_regrading (agileplus-api atomic_acceptance_http). Live binary restart smoke: created fresh SQLite at /tmp/d3_val_atomic_acceptance_*.db, started API (PID 9786), GET /health \u2192 {status:healthy,service:agileplus-api,version:0.2.4}, SIGTERM clean exit, started API again (PID 9924) against the same SQLite file, GET /health \u2192 identical payload. SQLite persisted 4096 B on disk between runs. No regrading, no duplicate writes. D.3 / NDR-3 is now FULLY CLOSED (Implementation PASS 2026-10-17T23:02Z + Validation PASS 2026-10-18T09:29Z). Result: /tmp/d3_val_2026-10-18-result.md, log: /tmp/d3_val_2026-10-18.log.",
+      "closed_by": "otter",
+      "closed_at": "2026-10-18T09:29:11Z"
     },
     {
       "cell": "E.2 / E.5 Validation",
@@ -487,5 +490,185 @@
     "no_enospc": true,
     "no_timeouts": true,
     "disk_state_during_run": "926Gi total, 842-845Gi used, 21-25Gi avail (98% capacity; not a blocker)"
+  },
+  "restart_2026-10-18-otter": {
+    "_purpose": "Close D.3 / NDR-3 Validation cell: prove the atomic_acceptance SQLite reopen path works under live restart.",
+    "subagent": "otter",
+    "subagent_session": "session_otter_1792315562943_1471cd76404b3050",
+    "subagent_model": "openai-compatible:MiniMax-M3",
+    "dispatched_at": "2026-10-18T09:26:02Z",
+    "completed_at": "2026-10-18T09:29:11Z",
+    "wall_clock_seconds": 188,
+    "out_of_cap_seconds": 600,
+    "verdict": "PASS",
+    "cell_movement": {
+      "cell": "D.3 / NDR-3 Validation",
+      "from": "NOT_RUN",
+      "to": "PASS",
+      "evidence": "3 reopen tests + live binary restart smoke with /health payload identical across kill+restart cycle and SQLite persisted 4096 B on disk"
+    },
+    "tests_run": [
+      {
+        "name": "file_reopen_preserves_atomic_receipt_and_replay",
+        "crate": "agileplus-sqlite",
+        "test_file": "crates/agileplus-sqlite/tests/atomic_acceptance.rs:184",
+        "invocation": "cargo test -p agileplus-sqlite --test atomic_acceptance file_reopen_preserves_atomic_receipt_and_replay",
+        "verdict": "PASS",
+        "wall_clock_s": 1.0,
+        "filtered": 9
+      },
+      {
+        "name": "file_backed_adapter_reopens_existing_database",
+        "crate": "agileplus-sqlite",
+        "test_file": "crates/agileplus-sqlite/tests/migrations_extra.rs:186",
+        "invocation": "cargo test -p agileplus-sqlite --test migrations_extra file_backed_adapter_reopens_existing_database",
+        "verdict": "PASS",
+        "wall_clock_s": 2.4,
+        "filtered": 28
+      },
+      {
+        "name": "mounted_receipt_survives_database_reopen_without_regrading",
+        "crate": "agileplus-api",
+        "test_file": "crates/agileplus-api/tests/atomic_acceptance_http.rs:218",
+        "invocation": "cargo test -p agileplus-api --test atomic_acceptance_http mounted_receipt_survives_database_reopen_without_regrading",
+        "verdict": "PASS",
+        "wall_clock_s": 1.0,
+        "filtered": 9
+      }
+    ],
+    "live_restart_smoke": {
+      "performed": true,
+      "sqlite_file": "/tmp/d3_val_atomic_acceptance_1792315736.db",
+      "sqlite_persisted_bytes": 4096,
+      "pid1": 9786,
+      "pid1_health_payload": "{\"status\":\"healthy\",\"service\":\"agileplus-api\",\"version\":\"0.2.4\"}",
+      "pid1_exit": "SIGTERM clean",
+      "pid2": 9924,
+      "pid2_health_payload": "{\"status\":\"healthy\",\"service\":\"agileplus-api\",\"version\":\"0.2.4\"}",
+      "pid2_exit": "SIGTERM clean",
+      "reopen_clean": true,
+      "no_panic": true,
+      "no_database_locked": true,
+      "no_migration_rerun": true
+    },
+    "result_file": "/tmp/d3_val_2026-10-18-result.md",
+    "log_file": "/tmp/d3_val_2026-10-18.log",
+    "code_references": [
+      "crates/agileplus-api/src/main.rs:17-42 (binary entry; SqliteStorageAdapter::new(path) → AppState::new(...).with_atomic_acceptance() on startup)",
+      "crates/agileplus-api/src/state.rs:120 (with_atomic_acceptance() arms the storage port as the AtomicAcceptancePort)",
+      "crates/agileplus-domain/src/config/core.rs:25-30 (default db path = $HOME/.agileplus/agileplus.db)",
+      "crates/agileplus-domain/src/config/api.rs:23-25 (default API port = 3000)",
+      "crates/agileplus-api/src/router/compose.rs:35 (/health is a public route)",
+      "crates/agileplus-api/src/middleware/auth.rs:25 (/health, /info, /webhooks are PUBLIC_PATHS, no API key required)"
+    ],
+    "blockers": []
+  },
+  "dependabot_2026-10-18-dolphin": {
+    "_purpose": "Enumerate the 5 dependabot moderate vulns on KooshaPari/AgilePlus default branch; cross-reference with deny.toml; identify net-new actionable work.",
+    "subagent": "dolphin",
+    "subagent_session": "session_panda_1792315603678_d05c8f338e3f0477",
+    "subagent_model": "openai-compatible:MiniMax-M3",
+    "dispatched_at": "2026-10-18T09:26:43Z",
+    "completed_at": "2026-10-18T09:28:00Z",
+    "wall_clock_seconds": 120,
+    "verdict": "PASS",
+    "api_call": "gh api /repos/KooshaPari/AgilePlus/dependabot/alerts --paginate",
+    "api_status": 200,
+    "total_alerts_in_repo": 204,
+    "open_moderate_alerts": 5,
+    "alerts": [
+      {
+        "alert_number": 217,
+        "ghsa_id": "GHSA-84m7-p3x7-pcfv",
+        "cve_id": "CVE-2026-59951",
+        "severity": "medium",
+        "cvss": 7.5,
+        "package": "mcp",
+        "ecosystem": "pip",
+        "vulnerable_version_range": ">=1.8.0, <1.30.0",
+        "fix_versions": ["1.30.0", "2.2.0"],
+        "manifest": "python/uv.lock",
+        "current_version": "1.28.1",
+        "status": "OPEN",
+        "actionable": true,
+        "follow_up": "bump mcp to >=1.30.0 in python/uv.lock"
+      },
+      {
+        "alert_number": 216,
+        "ghsa_id": "GHSA-84m7-p3x7-pcfv",
+        "cve_id": "CVE-2026-59951",
+        "severity": "medium",
+        "cvss": 7.5,
+        "package": "mcp",
+        "ecosystem": "pip",
+        "vulnerable_version_range": ">=1.8.0, <1.30.0",
+        "fix_versions": ["1.30.0"],
+        "manifest": "dispatch-mcp/uv.lock",
+        "current_version": "1.27.1",
+        "status": "OPEN",
+        "actionable": true,
+        "follow_up": "bump mcp to >=1.30.0 in dispatch-mcp/uv.lock"
+      },
+      {
+        "alert_number": 215,
+        "ghsa_id": "GHSA-84m7-p3x7-pcfv",
+        "cve_id": "CVE-2026-59951",
+        "severity": "medium",
+        "cvss": 7.5,
+        "package": "mcp",
+        "ecosystem": "pip",
+        "vulnerable_version_range": ">=1.8.0, <1.30.0",
+        "fix_versions": ["1.30.0"],
+        "manifest": "agileplus-mcp/uv.lock",
+        "current_version": "1.28.1",
+        "status": "OPEN",
+        "actionable": true,
+        "follow_up": "bump mcp to >=1.30.0 in agileplus-mcp/uv.lock"
+      },
+      {
+        "alert_number": 214,
+        "ghsa_id": "GHSA-rj75-hqrm-r3gf",
+        "cve_id": "CVE-2026-104844",
+        "severity": "medium",
+        "cvss": 5.9,
+        "package": "postcss-selector-parser",
+        "ecosystem": "npm",
+        "vulnerable_version_range": "<7.1.6",
+        "fix_versions": ["7.1.6"],
+        "manifest": "package-lock.json",
+        "current_version": "6.1.4",
+        "status": "OPEN",
+        "actionable": true,
+        "follow_up": "bump postcss-selector-parser to >=7.1.6 in package-lock.json (major-version jump; check for breaking changes in PostCSS selector parsing)"
+      },
+      {
+        "alert_number": 158,
+        "ghsa_id": "GHSA-wrw7-89jp-8q8g",
+        "rustsec_id": "RUSTSEC-2024-0429",
+        "severity": "medium",
+        "cvss": 0.0,
+        "package": "glib",
+        "ecosystem": "cargo",
+        "vulnerable_version_range": ">=0.15.0, <0.20.0",
+        "fix_versions": ["0.20.0"],
+        "manifest": "./Cargo.lock",
+        "current_version": "0.18.5",
+        "status": "OPEN",
+        "actionable": false,
+        "deny_toml_covered": true,
+        "deny_toml_rationale": "VariantStrIter; fix only in glib 0.20.0 behind tauri PR #16170; LINUX-ONLY path (libappindicator->tray-icon->tauri), so cargo-deny on a macOS host warns advisory-not-detected; benign on CI ubuntu. Re-evaluate when tauri PR #16170 lands OR dismiss with tolerable_risk to silence Dependabot.",
+        "follow_up": "manual dismissal with tolerable_risk recommended (matches the previously-used pattern for the 3 dismissed mcp HIGH alerts #141/144/146)"
+      }
+    ],
+    "deny_toml_actual_entries": [
+      "RUSTSEC-2024-0370 (proc-macro-error: build-time only via glib-macros 0.18; tauri stack pins it)",
+      "RUSTSEC-2024-0429 (glib VariantStrIter: latest resolvable glib is 0.18.5; fix only in 0.20.0 behind tauri PR #16170; LINUX-ONLY)"
+    ],
+    "stale_docket_reference_caught": "The upstream prompt and prior docket notes described the silenced advisories as 'RUSTSEC-2026-0370/0371/0372 zvariant/zbus_names/zvariant_derive'. The 3 RUSTSEC-2026-0xxx IDs do NOT exist in the Dependabot alert corpus; no zvariant/zbus_names/zvariant_derive package appears in any of the 204 alerts. The actual deny.toml entries are RUSTSEC-2024-0370 and RUSTSEC-2024-0429. This is corrected in cheap_closes[1] (E.20 Validation note) by the dolphin dispatch.",
+    "net_new_actionable": 4,
+    "actionable_summary": "3× mcp bump to >=1.30.0 in three Python lockfiles; 1× postcss-selector-parser bump to >=7.1.6 (npm major-version); 1× glib is documented-ignored and Dependabot-uncovers.",
+    "result_file": "/tmp/dependabot_2026-10-18-result.md",
+    "log_file": "/tmp/dependabot_2026-10-18.log",
+    "raw_dump": "/tmp/dependabot_alerts.json (1,263,929 bytes; 204 alerts paginated)"
   }
 }
