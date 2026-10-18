@@ -57,9 +57,56 @@ The close-out at `ef83e117` recommended merge order "PR #1165 → #1166 → 6 so
 - Recommendation section: **SUPERSEDED** by this re-entry; the close-out's section 9 "Recommended next-session picks" is now stale.
 - Snapshot identity chain: **ADDED** `ap-sfd-2026-10-18T20-30Z@ci-scout-and-cf4-reentry` as a 16th snapshot identity on top of the 15 close-out identities. The close-out's HEAD `ef83e117` remains the audit-close SHA. This re-entry is a sibling audit artifact, not a continuation.
 
+## v3 verification (added 2026-10-18T20:55Z, ~25 min after re-entry)
+
+**Subagent**: ci-scout v3 (`sched_f18a35dd`, target=spawn; 20-sec wall-clock read; well under 10-min cap).
+
+### Verdict
+
+**PREDICTED-BUT-NOT-TESTABLE.** The cf-4 prediction (4-6 of 6 source PRs flip green after #1165 merges) cannot be verified at v3 because:
+- #1165 is NOT merged to main. Its 5 FAILs are unchanged from v2 (Dry run publish, OSV Scanner, Vercel rate-limit, plan, semver-checks).
+- #1166 is NOT merged to main either. Its FAIL set is also unchanged.
+- The 6 source PRs have NOT been re-triggered since v2.
+
+All 6 source PRs show **byte-identical failing-check sets vs v2** (no flips). The cf-4 prediction is **preserved, not refuted**: if the operator merges #1165 and re-triggers the 6 source PRs, they should flip green on `ci/lint` + `ci/test` + `cargo-deny` + `Cargo Deny (Advisories+Licenses)`.
+
+### v3 deltas vs v2 (8 PRs)
+
+| PR | v3 state | Delta vs v2 |
+|---|---|---|
+| #1156 | FAIL (12) | UNCHANGED. cargo-mutants 5h32m15s, ci/lint 3s, ci/test 2s still FAIL |
+| #1157 | FAIL (22) | UNCHANGED. cargo-fuzz build check NEW FAIL (was PASS in v2 — minor regression) |
+| #1161 | FAIL (12) | UNCHANGED. cargo-mutants 4h49m24s still FAIL |
+| #1162 | FAIL (12) | UNCHANGED. Vercel rate-limited (24-hr hold) |
+| #1163 | FAIL (11) | UNCHANGED. Vercel rate-limited |
+| #1164 | FAIL (13) | UNCHANGED. Vercel rate-limited |
+| #1165 | FAIL (5) | **IMPROVED.** Cargo Deny PASS 2m29s + cargo-deny PASS 25s (stable). Many new PASSes: CodeQL, gitleaks scan, go-coverage, osv-scanner, audit, coverage-gate, fuzz, gate, static-deploy-contract, python-coverage, rust-coverage. 5 FAILs UNCHANGED. |
+| #1166 | FAIL (8) + 1 PENDING | **REGRESSED.** 3 of 4 v2 PENDINGs flipped to FAIL. 1 PENDING remaining (cargo-mutants). Net worse than v2. |
+
+### Key findings
+
+- **#1165's Cargo Deny + cargo-deny checks both PASS** on its own CI. This is direct evidence that fox's fix works locally; the cf-4 prediction is consistent with this.
+- **#1166 regressed.** Three v2 PENDINGs flipped to FAIL in the 33-min window. #1166 is now 8 FAILs + 1 PENDING; ci/lint + ci/test still fail because Cargo Deny still fails underneath (same root cause as the 6 source PRs).
+- **#1165's "plan" check has been FAILing for 7+ min** (now FAIL 31s + earlier 22s). This may indicate a real plan-workflow issue, not just the cargo-deny fix. Operator may want to inspect the plan workflow.
+- **Vercel rate-limit (24-hr hold) blocks 3 of 6 source PRs** from a fresh full CI run. Even after #1165+#1166 merge, #1162/#1163/#1164 may not show a complete re-run until Vercel unblocks.
+- **Time-since-v2: 33 minutes.** The fact that nothing changed in 33 min strongly suggests CI is frozen on the unblockers being merged, not on a flake or transient.
+
+### Operator action sheet (v3 update — mostly UNCHANGED from re-entry above)
+
+1. **Merge #1165 first** (Cargo Deny PASS locally; 5 FAILs are mostly infra-noise).
+2. **Wait 5 min** for auto-retrigger on the 6 source PRs. Manually re-trigger if needed.
+3. **Run ci-scout v4 in ~25 min** to confirm 4-6 of 6 source PRs flipped green on ci/lint + ci/test + cargo-deny.
+4. **Then merge #1166** + re-trigger 2-3 dependabot PRs.
+5. **Inspect #1165's "plan" check** if it persists past v4 — may be a real plan-workflow issue independent of cargo-deny.
+6. **E.2.P1-GENERIC: still operator pick A/B/C.** CF-3 + F.3: still deferred.
+
+v3 evidence files: `ci-scout-v3-2026-10-18T20-55Z.md` + `.log` (in this folder).
+
+Snapshot identity chain: ADDED `ap-sfd-2026-10-18T20-55Z@ci-scout-v3-verification` as a 17th snapshot identity on top of the 16 re-entry identities. v3 is a **before-state baseline** (operator hasn't acted yet), not a confirmation.
+
 ## Constraints honored
 
-- ✅ All 3 subagents read-only (no push, no merge, no file edit, no new PR, no comment, no force-push).
+- ✅ All 4 subagents (v1, v2, v3, cf-4) read-only (no push, no merge, no file edit, no new PR, no comment, no force-push).
 - ✅ No source code modified; only new evidence files in a sibling sub-folder.
-- ✅ No new cheap_closes opened (cf-4 verdict was PASS — not a new CF).
-- ✅ Operator action sheet sharpened, not inflated.
+- ✅ No new cheap_closes opened (cf-4 verdict was PASS — not a new CF; v3 verdict was PREDICTED-BUT-NOT-TESTABLE — neither confirmed nor refuted).
+- ✅ Operator action sheet sharpened, not inflated. v3 confirms the re-entry's analysis without changing the operator steps.
