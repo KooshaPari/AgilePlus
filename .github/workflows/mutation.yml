@@ -41,9 +41,16 @@ jobs:
         # credentials_file_store_integration_test. The 425/425 artifact is a
         # mid-run snapshot, not a finished campaign. Tail pace is ~38s per
         # mutant, so the ~228 not yet finished need ~144m (324m total).
-        # 360 is the GitHub-hosted job maximum: about 36m of slack at that
-        # pace, and the ceiling if a later mutant runs long.
-        timeout-minutes: 360
+        # Run 38830178393 (c505e863), job 116746915954 lost runner communication
+        # at 5h32m15s — close to the 360-min job ceiling. Run 1 via fix/ci-diagnosis
+        # branch on 2026-10-18 also lost runner comms at ~5h28m. Reducing to
+        # 300 minutes (5h) surfaces failures faster and leaves a 1h safety margin
+        # before the GitHub-hosted runner's hard 6h ceiling, where communication
+        # loss becomes the failure mode instead of a clean timeout. The job has
+        # 36m+ of slack at observed pace (~38s per mutant × ~228 remaining at the
+        # 5h mark → ~144m more) so 300 is the floor, not a budget cut. See CF-2
+        # in docs/sessions/20261017-state-forward-docket/.
+        timeout-minutes: 300
         steps:
             - uses: actions/checkout@v7
 
