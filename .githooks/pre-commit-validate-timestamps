@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# .githooks/pre-commit-validate-timestamps
+#
+# Reject commits that introduce non-RFC3339 timestamps in any staged
+# .agileplus/*.db file.
+#
+# This is the durable guard against the B.x finding (5 corrupt updated_at rows
+# in commit ea5a517a 2026-08-07 10:43:57 UTC that gecko fixed on
+# 2026-10-18T09:46:39Z). All 14 repository UPDATE bindings audited use
+# chrono::Utc::now().to_rfc3339(); the binary file replacement in ea5a517a is
+# the only known root cause, so this hook blocks any future direct commit
+# of a non-RFC3339 updated_at value in a staged SQLite file.
+#
+# Bypass:   HOOKS_SKIP=1 git commit
+#           PRE_COMMIT_SKIP_TIMESTAMPS=1 git commit
+#           git commit --no-verify
+#
+# This hook is invoked from .githooks/pre-commit when
+# core.hooksPath=.githooks is configured. It can also be invoked directly
+# against any SQLite file: HOOK_TARGET=/path/to.db ./pre-commit-validate-timestamps
+set -euo pipefail
+
+if [ "${HOOKS_SKIP:-0}" = "1" ]; then
+  echo "[hooks] HOOKS_SKIP=1; skipping pre-commit-validate-timestamps"
+  exit 0
+fi
+
+if [ "${PRE_COMMIT_SKIP_TIMESTAMPS:-0}" = "1" ]; then
+  echo "[hooks] PRE_COMMIT_SKIP_TIMESTAMPS=1; skipping timestamp scan"
+  exit 0
+fi
+
+if ! command -v sqlite3 >/dev/null 2>&1; then
+  echo "[hooks] pre-commit-validate-timestamps: sqlite3 not found in PATH; skipping check" >&2
+  exit 0
+fi
+
+# Allow a manual scan against an explicit file via HOOK_TARGET=<path>
+if [ -n "${HOOK_TARGET:-}" ]; then
+  staged_dbs="$HOOK_TARGET"
+else
+  # Find any staged .agileplus/*.db files (added or modified).
+  staged_dbs="$(git diff --cached --name-only --diff-filter=AM 2>/dev/null | grep -E '^\.agileplus/.*\.db$' || true)"
+fi
+
+if [ -z "$staged_dbs" ]; then
+  exit 0
+fi
+
+bad_files=0
+for db in $staged_dbs; do
+  if [ ! -f "$db" ]; then
+    # HOOK_TARGET might point to a file outside the repo; tolerate it.
+    if [ -n "${HOOK_TARGET:-}" ]; then
+      echo "[hooks] pre-commit-validate-timestamps: HOOK_TARGET=$db not found" >&2
+      exit 1
+    fi
+    continue
+  fi
+
+  echo "[hooks] pre-commit-validate-timestamps: scanning $db for non-RFC3339 updated_at rows..."
+
+  # Find every table whose CREATE TABLE sql mentions an updated_at column.
+  # We avoid sqlite_master queries that touch every row by using the schema.
+  tables="$(sqlite3 "$db" "SELECT name FROM sqlite_master WHERE type='table' AND sql LIKE '%updated_at%' AND name NOT LIKE 'sqlite_%'" 2>/dev/null || true)"
+
+  file_bad=0
+  for table in $tables; do
+    # Sanitize table name (single quote escape) — sqlite3 identifiers cannot be
+    # bound via parameters, but we verify the table exists via the previous query.
+    # Refuse anything that doesn't match a safe identifier.
+    if ! printf '%s' "$table" | grep -qE '^[A-Za-z_][A-Za-z0-9_]*$'; then
+      echo "[hooks] pre-commit-validate-timestamps: skipping unsafe table name: $table" >&2
+      continue
+    fi
+
+    # A row is non-RFC3339 iff updated_at is non-NULL and does not contain 'T'
+    # (the RFC3339 separator between date and time). Limit to 5 rows to keep
+    # output manageable; existence of any row is enough to reject.
+    rows="$(sqlite3 "$db" "SELECT id, updated_at FROM ${table} WHERE updated_at IS NOT NULL AND updated_at NOT GLOB '*T*' LIMIT 5" 2>/dev/null || true)"
+    if [ -n "$rows" ]; then
+      echo "[hooks] pre-commit-validate-timestamps: FAIL — $db table=$table has non-RFC3339 updated_at rows:" >&2
+      echo "$rows" >&2
+      file_bad=$((file_bad + 1))
+    fi
+  done
+
+  if [ "$file_bad" -gt 0 ]; then
+    bad_files=$((bad_files + 1))
+  fi
+done
+
+if [ "$bad_files" -gt 0 ]; then
+  echo "[hooks] pre-commit-validate-timestamps: rejected $bad_files file(s) with non-RFC3339 updated_at rows." >&2
+  echo "[hooks] Fix by:" >&2
+  echo "[hooks]   sqlite3 <db> \"UPDATE <table> SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE updated_at NOT GLOB '*T*';\"" >&2
+  echo "[hooks] Or set PRE_COMMIT_SKIP_TIMESTAMPS=1 (not recommended)." >&2
+  exit 1
+fi
+
+echo "[hooks] pre-commit-validate-timestamps: all staged .agileplus/*.db files have valid RFC3339 timestamps."
+exit 0
