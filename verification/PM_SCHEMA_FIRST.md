@@ -14,6 +14,8 @@ The actor is assigned by the server as `api-key`, representing the shared operat
 
 Creation and transitions each write the item and event in one immediate SQLite transaction. Audit insertion failure rolls back the item mutation. Each item has its own SHA-256 chain with an empty genesis prev_hash. The hash input is a versioned JSON tuple of event id, item id, actor, action, exact payload_json text, previous hash, and UTC timestamp. SQL triggers reject UPDATE and DELETE; a unique item/prev_hash index prevents chain forks. Reads and transitions verify the entire chain and reject corruption. This detects tampering; it is not an externally signed log protecting against a database administrator rewriting the schema and entire history.
 
+An existing item without its creation event is reported as corruption. Transitions reuse the verified chain head when appending. Migration 032 is intentionally irreversible: rollback returns an error before changing either schema or the migration marker, preserving audit history and allowing normal startup to reopen the database.
+
 Targeted witnesses:
 
 ```text

@@ -153,21 +153,19 @@ fn run_all_heals_a_database_missing_a_later_migration() {
 fn rollback_of_026_drops_tracking_row_but_keeps_add_column_changes() {
     let conn = Connection::open_in_memory().unwrap();
     let runner = MigrationRunner::new(&conn);
-    runner.run_all().unwrap();
+    runner.ensure_meta_table().unwrap();
     let index = MIGRATIONS
         .iter()
         .position(|(name, _)| *name == "026_feature_labels")
         .unwrap();
-    for (name, _) in MIGRATIONS[index + 1..].iter().rev() {
-        runner.rollback_last().unwrap();
-        let count: i64 = conn
-            .query_row(
-                "SELECT COUNT(*) FROM _migrations WHERE name=?1",
-                [name],
-                |r| r.get(0),
-            )
-            .unwrap();
-        assert_eq!(count, 0, "{name}");
+    // Model an actual 026-era database, before irreversible audit history exists.
+    for (name, sql) in &MIGRATIONS[..=index] {
+        conn.execute_batch(parse_up(sql)).unwrap();
+        conn.execute(
+            "INSERT INTO _migrations(name,applied_at) VALUES (?1,'2026-01-01T00:00:00Z')",
+            [name],
+        )
+        .unwrap();
     }
     let (name_026, sql_026) = MIGRATIONS[index];
     runner.rollback_last().unwrap();

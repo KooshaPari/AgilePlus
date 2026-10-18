@@ -64,7 +64,7 @@ async fn work_items_http_auth_chain_validation_and_reopen() {
         .add_header("X-API-Key", "journey-test-key")
         .json(&body)
         .await;
-    r.assert_status_created();
+    r.assert_status(axum::http::StatusCode::CREATED);
     let w: Value = r.json();
     let id = w["id"].as_i64().unwrap();
     let transition = format!("/api/v1/work-items/{id}/transition");

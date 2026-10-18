@@ -57,8 +57,8 @@ fn append(
     actor: &str,
     action: &str,
     payload: serde_json::Value,
+    previous_hash: String,
 ) -> Result<(), DomainError> {
-    let events = audit(c, w.id)?;
     let id = c
         .query_row("SELECT COALESCE(MAX(id),0)+1 FROM audit_event", [], |r| {
             r.get(0)
@@ -70,7 +70,7 @@ fn append(
         actor: actor.into(),
         action: action.into(),
         payload_json: payload.to_string(),
-        prev_hash: events.last().map(|e| e.hash.clone()).unwrap_or_default(),
+        prev_hash: previous_hash,
         hash: String::new(),
         created_at: w.updated_at,
     };
@@ -117,6 +117,7 @@ impl WorkItemPort for SqliteStorageAdapter {
             actor,
             "created",
             serde_json::to_value(&w).map_err(|e| DomainError::Storage(e.to_string()))?,
+            String::new(),
         )?;
         tx.commit().map_err(db)?;
         Ok(w)
@@ -150,6 +151,7 @@ impl WorkItemPort for SqliteStorageAdapter {
             actor,
             "state_transitioned",
             serde_json::json!({"from":before.state,"to":target}),
+            events.last().expect("creation event checked").hash.clone(),
         )?;
         tx.commit().map_err(db)?;
         Ok(w)
@@ -157,7 +159,11 @@ impl WorkItemPort for SqliteStorageAdapter {
     async fn list_work_item_audit(&self, id: i64) -> Result<Vec<AuditEvent>, DomainError> {
         let c = self.lock()?;
         item(&c, id)?;
-        audit(&c, id)
+        let events = audit(&c, id)?;
+        if events.is_empty() {
+            return Err(DomainError::Conflict("missing creation audit event".into()));
+        }
+        Ok(events)
     }
 }
 
@@ -259,5 +265,31 @@ mod tests {
             item(&s.lock().unwrap(), w.id).unwrap().state,
             WorkItemState::Intake
         );
+    }
+
+    #[tokio::test]
+    async fn work_item_missing_creation_is_corruption() {
+        let s = SqliteStorageAdapter::in_memory().unwrap();
+        s.lock().unwrap().execute(
+            "INSERT INTO work_item(kind,title,state,created_at,updated_at) VALUES ('task','JOURNEY-missing-audit','intake',?1,?1)",
+            [chrono::Utc::now().to_rfc3339()],
+        ).unwrap();
+        assert!(s.list_work_item_audit(1).await.is_err());
+        assert!(
+            s.transition_work_item(1, WorkItemState::Triaged, "test")
+                .await
+                .is_err()
+        );
+    }
+
+    #[tokio::test]
+    async fn work_item_migration_cannot_discard_append_only_history() {
+        let s = SqliteStorageAdapter::in_memory().unwrap();
+        let w = s.create_work_item(input(), "test").await.unwrap();
+        let c = s.lock().unwrap();
+        let runner = crate::migrations::MigrationRunner::new(&c);
+        assert!(runner.rollback_last().is_err());
+        runner.run_all().unwrap();
+        assert_eq!(audit(&c, w.id).unwrap().len(), 1);
     }
 }
