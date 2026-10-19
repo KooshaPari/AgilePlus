@@ -1,29 +1,28 @@
 name: Planify shim read-only contract
 
+# Operator rule: self-hosted desk only; no hosted-runner fallback.
+# Manual-only and hard-disabled until the exact desk runner identity and an
+# isolated, disposable Podman execution environment are verified. A skipped
+# job is NOT a passing acceptance check. Do not re-run historical hosted jobs.
 on:
-  pull_request:
-    paths:
-      - "tools/planify-shim/**"
-      - ".github/workflows/planify-shim-contract.yml"
-  push:
-    branches: [main]
-    paths:
-      - "tools/planify-shim/**"
-      - ".github/workflows/planify-shim-contract.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   contract:
-    runs-on: ubuntu-latest
+    if: ${{ false }} # Admission closed: desk identity/isolation not qualified.
+    runs-on: [self-hosted, podman, wsl2, fedora44]
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Install shim dependencies (local review only)
+      - name: Install shim dependencies (isolated local review only)
         working-directory: tools/planify-shim
         run: npm install --no-audit --no-fund --package-lock=false
       - name: Contract and fixture HTTP tests
