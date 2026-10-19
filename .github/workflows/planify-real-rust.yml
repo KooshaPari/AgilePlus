@@ -1,9 +1,12 @@
 name: Planify real Rust API integration
+
+# Operator rule: self-hosted desk only, never GitHub-hosted execution.
+# HARD ADMISSION STOP: runner identity and disposable Podman isolation remain
+# unverified. Both jobs are disabled, even on manual dispatch. This is not a
+# desk test pass. Before reopening: qualify the exact desk runner, containerize
+# these legacy Ubuntu setup commands, isolate paths/processes, and retain
+# logs on frontend-startup failure. Never re-run the historical hosted jobs.
 on:
-  pull_request:
-    paths:
-      - "tools/planify-shim/**"
-      - ".github/workflows/planify-real-rust.yml"
   workflow_dispatch:
 
 permissions:
@@ -11,16 +14,19 @@ permissions:
 
 jobs:
   real-backend:
-    runs-on: ubuntu-latest
+    if: ${{ false }} # Desk identity/isolation acceptance is still outstanding.
+    runs-on: [self-hosted, podman, wsl2, fedora44]
     timeout-minutes: 65
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-      - name: Install native Rust dependencies
+      - name: Install native Rust dependencies (sandbox only; admission closed)
         run: |
           sudo apt-get update
           sudo apt-get install -y pkg-config libglib2.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
@@ -43,11 +49,14 @@ jobs:
           retention-days: 2
 
   planify-browser:
+    if: ${{ false }} # No execution until the qualified desk sandbox is wired.
     needs: real-backend
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, podman, wsl2, fedora44]
     timeout-minutes: 65
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -70,7 +79,7 @@ jobs:
           corepack prepare pnpm@10.32.1 --activate
           cd /tmp/planify
           pnpm install --filter web... --frozen-lockfile
-      - name: Install shim and actual Chromium browser test dependencies
+      - name: Install shim and Chromium dependencies (sandbox only)
         working-directory: tools/planify-shim
         run: |
           npm install --no-audit --no-fund --package-lock=false
