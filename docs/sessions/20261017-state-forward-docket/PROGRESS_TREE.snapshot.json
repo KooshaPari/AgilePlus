@@ -47,36 +47,39 @@
   "total_cells": 256,
   "dimension_breakdown": {
     "Implementation": {
-      "PASS": 33,
-      "PARTIAL": 6,
-      "FAIL": 4,
-      "NOT_RUN": 10,
+      "PASS": 36,
+      "PARTIAL": 11,
+      "FAIL": 6,
+      "NOT_RUN": 7,
       "UNKNOWN": 2,
-      "STALE": 1,
+      "STALE": 0,
+      "BLOCKED": 0,
       "NOT_APPLICABLE": 1,
-      "dim_not_meaningful": 7,
+      "dim_not_meaningful": 1,
       "total": 64
     },
     "Usability": {
       "PASS": 5,
-      "PARTIAL": 4,
-      "FAIL": 12,
-      "NOT_RUN": 12,
-      "UNKNOWN": 4,
+      "PARTIAL": 2,
+      "FAIL": 15,
+      "NOT_RUN": 11,
+      "UNKNOWN": 6,
       "STALE": 1,
+      "BLOCKED": 0,
       "NOT_APPLICABLE": 1,
-      "dim_not_meaningful": 24,
+      "dim_not_meaningful": 23,
       "total": 64
     },
     "Validation": {
-      "PASS": 9,
-      "PARTIAL": 5,
-      "FAIL": 4,
-      "NOT_RUN": 35,
-      "UNKNOWN": 2,
+      "PASS": 6,
+      "PARTIAL": 9,
+      "FAIL": 3,
+      "NOT_RUN": 42,
+      "UNKNOWN": 1,
       "STALE": 0,
-      "NOT_APPLICABLE": 0,
-      "dim_not_meaningful": 9,
+      "BLOCKED": 0,
+      "NOT_APPLICABLE": 1,
+      "dim_not_meaningful": 2,
       "total": 64
     },
     "Assurance": {
@@ -86,21 +89,22 @@
       "NOT_RUN": 0,
       "UNKNOWN": 0,
       "STALE": 0,
+      "BLOCKED": 0,
       "NOT_APPLICABLE": 0,
       "dim_not_meaningful": 61,
       "total": 64
     }
   },
   "headline_counts": {
-    "cells_pass_any": "49/256",
-    "cells_pass_meaningful": "49/150",
+    "cells_pass_any": "50/256",
+    "cells_pass_meaningful": "50/166",
     "verification_cases_executed_target_level": "0/92 (current schema 0.4.0; pending 0.5.0 schema-bump)",
     "verification_cases_with_STRONG_witness": "5/92 (per CASE_BINDING_2026-10-17.md; AP-RVC-056 was downgraded from STRONG to ADJACENT after re-reading the case body)",
     "verification_cases_with_ADJACENT_witness": "5/92 (per CASE_BINDING_2026-10-17.md)",
     "requirements_runtime_verified": "0/67",
-    "ndr_items_with_target_witness": "4/10 (NDR-1, NDR-2, NDR-3 — NDR-3 fully closed 2026-10-18T09:29Z by otter: Implementation PASS cargo build 2026-10-17T23:02Z + Validation PASS 3 reopen tests + live binary restart smoke 2026-10-18T09:29Z)",
+    "ndr_items_with_target_witness": "3/10 (NDR-1, NDR-2, NDR-3. An NDR item counts when it has at least one PASS cell. NDR-3 fully closed 2026-10-18T09:29Z by otter: Implementation PASS cargo build 2026-10-17T23:02Z + Validation PASS 3 reopen tests + live binary restart smoke. The previous 4/10 was an arithmetic slip that named only 3 items.)",
     "integration_surfaces_live": "1/11",
-    "gates_pass": "4/20 (G1, G4, +B.6/E.6 Validation closed by cargo test -p agileplus-events 2026-10-17T23:08Z, +E.19/G19 Validation closed by cargo+llvm-cov 93.99% line coverage 2026-10-18T09:17Z via sloth-v3). D.3 / NDR-3 Validation closed at 2026-10-18T09:29Z by otter; this is an NDR item, not a gate, so gates_pass unchanged.",
+    "gates_pass": "3/20 (G1, G4, G19. A gate counts as clearly PASS only when EVERY meaningful cell is PASS. G19/G19 Validation closed by cargo+llvm-cov 93.99% line / 90.84% branch / 94.39% region coverage 2026-10-18T09:17Z via sloth-v3. Not clear despite a PASS cell: G8 (Usability ~), G15/G16/G18 (Validation ~). E.20 = PARTIAL (not PASS) because the 3 RUSTSEC-2026-0370/371/372 advisories are silenced via deny.toml ignore (PR #1157) but still exist. D.3/NDR-3 is an NDR item, not a gate, so it does not count here.)",
     "cells_advanced_in_cohort": "5 advanced: 1 FAIL→PARTIAL (E.20 / G20 Validation, ci_blockers_fix_2026-10-18), 1 NOT_RUN→PASS (D.3 / NDR-3 Validation, restart_2026-10-18-otter; 3 reopen tests + live binary restart), 1 NOT_RUN→PARTIAL→PASS (B.3 / B.4 Usability, ferret + gecko data fix), 1 NOT_RUN→PASS (B.6 / B.7 Storage Hygiene, gecko data fix on 5 rows), 1 FAIL→PARTIAL (E.20 stale RUSTSEC-2026→RUSTSEC-2024 ref fixed by dolphin). NDR-3 is fully closed (Implementation was already PASS via cargo build 2026-10-17T23:02Z; Validation now PASS). E.19 / G19 closed in prior cohort (v3-pass) at 2026-10-18T09:17Z. ndr_items_with_target_witness: 3/10 → 4/10.",
     "dependabot_alerts_actionable": 0
   },
@@ -116,7 +120,7 @@
     ]
   },
   "evidence_files": {
-    "raw": "docs/sessions/20261017-state-forward-docket/PROGRESS_TREE_RAW.md",
+    "raw": "docs/sessions/20261017-state-forward-docket/PROGRESS_TREE_RAW.md -- restored into the tree 2026-10-19T22:31Z from the orphaned git blob c46a4eedea485937a5007fca95605902561f5e1f (identity ap-sfd-2026-10-17T22-14Z@d6b418a6). It was cited by this JSON but had never been committed. Its PER-CELL evidence is authoritative; its own G.1/G.2 summary arithmetic is NOT (G.1 nm=104, G.2 verdicts total 180, 180+104=284!=256).",
     "tree": "docs/sessions/20261017-state-forward-docket/PROGRESS_TREE.md",
     "docket": "docs/sessions/20261017-state-forward-docket/DOCKET.md",
     "execution_receipt": "verification/ATOMIC_ACCEPTANCE_EXECUTION_2026-10-17.md",
@@ -1475,5 +1479,21 @@
     "no_source_code_modified": true,
     "no_pr_opened": true,
     "p1_exit_criterion_status": "substantively met today; Design A is the only remaining work to formalize evidence"
+  },
+  "count_semantics": {
+    "source_of_truth": "PROGRESS_TREE.md tree body (per-cell). The JSON dimension_breakdown and headline_counts are RENDERED from it.",
+    "validator": "scripts/sfd_validate_counts.py",
+    "meaningful_denominator": "256 - dim_not_meaningful(87) - NOT_APPLICABLE(3) = 166",
+    "fixed_at_utc": "2026-10-19T22:30:00Z",
+    "defects_corrected": [
+      "json dimension_breakdown never matched the per-cell tree body at any of the 4 commits touching PROGRESS_TREE.md (8179b549d3, 61d921f726, 17a40a8665, 89473b6d03); re-derived from the tree body",
+      "json per-dimension sums were 64/63/64/64 = 255 (not 256) while the json total field claimed 256; the hole was in Usability (introduced in f5ffb09d)",
+      "headline cells_pass_any said 49 while the breakdown held 50 PASS cells",
+      "cells_pass_meaningful used 150 = 256 - 104 - 2, inherited from the raw file's own (incorrect) G.1 tally; correct denominator is 256 - 87 - 3 = 166",
+      "ndr_items_with_target_witness said 4/10 but named only 3 items; tree body derives 3/10",
+      "gates_pass said 4/20; tree body derives 3/20 (G1, G4, G19) under the rule 'every meaningful cell of the gate is PASS'"
+    ],
+    "gate_clear_rule": "every meaningful (non-dim_not_meaningful) cell of the gate row is PASS",
+    "ndr_pass_rule": "the NDR row has at least one PASS cell"
   }
 }
