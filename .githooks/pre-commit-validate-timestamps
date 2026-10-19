@@ -74,10 +74,15 @@ for db in $staged_dbs; do
       continue
     fi
 
-    # A row is non-RFC3339 iff updated_at is non-NULL and does not contain 'T'
-    # (the RFC3339 separator between date and time). Limit to 5 rows to keep
-    # output manageable; existence of any row is enough to reject.
-    rows="$(sqlite3 "$db" "SELECT id, updated_at FROM ${table} WHERE updated_at IS NOT NULL AND updated_at NOT GLOB '*T*' LIMIT 5" 2>/dev/null || true)"
+    # A row's updated_at is treated as RFC3339 iff it matches the structural
+    # date+time prefix: YYYY-MM-DDTHH:MM:SS. SQLite GLOB is case-sensitive
+    # and '*' matches zero or more characters, so '*' is required before/after
+    # to allow fractional seconds and timezone offsets.
+    # Example accepted: '2026-08-07T10:43:57', '2026-08-07T10:43:57.123Z',
+    # '2026-08-07T10:43:57+00:00'. The literal string 'T' alone or
+    # 'Hello T World' is REJECTED (it lacks the date/time prefix).
+    # Limit to 5 rows to keep output manageable; existence of any row rejects.
+    rows="$(sqlite3 "$db" "SELECT id, updated_at FROM ${table} WHERE updated_at IS NOT NULL AND updated_at NOT GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]*' LIMIT 5" 2>/dev/null || true)"
     if [ -n "$rows" ]; then
       echo "[hooks] pre-commit-validate-timestamps: FAIL — $db table=$table has non-RFC3339 updated_at rows:" >&2
       echo "$rows" >&2
@@ -93,7 +98,7 @@ done
 if [ "$bad_files" -gt 0 ]; then
   echo "[hooks] pre-commit-validate-timestamps: rejected $bad_files file(s) with non-RFC3339 updated_at rows." >&2
   echo "[hooks] Fix by:" >&2
-  echo "[hooks]   sqlite3 <db> \"UPDATE <table> SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE updated_at NOT GLOB '*T*';\"" >&2
+  echo "[hooks]   sqlite3 <db> \"UPDATE <table> SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE updated_at IS NOT NULL AND updated_at NOT GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]*';\"" >&2
   echo "[hooks] Or set PRE_COMMIT_SKIP_TIMESTAMPS=1 (not recommended)." >&2
   exit 1
 fi
