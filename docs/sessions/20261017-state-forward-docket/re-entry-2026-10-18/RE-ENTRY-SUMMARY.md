@@ -104,9 +104,73 @@ v3 evidence files: `ci-scout-v3-2026-10-18T20-55Z.md` + `.log` (in this folder).
 
 Snapshot identity chain: ADDED `ap-sfd-2026-10-18T20-55Z@ci-scout-v3-verification` as a 17th snapshot identity on top of the 16 re-entry identities. v3 is a **before-state baseline** (operator hasn't acted yet), not a confirmation.
 
+## v4 verification (added 2026-10-19T00:10Z, 3h 13m after v3)
+
+**Subagent**: ci-scout v4 (`session_lizard_1792368535181_bec5869c9ba6a3d7`, model `openai-compatible:MiniMax-M3`, low effort; 2m 30s wall-clock read; well under 10-min cap).
+
+### Verdict
+
+**UNCHANGED.** The operator has NOT acted on the re-entry action sheet in the 3.5h since v3 fired.
+
+- `#1165` (fox) and `#1166` (badger) are both still **OPEN**, not merged.
+- All 6 source PRs (`#1156, #1157, #1161, #1162, #1163, #1164`) are still **OPEN**, not re-triggered.
+- `main` HEAD has not moved: still at `4857b4095d5b35757a922cbf369e6f9260fabf63` (#1138 "ci: fail-closed quality gates", committed 2026-10-18T02:53:15Z — **21h 17m before v4**).
+- The most recent merge to main was `#1152` at 2026-10-17T22:43:17Z — already known at v3.
+
+cf-4 prediction status: **STILL PREDICTED-BUT-NOT-TESTABLE**, identical to v3 verdict. The 6 source PRs need (a) `#1165` to merge into main, (b) auto-retrigger, before the cargo-deny → lint → test gate chain can be exercised. Neither has happened.
+
+### v4 deltas vs v3 (8 PRs)
+
+| PR | v4 state | Delta vs v3 |
+|---|---|---|
+| #1156 | FAIL (12) | UNCHANGED. Same failing set (cargo-mutants 5h32m15s, Cargo Deny, Cargo Deny A+L, Dry run publish, OSV Scanner, benchmark thresholds 26m9s, cargo-deny, ci/lint 3s, ci/test 2s, perf k6, python-coverage, semver-checks) |
+| #1157 | FAIL (22) | UNCHANGED. cargo-fuzz build check still FAIL (was PASS in v2). ci/lint 4s, ci/test 3s still FAIL |
+| #1161 | FAIL (12) | UNCHANGED. cargo-mutants 4h49m24s still FAIL |
+| #1162 | FAIL (12) | UNCHANGED. Vercel still rate-limited (24-hr hold) |
+| #1163 | FAIL (11) | UNCHANGED. Vercel still rate-limited |
+| #1164 | FAIL (13) | UNCHANGED. Vercel still rate-limited |
+| #1165 | FAIL (5) | UNCHANGED. Cargo Deny PASS 2m29s + cargo-deny PASS 25s stable. 5 FAILs unchanged. mergeStateStatus=UNSTABLE. Not merged. |
+| #1166 | FAIL (9) + 1 PENDING | **MINOR DELTA.** Vercel flipped FAIL → PASS (Vercel 24-hr hold elapsed for #1166). cargo-mutants still PENDING. mergeStateStatus=BLOCKED. Not merged. |
+
+### cf-4-relevant checks (cargo-deny family) — v4 reading
+
+| PR    | Cargo Deny          | Cargo Deny (A+L)     | cargo-deny (single) | ci/lint | ci/test |
+|-------|---------------------|----------------------|---------------------|---------|---------|
+| #1156 | FAIL 2m40s          | FAIL 1m11s           | FAIL 23s            | FAIL 3s | FAIL 2s |
+| #1157 | FAIL 1m56s          | FAIL 1m14s           | FAIL 22s            | FAIL 4s | FAIL 3s |
+| #1161 | FAIL 2m29s          | FAIL 1m21s           | (n/a)               | FAIL 3s | FAIL 3s |
+| #1162 | FAIL 2m10s          | FAIL 1m17s           | (n/a)               | FAIL 3s | FAIL 3s |
+| #1163 | FAIL 2m12s          | FAIL 1m23s           | FAIL 27s            | FAIL 3s | FAIL 3s |
+| #1164 | FAIL 2m4s           | FAIL 1m38s           | FAIL 29s            | FAIL 3s | FAIL 2s |
+| #1165 | **PASS 2m29s**      | (n/a — not a target) | **PASS 25s**        | (n/a)   | (n/a)   |
+| #1166 | FAIL 2m30s          | FAIL 1m29s           | (n/a)               | FAIL 3s | FAIL 4s |
+
+All 6 source PRs and `#1166` still FAIL the cargo-deny family; only `#1165` PASSes it (locally on fox's PR). The cf-4 gate chain (`cargo-deny` → `ci / lint` → `ci / test`) is unbroken on the 6 source PRs because fox's fix is not yet in `main`.
+
+### Key findings
+
+- **#1166's Vercel flipped FAIL → PASS** in the v3→v4 window. This is the only meaningful delta across 8 PRs. It is consistent with the Vercel 24-hr hold having elapsed for `#1166`. The other 3 rate-limited PRs (`#1162, #1163, #1164`) are still rate-limited.
+- **No new CF candidates** observed. The cf-4 hypothesis is unchanged from v3.
+- **Time-since-v3: 3h 13m.** Substantial window. The fact that nothing else changed in 3.5h confirms that CI is frozen on the unblockers being merged, not on flakes or transients.
+- **The operator may have shifted priorities** — 3.5h of inactivity on a sharpened action sheet is a signal worth respecting, not a bug to defeat.
+
+### Operator action sheet (v4 update — UNCHANGED from v3)
+
+1. **Merge #1165 first** (Cargo Deny PASS locally; 5 FAILs are mostly infra-noise).
+2. **Wait 5-10 min** for auto-retrigger on the 6 source PRs. Manually re-trigger if needed.
+3. **Run ci-scout v5 in ~25 min** to confirm 4-6 of 6 source PRs flipped green on ci/lint + ci/test + cargo-deny.
+4. **Then merge #1166** + re-trigger 2-3 dependabot PRs.
+5. **Inspect #1165's "plan" check** if it persists past v5 — may be a real plan-workflow issue independent of cargo-deny.
+6. **E.2.P1-GENERIC: still operator pick A/B/C.** CF-3 + F.3: still deferred.
+7. **If the operator does not plan to act in the next 24h**, v5 may be skipped. The audit is closed and re-entered; further v5/v6/... scouts are operator-optional.
+
+v4 evidence files: `ci-scout-v4-2026-10-19T00-10Z.md` + `.log` (in this folder).
+
+Snapshot identity chain: ADDED `ap-sfd-2026-10-19T00-10Z@ci-scout-v4-baseline2` as an 18th snapshot identity on top of the 17 prior. v4 is a **non-event scout** — the absence of movement is the signal. Operator's choice: act on the action sheet, or let the audit rest.
+
 ## Constraints honored
 
-- ✅ All 4 subagents (v1, v2, v3, cf-4) read-only (no push, no merge, no file edit, no new PR, no comment, no force-push).
+- ✅ All 5 subagents (v1, v2, v3, v4, cf-4) read-only (no push, no merge, no file edit, no new PR, no comment, no force-push).
 - ✅ No source code modified; only new evidence files in a sibling sub-folder.
 - ✅ No new cheap_closes opened (cf-4 verdict was PASS — not a new CF; v3 verdict was PREDICTED-BUT-NOT-TESTABLE — neither confirmed nor refuted).
 - ✅ Operator action sheet sharpened, not inflated. v3 confirms the re-entry's analysis without changing the operator steps.

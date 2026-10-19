@@ -1,0 +1,42 @@
+[2026-10-19T00:08:55Z] ci-scout v4 START (10-min cap, read-only)
+[2026-10-19T00:08:55Z] Working directory: /Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus
+[2026-10-19T00:08:55Z] Branch: docs/state-forward-docket-20261017 (DO NOT switch)
+[2026-10-19T00:08:55Z] Predecessor: ci-scout v3 at 2026-10-18T20:55Z (PREDICTED-BUT-NOT-TESTABLE)
+[2026-10-19T00:08:55Z] Time-since-v3: 3h 13m
+[2026-10-19T00:08:55Z] Time-since-re-entry-action-sheet: 3h 40m
+
+[2026-10-19T00:09:01Z] READ: /tmp/ci_scout_v3_2026-10-18T20-55Z-result.md (v3 baseline)
+[2026-10-19T00:09:01Z] READ: docs/sessions/20261017-state-forward-docket/re-entry-2026-10-18/RE-ENTRY-SUMMARY.md (operator action sheet)
+[2026-10-19T00:09:07Z] PR #1156 checks — 12 FAILs: Cargo Deny 2m40s, Cargo Deny A+L 1m11s, Dry run publish 31s, OSV Scanner 39s, benchmark thresholds 26m9s, cargo-deny 23s, cargo-mutants 5h32m15s, ci/lint 3s, ci/test 2s, perf k6 18s, python-coverage 33s, semver-checks 9m9s. 15 PASSes (Cargo Audit, CodeQL, CodeRabbit, Dependency Review, Detect Languages, GitGuardian, Gitleaks, Kilo Code Review, Lint & Format, Python, Python Security, Rust 18m30s, Security Scan, Socket Security x2, SonarCloud, Summary, CLI round-trip).
+[2026-10-19T00:09:08Z] PR #1157 checks — 22 FAILs: Cargo Deny 1m56s, Cargo Deny A+L 1m14s, Dry run publish 32s, OSV Scanner 32s, Rust 58s, Workspace Path Dependency Audit 26s, benchmark thresholds 39s, cargo-deny 22s, cargo-fuzz build check 31s, ci/lint 4s, ci/test 3s, flaky-test detection 58s, perf T118 1m1s, perf k6 22s, perf-qe-gate 2s, plan 22s, python-coverage 36s, qe/lint 44s, qe/test 1m1s, rust-coverage 2m7s, semver-checks 1m8s, static-deploy-contract 7s. 7 PASSes (Cargo Audit, CodeQL, CodeRabbit, Dependency Review, Detect Languages, GitGuardian, Gitleaks, Kilo Code Review 7h43m1s — but CodeRabbit was rate-limited). Note: CodeRabbit "Review rate limited" indicates the rate limit reset between v3 and v4 but the review itself didn't run.
+[2026-10-19T00:09:09Z] PR #1161 checks — 12 FAILs: Cargo Deny 2m29s, Cargo Deny A+L 1m21s, Dry run publish 23s, Lint & Format 17s, OSV Scanner 39s, SonarCloud 29s, benchmark thresholds 26m16s, cargo-mutants 4h49m24s, ci/lint 3s, ci/test 3s, perf k6 21s, python-coverage 37s. 17 PASSes.
+[2026-10-19T00:09:10Z] PR #1162 checks — 12 FAILs: Cargo Deny 2m10s, Cargo Deny A+L 1m17s, Dry run publish 30s, Lint & Format 18s, OSV Scanner 41s, SonarCloud 25s, Vercel rate-limited 0s, benchmark thresholds 26m19s, ci/lint 3s, ci/test 3s, perf k6 17s, python-coverage 35s. 14 PASSes.
+[2026-10-19T00:09:11Z] PR #1163 checks — 11 FAILs: Cargo Deny 2m12s, Cargo Deny A+L 1m23s, Dry run publish 31s, OSV Scanner 43s, Vercel rate-limited 0s, benchmark thresholds 26m11s, cargo-deny 27s, cargo-mutants 3h38m21s, ci/lint 3s, ci/test 3s, perf k6 16s, python-coverage 24s. 15 PASSes.
+[2026-10-19T00:09:12Z] PR #1164 checks — 13 FAILs: Cargo Deny 2m4s, Cargo Deny A+L 1m38s, Dry run publish 29s, Lint & Format 16s, OSV Scanner 45s, SonarCloud 42s, Vercel rate-limited 0s, benchmark thresholds 26m7s, cargo-deny 29s, ci/lint 3s, ci/test 2s, perf k6 24s, python-coverage 24s, semver-checks 8m57s. 16 PASSes.
+[2026-10-19T00:09:13Z] PR #1165 checks — 5 FAILs: Dry run publish 36s, OSV Scanner 40s, Vercel rate-limited 0s, plan 31s, semver-checks 7m35s. 26 PASSes (Cargo Audit 3m11s, Cargo Deny 2m29s, CodeQL, CodeQL python, CodeRabbit, GitGuardian, Gitleaks, Kilo Code Review 20m31s, Lint & Format, Python Security, Socket Security x2, SonarCloud, Summary, Workspace Path Dependency Audit, audit, cargo-deny 25s, coverage-gate, fuzz, gate, gitleaks scan x2, go-coverage, osv-scanner, python-coverage, rust-coverage, static-deploy-contract). State=OPEN, mergeStateStatus=UNSTABLE.
+[2026-10-19T00:09:15Z] PR #1166 checks — 9 FAILs: Cargo Deny 2m30s, Cargo Deny A+L 1m29s, Dry run publish 33s, OSV Scanner 43s, benchmark thresholds 26m22s, ci/lint 3s, ci/test 4s, perf k6 20s, python-coverage 39s. 1 PENDING: cargo-mutants. Vercel PASS (newly passing). 19 PASSes total. State=OPEN, mergeStateStatus=BLOCKED.
+[2026-10-19T00:09:28Z] gh pr list --state merged --limit 20: 20 most-recent merges. Most recent merge is #1152 at 2026-10-17T22:43:17Z. After that: #1150 at 22:24:27Z, #1138 at 02:53:15Z (Oct 18). No merges since 2026-10-17T22:43:17Z (25h 26m before v4).
+[2026-10-19T00:09:52Z] gh pr view #1165 --json state,mergeStateStatus,mergedAt: state=OPEN, mergedAt=null, mergeStateStatus=UNSTABLE.
+[2026-10-19T00:09:53Z] gh pr view #1166 --json state,mergeStateStatus,mergedAt: state=OPEN, mergedAt=null, mergeStateStatus=BLOCKED.
+[2026-10-19T00:09:55Z] gh pr list --state all --limit 10: PRs #1166, #1165, #1164, #1163, #1162, #1161, #1157, #1156, #1155, #1154 all OPEN.
+[2026-10-19T00:09:56Z] gh pr view #1156: state=OPEN, mergeStateStatus=BLOCKED.
+[2026-10-19T00:09:57Z] gh pr view #1157: state=OPEN, mergeStateStatus=UNSTABLE.
+[2026-10-19T00:09:58Z] gh pr view #1161: state=OPEN, mergeStateStatus=BLOCKED.
+[2026-10-19T00:10:22Z] gh pr view #1162: state=OPEN, mergeStateStatus=BLOCKED.
+[2026-10-19T00:10:24Z] gh pr view #1163: state=OPEN, mergeStateStatus=BLOCKED.
+[2026-10-19T00:10:25Z] gh pr view #1164: state=OPEN, mergeStateStatus=BLOCKED.
+[2026-10-19T00:10:26Z] git log origin/main -3: HEAD = 4857b409 ci: fail-closed quality gates (qe.yml) (#1138). Tip 4bd2971b is #1152. 2a5c011e is #1150.
+[2026-10-19T00:10:27Z] gh api /branches/main: head_sha=4857b4095d5b35757a922cbf369e6f9260fabf63, head_date=2026-10-18T02:53:15Z. CONFIRMED UNCHANGED.
+[2026-10-19T00:11:30Z] UTC timestamp: 2026-10-19T00:11:30Z
+[2026-10-19T00:11:30Z] gh pr list --state closed --limit 10: most recent close #1145 at 2026-10-18T04:15:16Z (CLOSED, not merged). Most recent MERGE is still #1152 at 2026-10-17T22:43:17Z.
+[2026-10-19T00:12:03Z] WROTE: /tmp/ci_scout_v4_2026-10-19T00-10Z-result.md (107 lines, 8 sections, full delta table, operator-actionable, constraints-honored, next-step).
+
+VERDICT: UNCHANGED. Operator has not acted on re-entry action sheet in 3.5h. cf-4 prediction preserved (still PREDICTED-BUT-NOT-TESTABLE). Main HEAD unchanged for 21h 17m. #1165 still OPEN+UNSTABLE, #1166 still OPEN+BLOCKED. All 6 source PRs still OPEN with byte-identical failing-check sets vs v3. Only minor delta: #1166 Vercel flipped FAIL → PASS (rate-limit elapsed).
+
+CONSTRAINTS HONORED:
+- Read-only (no push / merge / new PR / comment / close / force-push) ✅
+- Only the 8 PRs in scope + main HEAD queried ✅
+- Did not switch branches ✅
+- Did not call gh pr merge on anything ✅
+- Read completed in ~2m 30s wall-clock, well under 10-min cap ✅
+- Did not modify any file in the repo (only /tmp output files) ✅
