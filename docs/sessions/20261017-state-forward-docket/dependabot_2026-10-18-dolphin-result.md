@@ -11,13 +11,13 @@ Dependabot is reporting 5 vulnerabilities on `KooshaPari/AgilePlus` default bran
 
 ## Enumerated vulnerabilities
 
-| # | alert # | ghsa_id | cve_id | severity | cvss | package | ecosystem | version_range | fix_versions | manifest | status |
-|---|---------|---------|--------|----------|------|---------|-----------|---------------|--------------|----------|--------|
-| 1 | 217 | GHSA-84m7-p3x7-pcfv | CVE-2026-59951 | medium | 7.5 | mcp | pip | `>= 1.8.0, < 1.30.0` (also `>= 2.0.0, < 2.2.0` in advisory) | 1.30.0 (and 2.2.0) | `python/uv.lock` | OPEN — pinned at 1.28.1 |
-| 2 | 216 | GHSA-84m7-p3x7-pcfv | CVE-2026-59951 | medium | 7.5 | mcp | pip | `>= 1.8.0, < 1.30.0` | 1.30.0 | `dispatch-mcp/uv.lock` | OPEN — pinned at 1.27.1 |
-| 3 | 215 | GHSA-84m7-p3x7-pcfv | CVE-2026-59951 | medium | 7.5 | mcp | pip | `>= 1.8.0, < 1.30.0` | 1.30.0 | `agileplus-mcp/uv.lock` | OPEN — pinned at 1.28.1 |
-| 4 | 214 | GHSA-rj75-hqrm-r3gf | CVE-2026-104844 | medium | 5.9 | postcss-selector-parser | npm | `< 7.1.6` | 7.1.6 | `package-lock.json` | OPEN — pinned at 6.1.4 |
-| 5 | 158 | GHSA-wrw7-89jp-8q8g | (RUSTSEC-2024-0429) | medium | 0.0* | glib | rust | `>= 0.15.0, < 0.20.0` | 0.20.0 | `./Cargo.lock` | OPEN — pinned at 0.18.5 |
+| #   | alert # | ghsa_id             | cve_id              | severity | cvss  | package                 | ecosystem | version_range                                               | fix_versions       | manifest                | status                  |
+| --- | ------- | ------------------- | ------------------- | -------- | ----- | ----------------------- | --------- | ----------------------------------------------------------- | ------------------ | ----------------------- | ----------------------- |
+| 1   | 217     | GHSA-84m7-p3x7-pcfv | CVE-2026-59951      | medium   | 7.5   | mcp                     | pip       | `>= 1.8.0, < 1.30.0` (also `>= 2.0.0, < 2.2.0` in advisory) | 1.30.0 (and 2.2.0) | `python/uv.lock`        | OPEN — pinned at 1.28.1 |
+| 2   | 216     | GHSA-84m7-p3x7-pcfv | CVE-2026-59951      | medium   | 7.5   | mcp                     | pip       | `>= 1.8.0, < 1.30.0`                                        | 1.30.0             | `dispatch-mcp/uv.lock`  | OPEN — pinned at 1.27.1 |
+| 3   | 215     | GHSA-84m7-p3x7-pcfv | CVE-2026-59951      | medium   | 7.5   | mcp                     | pip       | `>= 1.8.0, < 1.30.0`                                        | 1.30.0             | `agileplus-mcp/uv.lock` | OPEN — pinned at 1.28.1 |
+| 4   | 214     | GHSA-rj75-hqrm-r3gf | CVE-2026-104844     | medium   | 5.9   | postcss-selector-parser | npm       | `< 7.1.6`                                                   | 7.1.6              | `package-lock.json`     | OPEN — pinned at 6.1.4  |
+| 5   | 158     | GHSA-wrw7-89jp-8q8g | (RUSTSEC-2024-0429) | medium   | 0.0\* | glib                    | rust      | `>= 0.15.0, < 0.20.0`                                       | 0.20.0             | `./Cargo.lock`          | OPEN — pinned at 0.18.5 |
 
 \* GHSA-wrw7-89jp-8q8g CVSS is 0.0 in the API payload (no `cvss.score` field set), but severity is `medium`. This is the same root cause as RUSTSEC-2024-0429 which is **already in `deny.toml` ignore list** with rationale (tauri/tray-icon stack pins glib 0.18, fix only in 0.20.0 behind tauri PR #16170).
 
@@ -25,9 +25,9 @@ Dependabot is reporting 5 vulnerabilities on `KooshaPari/AgilePlus` default bran
 
 The current `deny.toml` `[advisories].ignore` array contains exactly 2 entries:
 
-| id | reason (verbatim from deny.toml) |
-|----|-----------------------------------|
-| RUSTSEC-2024-0370 | proc-macro-error unmaintained: build-time only via glib-macros 0.18 (tauri stack); glib 0.18 pins it, no fix until tauri/tray-icon bump. |
+| id                | reason (verbatim from deny.toml)                                                                                                                                                                                                                                                               |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RUSTSEC-2024-0370 | proc-macro-error unmaintained: build-time only via glib-macros 0.18 (tauri stack); glib 0.18 pins it, no fix until tauri/tray-icon bump.                                                                                                                                                       |
 | RUSTSEC-2024-0429 | glib VariantStrIter: latest resolvable glib is 0.18.5; fixed in 0.20.0 behind tauri PR #16170. LINUX-ONLY path (libappindicator->tray-icon->tauri), so cargo-deny on a macOS host warns advisory-not-detected for this entry - benign, CI runs ubuntu. Re-evaluate when tauri PR #16170 lands. |
 
 **Docket discrepancy (IMPORTANT)**: the upstream prompt claimed the docket "notes 3 of them (RUSTSEC-2026-0370/0371/0372: zvariant, zbus_names, zvariant_derive unmaintained, ignored via PR #1157 deny.toml)". After grepping all 204 alerts and reading `deny.toml`:
@@ -43,14 +43,15 @@ The current `deny.toml` `[advisories].ignore` array contains exactly 2 entries:
 
 These 4 alert-numbers are NOT covered by `deny.toml` and have **real fix versions** (i.e., these are not "unmaintained" ignores; they're actionable bumps):
 
-| alert # | advisory | fix | action required |
-|---------|----------|-----|-----------------|
-| 217 | GHSA-84m7-p3x7-pcfv (mcp 1.28.1) | 1.30.0 | bump `python/uv.lock` mcp to >=1.30.0 |
-| 216 | GHSA-84m7-p3x7-pcfv (mcp 1.27.1) | 1.30.0 | bump `dispatch-mcp/uv.lock` mcp to >=1.30.0 |
-| 215 | GHSA-84m7-p3x7-pcfv (mcp 1.28.1) | 1.30.0 | bump `agileplus-mcp/uv.lock` mcp to >=1.30.0 |
-| 214 | GHSA-rj75-hqrm-r3gf (postcss-selector-parser 6.1.4) | 7.1.6 | bump `package-lock.json` postcss-selector-parser to >=7.1.6 (note: a major-version jump; check for breaking changes in PostCSS selector parsing) |
+| alert # | advisory                                            | fix    | action required                                                                                                                                  |
+| ------- | --------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 217     | GHSA-84m7-p3x7-pcfv (mcp 1.28.1)                    | 1.30.0 | bump `python/uv.lock` mcp to >=1.30.0                                                                                                            |
+| 216     | GHSA-84m7-p3x7-pcfv (mcp 1.27.1)                    | 1.30.0 | bump `dispatch-mcp/uv.lock` mcp to >=1.30.0                                                                                                      |
+| 215     | GHSA-84m7-p3x7-pcfv (mcp 1.28.1)                    | 1.30.0 | bump `agileplus-mcp/uv.lock` mcp to >=1.30.0                                                                                                     |
+| 214     | GHSA-rj75-hqrm-r3gf (postcss-selector-parser 6.1.4) | 7.1.6  | bump `package-lock.json` postcss-selector-parser to >=7.1.6 (note: a major-version jump; check for breaking changes in PostCSS selector parsing) |
 
 Alert #158 (glib / RUSTSEC-2024-0429) is documented-ignored but Dependabot still flags it because Dependabot ignores `deny.toml`. It will require either:
+
 - merging tauri PR #16170 (the upstream gtk 0.19 bump), or
 - dismissing the alert manually with reason `tolerable_risk` (matches the pattern used for the 3 previously-dismissed mcp HIGH alerts #141/144/146).
 

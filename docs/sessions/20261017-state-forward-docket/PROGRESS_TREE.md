@@ -10,7 +10,7 @@
 
 ## Verdict vocabulary (SFD v1.0)
 
-`✓` PASS · `~` PARTIAL · `✗` FAIL · `…` NOT_RUN · `?` UNKNOWN · `S` STALE · `B` BLOCKED · `N/A` NOT_APPLICABLE · `_` n/a (dimension not meaningful for that row)
+`✓` PASS · `~` PARTIAL · `✗` FAIL · `…` NOT*RUN · `?` UNKNOWN · `S` STALE · `B` BLOCKED · `N/A` NOT_APPLICABLE · `*` n/a (dimension not meaningful for that row)
 
 ---
 
@@ -111,17 +111,17 @@ E.20 G20 cargo deny + OSV clean           ? _ ~ _   cargo deny: advisories PARTI
 
 **Re-validated by parent orchestrator (this file).** Per-dimension totals across 256 cells (64 rows × 4 dimensions):
 
-| Verdict | Impl | Usab | Val | Assur | Total |
-|---|---|---|---|---|---|
-| ✓ PASS | 32 | 4 | 7 | 3 | **46** |
-| ~ PARTIAL | 6 | 4 | 5 | 0 | **15** |
-| ✗ FAIL | 4 | 12 | 4 | 0 | **20** |
-| … NOT_RUN | 11 | 14 | 37 | 0 | **62** |
-| ? UNKNOWN | 2 | 4 | 2 | 0 | **8** |
-| S STALE | 1 | 1 | 0 | 0 | **2** |
-| N/A NOT_APPLICABLE | 1 | 1 | 0 | 0 | **2** |
-| _ dim-not-meaningful | 7 | 24 | 9 | 61 | **101** |
-| **Column total** | **64** | **64** | **64** | **64** | **256** |
+| Verdict               | Impl   | Usab   | Val    | Assur  | Total   |
+| --------------------- | ------ | ------ | ------ | ------ | ------- |
+| ✓ PASS                | 32     | 4      | 7      | 3      | **46**  |
+| ~ PARTIAL             | 6      | 4      | 5      | 0      | **15**  |
+| ✗ FAIL                | 4      | 12     | 4      | 0      | **20**  |
+| … NOT_RUN             | 11     | 14     | 37     | 0      | **62**  |
+| ? UNKNOWN             | 2      | 4      | 2      | 0      | **8**   |
+| S STALE               | 1      | 1      | 0      | 0      | **2**   |
+| N/A NOT_APPLICABLE    | 1      | 1      | 0      | 0      | **2**   |
+| \_ dim-not-meaningful | 7      | 24     | 9      | 61     | **101** |
+| **Column total**      | **64** | **64** | **64** | **64** | **256** |
 
 > Caveat: the subagent's `PROGRESS_TREE_RAW.md §G.1` and `§G.2` show minor 28-row arithmetic drift (subagent counted 162 row-verdicts, parent counts 155; difference is the 7 `dim-not-meaningful` cells the subagent double-counted as n/a, vs the 7 it correctly classed as `_`). The evidence cells themselves are correct; the **per-cell verdict and source** stand.
 
@@ -156,29 +156,29 @@ This overlay updates the **Validation** column for B.5, C.4, C.5, C.7, and C.12 
 
 ### Cheap closes (no operator authority needed)
 
-| Cell | Cheapest move | ETA |
-|---|---|---|
-| A.4 / E.19 Validation | `cargo llvm-cov --workspace --summary-only --fail-under 85` on `d6b418a6`; record in `verification/QUALITY_GATES_2026-10-17.md` | 10–15m |
-| A.4 / E.20 Validation | `cargo deny check advisories sources licenses bans` on `d6b418a6` | 5m |
-| B.5 Validation → case-level | Read the 4 atomic_acceptance*.rs files; bind each test name to an `AP-VC-*` id; edit `semantic-verification-cases.v1.json` to `executed_with_witness` | 30m |
-| B.6 / E.6 Validation | `cargo test -p agileplus-events --test event_store_tests` + `replay_tests` + `proptest_audit` on `d6b418a6` | 5m |
-| B.3 / B.4 Usability | Smoke-run `target/debug/agileplus module list`, `feature list`, `agent review`; capture transcript | 10m |
-| D.3 Implementation | `cargo build -p agileplus-desktop --release`; `target/release/agileplus-desktop --help`; record exit code | 5m |
-| D.3 Validation | Start `agileplus-api`, hit `health_probes` test target, kill + relaunch, observe `atomic_acceptance_sqlite` reopen | 10m |
-| E.2 / E.5 Validation | Run P1/P2 command list in `FORWARD_WBS_2026-10-04.md` P1+P2 | 1–2h |
-| F.3 (all 6 doc gaps) | Open 1 docs PR with the 6 new files (RISK_REGISTER, COVERAGE_REPORT, DASHBOARD_PROD_OBSERVED, etc.) | 30m |
+| Cell                        | Cheapest move                                                                                                                                     | ETA    |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| A.4 / E.19 Validation       | `cargo llvm-cov --workspace --summary-only --fail-under 85` on `d6b418a6`; record in `verification/QUALITY_GATES_2026-10-17.md`                   | 10–15m |
+| A.4 / E.20 Validation       | `cargo deny check advisories sources licenses bans` on `d6b418a6`                                                                                 | 5m     |
+| B.5 Validation → case-level | Read the 4 atomic_acceptance*.rs files; bind each test name to an `AP-VC-*`id; edit`semantic-verification-cases.v1.json`to`executed_with_witness` | 30m    |
+| B.6 / E.6 Validation        | `cargo test -p agileplus-events --test event_store_tests` + `replay_tests` + `proptest_audit` on `d6b418a6`                                       | 5m     |
+| B.3 / B.4 Usability         | Smoke-run `target/debug/agileplus module list`, `feature list`, `agent review`; capture transcript                                                | 10m    |
+| D.3 Implementation          | `cargo build -p agileplus-desktop --release`; `target/release/agileplus-desktop --help`; record exit code                                         | 5m     |
+| D.3 Validation              | Start `agileplus-api`, hit `health_probes` test target, kill + relaunch, observe `atomic_acceptance_sqlite` reopen                                | 10m    |
+| E.2 / E.5 Validation        | Run P1/P2 command list in `FORWARD_WBS_2026-10-04.md` P1+P2                                                                                       | 1–2h   |
+| F.3 (all 6 doc gaps)        | Open 1 docs PR with the 6 new files (RISK_REGISTER, COVERAGE_REPORT, DASHBOARD_PROD_OBSERVED, etc.)                                               | 30m    |
 
 ### Operator-gated (cannot close in parent ctx)
 
-| Cell | Why |
-|---|---|
-| A.7 Usability (`agileplus-nats` / MinIO / Neo4j) | Operator must start the dormant homebrew binaries and provision missing S3/MinIO client code |
-| A.9 / A.10 Risk register | No central file; operator convening authority needed |
-| D.4–D.10 Validation (6 of 10 NDR) | Requires Tailscale provisioning on `kooshapari-desk`, Vercel team access, Windows deploy creds |
-| E.7 / E.8 / E.13 / E.17 Validation (production) | Vercel deploy + `PLANE_API_KEY` env vars + reachable URL |
-| E.9 Validation (GitHub live) | `GITHUB_TOKEN` + actual repo to list |
-| Cargo registry semver | Blocked on operator publish decision (`agileplus-agent-dispatch` baseline unpublished) |
-| Vercel team-scope access | FORWARD_DELTA: "scoped deployment inspection returned 403 for the owning team" |
+| Cell                                             | Why                                                                                            |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| A.7 Usability (`agileplus-nats` / MinIO / Neo4j) | Operator must start the dormant homebrew binaries and provision missing S3/MinIO client code   |
+| A.9 / A.10 Risk register                         | No central file; operator convening authority needed                                           |
+| D.4–D.10 Validation (6 of 10 NDR)                | Requires Tailscale provisioning on `kooshapari-desk`, Vercel team access, Windows deploy creds |
+| E.7 / E.8 / E.13 / E.17 Validation (production)  | Vercel deploy + `PLANE_API_KEY` env vars + reachable URL                                       |
+| E.9 Validation (GitHub live)                     | `GITHUB_TOKEN` + actual repo to list                                                           |
+| Cargo registry semver                            | Blocked on operator publish decision (`agileplus-agent-dispatch` baseline unpublished)         |
+| Vercel team-scope access                         | FORWARD_DELTA: "scoped deployment inspection returned 403 for the owning team"                 |
 
 ---
 
@@ -192,4 +192,4 @@ This tree and the policy it follows are now the canonical end-of-turn cockpit sh
 
 ---
 
-*Snapshot: `ap-sfd-2026-10-17T22-14Z@d6b418a6` · evidence file `PROGRESS_TREE_RAW.md` · policy `~/.jcode/memories/global/cockpit-progress-tree-policy.md` · memory `mem_1792275198980_10767103059655466859`*
+_Snapshot: `ap-sfd-2026-10-17T22-14Z@d6b418a6` · evidence file `PROGRESS_TREE_RAW.md` · policy `~/.jcode/memories/global/cockpit-progress-tree-policy.md` · memory `mem_1792275198980_10767103059655466859`_
