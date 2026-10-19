@@ -35,6 +35,9 @@ if ! command -v sqlite3 >/dev/null 2>&1; then
   exit 0
 fi
 
+# Resolve the directory holding this hook (and the python validator).
+hook_dir="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
 # Allow a manual scan against an explicit file via HOOK_TARGET=<path>
 if [ -n "${HOOK_TARGET:-}" ]; then
   staged_dbs="$HOOK_TARGET"
@@ -74,18 +77,42 @@ for db in $staged_dbs; do
       continue
     fi
 
-    # A row's updated_at is treated as RFC3339 iff it matches the structural
-    # date+time prefix: YYYY-MM-DDTHH:MM:SS. SQLite GLOB is case-sensitive
-    # and '*' matches zero or more characters, so '*' is required before/after
-    # to allow fractional seconds and timezone offsets.
-    # Example accepted: '2026-08-07T10:43:57', '2026-08-07T10:43:57.123Z',
-    # '2026-08-07T10:43:57+00:00'. The literal string 'T' alone or
-    # 'Hello T World' is REJECTED (it lacks the date/time prefix).
-    # Limit to 5 rows to keep output manageable; existence of any row rejects.
-    rows="$(sqlite3 "$db" "SELECT id, updated_at FROM ${table} WHERE updated_at IS NOT NULL AND updated_at NOT GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]*' LIMIT 5" 2>/dev/null || true)"
-    if [ -n "$rows" ]; then
-      echo "[hooks] pre-commit-validate-timestamps: FAIL — $db table=$table has non-RFC3339 updated_at rows:" >&2
-      echo "$rows" >&2
+    # Updated_at must be a genuine UTC RFC3339 timestamp. SQLite GLOB is
+    # neither precise enough (it accepts invalid calendar/time and
+    # trailing garbage) nor does it enforce UTC. The strong check is
+    # delegated to the Python validator at $HOOK_DIR/rfc3339-utc-
+    # validate.py, which validates:
+    #   - YYYY-MM-DD with month 01-12 and day 01-31 (Feb 30 rejected;
+    #     leap-year rules: divisible by 4 except centuries unless 400)
+    #   - HH:MM:SS with hour 00-23, minute 00-59, second 00-59
+    #   - Optional fractional seconds (1+ digits)
+    #   - Timezone: literal 'Z' (Zulu) OR '+00:00' (chrono's default)
+    #   - No trailing whitespace or other characters
+    # The validator matches chrono's actual emission
+    # (DateTime<Utc>.to_rfc3339() = `YYYY-MM-DDTHH:MM:SS.fffffffff+00:00`
+    # by default; `YYYY-MM-DDTHH:MM:SSZ` with use_z=True).
+    #
+    # SQLite's role is reduced to: extract candidate rows (id +
+    # updated_at) without filtering. The Python validator does the
+    # actual accept/reject decision. Existence of any rejected row
+    # aborts the commit. Limit to 20 rows for output manageability.
+    if ! command -v python3 >/dev/null 2>&1; then
+      echo "[hooks] pre-commit-validate-timestamps: python3 not found in PATH; required by strict UTC RFC3339 validator. Install python3 or set PRE_COMMIT_SKIP_TIMESTAMPS=1 (not recommended)." >&2
+      exit 1
+    fi
+    rows="$(sqlite3 "$db" "SELECT id, updated_at FROM ${table} WHERE updated_at IS NOT NULL LIMIT 20" 2>/dev/null || true)"
+    if [ -z "$rows" ]; then
+      continue
+    fi
+    bad_rows="$(printf '%s\n' "$rows" | python3 "$hook_dir/rfc3339-utc-validate.py" 2>/dev/null || true)"
+    bad_rc=$?
+    if [ "$bad_rc" -ne 0 ] || [ -n "$bad_rows" ]; then
+      echo "[hooks] pre-commit-validate-timestamps: FAIL — $db table=$table has non-UTC-RFC3339 updated_at rows:" >&2
+      if [ -n "$bad_rows" ]; then
+        echo "$bad_rows" >&2
+      else
+        echo "(python validator returned non-zero but no rows; check python3 install)" >&2
+      fi
       file_bad=$((file_bad + 1))
     fi
   done
@@ -97,8 +124,8 @@ done
 
 if [ "$bad_files" -gt 0 ]; then
   echo "[hooks] pre-commit-validate-timestamps: rejected $bad_files file(s) with non-RFC3339 updated_at rows." >&2
-  echo "[hooks] Fix by:" >&2
-  echo "[hooks]   sqlite3 <db> \"UPDATE <table> SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE updated_at IS NOT NULL AND updated_at NOT GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]*';\"" >&2
+  echo "[hooks] Fix by running the strict Python validator manually:" >&2
+  echo "[hooks]   python3 $hook_dir/rfc3339-utc-validate.py < <(sqlite3 <db> 'SELECT id, updated_at FROM <table>')" >&2
   echo "[hooks] Or set PRE_COMMIT_SKIP_TIMESTAMPS=1 (not recommended)." >&2
   exit 1
 fi
