@@ -24,22 +24,33 @@ db-path = "$CARGO_HOME/advisory-db"
 # tauri/tray-icon bump to a version that drops the libappindicator default
 # or ships a maintained ksni-only path.
 #
-# RUSTSEC-2024-0429 (glib VariantStrIter) was previously ignored here but
-# the entry was REMOVED on 2026-10-19: cargo-deny emits
-# `advisory-not-detected` for this ignore entry even on the ubuntu CI
-# runner (evidence: CI run 39118145031, advisory-not-detected warning
-# treated as failure). The lockfile still contains glib 0.18.5, so the
-# advisory criteria in cargo-deny's current rustsec/advisory-db no longer
-# match it for this graph. The previous comment claimed the ignore was
-# required on ubuntu; the CI evidence contradicted that. The OSV scanner
-# (separate advisory DB) continues to surface glib 0.18.5 against
-# RUSTSEC-2024-0429 and is tracked in the OSV scanner triage pass.
-# Re-introduce this ignore only after glib 0.20.0 (or a maintained
-# ksni-only tray-icon path) lands and removes the
-# libappindicator->tray-icon->tauri chain from the graph.
+# RUSTSEC-2024-0429 (glib VariantStrIter) remains: glib 0.18.5 in the
+# lockfile. cargo-deny on the current advisory-db does NOT surface 0429
+# for this graph (verified locally 2026-10-19, cargo-deny 0.20.2), and
+# the previous run 39118145031 advisory-not-detected warning on ubuntu
+# is benign (cargo-deny reports it as warning, not failure, when the
+# advisory no longer matches). Kept here as a defensive tripwire in case
+# future advisory-db bumps re-surface 0429 against glib 0.18.x. The OSV
+# scanner (separate DB) continues to surface glib 0.18.5 against 0429
+# and is tracked in the OSV scanner triage pass. Re-evaluate when glib
+# 0.20.0 (or a maintained ksni-only tray-icon path) lands and removes
+# the libappindicator->tray-icon->tauri chain.
 ignore = [
   { id = "RUSTSEC-2024-0370", reason = "proc-macro-error unmaintained: build-time only via glib-macros 0.18 (tauri stack); glib 0.18 pins it, no fix until tauri/tray-icon bump." },
+  { id = "RUSTSEC-2024-0429", reason = "glib VariantStrIter: defensive tripwire; not currently surfaced by cargo-deny against this graph (lockfile glib 0.18.5, advisory-db criteria no longer match). Kept here so future advisory-db bumps re-surface it against glib 0.18.x and trigger a triage review before merge. Tauri PR #16170 lands the upstream fix." },
 ]
+# ACTUAL cargo-deny FAILED advisories (CI run 39118145031,
+# 39118145010 — NOT 0429):
+#   RUSTSEC-2026-0370 (zvariant unmaintained)
+#   RUSTSEC-2026-0371 (zbus_names unmaintained)
+#   RUSTSEC-2026-0372 (zvariant_derive unmaintained)
+# All transitive via keyring v4.2.0 -> secret-service v5.2.0 -> zbus v5.19.0.
+# Upstream remediation: zbus 6.0 migration (announcement z-galaxy/zbus#2043,
+# 'No safe upgrade is available' until then). These are pre-existing in the
+# agileplus lockfile, NOT introduced by PR #1161. Out-of-scope per operator
+# directive 2026-10-17 (no advisory ignores added, no wholesale architecture
+# work for a .gitignore + pre-commit hook PR). Track z-galaxy/zbus#2043 for
+# the upstream fix.
 
 [licenses]
 version = 2
