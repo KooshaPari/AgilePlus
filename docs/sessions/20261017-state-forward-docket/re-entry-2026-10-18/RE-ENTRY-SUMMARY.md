@@ -168,9 +168,68 @@ v4 evidence files: `ci-scout-v4-2026-10-19T00-10Z.md` + `.log` (in this folder).
 
 Snapshot identity chain: ADDED `ap-sfd-2026-10-19T00-10Z@ci-scout-v4-baseline2` as an 18th snapshot identity on top of the 17 prior. v4 is a **non-event scout** — the absence of movement is the signal. Operator's choice: act on the action sheet, or let the audit rest.
 
+## v5 verification (added 2026-10-19T03:13Z, 2h 50m after v4)
+
+**Subagent**: ci-scout v5 (`session_skunk_1792379606940_de2eabe856ecd2b3`, model `openai-compatible:MiniMax-M3`, low effort). **Hit 10-min cap mid-read; result file reconstructed by orchestrator from subagent log + authoritative `gh` state checks.**
+
+### Verdict
+
+**ACTED-OTHER.** The operator DID act in the 2h 50m since v4 fired, but on **docs-only PRs**, not the cf-4 unblocker. The cf-4 prediction remains **PREDICTED-BUT-NOT-TESTABLE**.
+
+- **`main` HEAD moved**: from `4857b4095d5b35757a922cbf369e6f9260fabf63` to `c074506bfcae41e199a64c2f2e7dfdb63d2005f0` (24h 19m of frozen-ness broken).
+- **2 new PRs merged** to `main`:
+  - **`#1167`** "docs: add compete section stub" — merged 2026-10-19T02:10:32Z.
+  - **`#1168`** "docs: link compete section in site nav" — merged 2026-10-19T02:39:51Z.
+- **`#1165` (fox) is still NOT merged.** Cargo Deny + cargo-deny PASS on fox's own CI; 5 remaining FAILs unchanged.
+- **`#1166` (badger) is still NOT merged.** FAIL set unchanged from v4. 1 PENDING remaining (cargo-mutants long job).
+- **0 of 6 source PRs re-triggered after the 2 merges.** Their latest check `completedAt` timestamps are all pre-merge (latest: #1161/#1162 at 00:09:56Z for cargo-mutants; #1164 at 01:14:38Z for cargo-mutants). The 2 docs-only merges do not trigger a fresh CI run on the source PRs.
+
+cf-4 prediction status: **STILL PREDICTED-BUT-NOT-TESTABLE**, identical to v3 + v4 verdicts. The 6 source PRs need (a) `#1165` to merge into `main`, (b) manual re-trigger, before the cargo-deny → lint → test gate chain can be exercised. Neither has happened.
+
+### Key findings vs v4
+
+- **Operator is actively working** — 2 PRs merged in 2h 50m window. The 3.5h of "no activity" identified at v4 was wrong; the operator was active, just on different things.
+- **The 2 new merges are unrelated to the cf-4 unblocker.** They are docs-only changes to the `compete` section, with no effect on cargo-deny, ci/lint, or ci/test gate chains.
+- **The operator may be intentionally avoiding the cf-4 action sheet** — the docs merge is a 2-PR sequence (`#1167` stub then `#1168` nav) that suggests the operator is on a different track. This is signal, not noise; the operator is choosing to work on different priorities.
+- **0 of 8 PRs green.** Same as v1, v2, v3, v4. No PR cleared all FAILs.
+
+### v5 source PR re-trigger check
+
+| PR    | Latest check completedAt | Status                                |
+|-------|--------------------------|---------------------------------------|
+| #1156 | 2026-10-18T13:46:07Z     | Kilo Code Review (bot, not CI)         |
+| #1157 | 2026-10-18T14:31:09Z     | Kilo Code Review (bot, not CI)         |
+| #1161 | 2026-10-19T00:09:56Z     | cargo-mutants 14h run finish           |
+| #1162 | 2026-10-19T00:09:56Z     | cargo-mutants 14h run finish           |
+| #1163 | 2026-10-18T23:07:19Z     | cargo-mutants 13h run finish           |
+| #1164 | 2026-10-19T01:14:38Z     | cargo-mutants 15h run finish           |
+| #1165 | 2026-10-18T20:21:46Z     | fox's own CI (unchanged from v4)       |
+| #1166 | 2026-10-19T00:13:17Z     | cargo-mutants 14h run finish           |
+
+The 2 merges to `main` happened at 02:10:32Z and 02:39:51Z. **All 8 PRs' latest check timestamps are PRE-MERGE** (none of the 6 source PRs saw a new CI run after the merges landed). This is standard GitHub behavior: new commits on `main` do not auto-trigger fresh CI on dependent PRs.
+
+### Operator action sheet (v5 update — UNCHANGED from v4)
+
+1. **Merge #1165 first** (Cargo Deny PASS locally; 5 FAILs are mostly infra-noise).
+2. **Manually re-trigger the 6 source PRs** (push no-op or `gh pr update-branch`). They will NOT auto-retrigger when main moves.
+3. **Run ci-scout v6 in ~25 min** to confirm 4-6 of 6 source PRs flipped green on ci/lint + ci/test + cargo-deny.
+4. **Then merge #1166** + re-trigger 2-3 dependabot PRs.
+5. **Inspect #1165's "plan" check** if it persists past v6 — may be a real plan-workflow issue independent of cargo-deny.
+6. **E.2.P1-GENERIC: still operator pick A/B/C.** CF-3 + F.3: still deferred.
+7. **If the operator does not plan to act in the next 24h**, v6 may be skipped. The audit is closed and re-entered; further v6/v7/... scouts are operator-optional.
+8. **The operator's choice of work (docs: compete section) is signal, not absence** — they are choosing other priorities. The audit respects that; no need to nag.
+
+v5 evidence files: `ci-scout-v5-2026-10-19T03-13Z.md` (reconstructed result) + `.log` (subagent's partial log) — both in this folder.
+
+Snapshot identity chain: ADDED `ap-sfd-2026-10-19T03-13Z@ci-scout-v5-acted-other` as a 19th snapshot identity on top of the 18 prior. v5 is a **state-update scout** — the operator has acted, but on different priorities. The cf-4 action sheet is preserved.
+
+### v5 cap-mitigation note
+
+The v5 subagent hit its 10-min cap mid-read. Future scouts (v6+) that need to read 8 PRs + main HEAD + recent merge history should be given a **15-min cap** to allow the result file to be written before the cap fires. v5 was reconstructed by the orchestrator from the subagent log + orchestrator's own state checks; this is acceptable but should not become the default.
+
 ## Constraints honored
 
-- ✅ All 5 subagents (v1, v2, v3, v4, cf-4) read-only (no push, no merge, no file edit, no new PR, no comment, no force-push).
+- ✅ All 6 subagents (v1, v2, v3, v4, v5, cf-4) read-only (no push, no merge, no file edit, no new PR, no comment, no force-push). v5 hit cap; result file reconstructed by orchestrator from subagent log + state checks.
 - ✅ No source code modified; only new evidence files in a sibling sub-folder.
 - ✅ No new cheap_closes opened (cf-4 verdict was PASS — not a new CF; v3 verdict was PREDICTED-BUT-NOT-TESTABLE — neither confirmed nor refuted).
 - ✅ Operator action sheet sharpened, not inflated. v3 confirms the re-entry's analysis without changing the operator steps.
