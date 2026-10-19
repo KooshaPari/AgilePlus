@@ -6,12 +6,12 @@
 
 ## Summary by Priority
 
-| Priority | Count | Items |
-|----------|-------|-------|
-| P0 | 1 | PTY Process Utilities (FORK-001) |
-| P1 | 2 | Error Handling (FORK-002), CLI Modernization |
-| P2 | 3 | Framework Audit, Architecture Patterns, Codecrafters-Style Learning |
-| P3 | 1 | LLM Inference Optimization |
+| Priority | Count | Items                                                               |
+| -------- | ----- | ------------------------------------------------------------------- |
+| P0       | 1     | PTY Process Utilities (FORK-001)                                    |
+| P1       | 2     | Error Handling (FORK-002), CLI Modernization                        |
+| P2       | 3     | Framework Audit, Architecture Patterns, Codecrafters-Style Learning |
+| P3       | 1     | LLM Inference Optimization                                          |
 
 ---
 
@@ -34,6 +34,7 @@
 | Priority | CRITICAL |
 
 **Next Steps:**
+
 - [ ] Fork to `libs/phenotype-process`
 - [ ] Migrate users to new crate
 - [ ] Test on CI (Unix + Windows)
@@ -58,6 +59,7 @@
 | Priority | CRITICAL |
 
 **Next Steps:**
+
 - [ ] Fork to `libs/phenotype-error`
 - [ ] Add AgilePlus-specific variants
 - [ ] Create migration guide
@@ -83,6 +85,7 @@
 | Progress feedback | None | Add indicatif |
 
 **Dependencies to Add:**
+
 ```toml
 # Missing modern tooling
 indicatif = "0.17"
@@ -90,6 +93,7 @@ figment = "0.10"
 ```
 
 **Next Steps:**
+
 - [ ] Add indicatif for progress feedback
 - [ ] Evaluate figment for config
 - [ ] Fork PTY utilities
@@ -113,6 +117,7 @@ figment = "0.10"
 | Config format | TOML | TOML | ✅ Match |
 
 **Recommendations:**
+
 1. Adopt `phenotype-error` when forked
 2. Standardize on `command-group` for process management
 3. Add `indicatif` for progress feedback
@@ -129,12 +134,14 @@ figment = "0.10"
 **Summary:** Audit of framework patterns across heliosCLI crates.
 
 **Crates Reviewed:**
+
 - `codex-rs/core`
 - `codex-rs/utils`
 - `codex-rs/cli`
 - `codex-rs/agent`
 
 **Findings:**
+
 - Consistent use of `thiserror`
 - Async patterns via `async-trait`
 - Config via manual TOML parsing
@@ -151,6 +158,7 @@ figment = "0.10"
 **Summary:** Consider adding codecrafters-style learning mode to heliosCLI.
 
 **Concept:**
+
 ```
 helios learn git
 # → Interactive git internals tutorial
@@ -159,10 +167,12 @@ helios learn git
 ```
 
 **Similar To:**
+
 - codecrafters-io/build-your-own-x (starred repo)
 - GitHub's git tutorial
 
 **Next Steps:**
+
 - [ ] Evaluate feasibility
 - [ ] Design learning curriculum
 - [ ] Prototype first module
@@ -185,6 +195,7 @@ helios learn git
 | Local (llama.cpp) | Privacy, no API cost | Slower, less capable |
 
 **Next Steps:**
+
 - [ ] Benchmark current setup
 - [ ] Evaluate SGLang vs vLLM
 - [ ] Consider hybrid approach
@@ -193,13 +204,13 @@ helios learn git
 
 ## Aggregation by Category
 
-| Category | Entries | Items |
-|----------|---------|-------|
-| architecture | 3 | CLI Modernization, Architecture Patterns, Framework Audit |
-| dependencies | 2 | PTY Process (FORK-001), Error Handling (FORK-002) |
-| duplication | 1 | Dependencies Worklog |
-| performance | 1 | LLM Inference |
-| research | 1 | Codecrafters-Style Learning |
+| Category     | Entries | Items                                                     |
+| ------------ | ------- | --------------------------------------------------------- |
+| architecture | 3       | CLI Modernization, Architecture Patterns, Framework Audit |
+| dependencies | 2       | PTY Process (FORK-001), Error Handling (FORK-002)         |
+| duplication  | 1       | Dependencies Worklog                                      |
+| performance  | 1       | LLM Inference                                             |
+| research     | 1       | Codecrafters-Style Learning                               |
 
 ---
 
@@ -215,15 +226,15 @@ helios learn git
 
 ## Dependencies Status
 
-| Dependency | Current | Target | Priority |
-|------------|---------|--------|----------|
-| tokio | 1.x | 1.x | ✅ Optimal |
-| clap | 4.x | 4.x | ✅ Optimal |
-| thiserror | 2.x | phenotype-error | P1 |
-| git2 | 0.18 | gix | P2 |
-| process-utils | internal | phenotype-process | P0 |
-| indicatif | missing | 0.17 | P1 |
-| figment | missing | 0.10 | P2 |
+| Dependency    | Current  | Target            | Priority   |
+| ------------- | -------- | ----------------- | ---------- |
+| tokio         | 1.x      | 1.x               | ✅ Optimal |
+| clap          | 4.x      | 4.x               | ✅ Optimal |
+| thiserror     | 2.x      | phenotype-error   | P1         |
+| git2          | 0.18     | gix               | P2         |
+| process-utils | internal | phenotype-process | P0         |
+| indicatif     | missing  | 0.17              | P1         |
+| figment       | missing  | 0.10              | P2         |
 
 ---
 

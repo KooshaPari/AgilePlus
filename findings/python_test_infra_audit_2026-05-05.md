@@ -9,31 +9,31 @@
 
 ### Summary Table
 
-| Repo | pyproject.toml | tests/ | pytest/unittest | CI Workflow | tests/__init__.py |
-|------|----------------|--------|-----------------|-------------|-------------------|
-| agent-user-status | YES | YES | NO | NO | NO |
-| agileplus-mcp | YES | YES | pytest | YES | YES |
-| AuthKit | YES | YES | pytest | YES | YES |
-| cheap-llm-mcp | YES | YES | pytest | NO | NO |
-| dispatch-mcp | YES | YES | pytest | YES | NO |
-| helios-router | YES | YES | pytest | NO | NO |
-| heliosBench | YES | YES | pytest | NO | NO |
-| helioscope | YES | YES | pytest | YES | YES |
-| Httpora | YES | YES | pytest | YES | YES |
-| McpKit | YES | YES | pytest | YES | YES |
-| Parpoura | YES | YES | pytest | NO | YES |
-| phenodocs | YES | YES | pytest | NO | YES |
-| phenodocs-scorecard-remediation | YES | NO | NO | NO | NO |
-| PhenoMCP | YES | YES | NO | NO | YES |
-| phenoResearchEngine | YES+setup.py | YES | pytest+unittest | NO | YES |
-| PhenoRuntime | YES | YES | NO | NO | YES |
-| phenotype-omlx | YES | YES | pytest | NO | NO |
-| PolicyStack | YES | YES | pytest | YES | YES |
-| portage | YES | YES | pytest | YES | YES |
-| python | YES | YES | pytest | NO | YES |
-| QuadSGM | YES | YES | pytest | NO | NO |
-| thegent | YES | YES | pytest | YES | YES |
-| Tracera | YES | YES | pytest | YES | YES |
+| Repo                            | pyproject.toml | tests/ | pytest/unittest | CI Workflow | tests/**init**.py |
+| ------------------------------- | -------------- | ------ | --------------- | ----------- | ----------------- |
+| agent-user-status               | YES            | YES    | NO              | NO          | NO                |
+| agileplus-mcp                   | YES            | YES    | pytest          | YES         | YES               |
+| AuthKit                         | YES            | YES    | pytest          | YES         | YES               |
+| cheap-llm-mcp                   | YES            | YES    | pytest          | NO          | NO                |
+| dispatch-mcp                    | YES            | YES    | pytest          | YES         | NO                |
+| helios-router                   | YES            | YES    | pytest          | NO          | NO                |
+| heliosBench                     | YES            | YES    | pytest          | NO          | NO                |
+| helioscope                      | YES            | YES    | pytest          | YES         | YES               |
+| Httpora                         | YES            | YES    | pytest          | YES         | YES               |
+| McpKit                          | YES            | YES    | pytest          | YES         | YES               |
+| Parpoura                        | YES            | YES    | pytest          | NO          | YES               |
+| phenodocs                       | YES            | YES    | pytest          | NO          | YES               |
+| phenodocs-scorecard-remediation | YES            | NO     | NO              | NO          | NO                |
+| PhenoMCP                        | YES            | YES    | NO              | NO          | YES               |
+| phenoResearchEngine             | YES+setup.py   | YES    | pytest+unittest | NO          | YES               |
+| PhenoRuntime                    | YES            | YES    | NO              | NO          | YES               |
+| phenotype-omlx                  | YES            | YES    | pytest          | NO          | NO                |
+| PolicyStack                     | YES            | YES    | pytest          | YES         | YES               |
+| portage                         | YES            | YES    | pytest          | YES         | YES               |
+| python                          | YES            | YES    | pytest          | NO          | YES               |
+| QuadSGM                         | YES            | YES    | pytest          | NO          | NO                |
+| thegent                         | YES            | YES    | pytest          | YES         | YES               |
+| Tracera                         | YES            | YES    | pytest          | YES         | YES               |
 
 ### Repos with Python Code but NO CI Workflow (8 repos)
 
@@ -61,9 +61,9 @@
 
 ### Broken References Found
 
-| Referencing Repo | Broken Reference | Actual Path | Status |
-|-----------------|------------------|-------------|--------|
-| helioscope | `heliosCLI` | `helios-cli` | Wrong casing/path |
+| Referencing Repo | Broken Reference | Actual Path  | Status            |
+| ---------------- | ---------------- | ------------ | ----------------- |
+| helioscope       | `heliosCLI`      | `helios-cli` | Wrong casing/path |
 
 ### Valid References Verified
 
@@ -104,6 +104,7 @@ These repos reference themselves in their own CLAUDE.md (acceptable):
 ### High Priority: Add CI Workflow
 
 These 13 Python repos have tests but no CI:
+
 - agent-user-status
 - cheap-llm-mcp
 - helios-router

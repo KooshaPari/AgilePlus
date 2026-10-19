@@ -6,14 +6,14 @@
 
 ## Overview
 
-| Phase | WPs | Priority | Parallelizable |
-|-------|-----|----------|----------------|
-| Foundation | WP01-WP02 | P1 | WP01 → WP02 |
-| Secrets & Profiles | WP03-WP04 | P1 | Parallel |
-| Git & Worktrees | WP05 | P1 | After WP01 |
-| CLI Integration | WP06 | P2 | After WP01-WP03 |
-| Org Config | WP07 | P1 | Parallel with WP01 |
-| Daemon & Monitoring | WP08 | P3 | After WP06 |
+| Phase               | WPs       | Priority | Parallelizable     |
+| ------------------- | --------- | -------- | ------------------ |
+| Foundation          | WP01-WP02 | P1       | WP01 → WP02        |
+| Secrets & Profiles  | WP03-WP04 | P1       | Parallel           |
+| Git & Worktrees     | WP05      | P1       | After WP01         |
+| CLI Integration     | WP06      | P2       | After WP01-WP03    |
+| Org Config          | WP07      | P1       | Parallel with WP01 |
+| Daemon & Monitoring | WP08      | P3       | After WP06         |
 
 ## Dependency Graph
 
@@ -31,10 +31,12 @@ WP05 (git-core)  ─────────────────────
 ---
 
 ## WP07 — Org-Level Capital Configuration
+
 **Priority**: P1 | **Est. lines**: ~50 (TOML) + ~200 (parser)
 **Dependencies**: none
 **Goal**: Create `repos/capital.toml` with full org resource inventory and the parser to read it.
 **File Scope:**
+
 - Read: [repos/capital.toml]
 - Write: [repos/capital.toml, crates/phenotype-capital/src/registry.rs, capital.toml, phenotype-capital::registry]
 
@@ -49,10 +51,12 @@ WP05 (git-core)  ─────────────────────
 ---
 
 ## WP01 — phenotype-capital Crate Foundation
+
 **Priority**: P1 | **Est. lines**: ~450
 **Dependencies**: WP07
 **Goal**: Create the `phenotype-capital` crate with SQLite-backed capital ledger, reusing `agileplus-sqlite` patterns.
 **File Scope:**
+
 - Read: [kitty-specs/eco-012-orgops-capital-ledger/spec.md, kitty-specs/eco-012-orgops-capital-ledger/plan.md, WP07]
 - Write: [crates/phenotype-capital/Cargo.toml, crates/phenotype-capital/src/lib.rs, crates/phenotype-capital/src/ledger.rs, crates/phenotype-capital/src/migrations.rs, phenotype-capital, agileplus-sqlite, crates/phenotype-capital/, phenotype-cost-core::BudgetManager]
 
@@ -74,10 +78,12 @@ WP05 (git-core)  ─────────────────────
 ---
 
 ## WP02 — Consumption Tracking & Budget Enforcement
+
 **Priority**: P1 | **Est. lines**: ~300
 **Dependencies**: WP01
 **Goal**: Implement real-time consumption tracking and budget enforcement using `phenotype-cost-core`.
 **File Scope:**
+
 - Read: [kitty-specs/eco-012-orgops-capital-ledger/spec.md, kitty-specs/eco-012-orgops-capital-ledger/plan.md, WP01]
 - Write: [crates/phenotype-capital/src/consumption.rs, phenotype-cost-core]
 
@@ -93,10 +99,12 @@ WP05 (git-core)  ─────────────────────
 ---
 
 ## WP03 — Secret Lifecycle Management
+
 **Priority**: P1 | **Est. lines**: ~350
 **Dependencies**: WP01
 **Goal**: Implement secret validation, rotation, and propagation (SQLite + .env export).
 **File Scope:**
+
 - Read: [kitty-specs/eco-012-orgops-capital-ledger/spec.md, kitty-specs/eco-012-orgops-capital-ledger/plan.md, WP01]
 - Write: [crates/phenotype-capital/src/secrets.rs]
 
@@ -113,10 +121,12 @@ WP05 (git-core)  ─────────────────────
 ---
 
 ## WP04 — phenotype-profiles Crate (Browser UA)
+
 **Priority**: P1 | **Est. lines**: ~300
 **Dependencies**: none (parallel with WP01-WP03)
 **Goal**: Create `phenotype-profiles` for persistent Chrome user-data-dir management.
 **File Scope:**
+
 - Read: [phenotype-crypto, none (parallel with WP01-WP03)]
 - Write: [crates/phenotype-profiles/Cargo.toml, crates/phenotype-profiles/src/lib.rs, crates/phenotype-profiles/src/chrome.rs, crates/phenotype-profiles/src/auth.rs, crates/phenotype-profiles/src/vault.rs, phenotype-profiles, crates/phenotype-profiles/, phenotype-crypto]
 
@@ -136,10 +146,12 @@ WP05 (git-core)  ─────────────────────
 ---
 
 ## WP05 — phenotype-git-core Worktree Extension
+
 **Priority**: P1 | **Est. lines**: ~250
 **Dependencies**: none (parallel)
 **Goal**: Extend the stub `phenotype-git-core` with gix-based worktree management.
 **File Scope:**
+
 - Read: [kitty-specs/eco-012-orgops-capital-ledger/spec.md, kitty-specs/eco-012-orgops-capital-ledger/plan.md, none (parallel)]
 - Write: [crates/phenotype-git-core/src/lib.rs, crates/phenotype-git-core/src/worktree.rs, phenotype-git-core, worktrees/<project>/<branch>, worktrees/]
 
@@ -155,10 +167,12 @@ WP05 (git-core)  ─────────────────────
 ---
 
 ## WP06 — AgilePlus CLI Integration
+
 **Priority**: P2 | **Est. lines**: ~300
 **Dependencies**: WP01, WP03
 **Goal**: Wire `agileplus capital` and `agileplus secrets` CLI subcommands.
 **File Scope:**
+
 - Read: [kitty-specs/eco-012-orgops-capital-ledger/spec.md, kitty-specs/eco-012-orgops-capital-ledger/plan.md, WP01, WP03]
 - Write: [AgilePlus/crates/agileplus-cli/src/commands/capital.rs, AgilePlus/crates/agileplus-cli/src/commands/secrets.rs, AgilePlus/crates/agileplus-cli/src/commands/worktree.rs, AgilePlus/crates/agileplus-cli/src/commands/profiles.rs, agileplus worktree create/list/prune]
 
@@ -178,10 +192,12 @@ WP05 (git-core)  ─────────────────────
 ---
 
 ## WP08 — Daemon & Process-Compose Integration
+
 **Priority**: P3 | **Est. lines**: ~200
 **Dependencies**: WP06
 **Goal**: Optional background daemon for continuous secret monitoring.
 **File Scope:**
+
 - Read: [kitty-specs/eco-012-orgops-capital-ledger/spec.md, kitty-specs/eco-012-orgops-capital-ledger/plan.md, WP06]
 - Write: [AgilePlus/crates/agileplus-cli/src/commands/daemon.rs, repos/process-compose.yml]
 

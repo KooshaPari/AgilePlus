@@ -20,20 +20,21 @@ Create a new branch from a base ref.
 agileplus branch:create --name feat/001-login-WP01 --base main
 ```
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| `--name` | string | Branch name (required) |
+| Argument | Type   | Description                             |
+| -------- | ------ | --------------------------------------- |
+| `--name` | string | Branch name (required)                  |
 | `--base` | string | Base ref to branch from (default: main) |
 
 **Audit Log Entry:**
+
 ```json
 {
-  "command": "branch:create",
-  "args": {"name": "feat/001-login-WP01", "base": "main"},
-  "actor": "claude-code",
-  "timestamp": "2025-01-16T14:22:00Z",
-  "exit_code": 0,
-  "duration_ms": 145
+    "command": "branch:create",
+    "args": { "name": "feat/001-login-WP01", "base": "main" },
+    "actor": "claude-code",
+    "timestamp": "2025-01-16T14:22:00Z",
+    "exit_code": 0,
+    "duration_ms": 145
 }
 ```
 
@@ -45,8 +46,8 @@ Switch to an existing branch.
 agileplus branch:checkout --name feat/001-login-WP01
 ```
 
-| Argument | Type | Description |
-|----------|------|-------------|
+| Argument | Type   | Description            |
+| -------- | ------ | ---------------------- |
 | `--name` | string | Branch name (required) |
 
 ### branch:delete
@@ -57,10 +58,10 @@ Delete a branch (local or remote).
 agileplus branch:delete --name feat/001-login-WP01 --force
 ```
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| `--name` | string | Branch name (required) |
-| `--force` | flag | Force delete even if not merged |
+| Argument   | Type   | Description                       |
+| ---------- | ------ | --------------------------------- |
+| `--name`   | string | Branch name (required)            |
+| `--force`  | flag   | Force delete even if not merged   |
 | `--remote` | string | Delete from remote (origin, etc.) |
 
 ### branch:list
@@ -85,12 +86,12 @@ agileplus commit:create \
   --files "src/auth/login.rs,src/auth/session.rs"
 ```
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| `--message` | string | Commit message (required) |
-| `--files` | string | Comma-separated file paths |
-| `--author` | string | Author (auto-detected from git config) |
-| `--allow-empty` | flag | Allow empty commits |
+| Argument        | Type   | Description                            |
+| --------------- | ------ | -------------------------------------- |
+| `--message`     | string | Commit message (required)              |
+| `--files`       | string | Comma-separated file paths             |
+| `--author`      | string | Author (auto-detected from git config) |
+| `--allow-empty` | flag   | Allow empty commits                    |
 
 ### commit:amend
 
@@ -102,10 +103,10 @@ agileplus commit:amend \
   --allow-empty
 ```
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| `--message` | string | New commit message |
-| `--allow-empty` | flag | Keep empty commit |
+| Argument        | Type   | Description        |
+| --------------- | ------ | ------------------ |
+| `--message`     | string | New commit message |
+| `--allow-empty` | flag   | Keep empty commit  |
 
 ### commit:fixup
 
@@ -115,10 +116,10 @@ Create a fixup commit for an earlier commit.
 agileplus commit:fixup --target abc123def456 --message "Fix type error"
 ```
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| `--target` | string | Commit SHA to fixup (required) |
-| `--message` | string | Fixup message |
+| Argument    | Type   | Description                    |
+| ----------- | ------ | ------------------------------ |
+| `--target`  | string | Commit SHA to fixup (required) |
+| `--message` | string | Fixup message                  |
 
 ## Diff Inspection
 
@@ -132,12 +133,12 @@ Show changes between commits or branches.
 agileplus diff:show --from main --to feat/001-login-WP01
 ```
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| `--from` | string | Base ref (default: HEAD~1) |
-| `--to` | string | Target ref (default: HEAD) |
-| `--stat` | flag | Show stats only |
-| `--unified` | int | Context lines (default: 3) |
+| Argument    | Type   | Description                |
+| ----------- | ------ | -------------------------- |
+| `--from`    | string | Base ref (default: HEAD~1) |
+| `--to`      | string | Target ref (default: HEAD) |
+| `--stat`    | flag   | Show stats only            |
+| `--unified` | int    | Context lines (default: 3) |
 
 ### diff:stat
 
@@ -159,10 +160,10 @@ Save uncommitted changes to stash.
 agileplus stash:push --message "WIP: login form styling"
 ```
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| `--message` | string | Stash description |
-| `--include-untracked` | flag | Include untracked files |
+| Argument              | Type   | Description             |
+| --------------------- | ------ | ----------------------- |
+| `--message`           | string | Stash description       |
+| `--include-untracked` | flag   | Include untracked files |
 
 ### stash:pop
 
@@ -172,9 +173,9 @@ Restore and remove a stash entry.
 agileplus stash:pop --index 0
 ```
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| `--index` | int | Stash index (0 = latest) |
+| Argument  | Type | Description              |
+| --------- | ---- | ------------------------ |
+| `--index` | int  | Stash index (0 = latest) |
 
 ### stash:list
 
@@ -200,12 +201,12 @@ agileplus worktree:add \
   --wp-id WP01
 ```
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| `--path` | string | Worktree directory path (required) |
-| `--branch` | string | Branch name (required) |
-| `--feature-slug` | string | Feature identifier (metadata) |
-| `--wp-id` | string | Work package ID (metadata) |
+| Argument         | Type   | Description                        |
+| ---------------- | ------ | ---------------------------------- |
+| `--path`         | string | Worktree directory path (required) |
+| `--branch`       | string | Branch name (required)             |
+| `--feature-slug` | string | Feature identifier (metadata)      |
+| `--wp-id`        | string | Work package ID (metadata)         |
 
 ### worktree:remove
 
@@ -215,10 +216,10 @@ Delete a worktree.
 agileplus worktree:remove --path .worktrees/001-login-WP01
 ```
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| `--path` | string | Worktree directory path (required) |
-| `--force` | flag | Force remove even if dirty |
+| Argument  | Type   | Description                        |
+| --------- | ------ | ---------------------------------- |
+| `--path`  | string | Worktree directory path (required) |
+| `--force` | flag   | Force remove even if dirty         |
 
 ### worktree:list
 
@@ -229,14 +230,15 @@ agileplus worktree:list
 ```
 
 **Output:**
+
 ```json
 [
-  {
-    "path": ".worktrees/001-login-WP01",
-    "branch": "feat/001-login-WP01",
-    "feature_slug": "001-login",
-    "wp_id": "WP01"
-  }
+    {
+        "path": ".worktrees/001-login-WP01",
+        "branch": "feat/001-login-WP01",
+        "feature_slug": "001-login",
+        "wp_id": "WP01"
+    }
 ]
 ```
 
@@ -255,12 +257,12 @@ agileplus artifact:write \
   --content "# Login Feature\n\n..."
 ```
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| `--feature-slug` | string | Feature ID (required) |
+| Argument          | Type   | Description                             |
+| ----------------- | ------ | --------------------------------------- |
+| `--feature-slug`  | string | Feature ID (required)                   |
 | `--relative-path` | string | Path relative to feature dir (required) |
-| `--content` | string | File content |
-| `--from-file` | string | Read content from file instead of stdin |
+| `--content`       | string | File content                            |
+| `--from-file`     | string | Read content from file instead of stdin |
 
 ### artifact:read
 
@@ -283,11 +285,12 @@ agileplus artifact:hash \
 ```
 
 **Output:**
+
 ```json
 {
-  "path": "001-login/spec.md",
-  "hash": "sha256:abc123...",
-  "size_bytes": 4567
+    "path": "001-login/spec.md",
+    "hash": "sha256:abc123...",
+    "size_bytes": 4567
 }
 ```
 
@@ -305,31 +308,33 @@ agileplus governance:check \
   --transition REVIEW
 ```
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| `--feature-slug` | string | Feature ID (required) |
-| `--transition` | string | Target state (required) |
-| `--verbose` | flag | Show detailed violations |
+| Argument         | Type   | Description              |
+| ---------------- | ------ | ------------------------ |
+| `--feature-slug` | string | Feature ID (required)    |
+| `--transition`   | string | Target state (required)  |
+| `--verbose`      | flag   | Show detailed violations |
 
 **Output (success):**
+
 ```json
 {
-  "passed": true,
-  "violations": []
+    "passed": true,
+    "violations": []
 }
 ```
 
 **Output (failure):**
+
 ```json
 {
-  "passed": false,
-  "violations": [
-    {
-      "rule_id": "FR-REVIEW-001",
-      "message": "At least one approved review required",
-      "remediation": "Request code review from @reviewer"
-    }
-  ]
+    "passed": false,
+    "violations": [
+        {
+            "rule_id": "FR-REVIEW-001",
+            "message": "At least one approved review required",
+            "remediation": "Request code review from @reviewer"
+        }
+    ]
 }
 ```
 
@@ -344,11 +349,11 @@ agileplus governance:enforce \
   --action enable
 ```
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| `--feature-slug` | string | Feature ID (required) |
-| `--rule` | string | Rule ID (required) |
-| `--action` | string | enable, disable, reset |
+| Argument         | Type   | Description            |
+| ---------------- | ------ | ---------------------- |
+| `--feature-slug` | string | Feature ID (required)  |
+| `--rule`         | string | Rule ID (required)     |
+| `--action`       | string | enable, disable, reset |
 
 ## Audit Trail Operations
 
@@ -365,28 +370,29 @@ agileplus audit:log \
   --output json
 ```
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| `--feature-slug` | string | Filter by feature |
-| `--actor` | string | Filter by actor (claude-code, etc.) |
-| `--since` | string | ISO 8601 timestamp (e.g., 2025-01-16T00:00:00Z) |
-| `--limit` | int | Max entries (default: 50) |
-| `--output` | string | `json`, `table`, or `markdown` |
+| Argument         | Type   | Description                                     |
+| ---------------- | ------ | ----------------------------------------------- |
+| `--feature-slug` | string | Filter by feature                               |
+| `--actor`        | string | Filter by actor (claude-code, etc.)             |
+| `--since`        | string | ISO 8601 timestamp (e.g., 2025-01-16T00:00:00Z) |
+| `--limit`        | int    | Max entries (default: 50)                       |
+| `--output`       | string | `json`, `table`, or `markdown`                  |
 
 **Example JSON output:**
+
 ```json
 [
-  {
-    "id": 42,
-    "feature_slug": "001-login",
-    "wp_sequence": 1,
-    "timestamp": "2025-01-16T14:22:00Z",
-    "actor": "claude-code",
-    "transition": "PLANNED -> DOING",
-    "evidence_refs": ["pr/42", "commit/abc123"],
-    "prev_hash": "...",
-    "hash": "..."
-  }
+    {
+        "id": 42,
+        "feature_slug": "001-login",
+        "wp_sequence": 1,
+        "timestamp": "2025-01-16T14:22:00Z",
+        "actor": "claude-code",
+        "transition": "PLANNED -> DOING",
+        "evidence_refs": ["pr/42", "commit/abc123"],
+        "prev_hash": "...",
+        "hash": "..."
+    }
 ]
 ```
 
@@ -410,12 +416,13 @@ agileplus audit:verify --feature-slug 001-login
 ```
 
 **Output:**
+
 ```json
 {
-  "valid": true,
-  "entries_verified": 127,
-  "first_invalid_id": null,
-  "error_message": null
+    "valid": true,
+    "entries_verified": 127,
+    "first_invalid_id": null,
+    "error_message": null
 }
 ```
 
@@ -436,13 +443,13 @@ All subcommands are callable via the MCP `dispatch_command` tool:
 
 ```json
 {
-  "command": "dispatch_command",
-  "feature_slug": "001-login",
-  "args": {
-    "command": "branch:create",
-    "name": "feat/001-login-WP02",
-    "base": "feat/001-login-WP01"
-  }
+    "command": "dispatch_command",
+    "feature_slug": "001-login",
+    "args": {
+        "command": "branch:create",
+        "name": "feat/001-login-WP02",
+        "base": "feat/001-login-WP01"
+    }
 }
 ```
 

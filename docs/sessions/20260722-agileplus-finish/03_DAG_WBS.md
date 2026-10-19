@@ -8,16 +8,16 @@
 
 ## Work packages and gates
 
-| ID | Owner lane | Depends on | Definition of done | Required proof |
-|---|---|---|---|---|
-| T1 | runtime | none | generated proto only; one port resolver; real API/gRPC lifecycle | locked package tests, live health/gRPC/shutdown transcript |
-| T2 | security | build baseline | keychain-first encrypted fallback and API-key redaction | crypto/tamper/rotation tests plus secret scan |
-| T3 | events | T1,T2 | SQLite query + stable cursor + audit chain | restart/filter/cursor/chain contract tests |
-| T4 | evidence transport | T1,T3 | MinIO digest store and single resumable authenticated stream source | MinIO authorization/digest tests and live SSE/gRPC/MCP transcript |
-| T5 | AgilePlus dogfood | T2-T4 | verifier accepts only complete self-dogfood manifest | real commands, trace, usage, artifact, audit, manifest verification |
-| T6 | Tracera dogfood | T5 | full consuming-project evidence pack | project-scoped integration test and verifier pass |
-| T7 | Grapheon recovery/dogfood | T6 | no conflict markers, clean build, consuming-project evidence pack | conflict scan, build/test, verifier pass |
-| T8 | portfolio | T7 | one independently verifiable go/no-go record per project | per-project manifest and command transcript |
+| ID  | Owner lane                | Depends on     | Definition of done                                                  | Required proof                                                      |
+| --- | ------------------------- | -------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| T1  | runtime                   | none           | generated proto only; one port resolver; real API/gRPC lifecycle    | locked package tests, live health/gRPC/shutdown transcript          |
+| T2  | security                  | build baseline | keychain-first encrypted fallback and API-key redaction             | crypto/tamper/rotation tests plus secret scan                       |
+| T3  | events                    | T1,T2          | SQLite query + stable cursor + audit chain                          | restart/filter/cursor/chain contract tests                          |
+| T4  | evidence transport        | T1,T3          | MinIO digest store and single resumable authenticated stream source | MinIO authorization/digest tests and live SSE/gRPC/MCP transcript   |
+| T5  | AgilePlus dogfood         | T2-T4          | verifier accepts only complete self-dogfood manifest                | real commands, trace, usage, artifact, audit, manifest verification |
+| T6  | Tracera dogfood           | T5             | full consuming-project evidence pack                                | project-scoped integration test and verifier pass                   |
+| T7  | Grapheon recovery/dogfood | T6             | no conflict markers, clean build, consuming-project evidence pack   | conflict scan, build/test, verifier pass                            |
+| T8  | portfolio                 | T7             | one independently verifiable go/no-go record per project            | per-project manifest and command transcript                         |
 
 ## Parallelization and checkpoints
 

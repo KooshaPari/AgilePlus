@@ -46,12 +46,12 @@ crates/agileplus-domain/src/ports/
 
 ### Overlap Analysis
 
-| phenotype-port-interfaces | agileplus-domain | Overlap |
-|--------------------------|------------------|---------|
-| Repository trait | StoragePort | HIGH |
-| Logger trait | ObservabilityPort | HIGH |
-| Cache trait | (no direct match) | - |
-| EventBus trait | (no direct match) | - |
+| phenotype-port-interfaces | agileplus-domain  | Overlap |
+| ------------------------- | ----------------- | ------- |
+| Repository trait          | StoragePort       | HIGH    |
+| Logger trait              | ObservabilityPort | HIGH    |
+| Cache trait               | (no direct match) | -       |
+| EventBus trait            | (no direct match) | -       |
 
 ### libs/hexagonal-rs (UNDERSUSED)
 
@@ -93,22 +93,22 @@ Conducted comprehensive review of AgilePlus hexagonal architecture compliance an
 
 ### Findings
 
-| Finding | Status | Recommendation |
-|---------|--------|----------------|
-| Domain layer isolation | ✅ Compliant | No changes needed |
-| Port/Adapter separation | ✅ Compliant | No changes needed |
-| Error type centralization | ⚠️ Needs work | Extract to `agileplus-error-core` |
+| Finding                       | Status        | Recommendation                     |
+| ----------------------------- | ------------- | ---------------------------------- |
+| Domain layer isolation        | ✅ Compliant  | No changes needed                  |
+| Port/Adapter separation       | ✅ Compliant  | No changes needed                  |
+| Error type centralization     | ⚠️ Needs work | Extract to `agileplus-error-core`  |
 | Config loading centralization | ⚠️ Needs work | Extract to `agileplus-config-core` |
-| Health status unification | ⚠️ Needs work | Extract to `agileplus-health-core` |
+| Health status unification     | ⚠️ Needs work | Extract to `agileplus-health-core` |
 
 ### Library Extraction Candidates
 
-| Library | Priority | Effort | Files Affected |
-|---------|----------|--------|---------------|
-| `agileplus-error-core` | P1 | 3 days | 36+ error enums |
-| `agileplus-config-core` | P1 | 1 week | 4 config loaders |
-| `agileplus-health-core` | P2 | 2 days | 3 health enums |
-| `agileplus-test-core` | P3 | 1 week | 4 in-memory stores |
+| Library                 | Priority | Effort | Files Affected     |
+| ----------------------- | -------- | ------ | ------------------ |
+| `agileplus-error-core`  | P1       | 3 days | 36+ error enums    |
+| `agileplus-config-core` | P1       | 1 week | 4 config loaders   |
+| `agileplus-health-core` | P2       | 2 days | 3 health enums     |
+| `agileplus-test-core`   | P3       | 1 week | 4 in-memory stores |
 
 ### Tasks Completed
 
@@ -152,22 +152,22 @@ Decision made to fork Plane (plane.so, Apache 2.0) as the shared PM substrate. A
 
 ### Architecture Impact
 
-| Component | Role | Change |
-|-----------|------|--------|
-| AgilePlus | Control plane, governance, agent dispatch | Enhanced |
-| Plane.so | PM substrate, issue tracking, cycles | Forked |
-| TracerTM | Custom tracking (if needed) | Phase out candidate |
+| Component | Role                                      | Change              |
+| --------- | ----------------------------------------- | ------------------- |
+| AgilePlus | Control plane, governance, agent dispatch | Enhanced            |
+| Plane.so  | PM substrate, issue tracking, cycles      | Forked              |
+| TracerTM  | Custom tracking (if needed)               | Phase out candidate |
 
 ### Work Package Status
 
-| WP | Description | Status |
-|----|-------------|--------|
-| G037-WP1 | Fork Plane repo into org GitHub | pending |
-| G037-WP2 | Define AgilePlus → Plane API boundary adapter | pending |
+| WP       | Description                                       | Status  |
+| -------- | ------------------------------------------------- | ------- |
+| G037-WP1 | Fork Plane repo into org GitHub                   | pending |
+| G037-WP2 | Define AgilePlus → Plane API boundary adapter     | pending |
 | G037-WP3 | Migrate or quarantine duplicate PM dashboard code | pending |
-| G037-WP4 | Wire existing controls into Plane | pending |
-| G037-WP5 | Validate co-existence with Plane | pending |
-| G037-WP6 | Archive TracerTM and TheGent from PM surface | pending |
+| G037-WP4 | Wire existing controls into Plane                 | pending |
+| G037-WP5 | Validate co-existence with Plane                  | pending |
+| G037-WP6 | Archive TracerTM and TheGent from PM surface      | pending |
 
 ### Related
 
@@ -189,13 +189,13 @@ Audit of architecture patterns across AgilePlus, heliosCLI, thegent, and heliosA
 
 ### Key Findings
 
-| Pattern | AgilePlus | thegent | heliosCLI | heliosApp |
-|---------|-----------|---------|-----------|-----------|
-| Language | Rust | Python | Rust | TypeScript |
-| Architecture | Hexagonal | Modular | Layered | MVC |
-| Config | TOML | YAML | TOML | JSON |
-| Error handling | thiserror | thiserror | thiserror | ErrorBoundary |
-| Testing | cargo test | pytest | cargo test | Vitest |
+| Pattern        | AgilePlus  | thegent   | heliosCLI  | heliosApp     |
+| -------------- | ---------- | --------- | ---------- | ------------- |
+| Language       | Rust       | Python    | Rust       | TypeScript    |
+| Architecture   | Hexagonal  | Modular   | Layered    | MVC           |
+| Config         | TOML       | YAML      | TOML       | JSON          |
+| Error handling | thiserror  | thiserror | thiserror  | ErrorBoundary |
+| Testing        | cargo test | pytest    | cargo test | Vitest        |
 
 ### Convergence Recommendations
 
@@ -224,13 +224,13 @@ Review of MCP server architecture in `agileplus-mcp` and `thegent`. Identified i
 
 ### Architecture Comparison
 
-| Aspect | agileplus-mcp | thegent-mcp |
-|--------|---------------|-------------|
-| Language | Python | Python |
-| Backend | gRPC | Direct |
-| Tool count | 15+ | 8+ |
-| Skill support | Basic | Advanced |
-| Streaming | SSE | Not implemented |
+| Aspect        | agileplus-mcp | thegent-mcp     |
+| ------------- | ------------- | --------------- |
+| Language      | Python        | Python          |
+| Backend       | gRPC          | Direct          |
+| Tool count    | 15+           | 8+              |
+| Skill support | Basic         | Advanced        |
+| Streaming     | SSE           | Not implemented |
 
 ### Recommendations
 
@@ -265,19 +265,19 @@ Comprehensive analysis of `libs/` directory reveals 11 mature libraries with pro
 
 ### libs/ Directory Inventory
 
-| Library | Location | Purpose | Integration Status |
-|---------|----------|---------|-------------------|
-| config-core | `libs/config-core/` | Config loading framework | 🔴 **UNUSED** — Zero imports |
-| logger | `libs/logger/` | Structured logging | 🔴 **UNUSED** — Zero imports |
-| tracing-lib | `libs/tracing/` | Distributed tracing | 🔴 **UNUSED** — Zero imports |
-| metrics | `libs/metrics/` | Metrics collection | 🔴 **UNUSED** — Zero imports |
-| hexagonal-rs | `libs/hexagonal-rs/` | Ports & Adapters framework | 🔴 **UNUSED** — Zero imports |
-| hexkit | `libs/hexkit/` | HTTP/Persistence adapters | 🔴 **UNUSED** — Zero imports |
-| cipher | `libs/cipher/` | Encryption utilities | 🟡 Partially used |
-| gauge | `libs/gauge/` | Benchmarking | 🟡 Partially used |
-| nexus | `libs/nexus/` | Service discovery | 🟡 Partially used |
-| xdd-lib-rs | `libs/xdd-lib-rs/` | Data transformation | 🟡 Partially used |
-| cli-framework | `libs/cli-framework/` | Command parsing | 🟡 Partially used |
+| Library       | Location              | Purpose                    | Integration Status           |
+| ------------- | --------------------- | -------------------------- | ---------------------------- |
+| config-core   | `libs/config-core/`   | Config loading framework   | 🔴 **UNUSED** — Zero imports |
+| logger        | `libs/logger/`        | Structured logging         | 🔴 **UNUSED** — Zero imports |
+| tracing-lib   | `libs/tracing/`       | Distributed tracing        | 🔴 **UNUSED** — Zero imports |
+| metrics       | `libs/metrics/`       | Metrics collection         | 🔴 **UNUSED** — Zero imports |
+| hexagonal-rs  | `libs/hexagonal-rs/`  | Ports & Adapters framework | 🔴 **UNUSED** — Zero imports |
+| hexkit        | `libs/hexkit/`        | HTTP/Persistence adapters  | 🔴 **UNUSED** — Zero imports |
+| cipher        | `libs/cipher/`        | Encryption utilities       | 🟡 Partially used            |
+| gauge         | `libs/gauge/`         | Benchmarking               | 🟡 Partially used            |
+| nexus         | `libs/nexus/`         | Service discovery          | 🟡 Partially used            |
+| xdd-lib-rs    | `libs/xdd-lib-rs/`    | Data transformation        | 🟡 Partially used            |
+| cli-framework | `libs/cli-framework/` | Command parsing            | 🟡 Partially used            |
 
 ### Root Cause Analysis
 
@@ -305,13 +305,13 @@ pub trait Repository<E: Entity> {
 
 But agileplus crates define their own duplicated versions:
 
-| Duplicated Trait | Location | LOC |
-|-----------------|----------|-----|
-| EventBus | `agileplus-nats/src/bus.rs:36-60` | ~25 |
-| SyncMappingStore | `agileplus-sync/src/store.rs:16-41` | ~26 |
-| EventStore | `agileplus-events/src/store.rs:21-53` | ~33 |
-| GraphBackend | `agileplus-graph/src/store.rs:22-27` | ~6 |
-| CacheStore | `agileplus-cache/src/store.rs:21-38` | ~18 |
+| Duplicated Trait | Location                              | LOC |
+| ---------------- | ------------------------------------- | --- |
+| EventBus         | `agileplus-nats/src/bus.rs:36-60`     | ~25 |
+| SyncMappingStore | `agileplus-sync/src/store.rs:16-41`   | ~26 |
+| EventStore       | `agileplus-events/src/store.rs:21-53` | ~33 |
+| GraphBackend     | `agileplus-graph/src/store.rs:22-27`  | ~6  |
+| CacheStore       | `agileplus-cache/src/store.rs:21-38`  | ~18 |
 
 ### Evidence — config-core Has Complete Config Loading
 
@@ -326,11 +326,11 @@ pub struct ConfigLoader<T: DeserializeOwned> {
 
 But crates define their own loaders:
 
-| Duplicated Loader | Location | Format |
-|------------------|----------|--------|
-| TOML loader | `agileplus-domain/src/config/loader.rs:24-84` | TOML |
-| YAML loader | `agileplus-telemetry/src/config.rs:126-201` | YAML |
-| JSON loader | `vibe-kanban/backend/src/models/config.rs:267-374` | JSON |
+| Duplicated Loader | Location                                           | Format |
+| ----------------- | -------------------------------------------------- | ------ |
+| TOML loader       | `agileplus-domain/src/config/loader.rs:24-84`      | TOML   |
+| YAML loader       | `agileplus-telemetry/src/config.rs:126-201`        | YAML   |
+| JSON loader       | `vibe-kanban/backend/src/models/config.rs:267-374` | JSON   |
 
 ### Action Items
 
@@ -361,12 +361,12 @@ Reviewed heliosCLI architecture patterns for consistency with AgilePlus.
 
 ### Pattern Comparison
 
-| Pattern | heliosCLI | AgilePlus | Alignment |
-|---------|-----------|-----------|-----------|
-| Error handling | thiserror | thiserror | ✅ Match |
-| CLI parsing | clap | clap | ✅ Match |
-| Async runtime | tokio | tokio | ✅ Match |
-| Config format | TOML | TOML | ✅ Match |
+| Pattern        | heliosCLI | AgilePlus | Alignment |
+| -------------- | --------- | --------- | --------- |
+| Error handling | thiserror | thiserror | ✅ Match  |
+| CLI parsing    | clap      | clap      | ✅ Match  |
+| Async runtime  | tokio     | tokio     | ✅ Match  |
+| Config format  | TOML      | TOML      | ✅ Match  |
 
 ### Recommendations
 

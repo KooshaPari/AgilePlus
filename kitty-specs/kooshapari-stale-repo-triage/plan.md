@@ -1,16 +1,20 @@
 # Plan: <REDACTED>-stale-repo-triage
+
 **Date**: 2026-03-29 | **WPs**: 1
 
 ## Work Packages
 
 ### WP01: Initial Implementation
+
 **ID**: 3 | **Dependencies**: none
 
 **Acceptance Criteria:**
-  - Implement the feature as specified.
+
+- Implement the feature as specified.
 
 **File Scope:**
-  - `Phenotype/repos`.`
+
+- `Phenotype/repos`.`
 
 ## Execution Waves
 

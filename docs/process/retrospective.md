@@ -110,37 +110,37 @@ Analyze data to find patterns:
 
 #### Went Well (What Should We Keep Doing?)
 
-| Item | Evidence | Impact |
-|------|----------|--------|
+| Item                         | Evidence                                                 | Impact                                |
+| ---------------------------- | -------------------------------------------------------- | ------------------------------------- |
 | Specification-first approach | 95% spec accuracy; minimal changes during implementation | Prevented scope creep, reduced rework |
-| Parallelization of WP02/WP03 | Completed 1 day faster than sequential estimate | Saved resources |
-| Agent pass rate | 100% first-review approval rate across 4 WPs | Agents producing quality work |
-| Clear deliverables | All WP checklists passed first time (except WP02) | Agents knew exactly what to build |
+| Parallelization of WP02/WP03 | Completed 1 day faster than sequential estimate          | Saved resources                       |
+| Agent pass rate              | 100% first-review approval rate across 4 WPs             | Agents producing quality work         |
+| Clear deliverables           | All WP checklists passed first time (except WP02)        | Agents knew exactly what to build     |
 
 #### Could Improve (What Bottlenecks?)
 
-| Item | Evidence | Impact | Cause |
-|------|----------|--------|-------|
-| WP02 rework | Sent back once for missing error handling | +0.5 days | Spec lacked edge case coverage (guest checkout w/ failed payment) |
-| Review cycle time | 4 hours average review time | Acceptable | Reviews require human review + test execution |
-| Spec-to-plan duration | 1.2 days | Reasonable | Planning tool could be faster |
+| Item                  | Evidence                                  | Impact     | Cause                                                             |
+| --------------------- | ----------------------------------------- | ---------- | ----------------------------------------------------------------- |
+| WP02 rework           | Sent back once for missing error handling | +0.5 days  | Spec lacked edge case coverage (guest checkout w/ failed payment) |
+| Review cycle time     | 4 hours average review time               | Acceptable | Reviews require human review + test execution                     |
+| Spec-to-plan duration | 1.2 days                                  | Reasonable | Planning tool could be faster                                     |
 
 #### Action Items (Constitution Improvements)
 
 1. **Add edge case: "Failed payment in guest checkout"**
-   - Where: Constitution checklist for spec validation
-   - Why: WP02 missed this; caused rework
-   - Action: Add to specification checklist: "All payment flows include failure cases"
+    - Where: Constitution checklist for spec validation
+    - Why: WP02 missed this; caused rework
+    - Action: Add to specification checklist: "All payment flows include failure cases"
 
 2. **Tighten implementation checklist for error handling**
-   - Where: Constitution custom checklist items
-   - Why: WP02 first pass lacked error handling
-   - Action: Add: "[ ] All API endpoints validate input and handle errors"
+    - Where: Constitution custom checklist items
+    - Why: WP02 first pass lacked error handling
+    - Action: Add: "[ ] All API endpoints validate input and handle errors"
 
 3. **Consider faster review automation**
-   - Where: CI/CD pipeline
-   - Why: Review cycle time is longest phase after implementation
-   - Action: Add automated code review tools; human reviews remain but with pre-filtering
+    - Where: CI/CD pipeline
+    - Why: Review cycle time is longest phase after implementation
+    - Action: Add automated code review tools; human reviews remain but with pre-filtering
 
 ### 3. Update Constitution
 
@@ -178,16 +178,16 @@ These changes apply to all future features.
 
 ### Key Metrics
 
-| Metric | Calculation | Unit | Why It Matters |
-|--------|-------------|------|-----------------|
-| **Cycle Time** | Ship date - Spec date | Days | Measures overall velocity |
-| **Phase Time** | Time in each phase | Days | Identifies bottlenecks |
-| **Review Cycles** | Times WP went back to "doing" | Count | Measures spec/plan quality |
-| **WP Throughput** | WPs completed per day | WPs/day | Agent productivity |
-| **Test Coverage** | Lines covered / total lines | % | Code quality proxy |
-| **Spec Accuracy** | 1 - (spec changes / original reqs) | % | Planning quality |
-| **Agent Pass Rate** | WPs approved on first review / total | % | Agent performance |
-| **Rework Rate** | WPs sent back / total WPs | % | Implementation quality |
+| Metric              | Calculation                          | Unit    | Why It Matters             |
+| ------------------- | ------------------------------------ | ------- | -------------------------- |
+| **Cycle Time**      | Ship date - Spec date                | Days    | Measures overall velocity  |
+| **Phase Time**      | Time in each phase                   | Days    | Identifies bottlenecks     |
+| **Review Cycles**   | Times WP went back to "doing"        | Count   | Measures spec/plan quality |
+| **WP Throughput**   | WPs completed per day                | WPs/day | Agent productivity         |
+| **Test Coverage**   | Lines covered / total lines          | %       | Code quality proxy         |
+| **Spec Accuracy**   | 1 - (spec changes / original reqs)   | %       | Planning quality           |
+| **Agent Pass Rate** | WPs approved on first review / total | %       | Agent performance          |
+| **Rework Rate**     | WPs sent back / total WPs            | %       | Implementation quality     |
 
 ### Trends Across Features
 
@@ -253,31 +253,34 @@ Quality excellent: 0 critical bugs in first week. Learnings feed into constituti
 
 ## Timeline
 
-| Phase | Start | End | Duration | Status |
-|-------|-------|-----|----------|--------|
-| Specification | 2/1 | 2/2 | 1.6 days | On time |
-| Planning | 2/2 | 2/3 | 1.2 days | On time |
-| Implementation | 2/4 | 2/12 | 8 days* | 1 day rework (WP02) |
-| Review & Ship | 2/12 | 2/13 | 1 day | On time |
-| **Total** | | | **9 days** | **On estimate** |
+| Phase          | Start | End  | Duration   | Status              |
+| -------------- | ----- | ---- | ---------- | ------------------- |
+| Specification  | 2/1   | 2/2  | 1.6 days   | On time             |
+| Planning       | 2/2   | 2/3  | 1.2 days   | On time             |
+| Implementation | 2/4   | 2/12 | 8 days\*   | 1 day rework (WP02) |
+| Review & Ship  | 2/12  | 2/13 | 1 day      | On time             |
+| **Total**      |       |      | **9 days** | **On estimate**     |
 
-*WP02 took 3.5 days (1 day rework for error handling)
+\*WP02 took 3.5 days (1 day rework for error handling)
 
 ## What Went Well
 
 ### Specification-First Prevented Scope Creep
+
 - Spec was detailed and clear
 - 95% accuracy: only 1 requirement clarified during implementation
 - No scope creep items added during development
 - **Impact**: Saved ~2 days of unplanned work
 
 ### Agent Quality Improved
+
 - 4 WPs, 4 first-pass approvals (100% pass rate)
 - Agents understood specifications and delivered to plan
 - Minimal human intervention needed
 - **Impact**: On-time delivery
 
 ### Parallelization Worked
+
 - WP02 (checkout) and WP03 (upsell) ran in parallel
 - Both completed within 1 day of each other
 - Saved ~1 day vs. sequential execution
@@ -286,12 +289,14 @@ Quality excellent: 0 critical bugs in first week. Learnings feed into constituti
 ## What Could Improve
 
 ### WP02 Error Handling Gap
+
 - **Issue**: First implementation lacked error handling for failed payments
 - **Cause**: Spec didn't explicitly call out failure paths
 - **Fix**: Spec checklist now requires "all payment flows include failure cases"
 - **Impact**: Prevented second rework cycle
 
 ### Review Cycle Time
+
 - Average: 4 hours from submission to approval
 - Bottleneck: Manual code review (human time-limited)
 - **Action**: Automate lint/formatting checks in CI; humans focus on logic
@@ -316,20 +321,21 @@ Quality excellent: 0 critical bugs in first week. Learnings feed into constituti
 Based on this retrospective, the following updates were made:
 
 1. **Spec Checklist**
-   - Added: "All payment/auth flows include both happy and error paths"
-   - Added: "Edge cases include system failures (network, database, service timeouts)"
+    - Added: "All payment/auth flows include both happy and error paths"
+    - Added: "Edge cases include system failures (network, database, service timeouts)"
 
 2. **Implementation Checklist**
-   - Added: "All API endpoints validate input and return meaningful errors"
-   - Added: "Payment code includes both success and failure test cases"
+    - Added: "All API endpoints validate input and return meaningful errors"
+    - Added: "Payment code includes both success and failure test cases"
 
 3. **Process**
-   - Created automated linting gate in CI (reduces review time)
-   - Increased parallelization guidance (identify independent WPs early)
+    - Created automated linting gate in CI (reduces review time)
+    - Increased parallelization guidance (identify independent WPs early)
 
 ## Metrics for Next Feature
 
 Use these targets from this feature:
+
 - **Cycle time**: 9 days (set as target for similar features)
 - **Test coverage**: 87% (continue targeting 85%+)
 - **Agent pass rate**: 100% (continue expecting first-pass quality)

@@ -9,6 +9,7 @@ The `agileplus-sqlite` crate follows best practices for error handling and has z
 ### No Panicking Patterns Found in Production Code
 
 After comprehensive static analysis, confirmed:
+
 - **0 lock().unwrap() calls** in production code
 - **0 serde_json::from_str().unwrap() calls** in production code
 - **0 .parse().unwrap() calls** in production code
@@ -27,40 +28,49 @@ After comprehensive static analysis, confirmed:
 ### Error Handling Patterns Used (Production)
 
 #### 1. Mutex Lock Safety
+
 ```rust
 let conn = self
     .conn
     .lock()
     .map_err(|e| DomainError::Storage(e.to_string()))?;
 ```
+
 Pattern: `.map_err()` converts panic-prone PoisonError to Result
 
 #### 2. Database Operations
+
 ```rust
 conn.execute_batch("BEGIN;")
     .map_err(|e| DomainError::Storage(e.to_string()))?;
 ```
+
 Pattern: All rusqlite operations use `?` operator to propagate errors
 
 #### 3. String Parsing
+
 ```rust
 let created_at = meta
     .created_at
     .parse::<chrono::DateTime<chrono::Utc>>()
     .map_err(|e| DomainError::Storage(e.to_string()))?;
 ```
+
 Pattern: `.parse()` errors are mapped to domain errors
 
 #### 4. JSON Deserialization
+
 ```rust
 let meta: MetaJson = serde_json::from_str(&meta_content)
     .map_err(|e| DomainError::Storage(format!("meta.json parse error for {slug}: {e}")))?;
 ```
+
 Pattern: Contextual error messages with ? propagation
 
 ### Test Code Patterns (Allowed to Use unwrap)
 
 Test files follow Rust idiom of using `.unwrap()` for test setup where failures indicate test configuration errors:
+
 - `src/lib.rs` — #[tokio::test] blocks (lines 804+)
 - `src/lib/tests/*.rs` — Dedicated test modules
 - `src/rebuild/tests.rs` — Rebuild-specific tests

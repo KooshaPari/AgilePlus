@@ -1,56 +1,56 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
-  "productName": "AgilePlus Desktop",
-  "version": "0.2.0",
-  "identifier": "com.phenotype.agileplus-desktop",
-  "build": {
-    "frontendDist": "../src",
-    "beforeDevCommand": "",
-    "beforeBuildCommand": ""
-  },
-  "app": {
-    "withGlobalTauri": true,
-    "windows": [
-      {
-        "label": "main",
-        "title": "AgilePlus Desktop",
-        "width": 1000,
-        "height": 700,
-        "resizable": true,
-        "fullscreen": false,
-        "visible": true
-      }
-    ],
-    "trayIcon": {
-      "iconPath": "icons/32x32.png",
-      "iconAsTemplate": true,
-      "tooltip": "AgilePlus"
+    "$schema": "https://schema.tauri.app/config/2",
+    "productName": "AgilePlus Desktop",
+    "version": "0.2.0",
+    "identifier": "com.phenotype.agileplus-desktop",
+    "build": {
+        "frontendDist": "../src",
+        "beforeDevCommand": "",
+        "beforeBuildCommand": ""
     },
-    "security": {
-      "csp": null
+    "app": {
+        "withGlobalTauri": true,
+        "windows": [
+            {
+                "label": "main",
+                "title": "AgilePlus Desktop",
+                "width": 1000,
+                "height": 700,
+                "resizable": true,
+                "fullscreen": false,
+                "visible": true
+            }
+        ],
+        "trayIcon": {
+            "iconPath": "icons/32x32.png",
+            "iconAsTemplate": true,
+            "tooltip": "AgilePlus"
+        },
+        "security": {
+            "csp": null
+        }
+    },
+    "plugins": {
+        "updater": {
+            "active": true,
+            "endpoints": [
+                "https://github.com/KooshaPari/AgilePlus/releases/latest/download/latest.json"
+            ],
+            "pubkey": "RWQxEapOx9VrQkjrGMEBjWO6gW8e2/rHXFW+Vp0wvZgOSrkdwvfGFw02"
+        }
+    },
+    "bundle": {
+        "active": true,
+        "targets": "all",
+        "icon": [
+            "icons/32x32.png",
+            "icons/128x128.png",
+            "icons/128x128@2x.png",
+            "icons/icon.icns",
+            "icons/icon.ico"
+        ],
+        "android": {
+            "debugApplicationIdSuffix": ".debug"
+        }
     }
-  },
-  "plugins": {
-    "updater": {
-      "active": true,
-      "endpoints": [
-        "https://github.com/KooshaPari/AgilePlus/releases/latest/download/latest.json"
-      ],
-      "pubkey": "RWQxEapOx9VrQkjrGMEBjWO6gW8e2/rHXFW+Vp0wvZgOSrkdwvfGFw02"
-    }
-  },
-  "bundle": {
-    "active": true,
-    "targets": "all",
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ],
-    "android": {
-      "debugApplicationIdSuffix": ".debug"
-    }
-  }
 }

@@ -5,13 +5,13 @@
 
 ## Container images
 
-| File | Purpose | Status |
-|------|---------|--------|
-| `Dockerfile` | **New** — multi-stage build producing `agileplus` CLI binary only | Added in this PR |
-| `Dockerfile.rust` | Full workspace compile (legacy single-stage) | Exists; no `runtime` stage despite `docker-compose.test.yml` reference |
-| `python/Dockerfile.python` | MCP Python service | Exists |
-| `agileplus-mcp/Dockerfile` | MCP alternate layout | Exists |
-| `tests/integration/Dockerfile.test` | Integration test runner | Exists |
+| File                                | Purpose                                                           | Status                                                                 |
+| ----------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `Dockerfile`                        | **New** — multi-stage build producing `agileplus` CLI binary only | Added in this PR                                                       |
+| `Dockerfile.rust`                   | Full workspace compile (legacy single-stage)                      | Exists; no `runtime` stage despite `docker-compose.test.yml` reference |
+| `python/Dockerfile.python`          | MCP Python service                                                | Exists                                                                 |
+| `agileplus-mcp/Dockerfile`          | MCP alternate layout                                              | Exists                                                                 |
+| `tests/integration/Dockerfile.test` | Integration test runner                                           | Exists                                                                 |
 
 ### Build CLI image (local)
 
@@ -48,32 +48,32 @@ process-compose up
 
 ### Canonical files
 
-| File | Role |
-|------|------|
-| `.env.example` | Sentry / telemetry placeholders (root) |
+| File                                   | Role                                                        |
+| -------------------------------------- | ----------------------------------------------------------- |
+| `.env.example`                         | Sentry / telemetry placeholders (root)                      |
 | `docs/remediation/env.example.snippet` | **Additive** AgilePlus runtime variables (copy into `.env`) |
 
 ### Variable catalog (runtime)
 
-| Variable | Default | Component | Description |
-|----------|---------|-----------|-------------|
-| `AGILEPLUS_DB` | `./agileplus.db` | CLI | SQLite path (`agileplus --db`) |
-| `AGILEPLUS_HOME` | — | Agents / harnesses | Repo root for tooling |
-| `AGILEPLUS_API_URL` | `http://localhost:8080` | MCP, integration tests | HTTP API base |
-| `AGILEPLUS_API_KEY` | `dev-api-key` | API clients | `X-API-Key` header value |
-| `AGILEPLUS_GRPC_ADDRESS` | `localhost:50051` | MCP | gRPC core address |
-| `AGILEPLUS_GRPC_URL` | `agileplus-core:50051` | Compose | gRPC host:port |
-| `AGILEPLUS_CORE_DATABASE_PATH` | `/data/agileplus.db` | Core container | Persistent DB mount |
-| `AGILEPLUS_CORE_REPO_PATH` | `/repo` | Core container | Git repo mount |
-| `AGILEPLUS_API_PORT` | `8080` | Core | HTTP listen port |
-| `AGILEPLUS_API_GRPC_PORT` | `50051` | Core | gRPC listen port |
-| `AGILEPLUS_TELEMETRY_ENABLED` | `true` | Core | OTLP on/off |
-| `AGILEPLUS_LOG_LEVEL` | `info` | Core | Log filter |
-| `AGILEPLUS_MCP_PORT` | `8081` | MCP | MCP HTTP port |
-| `SENTRY_DSN` | — | All Rust binaries | Error reporting (see `.env.example`) |
-| `SENTRY_ENVIRONMENT` | `development` | All Rust binaries | `development` / `staging` / `production` |
-| `RUST_LOG` | — | All Rust binaries | `tracing` filter override |
-| `RUST_BACKTRACE` | `1` | Dev | Set in `process-compose.yml` |
+| Variable                       | Default                 | Component              | Description                              |
+| ------------------------------ | ----------------------- | ---------------------- | ---------------------------------------- |
+| `AGILEPLUS_DB`                 | `./agileplus.db`        | CLI                    | SQLite path (`agileplus --db`)           |
+| `AGILEPLUS_HOME`               | —                       | Agents / harnesses     | Repo root for tooling                    |
+| `AGILEPLUS_API_URL`            | `http://localhost:8080` | MCP, integration tests | HTTP API base                            |
+| `AGILEPLUS_API_KEY`            | `dev-api-key`           | API clients            | `X-API-Key` header value                 |
+| `AGILEPLUS_GRPC_ADDRESS`       | `localhost:50051`       | MCP                    | gRPC core address                        |
+| `AGILEPLUS_GRPC_URL`           | `agileplus-core:50051`  | Compose                | gRPC host:port                           |
+| `AGILEPLUS_CORE_DATABASE_PATH` | `/data/agileplus.db`    | Core container         | Persistent DB mount                      |
+| `AGILEPLUS_CORE_REPO_PATH`     | `/repo`                 | Core container         | Git repo mount                           |
+| `AGILEPLUS_API_PORT`           | `8080`                  | Core                   | HTTP listen port                         |
+| `AGILEPLUS_API_GRPC_PORT`      | `50051`                 | Core                   | gRPC listen port                         |
+| `AGILEPLUS_TELEMETRY_ENABLED`  | `true`                  | Core                   | OTLP on/off                              |
+| `AGILEPLUS_LOG_LEVEL`          | `info`                  | Core                   | Log filter                               |
+| `AGILEPLUS_MCP_PORT`           | `8081`                  | MCP                    | MCP HTTP port                            |
+| `SENTRY_DSN`                   | —                       | All Rust binaries      | Error reporting (see `.env.example`)     |
+| `SENTRY_ENVIRONMENT`           | `development`           | All Rust binaries      | `development` / `staging` / `production` |
+| `RUST_LOG`                     | —                       | All Rust binaries      | `tracing` filter override                |
+| `RUST_BACKTRACE`               | `1`                     | Dev                    | Set in `process-compose.yml`             |
 
 Pattern for future config keys: `AGILEPLUS_<SECTION>_<KEY>` (see kitty-specs WP15).
 
@@ -126,14 +126,14 @@ process-compose up
 1. **Record current version:** `agileplus --version` or `docker inspect agileplus-cli:current`.
 2. **Backup SQLite:** `cp "$AGILEPLUS_DB" "${AGILEPLUS_DB}.$(date +%Y%m%d).bak"`.
 3. **Pull / build new artifact:**
-   - Cargo: `cargo install --path crates/agileplus-cli --locked --force`
-   - Docker: build new tag, retag `current`.
+    - Cargo: `cargo install --path crates/agileplus-cli --locked --force`
+    - Docker: build new tag, retag `current`.
 4. **Run migrations** (implicit on first CLI open): any command touching DB runs `MigrationRunner`.
 5. **Smoke test:**
-   ```bash
-   agileplus status
-   agileplus list-projects
-   ```
+    ```bash
+    agileplus status
+    agileplus list-projects
+    ```
 6. **Compose stack:** `docker compose -f tests/integration/docker-compose.test.yml pull && … up -d`.
 
 ---
@@ -177,12 +177,12 @@ Unset `SENTRY_DSN` or set `AGILEPLUS_TELEMETRY_ENABLED=false` — no code deploy
 
 ## Health checks
 
-| Endpoint / command | Expect |
-|--------------------|--------|
-| `curl -f http://localhost:8080/health` | 200 (core container) |
-| `agileplus status` | Exit 0, project summary |
-| `redis-cli -p 6379 ping` | `PONG` (Dragonfly) |
-| NATS `8222/healthz` | 200 |
+| Endpoint / command                     | Expect                  |
+| -------------------------------------- | ----------------------- |
+| `curl -f http://localhost:8080/health` | 200 (core container)    |
+| `agileplus status`                     | Exit 0, project summary |
+| `redis-cli -p 6379 ping`               | `PONG` (Dragonfly)      |
+| NATS `8222/healthz`                    | 200                     |
 
 ---
 

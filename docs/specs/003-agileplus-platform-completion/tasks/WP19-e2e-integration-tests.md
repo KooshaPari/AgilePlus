@@ -5,16 +5,16 @@ lane: "done"
 dependencies: []
 base_branch: main
 base_commit: f49e1f98ffaa17a3544f6bdc08854dfe0b6b933f
-created_at: '2026-03-02T17:40:32.794554+00:00'
+created_at: "2026-03-02T17:40:32.794554+00:00"
 subtasks: [T107, T108, T109, T110, T111]
 shell_pid: "10458"
 agent: "claude-opus"
 reviewed_by: "Koosha Paridehpour"
 review_status: "approved"
 history:
-- date: '2026-03-02'
-  action: created
-  by: spec-kitty
+    - date: "2026-03-02"
+      action: created
+      by: spec-kitty
 ---
 
 # WP19: End-to-End Integration Tests
@@ -32,6 +32,7 @@ Implement full pipeline integration tests covering all platform services: API, e
 Create integration test infrastructure at `tests/integration/` in the workspace root.
 
 **File structure:**
+
 ```
 tests/integration/
 ├── common/
@@ -176,6 +177,7 @@ pub struct TestFixtures {
 ```
 
 **Test runner configuration:**
+
 - Conditional skip if `process-compose` not available (print warning)
 - Set `RUST_LOG=debug` for integration tests
 - Use `tokio::test` for async test execution
@@ -283,6 +285,7 @@ async fn feature_lifecycle_integration() -> Result<()> {
 ```
 
 **Verification checklist:**
+
 - Feature created successfully via API (201 response)
 - Feature persisted in SQLite with correct data
 - Feature available in cache (Dragonfly)
@@ -369,6 +372,7 @@ async fn dashboard_sse_integration() -> Result<()> {
 ```
 
 **Verification checklist:**
+
 - SSE connection establishes successfully
 - Feature creation triggers SSE event with correct data
 - State transitions trigger SSE events
@@ -479,6 +483,7 @@ async fn sync_conflict_integration() -> Result<()> {
 ```
 
 **Verification checklist:**
+
 - Conflict detected when local and remote modifications differ
 - Conflict type identified correctly
 - Resolution strategy applied (local-wins used here)
@@ -610,6 +615,7 @@ async fn service_failure_recovery_integration() -> Result<()> {
 ```
 
 **Verification checklist:**
+
 - Health check detects Dragonfly offline
 - API still functional with SQLite fallback
 - Feature creation succeeds during outage

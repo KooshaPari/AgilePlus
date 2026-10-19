@@ -47,10 +47,10 @@ follow-up sweep to keep this pass auditable).
 
 ## Phased WBS
 
-| Phase | WP | Description | Depends On |
-|---|---|---|---|
-| Discovery | WP-01 | Resolve 5 SHAs, freeze audit input | — |
-| Discovery | WP-02 | Triage 384 malformed refs into action bins | WP-01 |
-| Build | WP-03 | Fan-out rewrites per repo, per-provenance commits | WP-01, WP-02 |
-| Validate | WP-04 | Per-repo local CI + org audit rerun | WP-03 |
-| Handoff | WP-05 | Roll-up branch, follow-up eco-012 spec drafted | WP-04 |
+| Phase     | WP    | Description                                       | Depends On   |
+| --------- | ----- | ------------------------------------------------- | ------------ |
+| Discovery | WP-01 | Resolve 5 SHAs, freeze audit input                | —            |
+| Discovery | WP-02 | Triage 384 malformed refs into action bins        | WP-01        |
+| Build     | WP-03 | Fan-out rewrites per repo, per-provenance commits | WP-01, WP-02 |
+| Validate  | WP-04 | Per-repo local CI + org audit rerun               | WP-03        |
+| Handoff   | WP-05 | Roll-up branch, follow-up eco-012 spec drafted    | WP-04        |

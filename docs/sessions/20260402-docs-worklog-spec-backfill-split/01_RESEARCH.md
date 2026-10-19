@@ -7,10 +7,10 @@
 - The clean replay target is `origin/main` via
   `AgilePlus/.worktrees/docs-worklog-and-spec-backfill-clean`.
 - Documentation-only scope for this replay is:
-  - `.work-audit/worklog.md`
-  - `worklog.md`
-  - `kitty-specs/*` validation, spec, task, research, and plan files introduced or updated by the
-    mixed local commit
+    - `.work-audit/worklog.md`
+    - `worklog.md`
+    - `kitty-specs/*` validation, spec, task, research, and plan files introduced or updated by the
+      mixed local commit
 
 ## Decision
 

@@ -4,7 +4,7 @@
 **Target PR observed:** <REDACTED>/AgilePlus#800
 **Date:** 2026-06-25
 **Method:** Read each failing job's log via `gh api .../actions/jobs/{id}/logs`, identify the
-*real* error, and apply the smallest possible fix in `.github/workflows/`.
+_real_ error, and apply the smallest possible fix in `.github/workflows/`.
 
 > Scope: ANTI-WIPE — only `.github/workflows/**` files were edited plus this document.
 > Source-code, scripts, and Cargo manifests are intentionally NOT touched.
@@ -13,20 +13,20 @@
 
 ## Summary Table
 
-| Gate                       | Run ID     | Job ID     | Root cause (verbatim from log)                                                                                       | Fix                                                                                                  | File                                    |
-|----------------------------|------------|------------|----------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|-----------------------------------------|
-| Autograder                 | 28162416729 | 83405937312 | `Could not find 'protoc'. ... To install it on Debian, run 'apt-get install protobuf-compiler'`                      | Add `apt-get install -y protobuf-compiler` step before `cargo build --workspace`                      | `.github/workflows/autograder.yml`      |
-| Conventional Commits       | 28162416797 | 83405937857 | `subject may not be empty [subject-empty]` / `type may not be empty [type-empty]` on synthetic PR merge commit      | Replace `wagoid/commitlint-github-action@v6` with explicit `git log --no-merges` + commitlint loop   | `.github/workflows/ci.yml`               |
-| Workspace Path Dependency  | 28162417085 | 83405939288 | `MISSING: rust # agileplus-proto: tonic/prost gRPC stubs (buf-generated)` (awk bug in `scripts/workspace-audit.sh`) | **Documented only** — script bug; outside workflow scope                                            | (this file)                              |
-| gitleaks scan              | 28149161095 | 83362706966 | `Unable to resolve action 'gitleaks/gitleaks-action@1c4d3b6...'` (placeholder SHA)                                   | Pin to real SHA `1938557f6a58837331b99822ab17b8e536e7bef9` (#v2.3.0)                                  | `.github/workflows/gitleaks.yml`        |
-| governance-index           | 28149162079 | 83362710103 | `Verify committed index` failed — `kitty-specs/INDEX.md` drifted on PR base                                          | Split verify: hard-fail on `push` to main, soft-notice on `pull_request`                              | `.github/workflows/governance-index.yml` |
-| guard (scanner bootstrap)  | 28162417209 | 83405939220 | `curl: (22) The requested URL returned error: 404` — `phenotype/repos` 404                                          | Remove `Bootstrap legacy tooling scanner` curl step (scanner now lives in-repo)                      | `.github/workflows/security-guard.yml`  |
-| guard (pre-commit)         | 28149161100 | 83362707105 | `legacy_tooling_scanner.py: No such file or directory` (same root cause as above)                                    | (same fix — removing bootstrap; pre-commit will pick up in-repo scanner)                              | `.github/workflows/security-guard.yml`  |
-| policy-gate                | 28162417076 | 83405938753 | `merge commits detected in PR diff range: 921f9eeb...` (GitHub synthetic `pull/<N>/merge` ref is itself a merge)   | Fetch explicit `pull/<N>/head` and diff against `origin/<base>` using first-parent                    | `.github/workflows/policy-gate.yml`     |
-| pr-governance-gate         | 28162416821 | 83405938081 | Downstream of the above failures                                                                                     | Auto-resolves once upstream gates are fixed                                                         | (consequential)                           |
-| sonar                      | 28162416675 | 83405937566 | `You are running CI analysis while Automatic Analysis is enabled. Please consider disabling one or the other.`      | Pass `-Dsonar.autoAnalysis.disable=true`                                                             | `.github/workflows/sonarcloud.yml`      |
-| semver-checks              | (passing)   | —          | —                                                                                                                    | (no change)                                                                                          | —                                       |
-| spec-first                 | (passing)   | —          | —                                                                                                                    | (no change)                                                                                          | —                                       |
+| Gate                      | Run ID      | Job ID      | Root cause (verbatim from log)                                                                                      | Fix                                                                                                | File                                     |
+| ------------------------- | ----------- | ----------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| Autograder                | 28162416729 | 83405937312 | `Could not find 'protoc'. ... To install it on Debian, run 'apt-get install protobuf-compiler'`                     | Add `apt-get install -y protobuf-compiler` step before `cargo build --workspace`                   | `.github/workflows/autograder.yml`       |
+| Conventional Commits      | 28162416797 | 83405937857 | `subject may not be empty [subject-empty]` / `type may not be empty [type-empty]` on synthetic PR merge commit      | Replace `wagoid/commitlint-github-action@v6` with explicit `git log --no-merges` + commitlint loop | `.github/workflows/ci.yml`               |
+| Workspace Path Dependency | 28162417085 | 83405939288 | `MISSING: rust # agileplus-proto: tonic/prost gRPC stubs (buf-generated)` (awk bug in `scripts/workspace-audit.sh`) | **Documented only** — script bug; outside workflow scope                                           | (this file)                              |
+| gitleaks scan             | 28149161095 | 83362706966 | `Unable to resolve action 'gitleaks/gitleaks-action@1c4d3b6...'` (placeholder SHA)                                  | Pin to real SHA `1938557f6a58837331b99822ab17b8e536e7bef9` (#v2.3.0)                               | `.github/workflows/gitleaks.yml`         |
+| governance-index          | 28149162079 | 83362710103 | `Verify committed index` failed — `kitty-specs/INDEX.md` drifted on PR base                                         | Split verify: hard-fail on `push` to main, soft-notice on `pull_request`                           | `.github/workflows/governance-index.yml` |
+| guard (scanner bootstrap) | 28162417209 | 83405939220 | `curl: (22) The requested URL returned error: 404` — `phenotype/repos` 404                                          | Remove `Bootstrap legacy tooling scanner` curl step (scanner now lives in-repo)                    | `.github/workflows/security-guard.yml`   |
+| guard (pre-commit)        | 28149161100 | 83362707105 | `legacy_tooling_scanner.py: No such file or directory` (same root cause as above)                                   | (same fix — removing bootstrap; pre-commit will pick up in-repo scanner)                           | `.github/workflows/security-guard.yml`   |
+| policy-gate               | 28162417076 | 83405938753 | `merge commits detected in PR diff range: 921f9eeb...` (GitHub synthetic `pull/<N>/merge` ref is itself a merge)    | Fetch explicit `pull/<N>/head` and diff against `origin/<base>` using first-parent                 | `.github/workflows/policy-gate.yml`      |
+| pr-governance-gate        | 28162416821 | 83405938081 | Downstream of the above failures                                                                                    | Auto-resolves once upstream gates are fixed                                                        | (consequential)                          |
+| sonar                     | 28162416675 | 83405937566 | `You are running CI analysis while Automatic Analysis is enabled. Please consider disabling one or the other.`      | Pass `-Dsonar.autoAnalysis.disable=true`                                                           | `.github/workflows/sonarcloud.yml`       |
+| semver-checks             | (passing)   | —           | —                                                                                                                   | (no change)                                                                                        | —                                        |
+| spec-first                | (passing)   | —           | —                                                                                                                   | (no change)                                                                                        | —                                        |
 
 ---
 
@@ -53,9 +53,9 @@ Error: Custom { kind: NotFound,
 ```yaml
 - name: Install protoc (agileplus-proto build script)
   run: |
-    sudo apt-get update
-    sudo apt-get install -y protobuf-compiler
-    protoc --version
+      sudo apt-get update
+      sudo apt-get install -y protobuf-compiler
+      protoc --version
 ```
 
 (`ci.yml` already uses `arduino/setup-protoc@v3`. Autograder runs on
@@ -87,34 +87,34 @@ the PR diff range. GitHub's `pull/<N>/merge` synthetic ref is one of those commi
 - name: Set up Node
   uses: actions/setup-node@v6
   with:
-    node-version: "20"
+      node-version: "20"
 - name: Install commitlint
   run: |
-    npm install --no-save \
-      commitlint@^19 \
-      @commitlint/config-conventional@^19
+      npm install --no-save \
+        commitlint@^19 \
+        @commitlint/config-conventional@^19
 - name: Lint PR commit messages (skip merges)
   env:
-    BASE_SHA: ${{ github.event.pull_request.base.sha }}
-    HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
   run: |
-    set -euo pipefail
-    COMMITS=$(git log --no-merges --pretty=format:%H "${BASE_SHA}..${HEAD_SHA}")
-    if [ -z "$COMMITS" ]; then
-      echo "No non-merge commits to lint (PR contains only merges)."
-      exit 0
-    fi
-    FAIL=0
-    for sha in $COMMITS; do
-      MSG=$(git log -1 --pretty=format:%B "$sha")
-      echo "── Linting ${sha:0:12} ──"
-      echo "$MSG" | npx commitlint --config .commitlintrc.yml || FAIL=1
-    done
-    if [ "$FAIL" -ne 0 ]; then
-      echo "::error::Conventional Commits gate failed."
-      exit 1
-    fi
-    echo "All non-merge PR commits conform to Conventional Commits."
+      set -euo pipefail
+      COMMITS=$(git log --no-merges --pretty=format:%H "${BASE_SHA}..${HEAD_SHA}")
+      if [ -z "$COMMITS" ]; then
+        echo "No non-merge commits to lint (PR contains only merges)."
+        exit 0
+      fi
+      FAIL=0
+      for sha in $COMMITS; do
+        MSG=$(git log -1 --pretty=format:%B "$sha")
+        echo "── Linting ${sha:0:12} ──"
+        echo "$MSG" | npx commitlint --config .commitlintrc.yml || FAIL=1
+      done
+      if [ "$FAIL" -ne 0 ]; then
+        echo "::error::Conventional Commits gate failed."
+        exit 1
+      fi
+      echo "All non-merge PR commits conform to Conventional Commits."
 ```
 
 Lint config remains the existing `.commitlintrc.yml`; only the runner is changed.
@@ -207,7 +207,7 @@ diff --git a/kitty-specs/INDEX.md b/kitty-specs/INDEX.md
 ##[error]Process completed with exit code 1.
 ```
 
-The diff is entirely additive (new eco-* specs added) and is regenerated by
+The diff is entirely additive (new eco-\* specs added) and is regenerated by
 `tooling/governance_index.py`. The committed `kitty-specs/INDEX.md` is out of sync
 because the PR branch was opened from an older base.
 
@@ -221,17 +221,17 @@ re-run the indexer on top of new specs).
 - name: Verify committed index
   if: github.event_name == 'push'
   run: |
-    # ... original hard-fail logic for direct pushes to main ...
+      # ... original hard-fail logic for direct pushes to main ...
 - name: Verify committed index (PR — informational)
   if: github.event_name == 'pull_request'
   run: |
-    if git diff --quiet -- kitty-specs/INDEX.md; then
-      echo "kitty-specs/INDEX.md is up to date."
-    else
-      echo "::notice::kitty-specs/INDEX.md drifted on base branch. \
-        Index will be regenerated on merge to main."
-      git diff --stat -- kitty-specs/INDEX.md || true
-    fi
+      if git diff --quiet -- kitty-specs/INDEX.md; then
+        echo "kitty-specs/INDEX.md is up to date."
+      else
+        echo "::notice::kitty-specs/INDEX.md drifted on base branch. \
+          Index will be regenerated on merge to main."
+        git diff --stat -- kitty-specs/INDEX.md || true
+      fi
 ```
 
 Pushes to `main` still enforce the gate; PRs surface drift as a `::notice::` annotation.
@@ -270,20 +270,20 @@ responsibility of the pre-commit config; an external fetch is unnecessary):
 # Before:
 - name: Bootstrap legacy tooling scanner
   run: |
-    mkdir -p tooling/legacy-enforcement/scanner tooling/legacy-enforcement/policy
-    curl -fsSL \
-      https://raw.githubusercontent.com/phenotype/repos/main/tooling/legacy-enforcement/scanner/legacy_tooling_scanner.py \
-      -o tooling/legacy-enforcement/scanner/legacy_tooling_scanner.py
-    curl -fsSL \
-      https://raw.githubusercontent.com/phenotype/repos/main/tooling/legacy-enforcement/policy/rules.yaml \
-      -o tooling/legacy-enforcement/policy/rules.yaml
+      mkdir -p tooling/legacy-enforcement/scanner tooling/legacy-enforcement/policy
+      curl -fsSL \
+        https://raw.githubusercontent.com/phenotype/repos/main/tooling/legacy-enforcement/scanner/legacy_tooling_scanner.py \
+        -o tooling/legacy-enforcement/scanner/legacy_tooling_scanner.py
+      curl -fsSL \
+        https://raw.githubusercontent.com/phenotype/repos/main/tooling/legacy-enforcement/policy/rules.yaml \
+        -o tooling/legacy-enforcement/policy/rules.yaml
 
 # After: (bootstrap step removed entirely)
 ```
 
 If the in-repo scanner doesn't exist for a given branch, the pre-commit hook will
-still fail — but it will fail for the *correct* reason (missing in-repo file), not
-the *misleading* reason (404 from `phenotype/repos`).
+still fail — but it will fail for the _correct_ reason (missing in-repo file), not
+the _misleading_ reason (404 from `phenotype/repos`).
 
 ---
 
@@ -302,7 +302,7 @@ fi
 ```
 
 **Root cause:** The runner checked out the synthetic `pull/800/merge` ref (SHA
-`921f9eeb...`). That ref is itself a *merge commit* (GitHub synthesizes it), so
+`921f9eeb...`). That ref is itself a _merge commit_ (GitHub synthesizes it), so
 `git rev-list --merges ... origin/main..HEAD` returns the synthetic merge and the
 gate fires even when the underlying branch has no real merges.
 
@@ -361,9 +361,9 @@ must explicitly opt out so the CI run is the sole analysis path.
 
 ```yaml
 args: >
-  -Dsonar.projectKey=<REDACTED>_AgilePlus
-  -Dsonar.organization=<REDACTED>
-  -Dsonar.autoAnalysis.disable=true
+    -Dsonar.projectKey=<REDACTED>_AgilePlus
+    -Dsonar.organization=<REDACTED>
+    -Dsonar.autoAnalysis.disable=true
 ```
 
 ---

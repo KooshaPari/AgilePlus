@@ -1,13 +1,13 @@
 ---
 work_package_id: WP25
-title: 'Shared Package Extraction Phase 2 (Polyrepo)'
+title: "Shared Package Extraction Phase 2 (Polyrepo)"
 lane: planned
 dependencies: [WP02, WP09, WP11]
 subtasks: [T075, T076, T077]
 history:
-- date: '2026-03-03'
-  event: created
-  by: spec-kitty.tasks
+    - date: "2026-03-03"
+      event: created
+      by: spec-kitty.tasks
 ---
 
 # WP25: Shared Package Extraction Phase 2 (Polyrepo)
@@ -30,6 +30,7 @@ Extract 15 additional shared package candidates identified in prior audit but no
 ### T075: Go shared package extractions
 
 **Steps**:
+
 1. `agentapi++/lib/screentracker/` (523L `pty_conversation.go`) -> publish as `phenotype/screentracker-go`
 2. `agentapi++/lib/msgfmt/` (322L) + `lib/termexec/` -> extract as standalone Go libs `phenotype/msgfmt-go` and `phenotype/termexec-go`
 3. `cliproxy/sdk/auth/` (2,800L) -> extract as `phenotype/llm-auth-go` (multi-provider OAuth conductor)
@@ -37,6 +38,7 @@ Extract 15 additional shared package candidates identified in prior audit but no
 5. For each: create repo with go.mod, CI, README, and update source repo to consume as dependency
 
 **Validation**:
+
 - Each extracted package builds independently (`go build ./...`)
 - Each extracted package passes its own test suite
 - Source repos updated to import from shared packages
@@ -46,6 +48,7 @@ Extract 15 additional shared package candidates identified in prior audit but no
 ### T076: Python shared package extractions
 
 **Steps**:
+
 1. `thegent/protocols/jsonrpc_agent_server.py` (1,378L) -> publish as `phenotype/jsonrpc-agent-server` (pyproject.toml, pip-publishable)
 2. `thegent/orchestration/` (13,068L) -> extract as `phenotype/agent-orchestration` (Redis locks, resource-aware scheduling — no thegent-specific logic)
 3. `thegent/audit/` + `audit_v2/` -> shared `phenotype/audit-trail` utility
@@ -55,6 +58,7 @@ Extract 15 additional shared package candidates identified in prior audit but no
 7. For each: create repo with pyproject.toml, CI, tests, and update source repo to consume
 
 **Validation**:
+
 - Each extracted package installs and passes tests independently
 - Source repos updated to import from shared packages
 - No duplicated code remains in source repos
@@ -63,6 +67,7 @@ Extract 15 additional shared package candidates identified in prior audit but no
 ### T077: TypeScript shared package extractions
 
 **Steps**:
+
 1. `heliosCLI/shell-tool-mcp/` (~300 LOC TS) -> publish as `@phenotype/shell-tool-mcp` npm package
 2. heliosApp `ProviderRegistry` -> extract as `@phenotype/provider-registry`
 3. heliosApp `mcp-bridge.ts` + `acp-client.ts` + `a2a-router.ts` -> extract as `@phenotype/agent-protocol-bridge`
@@ -71,6 +76,7 @@ Extract 15 additional shared package candidates identified in prior audit but no
 6. For each: create package with package.json, tsconfig, CI, tests, and update source repos
 
 **Validation**:
+
 - Each extracted package builds and passes tests independently
 - Source repos updated to import from shared packages
 - `pnpm build` and `pnpm test` pass in all affected repos

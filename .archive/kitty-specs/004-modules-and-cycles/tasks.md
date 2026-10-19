@@ -33,6 +33,7 @@ WP01 (Domain Entities)
 **Prompt**: `tasks/WP01-domain-entities.md`
 
 Subtasks:
+
 - [ ] T001: Create Module struct with slug, friendly_name, description, parent_module_id
 - [ ] T002: Create ModuleFeatureTag struct (module_id, feature_id, created_at)
 - [ ] T003: Create CycleState enum with transition validation (Draft→Active→Review→Shipped→Archived)
@@ -52,6 +53,7 @@ Subtasks:
 **Prompt**: `tasks/WP02-storage-adapter.md`
 
 Subtasks:
+
 - [ ] T007: Add Module CRUD methods to StoragePort trait
 - [ ] T008: Add Cycle CRUD methods to StoragePort trait
 - [ ] T009: Add join table methods (tag/untag, add/remove Feature from Cycle)
@@ -72,6 +74,7 @@ Subtasks:
 **Prompt**: `tasks/WP03-cli-module.md`
 
 Subtasks:
+
 - [ ] T014: Create module.rs command module with ModuleArgs enum (create, list, show, assign, tag, untag, delete)
 - [ ] T015: Implement module create (with --parent flag) and module delete (with child/feature guards)
 - [ ] T016: Implement module list (flat + --tree recursive) and module show (owned + tagged features)
@@ -86,6 +89,7 @@ Subtasks:
 **Prompt**: `tasks/WP04-cli-cycle.md`
 
 Subtasks:
+
 - [ ] T019: Create cycle.rs command module with CycleArgs enum
 - [ ] T020: Implement cycle create (--start, --end, --module scope) and cycle list (by state)
 - [ ] T021: Implement cycle show (assigned features, WP progress aggregate, date range)
@@ -104,6 +108,7 @@ Subtasks:
 **Prompt**: `tasks/WP05-dashboard-views.md`
 
 Subtasks:
+
 - [ ] T024: Add Module and Cycle API routes in agileplus-api (list, show, tree)
 - [ ] T025: Create module_tree.html Askama template (recursive tree with feature counts)
 - [ ] T026: Create cycle_kanban.html template (columns by CycleState, feature cards)
@@ -122,6 +127,7 @@ Subtasks:
 **Prompt**: `tasks/WP06-plane-sync.md`
 
 Subtasks:
+
 - [ ] T029: Extend PlaneClient with module CRUD API methods (POST/PUT/DELETE /modules/)
 - [ ] T030: Extend PlaneClient with cycle CRUD API methods (POST/PUT/DELETE /cycles/)
 - [ ] T031: Implement outbound push for Module/Cycle create/update/delete events
@@ -140,6 +146,7 @@ Subtasks:
 **Prompt**: `tasks/WP07-integration-tests.md`
 
 Subtasks:
+
 - [ ] T034: Test Module hierarchy CRUD lifecycle (create tree, assign features, list --tree, delete guards)
 - [ ] T035: Test Cycle lifecycle (create, add features, transition through states, gate enforcement)
 - [ ] T036: Test Module-scoped Cycle (scope validation, rejection of out-of-scope features)
@@ -150,43 +157,43 @@ Subtasks:
 
 ## Subtask Index
 
-| ID | Description | WP | Parallel |
-|----|-------------|-----|----------|
-| T001 | Module struct | WP01 | |
-| T002 | ModuleFeatureTag struct | WP01 | [P] T001 |
-| T003 | CycleState enum + transitions | WP01 | [P] T001 |
-| T004 | Cycle struct | WP01 | |
-| T005 | CycleFeature + scope validation | WP01 | |
+| ID   | Description                     | WP   | Parallel |
+| ---- | ------------------------------- | ---- | -------- |
+| T001 | Module struct                   | WP01 |          |
+| T002 | ModuleFeatureTag struct         | WP01 | [P] T001 |
+| T003 | CycleState enum + transitions   | WP01 | [P] T001 |
+| T004 | Cycle struct                    | WP01 |          |
+| T005 | CycleFeature + scope validation | WP01 |          |
 | T006 | Feature.module_id + DomainError | WP01 | [P] T001 |
-| T007 | StoragePort Module CRUD | WP02 | |
-| T008 | StoragePort Cycle CRUD | WP02 | [P] T007 |
-| T009 | StoragePort join table ops | WP02 | |
-| T010 | SQLite migration 010 | WP02 | |
-| T011 | SQLite Module CRUD impl | WP02 | |
-| T012 | SQLite Cycle CRUD impl | WP02 | [P] T011 |
-| T013 | SQLite join table impl | WP02 | |
-| T014 | CLI module command scaffold | WP03 | |
-| T015 | CLI module create/delete | WP03 | |
-| T016 | CLI module list/show | WP03 | |
-| T017 | CLI module assign/tag/untag | WP03 | |
-| T018 | CLI module wiring + tests | WP03 | |
-| T019 | CLI cycle command scaffold | WP04 | |
-| T020 | CLI cycle create/list | WP04 | |
-| T021 | CLI cycle show | WP04 | |
-| T022 | CLI cycle add/remove | WP04 | |
-| T023 | CLI cycle transition + tests | WP04 | |
-| T024 | Dashboard API routes | WP05 | |
-| T025 | Module tree template | WP05 | [P] T024 |
-| T026 | Cycle kanban template | WP05 | [P] T024 |
-| T027 | Cycle detail template | WP05 | [P] T024 |
-| T028 | SSE events + router wiring | WP05 | |
-| T029 | Plane module API methods | WP06 | |
-| T030 | Plane cycle API methods | WP06 | [P] T029 |
-| T031 | Outbound push module/cycle | WP06 | |
-| T032 | Inbound pull/webhook | WP06 | |
-| T033 | Sync mappings + assignment sync | WP06 | |
-| T034 | Integration: module hierarchy | WP07 | |
-| T035 | Integration: cycle lifecycle | WP07 | [P] T034 |
-| T036 | Integration: scoped cycles | WP07 | [P] T034 |
-| T037 | Integration: backward compat | WP07 | [P] T034 |
-| T038 | Integration: edge cases | WP07 | |
+| T007 | StoragePort Module CRUD         | WP02 |          |
+| T008 | StoragePort Cycle CRUD          | WP02 | [P] T007 |
+| T009 | StoragePort join table ops      | WP02 |          |
+| T010 | SQLite migration 010            | WP02 |          |
+| T011 | SQLite Module CRUD impl         | WP02 |          |
+| T012 | SQLite Cycle CRUD impl          | WP02 | [P] T011 |
+| T013 | SQLite join table impl          | WP02 |          |
+| T014 | CLI module command scaffold     | WP03 |          |
+| T015 | CLI module create/delete        | WP03 |          |
+| T016 | CLI module list/show            | WP03 |          |
+| T017 | CLI module assign/tag/untag     | WP03 |          |
+| T018 | CLI module wiring + tests       | WP03 |          |
+| T019 | CLI cycle command scaffold      | WP04 |          |
+| T020 | CLI cycle create/list           | WP04 |          |
+| T021 | CLI cycle show                  | WP04 |          |
+| T022 | CLI cycle add/remove            | WP04 |          |
+| T023 | CLI cycle transition + tests    | WP04 |          |
+| T024 | Dashboard API routes            | WP05 |          |
+| T025 | Module tree template            | WP05 | [P] T024 |
+| T026 | Cycle kanban template           | WP05 | [P] T024 |
+| T027 | Cycle detail template           | WP05 | [P] T024 |
+| T028 | SSE events + router wiring      | WP05 |          |
+| T029 | Plane module API methods        | WP06 |          |
+| T030 | Plane cycle API methods         | WP06 | [P] T029 |
+| T031 | Outbound push module/cycle      | WP06 |          |
+| T032 | Inbound pull/webhook            | WP06 |          |
+| T033 | Sync mappings + assignment sync | WP06 |          |
+| T034 | Integration: module hierarchy   | WP07 |          |
+| T035 | Integration: cycle lifecycle    | WP07 | [P] T034 |
+| T036 | Integration: scoped cycles      | WP07 | [P] T034 |
+| T037 | Integration: backward compat    | WP07 | [P] T034 |
+| T038 | Integration: edge cases         | WP07 |          |

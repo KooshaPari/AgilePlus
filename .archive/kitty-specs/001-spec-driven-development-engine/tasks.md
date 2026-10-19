@@ -18,6 +18,7 @@
 **Estimated**: ~350 lines, 8 subtasks
 
 ### Included Subtasks
+
 - [x] T000a Initialize `agileplus-proto` repo with README, LICENSE, .gitignore
 - [x] T000b Create `proto/agileplus/common.proto` with shared message types (Feature, WP, Audit, Governance, Agent events)
 - [x] T000c [P] Create `proto/agileplus/core.proto` with AgilePlusCoreService definition
@@ -28,6 +29,7 @@
 - [x] T000g Create Rust crate in `rust/` (Cargo.toml, build.rs with tonic-build, src/lib.rs re-exporting generated code) and Python package in `python/` (pyproject.toml, codegen script)
 
 ### Implementation Notes
+
 - Proto files are the single source of truth for all inter-service contracts
 - `buf generate` produces Rust code in `rust/src/` and Python code in `python/src/agileplus_proto/`
 - Rust crate is consumed as a git dependency by core, agents, integrations repos
@@ -35,12 +37,15 @@
 - `schemas/mcp-tools.json` and `schemas/mcp-resources.json` define MCP tool/resource schemas
 
 ### Parallel Opportunities
+
 - T000c, T000d, T000e are all independent after T000b
 
 ### Dependencies
+
 - None (starting package)
 
 ### Risks & Mitigations
+
 - Proto design must be stable before other repos build against it; use `buf breaking` in CI
 
 ---
@@ -54,6 +59,7 @@
 **Estimated**: ~300 lines, 9 subtasks
 
 ### Included Subtasks
+
 - [x] T001 Create root `Cargo.toml` workspace manifest with all 7 crate members
 - [x] T002 [P] Scaffold `crates/agileplus-domain/` with `lib.rs`, domain module stubs, port trait stubs
 - [x] T003 [P] Scaffold remaining 6 adapter crates (`cli`, `api`, `grpc`, `sqlite`, `git`, `telemetry`) with `lib.rs` and dependency declarations
@@ -65,6 +71,7 @@
 - [x] T006d Add CI lint step validating agileplus-domain has only serde/sha2/chrono dependencies
 
 ### Implementation Notes
+
 - Use Rust 2024 edition in all crates
 - Domain crate (renamed from `agileplus-core`) has no external deps except serde, sha2, chrono
 - Adapter crates depend on domain crate via workspace path
@@ -74,12 +81,15 @@
 - CI matrix must include macOS, Linux, and Windows targets
 
 ### Parallel Opportunities
+
 - T002, T003, T004, T005 are all independent after T001
 
 ### Dependencies
+
 - Depends on WP00 (proto repo must exist for git submodule)
 
 ### Risks & Mitigations
+
 - tonic-build requires protoc; pin version in Makefile and Docker
 
 ---
@@ -93,6 +103,7 @@
 **Estimated**: ~250 lines, 6 subtasks
 
 ### Included Subtasks
+
 - [x] T007 Initialize `agileplus-mcp` repo, create `pyproject.toml` with FastMCP 3.0, grpcio, opentelemetry-sdk deps
 - [x] T008 Create `src/agileplus_mcp/__init__.py` and `server.py` (FastMCP entry)
 - [x] T009 [P] Create `src/agileplus_mcp/grpc_client.py` (stub gRPC connection to Rust core)
@@ -101,18 +112,22 @@
 - [x] T011b Add sphinx/autodoc CI generation for Python API reference
 
 ### Implementation Notes
+
 - Use `uv` for Python package management
 - FastMCP 3.0 server should register tools from `agileplus-proto/schemas/mcp-tools.json` schema
 - gRPC client connects to `localhost:50051` (Rust core default)
 - Proto consumed from `agileplus-proto` git submodule
 
 ### Parallel Opportunities
+
 - T009, T010 independent after T008
 
 ### Dependencies
+
 - Depends on WP00 (proto repo must exist for git submodule)
 
 ### Risks & Mitigations
+
 - Python 3.13 free-threaded + FastMCP compatibility: test early, fall back to 3.12 if needed
 
 ---
@@ -125,6 +140,7 @@
 **Estimated**: ~400 lines, 8 subtasks
 
 ### Included Subtasks
+
 - [x] T012 Implement `Feature` struct with all fields from data-model.md in `crates/agileplus-domain/src/domain/feature.rs`
 - [x] T013 Implement `FeatureState` enum and `StateTransition` type with strict ordering (FR-033)
 - [x] T014 Implement state machine logic: `transition()` method enforcing valid transitions, skip-with-warning (FR-034)
@@ -135,17 +151,21 @@
 - [x] T017c Run cargo-mutants on state_machine.rs, verify ≥90% mutation score
 
 ### Implementation Notes
+
 - State machine uses Rust enums with exhaustive match — compiler enforces all transitions handled
 - Skip transitions return `Result<Warning>` not `Result<()>` — caller decides to log or abort
 - WorkPackage.file_scope is `Vec<String>` for overlap detection
 
 ### Parallel Opportunities
+
 - T015-T016 (WP model) parallel with T012-T014 (Feature model) after shared types defined
 
 ### Dependencies
+
 - Depends on WP01 (crate structure must exist)
 
 ### Risks & Mitigations
+
 - Complex state machine edge cases: exhaustive unit tests with property-based testing (proptest)
 
 ---
@@ -158,6 +178,7 @@
 **Estimated**: ~450 lines, 10 subtasks
 
 ### Included Subtasks
+
 - [x] T018 Implement `GovernanceContract` struct with versioned rules (FR-018) in `governance.rs`
 - [x] T019 Implement `AuditEntry` struct with SHA-256 hash chain (FR-016) in `audit.rs`
 - [x] T020 Implement `hash_entry()` function: SHA-256(id ‖ timestamp ‖ actor ‖ transition ‖ evidence_refs ‖ prev_hash)
@@ -170,18 +191,22 @@
 - [x] T024c Run cargo-mutants on audit.rs and governance.rs, verify ≥90% mutation score
 
 ### Implementation Notes
+
 - Use sha2 crate for SHA-256
 - AuditEntry.hash computed deterministically from concatenated fields
 - verify_chain() returns first invalid entry ID or Ok(count)
 - GovernanceContract.rules stored as serde_json::Value for flexibility
 
 ### Parallel Opportunities
+
 - T018, T022-T023 (governance types) parallel with T019-T021 (audit chain)
 
 ### Dependencies
+
 - Depends on WP03 (Feature and WP types needed for evidence linking)
 
 ### Risks & Mitigations
+
 - Hash chain correctness is critical: extensive property-based tests, comparison with thegent's implementation
 
 ---
@@ -194,6 +219,7 @@
 **Estimated**: ~350 lines, 6 subtasks
 
 ### Included Subtasks
+
 - [x] T025 Define `StoragePort` trait in `ports/storage.rs`: CRUD for features, WPs, audit, evidence, policies
 - [x] T026 [P] Define `VcsPort` trait in `ports/vcs.rs`: worktree create/cleanup, branch ops, artifact read/write
 - [x] T027 [P] Define `AgentPort` trait in `ports/agent.rs`: dispatch subagent, query status, send instruction
@@ -202,18 +228,22 @@
 - [x] T030 Define `mod.rs` re-exporting all ports, application service traits using ports
 
 ### Implementation Notes
+
 - All ports are async traits (use `async_trait` or Rust 2024 native async traits)
 - Port methods return `Result<T, DomainError>` — domain error type defined in core
 - StoragePort methods mirror data-model.md entities
 - VcsPort abstracts git2 — tests can use in-memory mock
 
 ### Parallel Opportunities
+
 - T026-T029 all independent
 
 ### Dependencies
+
 - Depends on WP03, WP04 (domain types referenced in port signatures)
 
 ### Risks & Mitigations
+
 - Port design lock-in: keep ports minimal, add methods incrementally
 
 ---
@@ -226,6 +256,7 @@
 **Estimated**: ~500 lines, 7 subtasks
 
 ### Included Subtasks
+
 - [x] T031 Create SQLite migration system in `crates/agileplus-sqlite/src/migrations/` (all tables from data-model.md)
 - [x] T032 Implement `SqliteStorageAdapter` struct implementing `StoragePort`
 - [x] T033 Implement feature CRUD: create, get_by_slug, update_state, list_by_state
@@ -235,18 +266,22 @@
 - [x] T037 Implement `rebuild_from_git()` (FR-017): parse git artifacts → populate SQLite
 
 ### Implementation Notes
+
 - Use rusqlite with WAL mode for concurrent reads
 - Migrations are embedded SQL files, applied on startup
-- rebuild_from_git reads: meta.json, audit/chain.jsonl, evidence/** from git working tree
+- rebuild_from_git reads: meta.json, audit/chain.jsonl, evidence/\*\* from git working tree
 - All queries use parameterized statements (no SQL injection)
 
 ### Parallel Opportunities
+
 - T033, T034, T035, T036 are independent after T031-T032
 
 ### Dependencies
+
 - Depends on WP05 (StoragePort trait)
 
 ### Risks & Mitigations
+
 - WAL mode + single writer: use connection pooling with write serialization
 
 ---
@@ -259,6 +294,7 @@
 **Estimated**: ~400 lines, 6 subtasks
 
 ### Included Subtasks
+
 - [x] T038 Implement `GitVcsAdapter` struct implementing `VcsPort` in `crates/agileplus-git/src/`
 - [x] T039 Implement worktree operations: create_worktree(feature, wp), list_worktrees, cleanup_worktree
 - [x] T040 Implement branch operations: create_branch, checkout, merge_to_target, detect_conflicts
@@ -267,17 +303,21 @@
 - [x] T043 Write integration tests using temp git repos (git2::Repository::init)
 
 ### Implementation Notes
+
 - Worktree paths: `.worktrees/<feature-slug>-<WP-id>/`
 - Use git2 for all operations — no shelling out to git CLI
 - Merge conflicts detected via git2 merge analysis, surfaced as structured error
 
 ### Parallel Opportunities
+
 - T039, T040, T041 independent after T038
 
 ### Dependencies
+
 - Depends on WP05 (VcsPort trait)
 
 ### Risks & Mitigations
+
 - git2 worktree API quirks: test on macOS + Linux, handle case-insensitive filesystems
 
 ---
@@ -291,6 +331,7 @@
 **Estimated**: ~550 lines, 8 subtasks
 
 ### Included Subtasks
+
 - [x] T044 Initialize `agileplus-agents` repo with Cargo workspace (3 crates), proto git submodule, Makefile
 - [x] T044b Implement `AgentDispatchAdapter` in `crates/agileplus-agent-dispatch/src/`
 - [x] T045 Implement `claude_code.rs`: spawn Claude Code with `--print` mode, pass WP prompt, collect output
@@ -301,6 +342,7 @@
 - [x] T049b Implement `agileplus-agent-service` gRPC server implementing `agents.proto` AgentDispatchService
 
 ### Implementation Notes
+
 - This is a separate repo (`agileplus-agents`) with its own Cargo workspace (3 crates)
 - Communicates with `agileplus-core` via gRPC client for state queries/updates
 - Implements `agents.proto` service that core can call
@@ -309,12 +351,15 @@
 - Review loop: poll GitHub API every 30s for review status, Coderabbit comments
 
 ### Parallel Opportunities
+
 - T045, T046 independent (different agent harnesses)
 
 ### Dependencies
+
 - Depends on WP00 (proto repo). Design reference: WP05 (AgentPort trait — not a build dependency, used as interface design guide)
 
 ### Risks & Mitigations
+
 - Agent CLI changes: abstract behind AgentPort, adapter is swappable
 - Coderabbit latency: configurable poll interval with exponential backoff
 
@@ -329,6 +374,7 @@
 **Estimated**: ~300 lines, 5 subtasks
 
 ### Included Subtasks
+
 - [x] T050 Implement `ReviewAdapter` struct in `crates/agileplus-agent-review/src/`
 - [x] T051 Implement `coderabbit.rs`: fetch review via GitHub API, parse comments into structured feedback
 - [x] T052 Implement `fallback.rs`: manual review approval flow (user confirms via CLI prompt)
@@ -336,18 +382,22 @@
 - [x] T054 Write unit tests with mock GitHub API responses
 
 ### Implementation Notes
+
 - Lives in `agileplus-agents` repo, `crates/agileplus-agent-review/` crate
 - GitHub API via `octocrab` or raw `reqwest` — use integration key from credential store
 - Coderabbit comments identified by bot username, parsed for actionable vs informational
 - Fallback triggers when Coderabbit unavailable for >5min (configurable)
 
 ### Parallel Opportunities
+
 - T051, T052, T053 independent after T050
 
 ### Dependencies
+
 - Depends on WP08 (agents repo must exist)
 
 ### Risks & Mitigations
+
 - GitHub API rate limits: cache responses, use conditional requests (ETags)
 
 ---
@@ -360,6 +410,7 @@
 **Estimated**: ~300 lines, 5 subtasks
 
 ### Included Subtasks
+
 - [x] T055 Implement `TelemetryAdapter` struct implementing `ObservabilityPort` in `crates/agileplus-telemetry/src/`
 - [x] T056 Implement `traces.rs`: OpenTelemetry trace spans per command execution, agent dispatch
 - [x] T057 [P] Implement `metrics.rs`: counters (agent_runs, review_cycles), histograms (command_duration_ms)
@@ -367,18 +418,22 @@
 - [x] T059 Create `~/.agileplus/otel-config.yaml` schema and loader
 
 ### Implementation Notes
+
 - Use `opentelemetry` + `opentelemetry-otlp` crates
 - Traces: one span per command, child spans for agent dispatch, review loop iterations
 - Metrics stored in SQLite (via StoragePort) AND exported via OTLP
 - Log format: JSON with timestamp, level, span_id, message, fields
 
 ### Parallel Opportunities
+
 - T056, T057, T058 independent after T055
 
 ### Dependencies
+
 - Depends on WP05 (ObservabilityPort trait)
 
 ### Risks & Mitigations
+
 - OTLP collector not running: degrade gracefully, log warning, continue without export
 
 ---
@@ -391,6 +446,7 @@
 **Estimated**: ~450 lines, 6 subtasks
 
 ### Included Subtasks
+
 - [x] T060 Create `crates/agileplus-cli/src/main.rs` with clap App, global flags, subcommand routing
 - [x] T061 Implement `commands/specify.rs`: guided discovery interview, spec generation, SQLite+git persistence (FR-001)
 - [x] T062 Implement `commands/research.rs`: pre-specify (codebase scan) and post-specify (feasibility) modes (FR-002)
@@ -399,18 +455,22 @@
 - [x] T065 Wire specify/research to StoragePort, VcsPort, ObservabilityPort via dependency injection
 
 ### Implementation Notes
+
 - CLI uses clap derive macros for arg parsing
 - Discovery interview: structured prompts to stdout, read from stdin
 - Spec written to git (kitty-specs/<feature>/spec.md) AND indexed in SQLite
 - Research modes determined by presence/absence of spec.md in feature dir
 
 ### Parallel Opportunities
+
 - T061, T062 independent after T060
 
 ### Dependencies
+
 - Depends on WP06 (SQLite), WP07 (git), WP10 (telemetry)
 
 ### Risks & Mitigations
+
 - Interactive CLI complexity: use `dialoguer` crate for structured prompts
 
 ---
@@ -423,6 +483,7 @@
 **Estimated**: ~500 lines, 7 subtasks
 
 ### Included Subtasks
+
 - [x] T066 Implement `commands/plan.rs`: WP generation with dependency ordering, governance contract creation (FR-003)
 - [x] T067 Implement WP file_scope detection: parse plan for file paths, build overlap graph
 - [x] T068 Implement dependency-aware scheduler: parallel WPs for non-overlapping, serial for overlapping (FR-038, FR-039)
@@ -432,18 +493,22 @@
 - [x] T072 Wire plan/implement to all ports (storage, VCS, agent, review, telemetry)
 
 ### Implementation Notes
+
 - Plan command reads spec.md + research.md, generates WPs with acceptance criteria traced to FRs
 - Implement command respects dependency ordering (WP.depends_on must all be `done`)
 - Agent dispatch: 1-3 subagents per worktree based on WP complexity (configurable)
 - Review loop: poll every 30s, max 5 cycles, fail after max with governance exception
 
 ### Parallel Opportunities
+
 - T066-T068 (plan) parallel with T069-T071 (implement) — different command files
 
 ### Dependencies
+
 - Depends on WP08 (agent dispatch), WP09 (review), WP11 (CLI scaffold)
 
 ### Risks & Mitigations
+
 - Agent dispatch reliability: implement retry with checkpoint (resume from last commit)
 
 ---
@@ -456,6 +521,7 @@
 **Estimated**: ~450 lines, 6 subtasks
 
 ### Included Subtasks
+
 - [x] T073 Implement `commands/validate.rs`: FR-to-evidence tracing, quality gate checks, validation report (FR-005)
 - [x] T074 Implement governance gate evaluator: check all contract rules, collect violations, block if failing (FR-018, FR-019)
 - [x] T075 Implement `commands/ship.rs`: merge to target branch, cleanup worktrees, archive feature, finalize audit (FR-006)
@@ -464,18 +530,22 @@
 - [x] T078 Wire validate/ship/retro to all ports
 
 ### Implementation Notes
+
 - Validate: iterate all FRs, for each find evidence records, check policy rules
 - Ship: git merge to target_branch, git worktree prune, update SQLite state, append final audit
 - Retrospective: query metrics table (time-per-WP, review cycles), generate markdown report
 - State enforcement: each command checks feature.state before proceeding
 
 ### Parallel Opportunities
+
 - T073-T074 (validate) parallel with T075 (ship) — different files
 
 ### Dependencies
+
 - Depends on WP12 (implement must exist for validate to have evidence)
 
 ### Risks & Mitigations
+
 - Merge conflicts at ship time: detect via git2, present structured diff, suggest resolution
 
 ---
@@ -489,6 +559,7 @@
 **Estimated**: ~450 lines, 7 subtasks
 
 ### Included Subtasks
+
 - [x] T079 Implement tonic gRPC server in `agileplus-core/crates/agileplus-grpc/src/server.rs` implementing `AgilePlusCoreService` from `core.proto`
 - [x] T080 Wire gRPC handlers to domain services (feature queries, governance checks, audit trail, command dispatch)
 - [x] T080b Implement gRPC proxy/routing: core server forwards agent/integration requests to agileplus-agents and agileplus-integrations services (or stubs them when those services are unavailable)
@@ -501,6 +572,7 @@
 - [x] T084d Implement MCP Elicitation primitive: discovery interview flows for specify/clarify commands (FR-049)
 
 ### Implementation Notes
+
 - gRPC server in core serves `core.proto` endpoints directly
 - For agents.proto and integrations.proto, core either proxies to those services or returns "service unavailable" stubs
 - MCP tools map 1:1 to `agileplus-proto/schemas/mcp-tools.json` definitions
@@ -508,12 +580,15 @@
 - Pact: Rust (core) is provider, Python (mcp) is consumer
 
 ### Parallel Opportunities
+
 - T079-T080b (Rust server) parallel with T081-T082 (Python client)
 
 ### Dependencies
+
 - Depends on WP00 (proto), WP13 (all CLI commands must exist for command dispatch)
 
 ### Risks & Mitigations
+
 - gRPC streaming complexity: start with unary calls, add streaming incrementally
 
 ---
@@ -526,6 +601,7 @@
 **Estimated**: ~400 lines, 6 subtasks
 
 ### Included Subtasks
+
 - [x] T085 Implement axum router in `crates/agileplus-api/src/` with routes for features, WPs, governance, audit
 - [x] T086 Implement API route handlers: delegate to domain services via ports
 - [x] T087 [P] Implement integration key auth middleware: validate API keys from credential store (FR-030)
@@ -534,18 +610,22 @@
 - [x] T090 Write API integration tests with mock HTTP client
 
 ### Implementation Notes
+
 - axum runs alongside gRPC in the same tokio runtime (shared binary)
 - API designed for Plane.so consumption: JSON responses match Plane.so work item format where possible
 - Credentials: use `keyring` crate, fallback to encrypted file with passphrase
 - Config: TOML with sections for core, credentials, telemetry, api
 
 ### Parallel Opportunities
+
 - T087, T088, T089 independent after T085-T086
 
 ### Dependencies
+
 - Depends on WP14 (gRPC server — shared binary architecture)
 
 ### Risks & Mitigations
+
 - Keychain access permissions on Linux: test with both gnome-keyring and kwallet
 
 ---
@@ -558,6 +638,7 @@
 **Estimated**: ~450 lines, 7 subtasks
 
 ### Included Subtasks
+
 - [x] T091 Create `.feature` files for core user stories: specify.feature, implement.feature, governance.feature, audit.feature
 - [x] T092 Implement cucumber-rs step definitions for Rust BDD tests in `tests/bdd/`
 - [x] T093 [P] Implement behave step definitions for Python BDD tests in `mcp/tests/bdd/`
@@ -567,18 +648,22 @@
 - [x] T097 Create test fixtures: sample specs, plans, WPs, evidence artifacts in `tests/fixtures/`
 
 ### Implementation Notes
+
 - BDD .feature files reference FR IDs in scenario names (e.g., "Scenario: FR-001 - Specify creates spec in git+SQLite")
 - cucumber-rs and behave share the same .feature files (copied or symlinked)
 - Pact: Python consumer writes expected interactions, Rust provider verifies
 - Integration tests use a temp git repo created in setUp, torn down in tearDown
 
 ### Parallel Opportunities
+
 - T092, T093, T094 all independent
 
 ### Dependencies
+
 - Depends on WP15 (all components must exist for full integration)
 
 ### Risks & Mitigations
+
 - Docker test environment complexity: use Docker Compose profiles for partial testing
 
 ---
@@ -592,6 +677,7 @@
 **Estimated**: ~500 lines, 8 subtasks
 
 ### Included Subtasks
+
 - [x] T098 Initialize `agileplus-integrations` repo with Cargo workspace (4 crates), proto git submodule, Makefile
 - [ ] T098b Implement `TriageAdapter` struct with `classify()` method in `crates/agileplus-triage/src/`
 - [x] T099 Implement `BacklogItem` CRUD: create, list_by_type, list_by_feature, promote_to_feature
@@ -602,11 +688,13 @@
 - [x] T103 Write unit tests for classification accuracy, backlog operations, router generation
 
 ### Implementation Notes
+
 - This is a separate repo (`agileplus-integrations`) with its own Cargo workspace (4 crates)
 - Communicates with `agileplus-core` via gRPC client for state reads
 - Implements triage portion of `integrations.proto` service
 
 ### Dependencies
+
 - Depends on WP00 (proto repo)
 
 ---
@@ -620,6 +708,7 @@
 **Estimated**: ~350 lines, 5 subtasks
 
 ### Included Subtasks
+
 - [x] T104 Implement `PlaneSyncAdapter` struct with Plane.so REST API client in `crates/agileplus-plane/src/` (FR-043)
 - [x] T105 Implement feature sync: gRPC request from core → Plane.so work item (create/update on state change)
 - [x] T106 Implement WP sync: gRPC request from core → Plane.so sub-item (status, assignee, PR link)
@@ -627,11 +716,13 @@
 - [x] T108 Write integration tests with mock Plane.so API
 
 ### Implementation Notes
+
 - Lives in `agileplus-integrations` repo, `crates/agileplus-plane/` crate
 - Receives sync requests via gRPC (integrations.proto SyncFeatureToPlane, SyncWPToPlane, DetectPlaneConflicts)
 - Credential management delegated to the integrations service config
 
 ### Dependencies
+
 - Depends on WP17 (integrations repo must exist)
 
 ---
@@ -645,6 +736,7 @@
 **Estimated**: ~350 lines, 5 subtasks
 
 ### Included Subtasks
+
 - [x] T109 Implement `GitHubSyncAdapter` struct with octocrab GitHub API client in `crates/agileplus-github/src/` (FR-044)
 - [x] T110 Implement bug sync: gRPC request from core → GitHub issue (title, body, labels, feature/WP refs)
 - [x] T111 Implement issue status sync: GitHub issue closed → notify core via gRPC
@@ -652,11 +744,13 @@
 - [x] T113 Write integration tests with mock GitHub API (wiremock)
 
 ### Implementation Notes
+
 - Lives in `agileplus-integrations` repo, `crates/agileplus-github/` crate
 - Receives sync requests via gRPC (integrations.proto SyncBugToGitHub, SyncIssueStatus, DetectGitHubConflicts)
 - Credential management delegated to the integrations service config
 
 ### Dependencies
+
 - Depends on WP17 (integrations repo must exist)
 
 ---
@@ -669,6 +763,7 @@
 **Estimated**: ~500 lines, 7 subtasks
 
 ### Included Subtasks
+
 - [x] T114 Define sub-command registry: enum of all ~25 sub-commands with metadata (category, description, required args)
 - [x] T115 Implement triage sub-commands: `triage:classify`, `triage:file-bug`, `triage:queue-idea` (FR-040, FR-041, FR-042)
 - [x] T116 Implement governance sub-commands: `governance:check-gates`, `governance:evaluate-policy`, `governance:verify-chain`
@@ -678,6 +773,7 @@
 - [x] T120 Implement audit logging for all sub-command invocations (FR-048) and write integration tests
 
 ### Dependencies
+
 - Depends on WP13 (CLI commands), WP17 (triage), WP18 (Plane sync), WP19 (GitHub sync)
 
 ---
@@ -690,6 +786,7 @@
 **Estimated**: ~400 lines, 6 subtasks
 
 ### Included Subtasks
+
 - [x] T121 Implement `commands/triage.rs`: accept input, classify, route to appropriate store (FR-040)
 - [x] T122 Implement `commands/queue.rs`: add to backlog, surface during next specify/plan cycle (FR-042)
 - [x] T123 Implement agent auto-triage hook: during implement, agents auto-file discovered bugs (FR-041)
@@ -699,6 +796,7 @@
 - [x] T127 Seed sub-command prompt files from hybridized reference commands (spec-kitty, bmad, gsd, openspec superset)
 
 ### Dependencies
+
 - Depends on WP17 (triage adapter), WP20 (sub-commands)
 
 ---
@@ -712,8 +810,9 @@
 **Estimated**: ~400 lines, 7 subtasks
 
 ### Included Subtasks
+
 - [ ] T128 Research and evaluate modern task runners (just, task, mise, moon, nx) — select best for Rust+Python polyglot, cross-platform, CI integration
-- [ ] T129 [P] Migrate agileplus-proto Makefile to chosen runner with all targets (lint, generate, breaking, rust-*, python-*, check, pre-commit)
+- [ ] T129 [P] Migrate agileplus-proto Makefile to chosen runner with all targets (lint, generate, breaking, rust-_, python-_, check, pre-commit)
 - [ ] T130 [P] Create agileplus-core task config with all quality gates (build, test, fmt, clippy, audit, deny, coverage, mutants, docs)
 - [ ] T131 [P] Create agileplus-mcp task config (install, test, fmt, lint, audit, docs, coverage)
 - [ ] T132 [P] Create agileplus-agents task config (mirroring core pattern)
@@ -721,18 +820,22 @@
 - [ ] T134 Update CI workflows and pre-commit hooks across all repos to use new runner
 
 ### Implementation Notes
+
 - Must work natively on macOS, Linux, and Windows (no WSL dependency)
 - Must support task dependencies, parallelism, and environment variables
 - Should integrate with pre-commit hooks and CI runners
 - Consider mise for unified toolchain management (Rust, Python, Node, buf versions)
 
 ### Parallel Opportunities
+
 - T129-T133 all independent after T128 decision
 
 ### Dependencies
+
 - Depends on WP00 (proto repo exists), WP01 (core repo exists)
 
 ### Risks & Mitigations
+
 - Runner not available on all CI images: use install step or container with runner pre-installed
 
 ---
@@ -788,164 +891,164 @@ Phase 0b (DX Tooling — after repo scaffolds):
 
 ## Subtask Index (Reference)
 
-| Subtask | Summary | WP | Priority | Parallel? |
-|---------|---------|-----|----------|-----------|
-| T000a | Init proto repo | WP00 | P0 | No |
-| T000b | common.proto shared types | WP00 | P0 | No |
-| T000c | core.proto service | WP00 | P0 | Yes |
-| T000d | agents.proto service | WP00 | P0 | Yes |
-| T000e | integrations.proto service | WP00 | P0 | Yes |
-| T000f | buf.yaml + buf.gen.yaml | WP00 | P0 | No |
-| T000f2 | buf breaking change baseline + CI check | WP00 | P0 | No |
-| T000g | Rust/Python codegen crates | WP00 | P0 | No |
-| T001 | Cargo workspace manifest (7 crates) | WP01 | P0 | No |
-| T002 | Scaffold agileplus-domain | WP01 | P0 | Yes |
-| T003 | Scaffold 6 adapter crates | WP01 | P0 | Yes |
-| T004 | Makefile | WP01 | P0 | Yes |
-| T005 | Docker Compose | WP01 | P0 | Yes |
-| T006 | Proto generation | WP01 | P0 | No |
-| T006b | MSRV CI check (latest stable Rust) | WP01 | P0 | No |
-| T006c | rustdoc CI generation + FR/WP traceability headers | WP01 | P0 | No |
-| T006d | CI lint: agileplus-domain zero-dep validation | WP01 | P0 | No |
-| T007 | Python pyproject.toml | WP02 | P0 | No |
-| T008 | FastMCP server entry | WP02 | P0 | No |
-| T009 | gRPC client stub | WP02 | P0 | Yes |
-| T010 | MCP tool stubs | WP02 | P0 | Yes |
-| T011 | Python test structure | WP02 | P0 | No |
-| T011b | sphinx/autodoc CI generation for Python API ref | WP02 | P0 | No |
-| T012 | Feature struct | WP03 | P0 | No |
-| T013 | FeatureState enum | WP03 | P0 | No |
-| T014 | State machine logic | WP03 | P0 | No |
-| T015 | WorkPackage struct | WP03 | P0 | Yes |
-| T016 | WP dependency logic | WP03 | P0 | Yes |
-| T017 | FSM unit tests | WP03 | P0 | No |
-| T017b | proptest property-based tests for FSM transitions | WP03 | P0 | No |
-| T017c | cargo-mutants on state_machine.rs (≥90% score) | WP03 | P0 | No |
-| T018 | GovernanceContract | WP04 | P0 | Yes |
-| T019 | AuditEntry struct | WP04 | P0 | Yes |
-| T020 | hash_entry() | WP04 | P0 | No |
-| T021 | verify_chain() | WP04 | P0 | No |
-| T022 | Evidence struct | WP04 | P0 | Yes |
-| T023 | PolicyRule struct | WP04 | P0 | Yes |
-| T024 | Governance unit tests | WP04 | P0 | No |
-| T024b | proptest property-based tests for hash chain + governance | WP04 | P0 | No |
-| T024c | cargo-mutants on audit.rs + governance.rs (≥90% score) | WP04 | P0 | No |
-| T024d | Import/extend Phenotype governance patterns (FR-028, FR-029) | WP04 | P0 | No |
-| T025 | StoragePort trait | WP05 | P0 | No |
-| T026 | VcsPort trait | WP05 | P0 | Yes |
-| T027 | AgentPort trait | WP05 | P0 | Yes |
-| T028 | ReviewPort trait | WP05 | P0 | Yes |
-| T029 | ObservabilityPort trait | WP05 | P0 | Yes |
-| T030 | Port module re-exports | WP05 | P0 | No |
-| T031 | SQLite migrations | WP06 | P1 | No |
-| T032 | SqliteStorageAdapter | WP06 | P1 | No |
-| T033 | Feature CRUD | WP06 | P1 | Yes |
-| T034 | WP CRUD | WP06 | P1 | Yes |
-| T035 | Audit CRUD | WP06 | P1 | Yes |
-| T036 | Evidence+policy+metric CRUD | WP06 | P1 | Yes |
-| T037 | rebuild_from_git | WP06 | P1 | No |
-| T038 | GitVcsAdapter | WP07 | P1 | No |
-| T039 | Worktree ops | WP07 | P1 | Yes |
-| T040 | Branch ops | WP07 | P1 | Yes |
-| T041 | Artifact ops | WP07 | P1 | Yes |
-| T042 | Git history scanning | WP07 | P1 | No |
-| T043 | Git integration tests | WP07 | P1 | No |
-| T044 | Init agents repo + workspace | WP08 | P1 | No |
-| T044b | AgentDispatchAdapter | WP08 | P1 | No |
-| T045 | Claude Code harness | WP08 | P1 | Yes |
-| T046 | Codex harness | WP08 | P1 | Yes |
-| T047 | Agent dispatch logic | WP08 | P1 | No |
-| T048 | PR creation + description | WP08 | P1 | No |
-| T049 | Review-fix loop | WP08 | P1 | No |
-| T049b | Agent gRPC service (agents.proto) | WP08 | P1 | No |
-| T050 | ReviewAdapter | WP09 | P1 | No |
-| T051 | Coderabbit integration | WP09 | P1 | Yes |
-| T052 | Manual review fallback | WP09 | P1 | Yes |
-| T053 | CI status checking | WP09 | P1 | Yes |
-| T054 | Review unit tests | WP09 | P1 | No |
-| T055 | TelemetryAdapter | WP10 | P1 | No |
-| T056 | OTel traces | WP10 | P1 | Yes |
-| T057 | OTel metrics | WP10 | P1 | Yes |
-| T058 | Structured logging | WP10 | P1 | Yes |
-| T059 | OTel config schema | WP10 | P1 | No |
-| T060 | CLI main + clap | WP11 | P1 | No |
-| T061 | specify command | WP11 | P1 | Yes |
-| T062 | research command | WP11 | P1 | Yes |
-| T063 | Refinement loop logic | WP11 | P1 | No |
-| T064 | Governance checks in planning | WP11 | P1 | No |
-| T065 | DI wiring for specify/research | WP11 | P1 | No |
-| T066 | plan command | WP12 | P1 | Yes |
-| T067 | File scope detection | WP12 | P1 | No |
-| T068 | Dependency-aware scheduler | WP12 | P1 | No |
-| T069 | implement command | WP12 | P1 | Yes |
-| T070 | PR description builder | WP12 | P1 | No |
-| T071 | Review-fix orchestrator | WP12 | P1 | No |
-| T072 | DI wiring for plan/implement | WP12 | P1 | No |
-| T073 | validate command | WP13 | P1 | Yes |
-| T074 | Governance gate evaluator | WP13 | P1 | No |
-| T075 | ship command | WP13 | P1 | Yes |
-| T076 | retrospective command | WP13 | P1 | No |
-| T077 | State machine enforcement | WP13 | P1 | No |
-| T078 | DI wiring for validate/ship/retro | WP13 | P1 | No |
-| T079 | tonic gRPC server | WP14 | P2 | Yes |
-| T080 | gRPC handler wiring | WP14 | P2 | No |
-| T080b | gRPC proxy to agents/integrations | WP14 | P2 | No |
-| T081 | Python gRPC client | WP14 | P2 | Yes |
-| T082 | MCP tool handlers | WP14 | P2 | No |
-| T083 | Agent event streaming | WP14 | P2 | No |
-| T084 | Pact contract tests | WP14 | P2 | No |
-| T084b | MCP Sampling primitive (server-initiated triage/governance) | WP14 | P2 | No |
-| T084c | MCP Roots primitive (workspace boundaries per feature/WP) | WP14 | P2 | No |
-| T084d | MCP Elicitation primitive (discovery interview flows) | WP14 | P2 | No |
-| T085 | axum router | WP15 | P2 | No |
-| T086 | API route handlers | WP15 | P2 | No |
-| T087 | Auth middleware | WP15 | P2 | Yes |
-| T088 | Credential management | WP15 | P2 | Yes |
-| T089 | Config schema + loader | WP15 | P2 | Yes |
-| T090 | API integration tests | WP15 | P2 | No |
-| T091 | BDD .feature files | WP16 | P2 | No |
-| T092 | Rust BDD step defs | WP16 | P2 | Yes |
-| T093 | Python BDD step defs | WP16 | P2 | Yes |
-| T094 | Pact contract fixtures | WP16 | P2 | Yes |
-| T095 | Docker Compose test env | WP16 | P2 | No |
-| T096 | Full workflow integration test | WP16 | P2 | No |
-| T097 | Test fixtures | WP16 | P2 | No |
-| T098 | Init integrations repo + workspace | WP17 | P2 | No |
-| T098b | TriageAdapter + classify | WP17 | P2 | No |
-| T099 | BacklogItem CRUD | WP17 | P2 | No |
-| T100 | Intent classifier | WP17 | P2 | No |
-| T101 | CLAUDE.md router gen | WP17 | P2 | No |
-| T102 | AGENTS.md gen | WP17 | P2 | No |
-| T102b | Integrations gRPC service (integrations.proto) | WP17 | P2 | No |
-| T103 | Triage unit tests | WP17 | P2 | No |
-| T104 | PlaneSyncAdapter | WP18 | P2 | No |
-| T105 | Feature → Plane.so sync | WP18 | P2 | Yes |
-| T106 | WP → Plane.so sync | WP18 | P2 | Yes |
-| T107 | Plane.so conflict detection | WP18 | P2 | No |
-| T108 | Plane.so mock tests | WP18 | P2 | No |
-| T109 | GitHubSyncAdapter | WP19 | P2 | No |
-| T110 | Bug → GitHub issue sync | WP19 | P2 | Yes |
-| T111 | Issue status sync | WP19 | P2 | Yes |
-| T112 | GitHub conflict detection | WP19 | P2 | No |
-| T113 | GitHub mock tests | WP19 | P2 | No |
-| T114 | Sub-command registry | WP20 | P2 | No |
-| T115 | Triage sub-commands | WP20 | P2 | Yes |
-| T116 | Governance sub-commands | WP20 | P2 | Yes |
-| T117 | Sync sub-commands | WP20 | P2 | Yes |
-| T118 | Git/devops sub-commands | WP20 | P2 | Yes |
-| T119 | Context/escape sub-commands | WP20 | P2 | Yes |
-| T120 | Sub-command audit logging | WP20 | P2 | No |
-| T121 | triage CLI command | WP21 | P2 | No |
-| T122 | queue CLI command | WP21 | P2 | No |
-| T123 | Agent auto-triage hook | WP21 | P2 | No |
-| T124 | Agent DevOps defaults | WP21 | P2 | No |
-| T125 | CLAUDE.md first-action classifier | WP21 | P2 | No |
-| T126 | Triage/queue DI wiring | WP21 | P2 | No |
-| T127 | Seed sub-command prompts | WP21 | P2 | No |
-| T128 | Research/evaluate task runners (just, task, mise, moon, nx) | WP22 | P1 | No |
-| T129 | Migrate agileplus-proto Makefile | WP22 | P1 | Yes |
-| T130 | Create agileplus-core task config | WP22 | P1 | Yes |
-| T131 | Create agileplus-mcp task config | WP22 | P1 | Yes |
-| T132 | Create agileplus-agents task config | WP22 | P1 | Yes |
-| T133 | Create agileplus-integrations task config | WP22 | P1 | Yes |
-| T134 | Update CI workflows + pre-commit for new runner | WP22 | P1 | No |
+| Subtask | Summary                                                      | WP   | Priority | Parallel? |
+| ------- | ------------------------------------------------------------ | ---- | -------- | --------- |
+| T000a   | Init proto repo                                              | WP00 | P0       | No        |
+| T000b   | common.proto shared types                                    | WP00 | P0       | No        |
+| T000c   | core.proto service                                           | WP00 | P0       | Yes       |
+| T000d   | agents.proto service                                         | WP00 | P0       | Yes       |
+| T000e   | integrations.proto service                                   | WP00 | P0       | Yes       |
+| T000f   | buf.yaml + buf.gen.yaml                                      | WP00 | P0       | No        |
+| T000f2  | buf breaking change baseline + CI check                      | WP00 | P0       | No        |
+| T000g   | Rust/Python codegen crates                                   | WP00 | P0       | No        |
+| T001    | Cargo workspace manifest (7 crates)                          | WP01 | P0       | No        |
+| T002    | Scaffold agileplus-domain                                    | WP01 | P0       | Yes       |
+| T003    | Scaffold 6 adapter crates                                    | WP01 | P0       | Yes       |
+| T004    | Makefile                                                     | WP01 | P0       | Yes       |
+| T005    | Docker Compose                                               | WP01 | P0       | Yes       |
+| T006    | Proto generation                                             | WP01 | P0       | No        |
+| T006b   | MSRV CI check (latest stable Rust)                           | WP01 | P0       | No        |
+| T006c   | rustdoc CI generation + FR/WP traceability headers           | WP01 | P0       | No        |
+| T006d   | CI lint: agileplus-domain zero-dep validation                | WP01 | P0       | No        |
+| T007    | Python pyproject.toml                                        | WP02 | P0       | No        |
+| T008    | FastMCP server entry                                         | WP02 | P0       | No        |
+| T009    | gRPC client stub                                             | WP02 | P0       | Yes       |
+| T010    | MCP tool stubs                                               | WP02 | P0       | Yes       |
+| T011    | Python test structure                                        | WP02 | P0       | No        |
+| T011b   | sphinx/autodoc CI generation for Python API ref              | WP02 | P0       | No        |
+| T012    | Feature struct                                               | WP03 | P0       | No        |
+| T013    | FeatureState enum                                            | WP03 | P0       | No        |
+| T014    | State machine logic                                          | WP03 | P0       | No        |
+| T015    | WorkPackage struct                                           | WP03 | P0       | Yes       |
+| T016    | WP dependency logic                                          | WP03 | P0       | Yes       |
+| T017    | FSM unit tests                                               | WP03 | P0       | No        |
+| T017b   | proptest property-based tests for FSM transitions            | WP03 | P0       | No        |
+| T017c   | cargo-mutants on state_machine.rs (≥90% score)               | WP03 | P0       | No        |
+| T018    | GovernanceContract                                           | WP04 | P0       | Yes       |
+| T019    | AuditEntry struct                                            | WP04 | P0       | Yes       |
+| T020    | hash_entry()                                                 | WP04 | P0       | No        |
+| T021    | verify_chain()                                               | WP04 | P0       | No        |
+| T022    | Evidence struct                                              | WP04 | P0       | Yes       |
+| T023    | PolicyRule struct                                            | WP04 | P0       | Yes       |
+| T024    | Governance unit tests                                        | WP04 | P0       | No        |
+| T024b   | proptest property-based tests for hash chain + governance    | WP04 | P0       | No        |
+| T024c   | cargo-mutants on audit.rs + governance.rs (≥90% score)       | WP04 | P0       | No        |
+| T024d   | Import/extend Phenotype governance patterns (FR-028, FR-029) | WP04 | P0       | No        |
+| T025    | StoragePort trait                                            | WP05 | P0       | No        |
+| T026    | VcsPort trait                                                | WP05 | P0       | Yes       |
+| T027    | AgentPort trait                                              | WP05 | P0       | Yes       |
+| T028    | ReviewPort trait                                             | WP05 | P0       | Yes       |
+| T029    | ObservabilityPort trait                                      | WP05 | P0       | Yes       |
+| T030    | Port module re-exports                                       | WP05 | P0       | No        |
+| T031    | SQLite migrations                                            | WP06 | P1       | No        |
+| T032    | SqliteStorageAdapter                                         | WP06 | P1       | No        |
+| T033    | Feature CRUD                                                 | WP06 | P1       | Yes       |
+| T034    | WP CRUD                                                      | WP06 | P1       | Yes       |
+| T035    | Audit CRUD                                                   | WP06 | P1       | Yes       |
+| T036    | Evidence+policy+metric CRUD                                  | WP06 | P1       | Yes       |
+| T037    | rebuild_from_git                                             | WP06 | P1       | No        |
+| T038    | GitVcsAdapter                                                | WP07 | P1       | No        |
+| T039    | Worktree ops                                                 | WP07 | P1       | Yes       |
+| T040    | Branch ops                                                   | WP07 | P1       | Yes       |
+| T041    | Artifact ops                                                 | WP07 | P1       | Yes       |
+| T042    | Git history scanning                                         | WP07 | P1       | No        |
+| T043    | Git integration tests                                        | WP07 | P1       | No        |
+| T044    | Init agents repo + workspace                                 | WP08 | P1       | No        |
+| T044b   | AgentDispatchAdapter                                         | WP08 | P1       | No        |
+| T045    | Claude Code harness                                          | WP08 | P1       | Yes       |
+| T046    | Codex harness                                                | WP08 | P1       | Yes       |
+| T047    | Agent dispatch logic                                         | WP08 | P1       | No        |
+| T048    | PR creation + description                                    | WP08 | P1       | No        |
+| T049    | Review-fix loop                                              | WP08 | P1       | No        |
+| T049b   | Agent gRPC service (agents.proto)                            | WP08 | P1       | No        |
+| T050    | ReviewAdapter                                                | WP09 | P1       | No        |
+| T051    | Coderabbit integration                                       | WP09 | P1       | Yes       |
+| T052    | Manual review fallback                                       | WP09 | P1       | Yes       |
+| T053    | CI status checking                                           | WP09 | P1       | Yes       |
+| T054    | Review unit tests                                            | WP09 | P1       | No        |
+| T055    | TelemetryAdapter                                             | WP10 | P1       | No        |
+| T056    | OTel traces                                                  | WP10 | P1       | Yes       |
+| T057    | OTel metrics                                                 | WP10 | P1       | Yes       |
+| T058    | Structured logging                                           | WP10 | P1       | Yes       |
+| T059    | OTel config schema                                           | WP10 | P1       | No        |
+| T060    | CLI main + clap                                              | WP11 | P1       | No        |
+| T061    | specify command                                              | WP11 | P1       | Yes       |
+| T062    | research command                                             | WP11 | P1       | Yes       |
+| T063    | Refinement loop logic                                        | WP11 | P1       | No        |
+| T064    | Governance checks in planning                                | WP11 | P1       | No        |
+| T065    | DI wiring for specify/research                               | WP11 | P1       | No        |
+| T066    | plan command                                                 | WP12 | P1       | Yes       |
+| T067    | File scope detection                                         | WP12 | P1       | No        |
+| T068    | Dependency-aware scheduler                                   | WP12 | P1       | No        |
+| T069    | implement command                                            | WP12 | P1       | Yes       |
+| T070    | PR description builder                                       | WP12 | P1       | No        |
+| T071    | Review-fix orchestrator                                      | WP12 | P1       | No        |
+| T072    | DI wiring for plan/implement                                 | WP12 | P1       | No        |
+| T073    | validate command                                             | WP13 | P1       | Yes       |
+| T074    | Governance gate evaluator                                    | WP13 | P1       | No        |
+| T075    | ship command                                                 | WP13 | P1       | Yes       |
+| T076    | retrospective command                                        | WP13 | P1       | No        |
+| T077    | State machine enforcement                                    | WP13 | P1       | No        |
+| T078    | DI wiring for validate/ship/retro                            | WP13 | P1       | No        |
+| T079    | tonic gRPC server                                            | WP14 | P2       | Yes       |
+| T080    | gRPC handler wiring                                          | WP14 | P2       | No        |
+| T080b   | gRPC proxy to agents/integrations                            | WP14 | P2       | No        |
+| T081    | Python gRPC client                                           | WP14 | P2       | Yes       |
+| T082    | MCP tool handlers                                            | WP14 | P2       | No        |
+| T083    | Agent event streaming                                        | WP14 | P2       | No        |
+| T084    | Pact contract tests                                          | WP14 | P2       | No        |
+| T084b   | MCP Sampling primitive (server-initiated triage/governance)  | WP14 | P2       | No        |
+| T084c   | MCP Roots primitive (workspace boundaries per feature/WP)    | WP14 | P2       | No        |
+| T084d   | MCP Elicitation primitive (discovery interview flows)        | WP14 | P2       | No        |
+| T085    | axum router                                                  | WP15 | P2       | No        |
+| T086    | API route handlers                                           | WP15 | P2       | No        |
+| T087    | Auth middleware                                              | WP15 | P2       | Yes       |
+| T088    | Credential management                                        | WP15 | P2       | Yes       |
+| T089    | Config schema + loader                                       | WP15 | P2       | Yes       |
+| T090    | API integration tests                                        | WP15 | P2       | No        |
+| T091    | BDD .feature files                                           | WP16 | P2       | No        |
+| T092    | Rust BDD step defs                                           | WP16 | P2       | Yes       |
+| T093    | Python BDD step defs                                         | WP16 | P2       | Yes       |
+| T094    | Pact contract fixtures                                       | WP16 | P2       | Yes       |
+| T095    | Docker Compose test env                                      | WP16 | P2       | No        |
+| T096    | Full workflow integration test                               | WP16 | P2       | No        |
+| T097    | Test fixtures                                                | WP16 | P2       | No        |
+| T098    | Init integrations repo + workspace                           | WP17 | P2       | No        |
+| T098b   | TriageAdapter + classify                                     | WP17 | P2       | No        |
+| T099    | BacklogItem CRUD                                             | WP17 | P2       | No        |
+| T100    | Intent classifier                                            | WP17 | P2       | No        |
+| T101    | CLAUDE.md router gen                                         | WP17 | P2       | No        |
+| T102    | AGENTS.md gen                                                | WP17 | P2       | No        |
+| T102b   | Integrations gRPC service (integrations.proto)               | WP17 | P2       | No        |
+| T103    | Triage unit tests                                            | WP17 | P2       | No        |
+| T104    | PlaneSyncAdapter                                             | WP18 | P2       | No        |
+| T105    | Feature → Plane.so sync                                      | WP18 | P2       | Yes       |
+| T106    | WP → Plane.so sync                                           | WP18 | P2       | Yes       |
+| T107    | Plane.so conflict detection                                  | WP18 | P2       | No        |
+| T108    | Plane.so mock tests                                          | WP18 | P2       | No        |
+| T109    | GitHubSyncAdapter                                            | WP19 | P2       | No        |
+| T110    | Bug → GitHub issue sync                                      | WP19 | P2       | Yes       |
+| T111    | Issue status sync                                            | WP19 | P2       | Yes       |
+| T112    | GitHub conflict detection                                    | WP19 | P2       | No        |
+| T113    | GitHub mock tests                                            | WP19 | P2       | No        |
+| T114    | Sub-command registry                                         | WP20 | P2       | No        |
+| T115    | Triage sub-commands                                          | WP20 | P2       | Yes       |
+| T116    | Governance sub-commands                                      | WP20 | P2       | Yes       |
+| T117    | Sync sub-commands                                            | WP20 | P2       | Yes       |
+| T118    | Git/devops sub-commands                                      | WP20 | P2       | Yes       |
+| T119    | Context/escape sub-commands                                  | WP20 | P2       | Yes       |
+| T120    | Sub-command audit logging                                    | WP20 | P2       | No        |
+| T121    | triage CLI command                                           | WP21 | P2       | No        |
+| T122    | queue CLI command                                            | WP21 | P2       | No        |
+| T123    | Agent auto-triage hook                                       | WP21 | P2       | No        |
+| T124    | Agent DevOps defaults                                        | WP21 | P2       | No        |
+| T125    | CLAUDE.md first-action classifier                            | WP21 | P2       | No        |
+| T126    | Triage/queue DI wiring                                       | WP21 | P2       | No        |
+| T127    | Seed sub-command prompts                                     | WP21 | P2       | No        |
+| T128    | Research/evaluate task runners (just, task, mise, moon, nx)  | WP22 | P1       | No        |
+| T129    | Migrate agileplus-proto Makefile                             | WP22 | P1       | Yes       |
+| T130    | Create agileplus-core task config                            | WP22 | P1       | Yes       |
+| T131    | Create agileplus-mcp task config                             | WP22 | P1       | Yes       |
+| T132    | Create agileplus-agents task config                          | WP22 | P1       | Yes       |
+| T133    | Create agileplus-integrations task config                    | WP22 | P1       | Yes       |
+| T134    | Update CI workflows + pre-commit for new runner              | WP22 | P1       | No        |

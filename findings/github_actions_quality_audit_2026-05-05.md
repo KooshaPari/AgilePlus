@@ -35,6 +35,7 @@ This single action appears pinned to `@main` in 128+ repos. `trufflehog` does pu
 6 AgilePlus worktrees pin `actions/checkout` to tag `@4` (not SHA-pinned). Also a floating tag risk.
 
 **Repos:**
+
 - `AgilePlus-wtrees/agile-main/`, `AgilePlus-wtrees/bdd-features/`, `AgilePlus-wtrees/cargo-deny-fix-tonic-2026-05-04/`, `AgilePlus-wtrees/security-gate-normalize/`, `AgilePlus-wtrees/task-77-contents-read/`
 
 ### Pattern: `<REDACTED>/phenotypeActions/actions/*@main`
@@ -42,6 +43,7 @@ This single action appears pinned to `@main` in 128+ repos. `trufflehog` does pu
 4 `agentapi-plusplus` worktrees and 1 `cliproxyapi-plusplus` worktree reference a private org action at `@main`.
 
 **Repos:**
+
 - `agentapi-plusplus/` (canonical + worktrees): `<REDACTED>/phenotypeActions/actions/policy-gate@main`
 - `cliproxyapi-plusplus/` (canonical + worktrees): `<REDACTED>/phenotypeActions/actions/lint-test@main`
 - `portage/` (canonical + worktrees): `<REDACTED>/phenotypeActions/actions/lint-test@main`
@@ -105,10 +107,10 @@ GitHub Actions runs with a default write-all scope when no `permissions:` is dec
 
 ```yaml
 permissions:
-  contents: read
-  pull-requests: write
-  issues: read
-  statuses: read
+    contents: read
+    pull-requests: write
+    issues: read
+    statuses: read
 ```
 
 Extend to `contents: write` only for workflows that push commits or releases.
@@ -138,12 +140,12 @@ This causes unnecessary network I/O and slower CI runs on every push. Common in 
 
 ## Summary Table
 
-| Audit | Issue | Count | % of Total |
-|-------|-------|-------|------------|
-| 1 | Non-SHA-pinned actions | 151 instances | 2.2% of uses |
-| 2 | Missing `timeout-minutes` | 6,401 | 91.3% |
-| 3 | Missing `permissions:` block | 3,560 | 50.8% |
-| 4 | Install without cache | 644 | 9.2% |
+| Audit | Issue                        | Count         | % of Total   |
+| ----- | ---------------------------- | ------------- | ------------ |
+| 1     | Non-SHA-pinned actions       | 151 instances | 2.2% of uses |
+| 2     | Missing `timeout-minutes`    | 6,401         | 91.3%        |
+| 3     | Missing `permissions:` block | 3,560         | 50.8%        |
+| 4     | Install without cache        | 644           | 9.2%         |
 
 ---
 
@@ -151,14 +153,14 @@ This causes unnecessary network I/O and slower CI runs on every push. Common in 
 
 1. **[P0 — Security]** Pin `trufflehog/actions/setup@main` to SHA in all 128+ affected files. Batch-fix with:
 
-   ```bash
-   # Dry-run first
-   find . -path "*/.github/workflows/*.yml" \
-     -exec grep -l "trufflehog/actions/setup@main" {} \; \
-     -exec sed -i '' 's|trufflehog/actions/setup@main|TRUFFLEHOG_SHA_PLACEHOLDER|g' {} \;
-   ```
+    ```bash
+    # Dry-run first
+    find . -path "*/.github/workflows/*.yml" \
+      -exec grep -l "trufflehog/actions/setup@main" {} \; \
+      -exec sed -i '' 's|trufflehog/actions/setup@main|TRUFFLEHOG_SHA_PLACEHOLDER|g' {} \;
+    ```
 
-   Then replace `TRUFFLEHOG_SHA_PLACEHOLDER` with the pinned SHA.
+    Then replace `TRUFFLEHOG_SHA_PLACEHOLDER` with the pinned SHA.
 
 2. **[P0 — Org Baseline]** Add `timeout-minutes` to all 37 root org-level workflows in `.github/workflows/`.
 

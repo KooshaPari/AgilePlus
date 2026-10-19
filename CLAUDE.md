@@ -35,6 +35,7 @@ All files must be UTF-8. No BOM.
 ## CI/CD Security (2026-05-05 Audit)
 
 All GitHub Actions are now pinned to full commit SHAs:
+
 - `returntocorp/semgrep-action@713efdd345f3035192eaa63f56867b88e63e4e5d` (v1) in `sast-quick.yml`
 - `pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd` (v3.0.1) in `security-guard.yml`
 - `trufflesecurity/trufflehog@3fc0c2aa6648d54242e4af6fbfde0701796e4fb0` (already pinned) in `sast-quick.yml`
@@ -51,24 +52,29 @@ How to apply: prefer concurrent agents for discovery/ranking across repos, while
 ## Repo Audit Findings (2026-05-05)
 
 ### Workspace Structure
+
 - `agileplus/` and `AgilePlus/` are the **same directory** (case-insensitive macOS filesystem, same inode). The canonical remote is `<REDACTED>/AgilePlus`.
 - The bare-repo pattern means direct commits to `main` are blocked; all changes flow through PRs.
 - Worktrees: `AgilePlus-wtrees/<topic>/` (note: `AgilePlus-wtr/` exists with inconsistent naming — should be consolidated).
 
 ### Python Projects Across Phenotype Repos (~15 identified)
+
 - Active Python repos: `pheno/`, `phenoAI/`, `PhenoAgent/`, `phenoData/`, `phenoDesign/`, `phenoUtils/`, `phenoXdd/`, `phenoShared/`, `cheap-llm-mcp/`, `agileplus-mcp/`, `dispatch-mcp/`, `phenotype-shared/`, `agentops-policy-federation/`
 - Gaps: several missing `pytest` in CI; some missing `uv.lock` (see tasks #228, #229)
 
 ### Rust Workspaces Across Phenotype Repos (~17+ identified)
+
 - Key multi-crate workspaces: `FocalPoint/`, `PhenoMCP/`, `PhenoProject/`, `PolicyStack/`, `thegent/`, `Parpoura/`
 - Scaffolding pattern: many repos have scaffolded `crates/<name>/` and `libs/<name>/` dirs excluded from workspace until populated
 
 ### CLAUDE.md Coverage
+
 - ~100 repos have CLAUDE.md
 - 7 active repos **missing** CLAUDE.md: `agileplus-agents` (Rust, Cargo.toml), `agileplus-mcp` (Python, pyproject.toml), `bdd-integration` (Rust, Cargo.toml), `dispatch-mcp` (Python, pyproject.toml), `pheno-cli` (Go, go.mod), `phenoShared/` (Python, likely fork of `PhenoShared/`), `phenotype-shared/` (Python, likely fork)
 - Both `phenoShared/` and `PhenoShared/` exist — verify which is canonical before adding CLAUDE.md
 
 ### Stale/Orphaned Directories
+
 - `.archive/` — flagged for deletion (task #233)
 - `Tracera-corrupt-20260501201930` — recovery artifact, candidate for removal
 - `AgilePlus-wtr/` — inconsistent worktree naming

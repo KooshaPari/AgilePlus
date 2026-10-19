@@ -2,22 +2,22 @@
 
 **Date:** 2026-09-03  
 **Scope:** All viable desktop client stacks compared for AgilePlus  
-**Requirements:** tray support, local SQLite access, cross-platform (macOS/Windows/Linux), offline-first, fast startup  
+**Requirements:** tray support, local SQLite access, cross-platform (macOS/Windows/Linux), offline-first, fast startup
 
 ---
 
 ## Requirement Matrix
 
-| Requirement | Why it matters for AgilePlus |
-|-------------|------------------------------|
+| Requirement                     | Why it matters for AgilePlus                            |
+| ------------------------------- | ------------------------------------------------------- |
 | Tray (system notification area) | User explicitly asked: "I want to use the app and tray" |
-| Local SQLite access | Must read/write `.agileplus/agileplus.db` |
-| Cross-platform | macOS (primary), Windows, Linux |
-| Offline-first | Core architecture principle |
-| Fast startup | CLI-first culture, no 5-second launcher |
-| Resource efficient | Local dev box has limits |
-| Reasonable binary size | Distribution matters |
-| Existing Rust integration | Can embed rusqlite via FFI |
+| Local SQLite access             | Must read/write `.agileplus/agileplus.db`               |
+| Cross-platform                  | macOS (primary), Windows, Linux                         |
+| Offline-first                   | Core architecture principle                             |
+| Fast startup                    | CLI-first culture, no 5-second launcher                 |
+| Resource efficient              | Local dev box has limits                                |
+| Reasonable binary size          | Distribution matters                                    |
+| Existing Rust integration       | Can embed rusqlite via FFI                              |
 
 ---
 
@@ -27,22 +27,23 @@
 
 **Architecture:** Rust core, OS-native WebView (WKWebView on macOS, WebView2 on Windows, WebKitGTK on Linux)
 
-| Attribute | Value | Notes |
-|-----------|-------|-------|
-| **Tray support** | ✅ Yes | `tauri-plugin-tray` |
-| **SQLite access** | ✅ Excellent | Pure Rust via `rusqlite`, no IPC |
-| **Cross-platform** | ✅ All 3 | Native WebView per OS |
-| **Offline-first** | ✅ Yes | Local assets, no network required |
-| **Startup** | ⚡ <500ms | Native WebView is instant |
-| **Binary size** | ✅ ~5-10MB | WebView is OS-provided, not bundled |
-| **Memory** | ✅ ~30-80MB | Much less than Electron |
-| **Security** | ✅ Strong | Rust + Tauri's allowlist model |
-| **Maturity** | ✅ Stable | 1.0 released, used by Linear, Vercel, etc. |
-| **Rust core** | ✅ Native | No FFI needed |
-| **UI language** | TS/JS/HTML/CSS or any web | React, Svelte, Vue, etc. |
-| **License** | MIT/Apache-2.0 | Permissive |
+| Attribute          | Value                     | Notes                                      |
+| ------------------ | ------------------------- | ------------------------------------------ |
+| **Tray support**   | ✅ Yes                    | `tauri-plugin-tray`                        |
+| **SQLite access**  | ✅ Excellent              | Pure Rust via `rusqlite`, no IPC           |
+| **Cross-platform** | ✅ All 3                  | Native WebView per OS                      |
+| **Offline-first**  | ✅ Yes                    | Local assets, no network required          |
+| **Startup**        | ⚡ <500ms                 | Native WebView is instant                  |
+| **Binary size**    | ✅ ~5-10MB                | WebView is OS-provided, not bundled        |
+| **Memory**         | ✅ ~30-80MB               | Much less than Electron                    |
+| **Security**       | ✅ Strong                 | Rust + Tauri's allowlist model             |
+| **Maturity**       | ✅ Stable                 | 1.0 released, used by Linear, Vercel, etc. |
+| **Rust core**      | ✅ Native                 | No FFI needed                              |
+| **UI language**    | TS/JS/HTML/CSS or any web | React, Svelte, Vue, etc.                   |
+| **License**        | MIT/Apache-2.0            | Permissive                                 |
 
 **Strengths:**
+
 - Smallest binary size of all web-based stacks
 - Lowest memory footprint
 - Native SQLite integration (no IPC overhead)
@@ -50,6 +51,7 @@
 - Used by Linear, Vercel, Cloudflare, 1Password
 
 **Weaknesses:**
+
 - WebView API quirks per OS (less unified than Electron)
 - Smaller ecosystem than Electron
 - Some advanced features require OS-specific code
@@ -58,27 +60,29 @@
 
 **Architecture:** Electron shell + Bun runtime
 
-| Attribute | Value | Notes |
-|-----------|-------|-------|
-| **Tray support** | ✅ Yes | Electron Tray API |
-| **SQLite access** | ⚠️ Via Node binding | `better-sqlite3` or `bun:sqlite` |
-| **Cross-platform** | ✅ All 3 | Electron |
-| **Offline-first** | ✅ Yes | Bundled assets |
-| **Startup** | ⚠️ 1-3s | Electron cold start |
-| **Binary size** | ❌ 80-150MB | Full Chromium bundled |
-| **Memory** | ❌ 100-300MB | Chromium overhead |
-| **Security** | ⚠️ Electron sandbox | Needs explicit config |
-| **Maturity** | ⚠️ Early | Young project, breaking changes |
-| **Rust core** | ⚠️ FFI only | Sidecar process or native module |
-| **UI language** | TS/JS/HTML | Bun + Node ecosystem |
-| **License** | MIT | Permissive |
+| Attribute          | Value               | Notes                            |
+| ------------------ | ------------------- | -------------------------------- |
+| **Tray support**   | ✅ Yes              | Electron Tray API                |
+| **SQLite access**  | ⚠️ Via Node binding | `better-sqlite3` or `bun:sqlite` |
+| **Cross-platform** | ✅ All 3            | Electron                         |
+| **Offline-first**  | ✅ Yes              | Bundled assets                   |
+| **Startup**        | ⚠️ 1-3s             | Electron cold start              |
+| **Binary size**    | ❌ 80-150MB         | Full Chromium bundled            |
+| **Memory**         | ❌ 100-300MB        | Chromium overhead                |
+| **Security**       | ⚠️ Electron sandbox | Needs explicit config            |
+| **Maturity**       | ⚠️ Early            | Young project, breaking changes  |
+| **Rust core**      | ⚠️ FFI only         | Sidecar process or native module |
+| **UI language**    | TS/JS/HTML          | Bun + Node ecosystem             |
+| **License**        | MIT                 | Permissive                       |
 
 **Strengths:**
+
 - Bun runtime is fast
 - Already partially implemented (commit 5062716a)
 - TS/JS ecosystem
 
 **Weaknesses:**
+
 - Large binary (80-150MB)
 - High memory (100-300MB)
 - Single-maintainer risk (very young project)
@@ -87,38 +91,40 @@
 
 ### 3. Electron (vanilla)
 
-| Attribute | Value | Notes |
-|-----------|-------|-------|
-| **Tray** | ✅ | Native |
-| **SQLite** | ⚠️ Node binding | |
-| **Binary** | ❌ 80-150MB | |
-| **Memory** | ❌ 100-300MB | |
-| **Maturity** | ✅✅ Stable | Used by VSCode, Slack, Discord |
-| **Rust FFI** | ⚠️ Sidecar | |
-| **License** | MIT | |
+| Attribute    | Value           | Notes                          |
+| ------------ | --------------- | ------------------------------ |
+| **Tray**     | ✅              | Native                         |
+| **SQLite**   | ⚠️ Node binding |                                |
+| **Binary**   | ❌ 80-150MB     |                                |
+| **Memory**   | ❌ 100-300MB    |                                |
+| **Maturity** | ✅✅ Stable     | Used by VSCode, Slack, Discord |
+| **Rust FFI** | ⚠️ Sidecar      |                                |
+| **License**  | MIT             |                                |
 
 **Verdict:** Same downsides as Electrobun, more mature. But still large.
 
 ### 4. Native Swift (macOS) / WinUI (Windows) / GTK (Linux)
 
-| Attribute | Value | Notes |
-|-----------|-------|-------|
-| **Tray** | ✅ | OS-native |
-| **SQLite** | ✅ | System SQLite on macOS, libsqlite3 elsewhere |
-| **Binary** | ✅ 5-20MB | Native compilation |
-| **Memory** | ✅ 20-50MB | Lowest possible |
-| **Startup** | ⚡ <200ms | |
-| **Cross-platform** | ❌ Three codebases | Swift + C#/.NET + GTK/Vala |
-| **Maturity** | ✅✅ Stable | |
-| **Rust core** | ❌ FFI only | Would call into Rust binary |
-| **License** | Platform-dependent | |
+| Attribute          | Value              | Notes                                        |
+| ------------------ | ------------------ | -------------------------------------------- |
+| **Tray**           | ✅                 | OS-native                                    |
+| **SQLite**         | ✅                 | System SQLite on macOS, libsqlite3 elsewhere |
+| **Binary**         | ✅ 5-20MB          | Native compilation                           |
+| **Memory**         | ✅ 20-50MB         | Lowest possible                              |
+| **Startup**        | ⚡ <200ms          |                                              |
+| **Cross-platform** | ❌ Three codebases | Swift + C#/.NET + GTK/Vala                   |
+| **Maturity**       | ✅✅ Stable        |                                              |
+| **Rust core**      | ❌ FFI only        | Would call into Rust binary                  |
+| **License**        | Platform-dependent |                                              |
 
 **Strengths:**
+
 - Best possible performance and UX on each platform
 - Smallest binaries
 - OS-native look and feel
 
 **Weaknesses:**
+
 - Three separate codebases (Swift, C#, GTK)
 - Highest maintenance cost
 - Slowest to ship features across all platforms
@@ -126,24 +132,26 @@
 
 ### 5. Qt (C++/QML)
 
-| Attribute | Value | Notes |
-|-----------|-------|-------|
-| **Tray** | ✅ | QSystemTrayIcon |
-| **SQLite** | ✅ | QtSql with SQLite driver |
-| **Binary** | ✅ 20-50MB | Static linking possible |
-| **Memory** | ✅ 40-100MB | |
-| **Startup** | ⚡ ~500ms | |
-| **Cross-platform** | ✅ All 3 | Same codebase |
-| **Maturity** | ✅✅ Stable | Used by KDE, VLC, etc. |
-| **Rust core** | ⚠️ FFI | C-ABI only |
-| **License** | LGPL/GPL | Restrictive |
+| Attribute          | Value       | Notes                    |
+| ------------------ | ----------- | ------------------------ |
+| **Tray**           | ✅          | QSystemTrayIcon          |
+| **SQLite**         | ✅          | QtSql with SQLite driver |
+| **Binary**         | ✅ 20-50MB  | Static linking possible  |
+| **Memory**         | ✅ 40-100MB |                          |
+| **Startup**        | ⚡ ~500ms   |                          |
+| **Cross-platform** | ✅ All 3    | Same codebase            |
+| **Maturity**       | ✅✅ Stable | Used by KDE, VLC, etc.   |
+| **Rust core**      | ⚠️ FFI      | C-ABI only               |
+| **License**        | LGPL/GPL    | Restrictive              |
 
 **Strengths:**
+
 - Mature, stable, cross-platform
 - Good performance
 - Native widgets available
 
 **Weaknesses:**
+
 - LGPL license concern
 - QML is not as mainstream as web
 - C++ build complexity
@@ -151,35 +159,35 @@
 
 ### 6. Wails (Go + WebView)
 
-| Attribute | Value | Notes |
-|-----------|-------|-------|
-| **Tray** | ⚠️ Limited | Plugin-based |
-| **SQLite** | ⚠️ Via Go binding | |
-| **Binary** | ✅ 5-10MB | |
-| **Memory** | ✅ 40-80MB | |
-| **Startup** | ⚡ ~500ms | |
-| **Cross-platform** | ✅ All 3 | |
-| **Maturity** | ⚠️ Mid | Newer than Tauri |
-| **Rust core** | ❌ FFI only | Go would call Rust via C-ABI |
-| **UI language** | TS/JS | |
-| **License** | MIT | |
+| Attribute          | Value             | Notes                        |
+| ------------------ | ----------------- | ---------------------------- |
+| **Tray**           | ⚠️ Limited        | Plugin-based                 |
+| **SQLite**         | ⚠️ Via Go binding |                              |
+| **Binary**         | ✅ 5-10MB         |                              |
+| **Memory**         | ✅ 40-80MB        |                              |
+| **Startup**        | ⚡ ~500ms         |                              |
+| **Cross-platform** | ✅ All 3          |                              |
+| **Maturity**       | ⚠️ Mid            | Newer than Tauri             |
+| **Rust core**      | ❌ FFI only       | Go would call Rust via C-ABI |
+| **UI language**    | TS/JS             |                              |
+| **License**        | MIT               |                              |
 
 **Verdict:** Similar to Tauri but Go instead of Rust. Worse fit because AgilePlus core is Rust.
 
 ### 7. CEF (Chromium Embedded Framework)
 
-| Attribute | Value | Notes |
-|-----------|-------|-------|
-| **Tray** | ⚠️ Manual | Not built-in |
-| **SQLite** | ✅ Via native binding | |
-| **Binary** | ❌ 80-150MB | |
-| **Memory** | ❌ 100-300MB | |
-| **Startup** | ❌ 1-3s | |
-| **Cross-platform** | ✅ All 3 | |
-| **Maturity** | ✅✅ Stable | Used by Spotify, Discord |
-| **Rust core** | ⚠️ C++ binding | |
-| **UI language** | TS/JS | |
-| **License** | BSD | Permissive |
+| Attribute          | Value                 | Notes                    |
+| ------------------ | --------------------- | ------------------------ |
+| **Tray**           | ⚠️ Manual             | Not built-in             |
+| **SQLite**         | ✅ Via native binding |                          |
+| **Binary**         | ❌ 80-150MB           |                          |
+| **Memory**         | ❌ 100-300MB          |                          |
+| **Startup**        | ❌ 1-3s               |                          |
+| **Cross-platform** | ✅ All 3              |                          |
+| **Maturity**       | ✅✅ Stable           | Used by Spotify, Discord |
+| **Rust core**      | ⚠️ C++ binding        |                          |
+| **UI language**    | TS/JS                 |                          |
+| **License**        | BSD                   | Permissive               |
 
 **Verdict:** Same downsides as Electron, more control, more complexity. Not recommended.
 
@@ -187,17 +195,17 @@
 
 ## Cross-Platform Stack Decision Matrix
 
-| Stack | Tray | SQLite | Binary | Memory | Rust Fit | Maturity | License | Score |
-|-------|------|--------|--------|--------|----------|----------|---------|-------|
-| **Tauri** | ✅ | ✅✅ | ✅✅ | ✅✅ | ✅✅ | ✅ | MIT | **9/10** |
-| **Electron** | ✅ | ✅ | ❌ | ❌ | ⚠️ | ✅✅ | MIT | 5/10 |
-| **Electrobun** | ✅ | ✅ | ❌ | ❌ | ⚠️ | ⚠️ | MIT | 5/10 |
-| **CEF** | ⚠️ | ✅ | ❌ | ❌ | ⚠️ | ✅✅ | BSD | 4/10 |
-| **Qt** | ✅ | ✅ | ✅ | ✅ | ⚠️ | ✅✅ | LGPL | 6/10 |
-| **Wails (Go)** | ⚠️ | ✅ | ✅ | ✅ | ❌ | ⚠️ | MIT | 5/10 |
-| **Native (Swift/WinUI/GTK)** | ✅ | ✅ | ✅✅ | ✅✅ | ⚠️ | ✅✅ | Platform | 5/10* |
+| Stack                        | Tray | SQLite | Binary | Memory | Rust Fit | Maturity | License  | Score    |
+| ---------------------------- | ---- | ------ | ------ | ------ | -------- | -------- | -------- | -------- |
+| **Tauri**                    | ✅   | ✅✅   | ✅✅   | ✅✅   | ✅✅     | ✅       | MIT      | **9/10** |
+| **Electron**                 | ✅   | ✅     | ❌     | ❌     | ⚠️       | ✅✅     | MIT      | 5/10     |
+| **Electrobun**               | ✅   | ✅     | ❌     | ❌     | ⚠️       | ⚠️       | MIT      | 5/10     |
+| **CEF**                      | ⚠️   | ✅     | ❌     | ❌     | ⚠️       | ✅✅     | BSD      | 4/10     |
+| **Qt**                       | ✅   | ✅     | ✅     | ✅     | ⚠️       | ✅✅     | LGPL     | 6/10     |
+| **Wails (Go)**               | ⚠️   | ✅     | ✅     | ✅     | ❌       | ⚠️       | MIT      | 5/10     |
+| **Native (Swift/WinUI/GTK)** | ✅   | ✅     | ✅✅   | ✅✅   | ⚠️       | ✅✅     | Platform | 5/10\*   |
 
-*Native is best per-platform but requires 3x codebases. Net TCO is higher.
+\*Native is best per-platform but requires 3x codebases. Net TCO is higher.
 
 ---
 
@@ -243,17 +251,17 @@
 
 ### Alternatives considered:
 
-| DB | Storage | FTS | Vector | Sync | Multi-proc | License | Fit |
-|----|---------|-----|--------|------|------------|---------|-----|
-| **SQLite (current)** | Single file | ✅ Built-in | ⚠️ via extension | ❌ | ⚠️ WAL | Public Domain | ✅ Best fit |
-| **LanceDB** | Columnar (files) | ❌ | ✅ Native | ❌ | ❌ | Apache-2.0 | ❌ Vector-only, wrong fit |
-| **DuckDB** | Single file | ✅ Strong | ✅ Native | ❌ | ⚠️ | MIT | ✅ For analytics, not OLTP |
-| **Beads (beads-rs)** | Single file | ❌ | ❌ | ❌ | ❌ | MIT | ⚠️ Niche, narrow focus |
-| **LMDB** | Single file (mmap) | ❌ | ❌ | ❌ | ⚠️ | OpenLDAP | ⚠️ Read-optimized, not great for writes |
-| **RocksDB** | Directory | ❌ | ❌ | ❌ | ✅ | GPL/Apache | ❌ Heavy, server-grade |
-| **Redb** | Single file | ❌ | ❌ | ❌ | ❌ | MPL-2.0 | ⚠️ New, unproven |
-| **Sled** | Single file | ❌ | ❌ | ❌ | ⚠️ | MIT | ⚠️ Unstable, single-maintainer |
-| **PostgreSQL** | Server | ✅ | ✅ via pgvector | ✅ | ✅ | PostgreSQL | ❌ Server, contradicts local-first |
+| DB                   | Storage            | FTS         | Vector           | Sync | Multi-proc | License       | Fit                                     |
+| -------------------- | ------------------ | ----------- | ---------------- | ---- | ---------- | ------------- | --------------------------------------- |
+| **SQLite (current)** | Single file        | ✅ Built-in | ⚠️ via extension | ❌   | ⚠️ WAL     | Public Domain | ✅ Best fit                             |
+| **LanceDB**          | Columnar (files)   | ❌          | ✅ Native        | ❌   | ❌         | Apache-2.0    | ❌ Vector-only, wrong fit               |
+| **DuckDB**           | Single file        | ✅ Strong   | ✅ Native        | ❌   | ⚠️         | MIT           | ✅ For analytics, not OLTP              |
+| **Beads (beads-rs)** | Single file        | ❌          | ❌               | ❌   | ❌         | MIT           | ⚠️ Niche, narrow focus                  |
+| **LMDB**             | Single file (mmap) | ❌          | ❌               | ❌   | ⚠️         | OpenLDAP      | ⚠️ Read-optimized, not great for writes |
+| **RocksDB**          | Directory          | ❌          | ❌               | ❌   | ✅         | GPL/Apache    | ❌ Heavy, server-grade                  |
+| **Redb**             | Single file        | ❌          | ❌               | ❌   | ❌         | MPL-2.0       | ⚠️ New, unproven                        |
+| **Sled**             | Single file        | ❌          | ❌               | ❌   | ⚠️         | MIT           | ⚠️ Unstable, single-maintainer          |
+| **PostgreSQL**       | Server             | ✅          | ✅ via pgvector  | ✅   | ✅         | PostgreSQL    | ❌ Server, contradicts local-first      |
 
 ### SQLite in detail:
 

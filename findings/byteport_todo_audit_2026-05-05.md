@@ -4,9 +4,9 @@
 
 Only **1 live `todo!()`** stub found in production source:
 
-| File | Line | Function | Category |
-|------|------|----------|----------|
-| `backend/nvms.rs` | 280 | `locateNVMS(path: String) -> String` | STUB |
+| File              | Line | Function                             | Category |
+| ----------------- | ---- | ------------------------------------ | -------- |
+| `backend/nvms.rs` | 280  | `locateNVMS(path: String) -> String` | STUB     |
 
 ## Detail
 

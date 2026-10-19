@@ -1,14 +1,13 @@
 ---
 description: Perform a non-destructive cross-artifact consistency and quality analysis across spec.md, plan.md, and tasks.md after task generation.
 scripts:
-  sh: spec-kitty agent check-prerequisites --json --require-tasks --include-tasks
-  ps: spec-kitty agent -Json -RequireTasks -IncludeTasks
+    sh: spec-kitty agent check-prerequisites --json --require-tasks --include-tasks
+    ps: spec-kitty agent -Json -RequireTasks -IncludeTasks
 ---
+
 **Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `kitty-specs/<feature>/tasks/`). Never refer to a folder by name alone.
 
-
-*Path: [templates/commands/analyze.md](templates/commands/analyze.md)*
-
+_Path: [templates/commands/analyze.md](templates/commands/analyze.md)_
 
 ## User Input
 
@@ -30,6 +29,7 @@ git branch --show-current
 ```
 
 **Expected output:**
+
 - `pwd`: Should end with `.worktrees/001-feature-name` (or similar feature worktree)
 - Branch: Should show your feature branch name like `001-feature-name` (NOT `main`)
 
@@ -40,6 +40,7 @@ git branch --show-current
 This command reads your feature artifacts (spec, plan, tasks) which are in your feature worktree.
 
 **Correct the issue:**
+
 1. Navigate to your feature worktree: `cd .worktrees/001-feature-name`
 2. Verify you're on the correct feature branch: `git branch --show-current`
 3. Then run this analyze command again
@@ -51,6 +52,7 @@ This command reads your feature artifacts (spec, plan, tasks) which are in your 
 This command performs a comprehensive cross-artifact analysis. It reads (but does NOT modify):
 
 **Files analyzed**:
+
 - **spec.md** – Requirements, user stories, edge cases
 - **plan.md** – Architecture choices, data model, technical design
 - **tasks.md** – Work breakdown, task descriptions, phases
@@ -65,12 +67,14 @@ This command performs a comprehensive cross-artifact analysis. It reads (but doe
 **Before this**: `/spec-kitty.tasks` created your task breakdown (tasks.md complete)
 
 **This command**:
+
 - Validates consistency across all artifacts
 - Detects gaps, duplications, ambiguities
 - Verifies alignment with project constitution
 - Produces read-only analysis report (no file modifications)
 
 **After this**:
+
 - Review analysis findings
 - Fix any CRITICAL or HIGH severity issues
 - Proceed to `/spec-kitty.implement` when ready
@@ -195,16 +199,16 @@ Output a Markdown report (no file writes) with the following structure:
 
 ## Specification Analysis Report
 
-| ID | Category | Severity | Location(s) | Summary | Recommendation |
-|----|----------|----------|-------------|---------|----------------|
-| A1 | Duplication | HIGH | spec.md:L120-134 | Two similar requirements ... | Merge phrasing; keep clearer version |
+| ID  | Category    | Severity | Location(s)      | Summary                      | Recommendation                       |
+| --- | ----------- | -------- | ---------------- | ---------------------------- | ------------------------------------ |
+| A1  | Duplication | HIGH     | spec.md:L120-134 | Two similar requirements ... | Merge phrasing; keep clearer version |
 
 (Add one row per finding; generate stable IDs prefixed by category initial.)
 
 **Coverage Summary Table:**
 
 | Requirement Key | Has Task? | Task IDs | Notes |
-|-----------------|-----------|----------|-------|
+| --------------- | --------- | -------- | ----- |
 
 **Constitution Alignment Issues:** (if any)
 

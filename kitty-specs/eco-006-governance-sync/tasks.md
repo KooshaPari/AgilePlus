@@ -47,10 +47,11 @@ WP01 (Governance Doc Inventory)
 **Prompt**: `tasks/WP01-governance-inventory.md`
 
 Subtasks:
+
 - [ ] T001: Define GovernanceArtifact schema (path, repo, checksum, canonical_url, last_verified, source_type)
 - [ ] T002: Implement repo discovery scanner (walks repos/Phenotype/, repos/docs/, worktrees/)
 - [ ] T003: Implement CLAUDE.md fingerprint generator (hash of effective CLAUDE.md + inherited hierarchy)
-- [ ] T004: Implement kitty-spec indexer (parses all kitty-specs/*/spec.md into structured catalog)
+- [ ] T004: Implement kitty-spec indexer (parses all kitty-specs/\*/spec.md into structured catalog)
 - [ ] T005: Implement worklog scanner (validates worklogs/ entries against kitty-spec requirements)
 
 ---
@@ -65,6 +66,7 @@ Subtasks:
 **Prompt**: `tasks/WP02-sync-engine.md`
 
 Subtasks:
+
 - [ ] T006: Implement DriftDetector — compares current inventory snapshot against canonical baseline
 - [ ] T007: Implement DriftClassifier — categorizes drift by severity (BREAKING/MINOR/DOCUMENTATION/ORPHANED)
 - [ ] T008: Implement SyncPlanner — generates remediation action plan from drift events
@@ -83,6 +85,7 @@ Subtasks:
 **Prompt**: `tasks/WP03-ci-trigger.md`
 
 Subtasks:
+
 - [ ] T011: Create `.github/workflows/governance-sync.yml` with dispatch + schedule triggers
 - [ ] T012: Implement `--ci` flag on `agileplus governance sync` for non-interactive CI mode
 - [ ] T013: Add status check output compatible with GitHub commit status API (pass/fail with summary)
@@ -100,6 +103,7 @@ Subtasks:
 **Prompt**: `tasks/WP04-notifications.md`
 
 Subtasks:
+
 - [ ] T015: Implement NotificationRouter — maps drift type to delivery channel (iMessege, Slack, GitHub)
 - [ ] T016: Implement iMessege notifier via agent-imessage MCP (critical drift alerts to Koosha)
 - [ ] T017: Implement GitHub issue creator for BREAKING drift (auto-files governance debt issue)
@@ -118,6 +122,7 @@ Subtasks:
 **Prompt**: `tasks/WP05-drift-resolution.md`
 
 Subtasks:
+
 - [ ] T020: Implement ReviewQueue — holds BREAKING drift for human approval before applying
 - [ ] T021: Implement auto-fix executor for MINOR/DOCUMENTATION drift (CLAUDE.md updates, meta.json patches)
 - [ ] T022: Implement orphan detection + cleanup workflow (removes stale kitty-spec references)
@@ -136,6 +141,7 @@ Subtasks:
 **Prompt**: `tasks/WP06-evidence-ledger.md`
 
 Subtasks:
+
 - [ ] T025: Implement GovernanceEvent struct (timestamp, event_type, artifact_ref, diff, actor, hash)
 - [ ] T026: Implement hash-chain ledger (each event references previous event hash; tamper-evident)
 - [ ] T027: Implement audit query CLI (`agileplus governance audit --repo <name> --since <date>`)
@@ -145,50 +151,50 @@ Subtasks:
 
 ## Subtask Index
 
-| ID | Description | WP | Parallel |
-|----|-------------|-----|----------|
-| T001 | GovernanceArtifact schema | WP01 | |
-| T002 | Repo discovery scanner | WP01 | |
-| T003 | CLAUDE.md fingerprint generator | WP01 | |
-| T004 | kitty-spec indexer | WP01 | |
-| T005 | Worklog scanner | WP01 | |
-| T006 | DriftDetector | WP02 | |
-| T007 | DriftClassifier | WP02 | [P] T006 |
-| T008 | SyncPlanner | WP02 | [P] T006 |
-| T009 | SafeApplicator | WP02 | [P] T006 |
+| ID   | Description                      | WP   | Parallel |
+| ---- | -------------------------------- | ---- | -------- |
+| T001 | GovernanceArtifact schema        | WP01 |          |
+| T002 | Repo discovery scanner           | WP01 |          |
+| T003 | CLAUDE.md fingerprint generator  | WP01 |          |
+| T004 | kitty-spec indexer               | WP01 |          |
+| T005 | Worklog scanner                  | WP01 |          |
+| T006 | DriftDetector                    | WP02 |          |
+| T007 | DriftClassifier                  | WP02 | [P] T006 |
+| T008 | SyncPlanner                      | WP02 | [P] T006 |
+| T009 | SafeApplicator                   | WP02 | [P] T006 |
 | T010 | Dry-run mode + structured output | WP02 | [P] T006 |
-| T011 | GitHub Actions workflow | WP03 | |
-| T012 | CI flag for governance sync | WP03 | |
-| T013 | GitHub status check output | WP03 | [P] T011 |
-| T014 | PR comment reporter | WP03 | [P] T011 |
-| T015 | NotificationRouter | WP04 | |
-| T016 | iMessege notifier | WP04 | |
-| T017 | GitHub issue creator | WP04 | |
-| T018 | Worklog entry writer | WP04 | [P] T015 |
-| T019 | Severity deduplication | WP04 | [P] T015 |
-| T020 | ReviewQueue for BREAKING drift | WP05 | |
-| T021 | Auto-fix executor | WP05 | |
-| T022 | Orphan detection + cleanup | WP05 | [P] T020 |
-| T023 | Rollback capability | WP05 | [P] T020 |
-| T024 | Resolution approval CLI | WP05 | |
-| T025 | GovernanceEvent struct | WP06 | |
-| T026 | Hash-chain ledger | WP06 | |
-| T027 | Audit query CLI | WP06 | |
-| T028 | Compliance report generator | WP06 | |
+| T011 | GitHub Actions workflow          | WP03 |          |
+| T012 | CI flag for governance sync      | WP03 |          |
+| T013 | GitHub status check output       | WP03 | [P] T011 |
+| T014 | PR comment reporter              | WP03 | [P] T011 |
+| T015 | NotificationRouter               | WP04 |          |
+| T016 | iMessege notifier                | WP04 |          |
+| T017 | GitHub issue creator             | WP04 |          |
+| T018 | Worklog entry writer             | WP04 | [P] T015 |
+| T019 | Severity deduplication           | WP04 | [P] T015 |
+| T020 | ReviewQueue for BREAKING drift   | WP05 |          |
+| T021 | Auto-fix executor                | WP05 |          |
+| T022 | Orphan detection + cleanup       | WP05 | [P] T020 |
+| T023 | Rollback capability              | WP05 | [P] T020 |
+| T024 | Resolution approval CLI          | WP05 |          |
+| T025 | GovernanceEvent struct           | WP06 |          |
+| T026 | Hash-chain ledger                | WP06 |          |
+| T027 | Audit query CLI                  | WP06 |          |
+| T028 | Compliance report generator      | WP06 |          |
 
 ---
 
 ## Acceptance Criteria
 
-| ID | Criterion | Verification |
-|----|----------|--------------|
-| AC01 | `agileplus governance sync --dry-run` produces valid JSON/CSV output without modifying any files | Manual: run command, inspect output |
-| AC02 | CI workflow triggers on every PR and blocks merge on BREAKING drift | CI: PR with broken CLAUDE.md fails status check |
-| AC03 | iMessege alert fires for BREAKING drift within 60s of detection | Manual: simulate BREAKING drift, verify notification |
-| AC04 | ReviewQueue holds BREAKING drift until approved | Manual: approve drift, verify fix applied |
-| AC05 | Hash-chain ledger is tamper-evident (modified event breaks chain) | Manual: tamper with ledger file, verify detection |
-| AC06 | Audit query returns correct event history for a given repo | Manual: `agileplus governance audit --repo focalpoint --since 2026-04-01` |
-| AC07 | Orphaned kitty-spec entries are detected and flagged | Manual: add stale spec entry, run sync, verify detection |
+| ID   | Criterion                                                                                        | Verification                                                              |
+| ---- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| AC01 | `agileplus governance sync --dry-run` produces valid JSON/CSV output without modifying any files | Manual: run command, inspect output                                       |
+| AC02 | CI workflow triggers on every PR and blocks merge on BREAKING drift                              | CI: PR with broken CLAUDE.md fails status check                           |
+| AC03 | iMessege alert fires for BREAKING drift within 60s of detection                                  | Manual: simulate BREAKING drift, verify notification                      |
+| AC04 | ReviewQueue holds BREAKING drift until approved                                                  | Manual: approve drift, verify fix applied                                 |
+| AC05 | Hash-chain ledger is tamper-evident (modified event breaks chain)                                | Manual: tamper with ledger file, verify detection                         |
+| AC06 | Audit query returns correct event history for a given repo                                       | Manual: `agileplus governance audit --repo focalpoint --since 2026-04-01` |
+| AC07 | Orphaned kitty-spec entries are detected and flagged                                             | Manual: add stale spec entry, run sync, verify detection                  |
 
 ---
 

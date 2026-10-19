@@ -12,36 +12,36 @@ AgilePlus synchronizes specifications, work packages, and status with external t
 
 Full bi-directional sync with Plane project management:
 
-| What Syncs | Direction | Notes |
-|------------|-----------|-------|
-| Issues | ← → | Specs create issues, updates sync both ways |
-| States | ← → | Done/blocked/done syncs states in Plane |
-| Labels | ← → | AgilePlus labels sync to Plane |
-| Milestones | ← → | WP groups sync as milestones |
-| Assignees | ← → | WP owner syncs to Plane assignee |
-| Comments | ← | Plane comments pull into AgilePlus |
+| What Syncs | Direction | Notes                                       |
+| ---------- | --------- | ------------------------------------------- |
+| Issues     | ← →       | Specs create issues, updates sync both ways |
+| States     | ← →       | Done/blocked/done syncs states in Plane     |
+| Labels     | ← →       | AgilePlus labels sync to Plane              |
+| Milestones | ← →       | WP groups sync as milestones                |
+| Assignees  | ← →       | WP owner syncs to Plane assignee            |
+| Comments   | ←         | Plane comments pull into AgilePlus          |
 
 ### GitHub Issues
 
 Bi-directional sync with GitHub Issues:
 
-| What Syncs | Direction | Notes |
-|------------|-----------|-------|
-| Issues | ← → | Create issues from specs |
-| Labels | ← → | Status labels sync both ways |
-| Milestones | ← → | Tie issues to release milestones |
-| PR Links | → | Link issues to merged PRs |
-| Assignees | ← → | Assignment syncs both ways |
+| What Syncs | Direction | Notes                            |
+| ---------- | --------- | -------------------------------- |
+| Issues     | ← →       | Create issues from specs         |
+| Labels     | ← →       | Status labels sync both ways     |
+| Milestones | ← →       | Tie issues to release milestones |
+| PR Links   | →         | Link issues to merged PRs        |
+| Assignees  | ← →       | Assignment syncs both ways       |
 
 ### GitHub Projects (v2)
 
 Push-only sync to GitHub Projects board:
 
-| What Syncs | Direction | Notes |
-|------------|-----------|-------|
-| Cards | → | WPs become cards |
-| Status | → | WP lane → Status field |
-| Custom Fields | → | Custom field mapping |
+| What Syncs    | Direction | Notes                  |
+| ------------- | --------- | ---------------------- |
+| Cards         | →         | WPs become cards       |
+| Status        | →         | WP lane → Status field |
+| Custom Fields | →         | Custom field mapping   |
 
 ## Setup & Configuration
 
@@ -546,26 +546,26 @@ The complete mapping between AgilePlus states and external tracker states:
 
 ### AgilePlus Feature States → Plane.so
 
-| AgilePlus State | Plane.so Issue State | Label Added |
-|-----------------|---------------------|-------------|
-| Created | Backlog | — |
-| Specified | Backlog | spec |
-| Researched | Todo | spec, researched |
-| Planned | Todo | planned |
-| Implementing | In Progress | in-progress |
-| Validated | Done | validated |
-| Shipped | Done | shipped |
-| Cancelled | Cancelled | cancelled |
+| AgilePlus State | Plane.so Issue State | Label Added      |
+| --------------- | -------------------- | ---------------- |
+| Created         | Backlog              | —                |
+| Specified       | Backlog              | spec             |
+| Researched      | Todo                 | spec, researched |
+| Planned         | Todo                 | planned          |
+| Implementing    | In Progress          | in-progress      |
+| Validated       | Done                 | validated        |
+| Shipped         | Done                 | shipped          |
+| Cancelled       | Cancelled            | cancelled        |
 
 ### AgilePlus WP States → GitHub
 
-| AgilePlus WP State | GitHub Issue Label | PR State |
-|--------------------|--------------------|----------|
-| Planned | work-package, planned | — |
-| Doing | work-package, in-progress | Draft PR |
-| ForReview | work-package, in-review | PR ready for review |
-| Done | work-package | PR merged, issue closed |
-| Blocked | work-package, blocked | PR blocked label |
+| AgilePlus WP State | GitHub Issue Label        | PR State                |
+| ------------------ | ------------------------- | ----------------------- |
+| Planned            | work-package, planned     | —                       |
+| Doing              | work-package, in-progress | Draft PR                |
+| ForReview          | work-package, in-review   | PR ready for review     |
+| Done               | work-package              | PR merged, issue closed |
+| Blocked            | work-package, blocked     | PR blocked label        |
 
 ### Customizing State Mappings
 
@@ -607,6 +607,7 @@ conflict_strategy = "local-wins"
 ```
 
 AgilePlus state wins. Plane.so is updated to match AgilePlus:
+
 ```
 Resolution: AgilePlus "Doing" wins → update Plane.so to "In Progress"
 Audit: conflict recorded, resolution actor = sync:local-wins
