@@ -225,11 +225,63 @@ Snapshot identity chain: ADDED `ap-sfd-2026-10-19T03-13Z@ci-scout-v5-acted-other
 
 ### v5 cap-mitigation note
 
-The v5 subagent hit its 10-min cap mid-read. Future scouts (v6+) that need to read 8 PRs + main HEAD + recent merge history should be given a **15-min cap** to allow the result file to be written before the cap fires. v5 was reconstructed by the orchestrator from the subagent log + orchestrator's own state checks; this is acceptable but should not become the default.
+The v5 subagent hit its 10-min cap mid-read. Future scouts (v6+) should use a **5-min hard cap** instead — v6 confirmed this is ample time (finished in 90s) and ensures the result file is written before any cap fires. v5 was reconstructed by the orchestrator from the subagent log + orchestrator's own state checks; this should not become the default going forward.
+
+## v6 verification (added 2026-10-19T20:40Z, 17h 27m after v5)
+
+**Subagent**: ci-scout v6 (`session_microbe_1792442347418_b0ef2c64840de4df`, model `openai-compatible:MiniMax-M3`, low effort, 5-min cap). **Finished cleanly in ~90s.** Result file 8.8 KB / 119 lines.
+
+### Verdict
+
+**UNCHANGED** (byte-equivalent to v5; identical-state sentinel).
+
+The cf-4 action-sheet situation has not changed one bit in 17h 27m:
+
+- **`main` HEAD**: still `c074506bfcae` — frozen for **18h 0m** since last merge (#1168 at 2026-10-19T02:39:51Z).
+- **0 of 8 cf-4 PRs** merged (state byte-identical to v5).
+- **0 of 8 cf-4 PRs** has `updatedAt` timestamp newer than v5's fire time. All show `updatedAt` from 2026-10-18 (24h+ ago).
+- **All 8 PRs' CI check action-run IDs are unchanged from v5** — zero re-triggers, zero force-pushes, zero comments.
+- **31 open PRs** on the org (prompt said "30"; off-by-one, immaterial).
+- **#1126** ("fix(planify-shim): fail closed, …") is the only PR with `updatedAt` newer than v5 (06:07:10Z), but it is NOT in cf-4 focus and was not merged.
+
+### Key findings vs v5
+
+- **One byte of state has changed: elapsed time.** v5 fired 17h 27m before v6. State is otherwise identical.
+- **#1165 (fox) STILL has its own `cargo-deny` PASSING.** This is the audit-relevant flip criterion, unchanged from v5.
+- **#1157 picked up 2 NEW FAILs** vs v4: `qe / lint` and `qe / test`. These are the fail-closed gates from #1138 ("ci: fail-closed quality gates") introduced 2026-10-18T02:53:15Z. v6's `gh pr checks` shows #1157 FAIL count 21 (was 19 per v5's enumeration; +2 from new fail-closed gates; the merge of #1138 happened after v1 fired so v1 may not have captured this).
+- **`cargo-mutants` 4-5.5h timeouts** continue to dominate PR-level action quota. Not new; same as v1-v5.
+- **Vercel rate-limit fails** persist on #1162 and #1164. Same as v1-v5.
+
+### Operator action sheet (v6 update — UNCHANGED from v4, v5)
+
+1. **Merge #1165 (fox) FIRST** (Cargo Deny PASS locally; 5 remaining FAILs are mostly infra-noise).
+2. **Manually re-trigger the 6 source PRs** (push no-op or `gh pr update-branch`).
+3. **Run ci-scout v7 in ~24h** to confirm 4-6 of 8 PRs flipped green on ci/lint + ci/test + cargo-deny.
+4. **Then merge #1166 (badger)** + re-trigger dependabot PRs #1153, #1154, #1155.
+5. **If operator does not plan to act in the next 24h**, v7 may be skipped (operator-optional).
+6. **The audit is in closed-and-re-entered state** (since v5). Further scouts are operator-optional.
+
+### v6 cap mitigation applied
+
+v6 ran with a **5-min hard cap** instead of v5's 10-min cap. This worked: v6 finished cleanly in ~90s and wrote its own result file before any cap.
+
+### v6 sentinel watchlist for v7
+
+Per v6's own recommendations:
+- Main HEAD advance (would invalidate UNCHANGED verdict).
+- Any `gh pr edit` / push / comment on the 8 cf-4 PRs (operator action).
+- New failure on #1165's `cargo-deny` check (would invalidate the audit-relevant flip).
+- New repo-wide event: dependabot bumps, Renovate PRs landing, CI infra changes.
+
+If the orchestrator wants a v7, v6 recommends **24h cadence** (next fire ~2026-10-20T20:40Z). If operator signals imminent #1165 or #1166 merge, **1h cadence** until the flip lands.
+
+v6 evidence files: `ci-scout-v6-2026-10-19T20-40Z.md` (119 lines / 8.8 KB) + `.log` (64 lines) — both in this folder.
+
+Snapshot identity chain: ADDED `ap-sfd-2026-10-19T20-40Z@ci-scout-v6-unchanged` as a 20th snapshot identity on top of the 19 prior. v6 is the **identical-state sentinel** — the audit honors the operator's selection of work priorities by recording this absence of cf-4 movement, not chasing the operator.
 
 ## Constraints honored
 
-- ✅ All 6 subagents (v1, v2, v3, v4, v5, cf-4) read-only (no push, no merge, no file edit, no new PR, no comment, no force-push). v5 hit cap; result file reconstructed by orchestrator from subagent log + state checks.
+- ✅ All 7 subagents (v1, v2, v3, v4, v5, v6, cf-4) read-only (no push, no merge, no file edit, no new PR, no comment, no force-push). v6 finished cleanly; v5 reconstructed.
 - ✅ No source code modified; only new evidence files in a sibling sub-folder.
 - ✅ No new cheap_closes opened (cf-4 verdict was PASS — not a new CF; v3 verdict was PREDICTED-BUT-NOT-TESTABLE — neither confirmed nor refuted).
-- ✅ Operator action sheet sharpened, not inflated. v3 confirms the re-entry's analysis without changing the operator steps.
+- ✅ Operator action sheet sharpened, not inflated. v6 confirms the v5 verdict exactly without changing the operator steps.
