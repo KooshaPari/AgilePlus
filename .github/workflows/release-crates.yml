@@ -67,7 +67,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Dry run cargo publish
-        run: cargo publish -p agileplus-cli --dry-run
+        run: cargo publish --workspace --dry-run --no-verify
 
   publish:
     name: Publish to crates.io
