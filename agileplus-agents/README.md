@@ -2,7 +2,7 @@
 
 Overview
 
-agileplus-agents is a small Rust workspace providing helper crates for agent orchestration and workspace automation used by the AgilePlus project. The workspace contains three primary crates:
+agileplus-agents is a set of three Rust crates for agent orchestration and workspace automation used by the AgilePlus project. They are members of the **root** AgilePlus workspace (`../Cargo.toml`), not a nested workspace of their own. The crates are:
 
 - crates/agileplus-agent-dispatch — dispatch and adapter layer that spawns/coordinates Claude Code / Codex subprocesses and provides PR/dispatch helpers.
 - crates/agileplus-agent-review — review-loop logic that polls external systems (GitHub, Coderabbit) and feeds events back to agents.
@@ -89,9 +89,18 @@ Please follow the repository contribution guidelines, respect branch naming conv
 
 Files referenced
 
-- /Users/<REDACTED>/CodeProjects/Phenotype/repos/agileplus-agents/Cargo.toml
-- /Users/<REDACTED>/CodeProjects/Phenotype/repos/agileplus-agents/crates/agileplus-agent-dispatch
-- /Users/<REDACTED>/CodeProjects/Phenotype/repos/agileplus-agents/crates/agileplus-agent-review
-- /Users/<REDACTED>/CodeProjects/Phenotype/repos/agileplus-agents/crates/agileplus-agent-service
+This directory intentionally has **no** `Cargo.toml`. It used to contain a
+comment-only stub ("Workspace absorbed into root — see ../Cargo.toml
+members."), but a `Cargo.toml` with neither a `[package]` nor a `[workspace]`
+table is invalid, and any tool that walks up from a sub-crate looking for its
+workspace root stops at it and fails. That is what broke
+`cargo-semver-checks` ("error inheriting `edition` from workspace root
+manifest's `workspace.package.edition`"). The crates inherit `edition` and
+`version` from the root workspace, so the stub was removed; do not recreate it.
+
+- ../Cargo.toml (root workspace; lists these crates under `members`)
+- crates/agileplus-agent-dispatch
+- crates/agileplus-agent-review
+- crates/agileplus-agent-service
 
 If you want, I can also create an AgilePlus work package for adding or updating this README so the change is tracked according to project rules.
