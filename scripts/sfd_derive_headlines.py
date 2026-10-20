@@ -10,12 +10,14 @@ Usage:
     python3 scripts/sfd_derive_headlines.py
 """
 import json
-import re
 import sys
+from pathlib import Path
 
 sys.path.insert(0, __file__.rsplit("/", 1)[0])
-from sfd_validate_counts import (  # noqa: E402
-    DIMS, MD_PATH, JS_PATH, parse_tree_body,
+from sfd_validate_counts import (
+    JS_PATH,
+    MD_PATH,
+    parse_tree_body,
 )
 
 # A "target-level PASS witness" for an NDR item = the row has at least one
@@ -37,7 +39,7 @@ SECTION_TITLES = {
 
 
 def main():
-    md_text = open(MD_PATH).read()
+    md_text = Path(MD_PATH).read_text()
     rows, _ = parse_tree_body(md_text)
 
     print("=== per-section row counts ===")
@@ -87,7 +89,7 @@ def main():
     print("  1/5 Tracera-relevant surfaces -- from E11 row")
 
     print("\n=== JSON headline_counts (for comparison) ===")
-    js = json.load(open(JS_PATH))
+    js = json.loads(Path(JS_PATH).read_text())
     for k, v in js["headline_counts"].items():
         if k.startswith("cells_"):
             continue

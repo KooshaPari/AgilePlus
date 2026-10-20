@@ -40,10 +40,10 @@ Usage:
 """
 import argparse
 import json
-import os
 import re
 import sys
 from collections import Counter
+from pathlib import Path
 
 DOC = "docs/sessions/20261017-state-forward-docket"
 MD_PATH = f"{DOC}/PROGRESS_TREE.md"
@@ -72,10 +72,8 @@ TOKEN_MAP = {
 }
 TOKENS = list(TOKEN_MAP)
 TOKEN_RE = re.compile("|".join(re.escape(t) for t in TOKENS))
-COMPOUND_RE = re.compile(r"(%s)\s*/\s*(%s)" % (
-    "|".join(re.escape(t) for t in TOKENS),
-    "|".join(re.escape(t) for t in TOKENS),
-))
+_TOK_ALT = "|".join(re.escape(t) for t in TOKENS)
+COMPOUND_RE = re.compile(rf"({_TOK_ALT})\s*/\s*({_TOK_ALT})")
 
 ROW_RE = re.compile(r"^([A-E](?:-std)?\.\d+)\s+(.*)$")
 
@@ -239,7 +237,7 @@ def main():
                     help="rewrite the JSON breakdown/headline and the md table")
     args = ap.parse_args()
 
-    md_text = open(MD_PATH).read()
+    md_text = Path(MD_PATH).read_text()
     rows, occ = parse_tree_body(md_text)
     if len(rows) != 64:
         print(f"FAIL: {len(rows)} unique rows, expected 64")
@@ -256,7 +254,7 @@ def main():
     print()
 
     drift = []
-    js = json.load(open(JS_PATH))
+    js = json.loads(Path(JS_PATH).read_text())
     jb = js.get("dimension_breakdown", {})
     for dim in DIMS:
         for k in JSON_KEYS:

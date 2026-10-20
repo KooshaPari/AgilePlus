@@ -20,9 +20,8 @@ authoritative ones and the JSON counters are the artefact that drifted.
 """
 import json
 import re
-import subprocess
-import sys
 from collections import Counter
+from pathlib import Path
 
 DIMS = ["Implementation", "Usability", "Validation", "Assurance"]
 
@@ -109,7 +108,7 @@ def classify_raw(cell: str):
 
 def parse_raw(path="docs/sessions/20261017-state-forward-docket/PROGRESS_TREE_RAW.md"):
     rows = {}
-    for ln in open(path):
+    for ln in Path(path).read_text().splitlines():
         if not ln.startswith("|"):
             continue
         cells = [c.strip() for c in ln.strip().strip("|").split("|")]
@@ -161,7 +160,7 @@ def _find_run(rest):
 
 
 def parse_md(path="docs/sessions/20261017-state-forward-docket/PROGRESS_TREE.md"):
-    lines = open(path).read().split("\n")
+    lines = Path(path).read_text().split("\n")
     in_tree = False
     blocks = []
     cur = None
@@ -215,7 +214,7 @@ def parse_md(path="docs/sessions/20261017-state-forward-docket/PROGRESS_TREE.md"
 # --------------------------------------------------------------------------
 def tally(rows):
     counts = {d: Counter() for d in DIMS}
-    for label, verdicts in rows.items():
+    for verdicts in rows.values():
         for d, v in zip(DIMS, verdicts):
             counts[d][v] += 1
     return counts
@@ -276,8 +275,9 @@ def main():
                 changed += 1
     print(f"  changed cells = {changed}")
 
-    js = json.load(open(
-        "docs/sessions/20261017-state-forward-docket/PROGRESS_TREE.snapshot.json"))
+    js = json.loads(Path(
+        "docs/sessions/20261017-state-forward-docket/PROGRESS_TREE.snapshot.json"
+    ).read_text())
     jb = js["dimension_breakdown"]
     print("\n=== json dimension_breakdown ===")
     for d in DIMS:
