@@ -45,6 +45,16 @@ jobs:
               working-directory: python
 
             - name: Coverage report (pytest-cov)
+              # The Coverage.py SQLite data file lands at python/.coverage because
+              # the job's working-directory is python/. We then emit the XML/JSON
+              # reports at the repo-root .coverage/ directory so the artifact
+              # uploader (./upload-artifact step below) and downstream gate can
+              # collect a single, repo-relative set of paths. Pass those two
+              # locations explicitly to the comment action — its default
+              # coverage_path is `.` (workspace root), which would otherwise
+              # raise `unable to open database file
+              # '/github/workspace/.coverage'` (the SQLite file is in
+              # python/.coverage, not at the workspace root).
               run: |
                   set -euo pipefail
                   mkdir -p ../.coverage
@@ -80,6 +90,17 @@ jobs:
               uses: py-cov-action/python-coverage-comment-action@v4.5
               with:
                   GITHUB_TOKEN: ${{ github.token }}
+                  # Coverage.py data file (.coverage SQLite DB) lives in
+                  # python/ because the job's working-directory is python/.
+                  # The pre-generated XML/JSON reports at .coverage/ (see the
+                  # Coverage report step above) are written by us for the
+                  # artifact uploader and downstream consumers; the action
+                  # generates its own JSON internally from the SQLite file,
+                  # so we only need to point it at that file's directory.
+                  # Without this, the action defaults to '.' and looks for
+                  # /github/workspace/.coverage, which raises
+                  # 'unable to open database file' (observed on PR #1161).
+                  COVERAGE_PATH: python
 
     coverage-rust:
         name: rust-coverage (cargo-llvm-cov)
