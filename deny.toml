@@ -38,12 +38,6 @@ db-path = "$CARGO_HOME/advisory-db"
 ignore = [
   { id = "RUSTSEC-2024-0370", reason = "proc-macro-error unmaintained: build-time only via glib-macros 0.18 (tauri stack); glib 0.18 pins it, no fix until tauri/tray-icon bump." },
   { id = "RUSTSEC-2024-0429", reason = "glib VariantStrIter: defensive tripwire; not currently surfaced by cargo-deny against this graph (lockfile glib 0.18.5, advisory-db criteria no longer match). Kept here so future advisory-db bumps re-surface it against glib 0.18.x and trigger a triage review before merge. Tauri PR #16170 lands the upstream fix." },
-  # RUSTSEC-2026-0370/0371/0372: zvariant, zbus_names, zvariant_derive unmaintained.
-  # Transitive via keyring v4.2.0 -> secret-service v5.2.0 -> zbus v5.19.0.
-  # Merged into zbus 6.0 (z-galaxy/zbus#2043); no drop-in fix available.
-  { id = "RUSTSEC-2026-0370", reason = "zvariant unmaintained: transitive via keyring->secret-service->zbus5.19; merged into zbus 6.0 (z-galaxy/zbus#2043). No drop-in fix available." },
-  { id = "RUSTSEC-2026-0371", reason = "zbus_names unmaintained: transitive via keyring->secret-service->zbus5.19; merged into zbus 6.0 (z-galaxy/zbus#2043). No drop-in fix available." },
-  { id = "RUSTSEC-2026-0372", reason = "zvariant_derive unmaintained: transitive via keyring->secret-service->zbus5.19; merged into zbus 6.0 (z-galaxy/zbus#2043). No drop-in fix available." },
 ]
 
 [licenses]
