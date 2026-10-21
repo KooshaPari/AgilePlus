@@ -189,7 +189,12 @@ uuid = { version = "1", features = ["v4", "serde"] }
 rand = "0.10"
 toml = "1.1"
 dirs-next = "2"
-keyring = "4"
+keyring = { version = "3.6.3", default-features = false, features = [
+  "apple-native",
+  "windows-native",
+  "sync-secret-service",
+  "crypto-rust",
+] }
 # Test-only deps used by legacy/obsolete test files (traceability integration tests).
 tempfile = "3"
 proptest = "1"
