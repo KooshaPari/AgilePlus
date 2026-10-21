@@ -97,7 +97,25 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+      # Provenance for the exact bytes users download.
+      #
+      # Was: slsa-framework/slsa-github-generator/attest-build-provenance@v1
+      # That ref cannot resolve — upstream has no `v1` tag or branch (ls-remote on
+      # refs/tags/v1, refs/tags/v1^{} and refs/heads/v1 returns empty across all 39
+      # tags), so the step could never have run. Its README also marks the project
+      # unmaintained and directs new users to GitHub artifact attestations.
+      #
+      # The generator's own docs additionally require reusable workflows to be
+      # referenced as @vX.Y.Z and warn that a shorter tag such as @vX breaks the
+      # build, so digest-pinning this particular action would conflict with
+      # slsa-verifier. GitHub's built-in attestation is the documented path and
+      # has no such constraint, so it is pinned by SHA like every other action.
+      #
+      # Behavior preserved: same subject (the downloaded release assets, which
+      # already include SHA256SUMS and BUILD_MANIFEST.txt), same permissions
+      # (id-token: write + attestations: write + contents: read, declared above).
+      # Verified with `gh attestation verify` rather than `slsa-verifier`.
       - name: Attest build provenance (SLSA Build L2)
-        uses: slsa-framework/slsa-github-generator/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@62fc1d596301d0ab9914e1fec14dc5c8d93f65cd # v3.2.0
         with:
-          artifact-name: release-artifacts
+          subject-path: release-artifacts/*

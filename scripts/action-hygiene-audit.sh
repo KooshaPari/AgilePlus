@@ -4,6 +4,12 @@
 # eco-011 FR-5: Action hygiene audit
 # A third-party action is considered pinned if it uses a 40-character SHA ref.
 # First-party actions (KooshaPari/*, actions/*) are exempt.
+#
+# Repository-local reusable workflows ("./.github/workflows/x.yml") are also
+# exempt, because GitHub only accepts them in that form: they are resolved from
+# the checked-out commit at run time and cannot be referenced by SHA. This is a
+# syntax exemption, not a blanket allow-list — see classify_action below, which
+# still rejects an unpinned external ref and rejects a malformed local path.
 
 set -euo pipefail
 
@@ -18,6 +24,45 @@ if [ ! -d "$WORKFLOWS_DIR" ]; then
     echo "error: workflows directory not found: $WORKFLOWS_DIR"
     exit 1
 fi
+
+# classify_action <action_ref>
+# Prints one of: pinned | exempt | unpinned
+#
+#   pinned   - third-party ref carrying an immutable 40-char SHA
+#   exempt   - first-party owner, or a well-formed repository-local reusable
+#              workflow path ("./.github/workflows/<file>.yml")
+#   unpinned - everything else, including malformed local paths
+#
+# A local ref is exempt only if it is exactly "./.github/workflows/" followed by
+# a plain workflow filename ending in .yml or .yaml. Anything else that starts
+# with "./" is malformed and is reported as unpinned rather than silently passed.
+classify_action() {
+    local ref="$1"
+    local org_pattern='^KooshaPari/'
+
+    # First-party actions (actions/* and KooshaPari/*)
+    if [[ "$ref" =~ ^actions/ || "$ref" =~ $org_pattern ]]; then
+        echo "exempt"
+        return
+    fi
+
+    # Repository-local reusable workflow: GitHub requires the "./" form and
+    # resolves it from the checked-out commit, so a SHA ref is not applicable.
+    if [[ "$ref" == ./* ]]; then
+        if [[ "$ref" =~ ^\./\.github/workflows/[A-Za-z0-9._-]+\.ya?ml$ ]]; then
+            echo "exempt"
+        else
+            echo "unpinned"
+        fi
+        return
+    fi
+
+    if [[ "$ref" =~ @[a-f0-9]{40} ]]; then
+        echo "pinned"
+    else
+        echo "unpinned"
+    fi
+}
 
 echo "=== Action Hygiene Audit ==="
 echo "Scanning: $WORKFLOWS_DIR"
@@ -39,14 +84,18 @@ for file in "$WORKFLOWS_DIR"/*.yml; do
         if [[ "$action_ref" =~ ^actions/ || "$action_ref" =~ $org_pattern ]]; then
             continue
         fi
-        # Check if the action is pinned to a 40-char SHA
-        # SHA pattern: exactly 40 hex characters after @
-        if [[ "$action_ref" =~ @[a-f0-9]{40} ]]; then
-            PINS_FOUND=$((PINS_FOUND + 1))
-        else
-            unpinned+=("$action_ref")
-            UNPINS_FOUND=$((UNPINS_FOUND + 1))
-        fi
+        case "$(classify_action "$action_ref")" in
+            pinned)
+                PINS_FOUND=$((PINS_FOUND + 1))
+                ;;
+            exempt)
+                continue
+                ;;
+            unpinned)
+                unpinned+=("$action_ref")
+                UNPINS_FOUND=$((UNPINS_FOUND + 1))
+                ;;
+        esac
     done < <(grep -n 'uses:' "$file" 2>/dev/null || true)
 
     if [ ${#unpinned[@]} -gt 0 ]; then

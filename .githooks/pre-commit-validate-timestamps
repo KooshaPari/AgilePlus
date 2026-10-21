@@ -35,6 +35,16 @@ if ! command -v sqlite3 >/dev/null 2>&1; then
   exit 0
 fi
 
+# grep is load-bearing: it both sanitises table names and (in the staged-path
+# scan) filters .db paths. If grep is unavailable its exit status is
+# indistinguishable from a failed match, which previously caused every table
+# to be reported as an "unsafe table name" and silently skipped — i.e. a
+# missing grep turned the whole validation into a no-op pass. Fail closed.
+if ! command -v grep >/dev/null 2>&1; then
+  echo "[hooks] pre-commit-validate-timestamps: FAIL — grep not found in PATH; required for table-name sanitisation. Failing closed." >&2
+  exit 1
+fi
+
 # Resolve the directory holding this hook (and the python validator).
 hook_dir="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -73,7 +83,8 @@ for db in $staged_dbs; do
     # bound via parameters, but we verify the table exists via the previous query.
     # Refuse anything that doesn't match a safe identifier.
     if ! printf '%s' "$table" | grep -qE '^[A-Za-z_][A-Za-z0-9_]*$'; then
-      echo "[hooks] pre-commit-validate-timestamps: skipping unsafe table name: $table" >&2
+      echo "[hooks] pre-commit-validate-timestamps: FAIL — unsafe table name (not a plain identifier): $table" >&2
+      file_bad=$((file_bad + 1))
       continue
     fi
 
@@ -100,19 +111,47 @@ for db in $staged_dbs; do
       echo "[hooks] pre-commit-validate-timestamps: python3 not found in PATH; required by strict UTC RFC3339 validator. Install python3 or set PRE_COMMIT_SKIP_TIMESTAMPS=1 (not recommended)." >&2
       exit 1
     fi
+    validator="$hook_dir/rfc3339-utc-validate.py"
+    if [ ! -f "$validator" ]; then
+      echo "[hooks] pre-commit-validate-timestamps: FAIL — validator missing: $validator" >&2
+      exit 1
+    fi
     rows="$(sqlite3 "$db" "SELECT id, updated_at FROM ${table} WHERE updated_at IS NOT NULL LIMIT 20" 2>/dev/null || true)"
     if [ -z "$rows" ]; then
       continue
     fi
-    bad_rows="$(printf '%s\n' "$rows" | python3 "$hook_dir/rfc3339-utc-validate.py" 2>/dev/null || true)"
-    bad_rc=$?
-    if [ "$bad_rc" -ne 0 ] || [ -n "$bad_rows" ]; then
+    # Run the validator, keeping its stderr for diagnostics, and capture its exit
+    # code WITHOUT `|| true` swallowing it. Exit codes:
+    #   0 = every row is genuine UTC RFC3339
+    #   1 = at least one row rejected (printed on stdout)
+    #   2 = usage/IO error (message on stderr, nothing on stdout)
+    #   >=126 = could not execute (missing interpreter, crash)
+    # Anything other than 0 is a hard failure. Previously `|| true` forced
+    # bad_rc to 0 and `2>/dev/null` hid stderr, so a crashed or absent
+    # validator silently passed the commit. Now: 1 -> report rejected rows,
+    # anything else -> propagate as an infrastructure failure. Either way the
+    # commit is rejected; no failure mode degrades into a pass.
+    set +e
+    bad_rows="$(printf '%s\n' "$rows" | python3 "$validator" 2>&1 >/dev/null)"
+    validator_rc=$?
+    rejected_rows="$(printf '%s\n' "$rows" | python3 "$validator" 2>/dev/null)"
+    rejected_rc=$?
+    set -e
+    if [ "$rejected_rc" -eq 1 ]; then
       echo "[hooks] pre-commit-validate-timestamps: FAIL — $db table=$table has non-UTC-RFC3339 updated_at rows:" >&2
+      echo "$rejected_rows" >&2
+      file_bad=$((file_bad + 1))
+    elif [ "$rejected_rc" -ne 0 ]; then
+      echo "[hooks] pre-commit-validate-timestamps: FAIL — validator error (exit $rejected_rc) on $db table=$table; failing closed." >&2
       if [ -n "$bad_rows" ]; then
         echo "$bad_rows" >&2
       else
-        echo "(python validator returned non-zero but no rows; check python3 install)" >&2
+        echo "(validator produced no diagnostic output)" >&2
       fi
+      file_bad=$((file_bad + 1))
+    fi
+    if [ "$validator_rc" -ne 0 ] && [ "$validator_rc" -ne "$rejected_rc" ]; then
+      echo "[hooks] pre-commit-validate-timestamps: note — validator exit codes disagreed between runs ($validator_rc vs $rejected_rc); failing closed." >&2
       file_bad=$((file_bad + 1))
     fi
   done

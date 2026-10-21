@@ -8,6 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
       - run: cargo install cargo-fuzz
       - run: if [ -d fuzz ]; then cargo fuzz run 2>&1 | tail -50 || true; else echo no-fuzz; fi
