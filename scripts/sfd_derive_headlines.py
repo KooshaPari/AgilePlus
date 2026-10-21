@@ -9,6 +9,7 @@ bullets and the JSON agree.
 Usage:
     python3 scripts/sfd_derive_headlines.py
 """
+
 import json
 import sys
 from pathlib import Path
@@ -77,8 +78,10 @@ def main():
             print(f"  {k:5} {v}  {mark}")
         if clear:
             gate_clear.append(k)
-    print(f"  -> gates clearly PASS (EVERY meaningful cell is PASS): "
-          f"{len(gate_clear)}/20 {gate_clear}")
+    print(
+        f"  -> gates clearly PASS (EVERY meaningful cell is PASS): "
+        f"{len(gate_clear)}/20 {gate_clear}"
+    )
 
     print("\n=== journey rows with any PASS (C) ===")
     cpass = [k for k in rows if k.startswith("C.") and "PASS" in rows[k]]

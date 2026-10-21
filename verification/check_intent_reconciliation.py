@@ -67,9 +67,7 @@ for case in c:
     assert case["journey_id"] in journeys
     if "requirement_id" in case:
         assert case["requirement_id"] in by_id
-sources = set(
-    re.findall(r"^## (S\d+) ", (folder / "OWNER_EXCERPTS.md").read_text(), re.MULTILINE)
-)
+sources = set(re.findall(r"^## (S\d+) ", (folder / "OWNER_EXCERPTS.md").read_text(), re.MULTILINE))
 assert len(sources) == 9
 for row in rows:
     req = by_id[row["requirement_id"]]

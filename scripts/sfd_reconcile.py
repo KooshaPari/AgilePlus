@@ -18,6 +18,7 @@ The question this answers: does the md tree body faithfully reflect the raw
 evidence + documented cohort movements? If yes, md-derived counts are the
 authoritative ones and the JSON counters are the artefact that drifted.
 """
+
 import json
 import re
 from collections import Counter
@@ -25,22 +26,28 @@ from pathlib import Path
 
 DIMS = ["Implementation", "Usability", "Validation", "Assurance"]
 
-VERDICT_WORDS = ("PASS", "FAIL", "NOT_RUN", "UNKNOWN", "STALE", "BLOCKED",
-                 "NOT_APPLICABLE")
+VERDICT_WORDS = ("PASS", "FAIL", "NOT_RUN", "UNKNOWN", "STALE", "BLOCKED", "NOT_APPLICABLE")
 STRENGTHS = ("LOW", "MEDIUM", "HIGH")
 
 # md tree token -> canonical verdict
 MD_MAP = {
-    "✓": "PASS", "~": "PARTIAL", "✗": "FAIL", "…": "NOT_RUN",
-    "?": "UNKNOWN", "S": "STALE", "B": "BLOCKED", "N/A": "NOT_APPLICABLE",
+    "✓": "PASS",
+    "~": "PARTIAL",
+    "✗": "FAIL",
+    "…": "NOT_RUN",
+    "?": "UNKNOWN",
+    "S": "STALE",
+    "B": "BLOCKED",
+    "N/A": "NOT_APPLICABLE",
     "_": "DIM_NOT_MEANINGFUL",
-    "H": "PASS", "L": "DIM_NOT_MEANINGFUL", "M": "DIM_NOT_MEANINGFUL",
+    "H": "PASS",
+    "L": "DIM_NOT_MEANINGFUL",
+    "M": "DIM_NOT_MEANINGFUL",
 }
 
 MD_TOKENS = ["N/A", "✓", "~", "✗", "…", "?", "S", "B", "_", "L", "H", "M"]
 MD_TOKEN_RE = re.compile("|".join(re.escape(t) for t in MD_TOKENS))
-MD_COMPOUND_RE = re.compile(
-    r"(N/A|[✓~✗…?SB_HLM])\s*/\s*(N/A|[✓~✗…?SB_HLM])")
+MD_COMPOUND_RE = re.compile(r"(N/A|[✓~✗…?SB_HLM])\s*/\s*(N/A|[✓~✗…?SB_HLM])")
 
 
 # --------------------------------------------------------------------------
@@ -207,7 +214,7 @@ def parse_md(path="docs/sessions/20261017-state-forward-docket/PROGRESS_TREE.md"
 
     rows = {}
     for label, verdicts in occ:
-        rows[label] = verdicts       # overlay (later occurrence) wins
+        rows[label] = verdicts  # overlay (later occurrence) wins
     return rows, occ
 
 
@@ -230,18 +237,19 @@ def show(name, counts):
         total += t
         npass += c.get("PASS", 0)
         nm = c.get("DIM_NOT_MEANINGFUL", 0)
-        print(f"  {d:15} n={t:3} PASS={c.get('PASS',0):2} PARTIAL={c.get('PARTIAL',0):2} "
-              f"FAIL={c.get('FAIL',0):2} NOT_RUN={c.get('NOT_RUN',0):2} "
-              f"UNKNOWN={c.get('UNKNOWN',0):2} STALE={c.get('STALE',0):2} "
-              f"NA={c.get('NOT_APPLICABLE',0):2} nm={nm:2}")
+        print(
+            f"  {d:15} n={t:3} PASS={c.get('PASS', 0):2} PARTIAL={c.get('PARTIAL', 0):2} "
+            f"FAIL={c.get('FAIL', 0):2} NOT_RUN={c.get('NOT_RUN', 0):2} "
+            f"UNKNOWN={c.get('UNKNOWN', 0):2} STALE={c.get('STALE', 0):2} "
+            f"NA={c.get('NOT_APPLICABLE', 0):2} nm={nm:2}"
+        )
     nm = sum(counts[d].get("DIM_NOT_MEANINGFUL", 0) for d in DIMS)
     na = sum(counts[d].get("NOT_APPLICABLE", 0) for d in DIMS)
     # "meaningful" = cells that carry a verdict for the dimension, i.e.
     # everything that is neither dim_not_meaningful nor NOT_APPLICABLE.
     # This must match sfd_validate_counts.py exactly.
     meaningful = total - nm - na
-    print(f"  TOTAL={total}  PASS={npass}  meaningful={meaningful} "
-          f"(= {total} - nm {nm} - NA {na})")
+    print(f"  TOTAL={total}  PASS={npass}  meaningful={meaningful} (= {total} - nm {nm} - NA {na})")
     return total, npass, meaningful
 
 
@@ -275,9 +283,9 @@ def main():
                 changed += 1
     print(f"  changed cells = {changed}")
 
-    js = json.loads(Path(
-        "docs/sessions/20261017-state-forward-docket/PROGRESS_TREE.snapshot.json"
-    ).read_text())
+    js = json.loads(
+        Path("docs/sessions/20261017-state-forward-docket/PROGRESS_TREE.snapshot.json").read_text()
+    )
     jb = js["dimension_breakdown"]
     print("\n=== json dimension_breakdown ===")
     for d in DIMS:

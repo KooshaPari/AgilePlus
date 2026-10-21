@@ -38,6 +38,7 @@ Usage:
     python3 scripts/sfd_validate_counts.py            # report + exit 1 on drift
     python3 scripts/sfd_validate_counts.py --write    # rewrite JSON + md table
 """
+
 import argparse
 import json
 import re
@@ -51,10 +52,19 @@ JS_PATH = f"{DOC}/PROGRESS_TREE.snapshot.json"
 
 DIMS = ["Implementation", "Usability", "Validation", "Assurance"]
 
-VERDICTS = ["PASS", "PARTIAL", "FAIL", "NOT_RUN", "UNKNOWN", "STALE",
-            "BLOCKED", "NOT_APPLICABLE"]
-JSON_KEYS = ["PASS", "PARTIAL", "FAIL", "NOT_RUN", "UNKNOWN", "STALE",
-             "BLOCKED", "NOT_APPLICABLE", "dim_not_meaningful", "total"]
+VERDICTS = ["PASS", "PARTIAL", "FAIL", "NOT_RUN", "UNKNOWN", "STALE", "BLOCKED", "NOT_APPLICABLE"]
+JSON_KEYS = [
+    "PASS",
+    "PARTIAL",
+    "FAIL",
+    "NOT_RUN",
+    "UNKNOWN",
+    "STALE",
+    "BLOCKED",
+    "NOT_APPLICABLE",
+    "dim_not_meaningful",
+    "total",
+]
 
 TOKEN_MAP = {
     "✓": "PASS",
@@ -215,26 +225,32 @@ def derive(rows):
 
 def md_count_table(breakdown):
     """Render the md Counts table from a breakdown."""
-    order = [("PASS", "PASS"), ("PARTIAL", "PARTIAL"), ("FAIL", "FAIL"),
-             ("NOT_RUN", "NOT_RUN"), ("UNKNOWN", "UNKNOWN"),
-             ("STALE", "STALE"), ("NOT_APPLICABLE", "NOT_APPLICABLE"),
-             ("dim_not_meaningful", "dim-not-meaningful")]
-    out = ["| Verdict | Impl | Usab | Val | Assur | Total |",
-           "|---|---|---|---|---|---|"]
+    order = [
+        ("PASS", "PASS"),
+        ("PARTIAL", "PARTIAL"),
+        ("FAIL", "FAIL"),
+        ("NOT_RUN", "NOT_RUN"),
+        ("UNKNOWN", "UNKNOWN"),
+        ("STALE", "STALE"),
+        ("NOT_APPLICABLE", "NOT_APPLICABLE"),
+        ("dim_not_meaningful", "dim-not-meaningful"),
+    ]
+    out = ["| Verdict | Impl | Usab | Val | Assur | Total |", "|---|---|---|---|---|---|"]
     for key, label in order:
         vals = [breakdown[d][key] for d in DIMS]
-        out.append(f"| {label} | " + " | ".join(str(v) for v in vals)
-                   + f" | **{sum(vals)}** |")
+        out.append(f"| {label} | " + " | ".join(str(v) for v in vals) + f" | **{sum(vals)}** |")
     cols = [breakdown[d]["total"] for d in DIMS]
-    out.append("| **Column total** | " + " | ".join(f"**{c}**" for c in cols)
-               + f" | **{sum(cols)}** |")
+    out.append(
+        "| **Column total** | " + " | ".join(f"**{c}**" for c in cols) + f" | **{sum(cols)}** |"
+    )
     return "\n".join(out)
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--write", action="store_true",
-                    help="rewrite the JSON breakdown/headline and the md table")
+    ap.add_argument(
+        "--write", action="store_true", help="rewrite the JSON breakdown/headline and the md table"
+    )
     args = ap.parse_args()
 
     md_text = Path(MD_PATH).read_text()
@@ -249,8 +265,7 @@ def main():
         b = d["dimension_breakdown"][dim]
         print(f"  {dim:15} " + " ".join(f"{k}={b[k]}" for k in JSON_KEYS))
     print(f"  PASS any        = {d['cells_pass_any']}")
-    print(f"  meaningful      = {d['cells_pass_meaningful']} "
-          f"(256 - nm - NOT_APPLICABLE)")
+    print(f"  meaningful      = {d['cells_pass_meaningful']} (256 - nm - NOT_APPLICABLE)")
     print()
 
     drift = []
@@ -259,23 +274,29 @@ def main():
     for dim in DIMS:
         for k in JSON_KEYS:
             if jb.get(dim, {}).get(k) != d["dimension_breakdown"][dim][k]:
-                drift.append(f"json {dim}.{k}: {jb.get(dim,{}).get(k)} "
-                             f"-> {d['dimension_breakdown'][dim][k]}")
+                drift.append(
+                    f"json {dim}.{k}: {jb.get(dim, {}).get(k)} "
+                    f"-> {d['dimension_breakdown'][dim][k]}"
+                )
     hc = js.get("headline_counts", {})
     if hc.get("cells_pass_any") != f"{d['cells_pass_any']}/{d['total_cells']}":
-        drift.append(f"json headline cells_pass_any: "
-                     f"{hc.get('cells_pass_any')} -> "
-                     f"{d['cells_pass_any']}/{d['total_cells']}")
+        drift.append(
+            f"json headline cells_pass_any: "
+            f"{hc.get('cells_pass_any')} -> "
+            f"{d['cells_pass_any']}/{d['total_cells']}"
+        )
     want_mean = f"{d['cells_pass_any']}/{d['cells_pass_meaningful']}"
     if hc.get("cells_pass_meaningful") != want_mean:
-        drift.append(f"json headline cells_pass_meaningful: "
-                     f"{hc.get('cells_pass_meaningful')} -> {want_mean}")
+        drift.append(
+            f"json headline cells_pass_meaningful: {hc.get('cells_pass_meaningful')} -> {want_mean}"
+        )
 
     # md counts table
     table_re = re.compile(
         r"(\| Verdict \| Impl \| Usab \| Val \| Assur \| Total \|\n"
         r"\|---\|---\|---\|---\|---\|---\|\n"
-        r"(?:\|[^\n]*\|\n)+)")
+        r"(?:\|[^\n]*\|\n)+)"
+    )
     mm = table_re.search(md_text)
     if not mm:
         drift.append("md: counts table not found")
@@ -283,8 +304,7 @@ def main():
         drift.append("md: counts table differs from derived breakdown")
 
     # derived headline counters (must be derivable from the tree body)
-    ndr_pass = [k for k in rows if k.startswith("D.")
-                and "PASS" in rows[k]]
+    ndr_pass = [k for k in rows if k.startswith("D.") and "PASS" in rows[k]]
     gate_clear = []
     for k in rows:
         if not k.startswith("E."):
@@ -293,19 +313,22 @@ def main():
         if vs and all(v == "PASS" for v in vs):
             gate_clear.append(k)
     hc_raw = js.get("headline_counts", {})
-    if not hc_raw.get("ndr_items_with_target_witness", "").startswith(
-            f"{len(ndr_pass)}/10"):
-        drift.append(f"json ndr_items_with_target_witness: "
-                     f"{hc_raw.get('ndr_items_with_target_witness', '')[:20]}... "
-                     f"-> {len(ndr_pass)}/10 (derived from tree body)")
+    if not hc_raw.get("ndr_items_with_target_witness", "").startswith(f"{len(ndr_pass)}/10"):
+        drift.append(
+            f"json ndr_items_with_target_witness: "
+            f"{hc_raw.get('ndr_items_with_target_witness', '')[:20]}... "
+            f"-> {len(ndr_pass)}/10 (derived from tree body)"
+        )
     if not hc_raw.get("gates_pass", "").startswith(f"{len(gate_clear)}/20"):
-        drift.append(f"json gates_pass: "
-                     f"{hc_raw.get('gates_pass', '')[:20]}... "
-                     f"-> {len(gate_clear)}/20 (derived from tree body)")
+        drift.append(
+            f"json gates_pass: "
+            f"{hc_raw.get('gates_pass', '')[:20]}... "
+            f"-> {len(gate_clear)}/20 (derived from tree body)"
+        )
     for pat, want, label in (
-            (r"\*\*(\d+) / 10\*\* NDR items", len(ndr_pass), "md NDR"),
-            (r"\*\*(\d+) / 20\*\* gates are clearly PASS", len(gate_clear),
-             "md gates")):
+        (r"\*\*(\d+) / 10\*\* NDR items", len(ndr_pass), "md NDR"),
+        (r"\*\*(\d+) / 20\*\* gates are clearly PASS", len(gate_clear), "md gates"),
+    ):
         m2 = re.search(pat, md_text)
         if not m2:
             drift.append(f"{label}: headline bullet not found")
@@ -330,8 +353,7 @@ def main():
     js["total_cells"] = d["total_cells"]
     hc = dict(hc)
     hc["cells_pass_any"] = f"{d['cells_pass_any']}/{d['total_cells']}"
-    hc["cells_pass_meaningful"] = (
-        f"{d['cells_pass_any']}/{d['cells_pass_meaningful']}")
+    hc["cells_pass_meaningful"] = f"{d['cells_pass_any']}/{d['cells_pass_meaningful']}"
     js["headline_counts"] = hc
     with open(JS_PATH, "w") as f:
         json.dump(js, f, indent=2, ensure_ascii=False)
