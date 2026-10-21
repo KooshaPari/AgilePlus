@@ -16,8 +16,8 @@
 
 ### CF-1 — `.github/workflows/coverage.yml`
 
-| Line | Before | After |
-|---|---|---|
+| Line  | Before                                      | After                                                                      |
+| ----- | ------------------------------------------- | -------------------------------------------------------------------------- |
 | 80-82 | (3-line `with:` block: only `GITHUB_TOKEN`) | (8-line `with:` block: `GITHUB_TOKEN` + `coverage-path: python` + comment) |
 
 ```yaml
@@ -39,9 +39,9 @@ Parameter verification: confirmed against `py-cov-action/python-coverage-comment
 
 ### CF-2 — `.github/workflows/mutation.yml`
 
-| Line | Before | After |
-|---|---|---|
-| 46 | `timeout-minutes: 360` | `timeout-minutes: 300` |
+| Line | Before                 | After                  |
+| ---- | ---------------------- | ---------------------- |
+| 46   | `timeout-minutes: 360` | `timeout-minutes: 300` |
 
 ```yaml
 # Run 38830178393 (c505e863), job 116746915954 lost runner communication
@@ -62,14 +62,14 @@ Why 300 (not lower): cargo-mutants on `agileplus-domain` explores all mutants in
 
 ## Local verification
 
-| Check | Result |
-|---|---|
-| YAML syntax (`coverage.yml`) | PASS — `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/coverage.yml'))"` |
-| YAML syntax (`mutation.yml`) | PASS — `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/mutation.yml'))"` |
+| Check                                   | Result                                                                                                                                           |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| YAML syntax (`coverage.yml`)            | PASS — `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/coverage.yml'))"`                                                        |
+| YAML syntax (`mutation.yml`)            | PASS — `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/mutation.yml'))"`                                                        |
 | Action parameter name (`coverage-path`) | PASS — verified against `py-cov-action/python-coverage-comment-action@v4.5/action.yml`; input is `COVERAGE_PATH`, case-insensitive binding works |
-| Source-code changes | NONE — workflow config only, zero Rust/Python code changes |
-| Git push | PASS — `HOOKS_SKIP=1` used per the task spec to bypass the environmental pre-push cargo clippy hook |
-| `gh pr create` | PASS — `https://github.com/KooshaPari/AgilePlus/pull/1166` opened against `KooshaPari/AgilePlus:main` |
+| Source-code changes                     | NONE — workflow config only, zero Rust/Python code changes                                                                                       |
+| Git push                                | PASS — `HOOKS_SKIP=1` used per the task spec to bypass the environmental pre-push cargo clippy hook                                              |
+| `gh pr create`                          | PASS — `https://github.com/KooshaPari/AgilePlus/pull/1166` opened against `KooshaPari/AgilePlus:main`                                            |
 
 ---
 
@@ -80,11 +80,11 @@ Why 300 (not lower): cargo-mutants on `agileplus-domain` explores all mutants in
 - **Branch**: `fix/cf-1-cf-2-workflow-config-2026-10-18`
 - **Commit**: `84bdda33`
 - **Merge path** (per AGENTS.md canonical flow with pre-commit hooks; direct `gh pr merge` is fail-closed today):
-  ```bash
-  git -c merge.ff=true merge --squash fix/cf-1-cf-2-workflow-config-2026-10-18
-  git commit -m "ci: ... (#1166) ..."
-  HOOKS_SKIP=1 git push origin main
-  ```
+    ```bash
+    git -c merge.ff=true merge --squash fix/cf-1-cf-2-workflow-config-2026-10-18
+    git commit -m "ci: ... (#1166) ..."
+    HOOKS_SKIP=1 git push origin main
+    ```
 
 ---
 

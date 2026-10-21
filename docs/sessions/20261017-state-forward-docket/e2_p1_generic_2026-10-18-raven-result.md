@@ -69,7 +69,7 @@ paths, all of which already fail closed:
   validate/ship operation". The transition then delegates to the domain
   state machine at line 288 and persists at line 296.
 - **HTTP create route** (`crates/agileplus-api/src/routes/features.rs:131-225`):
-  the create handler, lines 168-172, similarly refuses to *create* a
+  the create handler, lines 168-172, similarly refuses to _create_ a
   feature in a terminal state, returning 400 BadRequest with "terminal
   feature states cannot be assigned at creation; use canonical
   acceptance/promotion".
@@ -138,7 +138,7 @@ Per AGENTS.md (Recovery Authority 2026-10-04):
 
 > Generic state-transition transports must not award terminal acceptance.
 
-This is a *transport-layer* invariant. The transport-layer code cannot
+This is a _transport-layer_ invariant. The transport-layer code cannot
 have access to governance contracts, evidence references, candidate
 evaluators, or assignment receipts, so it must defer to the canonical
 acceptance use case. The gRPC, HTTP `transition`, HTTP `create`, and CLI
@@ -250,7 +250,7 @@ where ...
 Lines 283-287 are the production enforcement. A POST to
 `/api/v1/features/{slug}/transition` with `target_state ∈ {"validated",
 "shipped"}` returns HTTP 400 BadRequest without ever consulting
-`feature.transition()` (the domain state machine that *would* otherwise
+`feature.transition()` (the domain state machine that _would_ otherwise
 allow `Implementing -> Validated`). The handler then delegates to the
 domain state machine at line 288 for non-terminal targets.
 
@@ -287,7 +287,7 @@ This already has a behaviour test:
 re-export from `traceability_core::lifecycle` that maps errors. It
 **does not** enforce the rule. The lifecycle crate allows
 `Implementing -> Validated` and `Validated -> Shipped` because those
-are valid state transitions; the gate is at the *transport* layer,
+are valid state transitions; the gate is at the _transport_ layer,
 which is correct.
 
 ### 3d. Domain model
@@ -324,7 +324,7 @@ state-machine-level transition; the transport layer is the gate.
 
 `crates/agileplus-application/src/use_cases/advance_feature.rs:32-46`
 (AdvanceFeature::execute) calls `feature.transition(target)` directly
-(line 36). It therefore *would* permit a Validated/Shipped transition
+(line 36). It therefore _would_ permit a Validated/Shipped transition
 if called from app code. There is no HTTP route that calls
 `AdvanceFeature::execute` for terminal targets (the HTTP `transition`
 route calls `state_machine::transition` at line 288, not the use case),
@@ -416,6 +416,7 @@ async fn coverage_transition_feature_rejects_terminal_states() {
 ```
 
 **Where**:
+
 - Delete `terminal_feature_states_are_not_generic_transition_targets` at
   `crates/agileplus-api/src/routes/features.rs:391-399`.
 - Add the new test alongside
@@ -423,6 +424,7 @@ async fn coverage_transition_feature_rejects_terminal_states() {
   (lines 254-269). A 1-line file edit.
 
 **Pros**:
+
 - 1-line code deletion + ~22-line test addition. Done in <30 min.
 - Cites the existing real-transition test at
   `crates/agileplus-api/tests/api_integration/route_coverage.rs:373-378`
@@ -431,6 +433,7 @@ async fn coverage_transition_feature_rejects_terminal_states() {
 - Closes E.2.P1-GENERIC today.
 
 **Cons**:
+
 - None. The production code is already correct.
 
 ### Design B — Defense in depth: add the rule to `Feature::transition()`
@@ -445,6 +448,7 @@ This means changing the local state-machine model to refuse terminal
 transitions outside the canonical acceptance use case.
 
 **Pros**:
+
 - Domain layer is the single source of truth. The rule cannot be
   bypassed by any future route.
 - The CLI `mvp` helper and the gRPC path both already use
@@ -454,6 +458,7 @@ transitions outside the canonical acceptance use case.
   transition.
 
 **Cons**:
+
 - Likely breaks the existing test at lines 251-265 of
   `crates/agileplus-domain/src/domain/feature.rs`
   (`full_happy_path_transition_chain`), which walks to
@@ -461,7 +466,7 @@ transitions outside the canonical acceptance use case.
   rewritten to call the canonical acceptance use case instead, or the
   rule would need to be parameterizable.
 - Requires a contract change in the lifecycle state-machine semantics
-  *and* in the use case (`AdvanceFeature::execute` and
+  _and_ in the use case (`AdvanceFeature::execute` and
   `FeatureAcceptanceCommand`). The 5-7 line proof-of-concept above
   understates the ripple.
 - Risk of touching the `traceability-core` upstream re-export
@@ -477,11 +482,13 @@ has no rules). The transition function reads the contract and refuses
 terminal targets when the contract is absent / incomplete.
 
 **Pros**:
+
 - Reuses existing primitives (`GovernanceContract`,
   `AtomicAcceptancePort`).
 - Ties the rule to the canonical evidence model.
 
 **Cons**:
+
 - Heaviest design. Requires plumbing `&GovernanceContract` (or a port)
   through `Feature::transition()` and `AdvanceFeature::execute()`.
 - Changes the semantic of "generic" to mean "no contract bound".
@@ -573,8 +580,7 @@ async fn coverage_transition_feature_rejects_terminal_states() {
 }
 ```
 
-The existing `coverage_transition_feature_invalid_target_is_400` (line
-385) exercises `target_state = "sideways"`, so the seed feature does not
+The existing `coverage_transition_feature_invalid_target_is_400` (line 385) exercises `target_state = "sideways"`, so the seed feature does not
 need to be in `Implementing`; the message-substring assertion is enough.
 
 The deletion: lines 391-399 of
@@ -585,12 +591,12 @@ The deletion: lines 391-399 of
 
 ## 7. Effort estimate for implementation
 
-| Design | Effort | Lines of code touched | Risk | Closes E.2.P1-GENERIC |
-|--------|--------|----------------------|------|------------------------|
-| **A** — replace tautology with HTTP behaviour test | **25 min** | ~25 add, 9 delete | zero behaviour change | YES |
-| B — add rule to `Feature::transition()` (domain layer) | 45-60 min (no surprises), up to 2 h (if traceability_core needs sync) | ~15 plus 5-7 test updates | medium; semantic of lifecycle crate changes | YES |
-| C — governance-contract-as-source-of-truth | 90-120 min | ~50 add, contract API surface | medium-heavy | YES |
-| D — remove `POST /transition` entirely (force `/accept` for every state change) | NOT RECOMMENDED | would invalidate `route_coverage.rs:373-414`, `atomic_acceptance_http.rs` etc. | very high — breaks the existing non-terminal transition contract | YES (in a sense) |
+| Design                                                                          | Effort                                                                | Lines of code touched                                                          | Risk                                                             | Closes E.2.P1-GENERIC |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------- | --------------------- |
+| **A** — replace tautology with HTTP behaviour test                              | **25 min**                                                            | ~25 add, 9 delete                                                              | zero behaviour change                                            | YES                   |
+| B — add rule to `Feature::transition()` (domain layer)                          | 45-60 min (no surprises), up to 2 h (if traceability_core needs sync) | ~15 plus 5-7 test updates                                                      | medium; semantic of lifecycle crate changes                      | YES                   |
+| C — governance-contract-as-source-of-truth                                      | 90-120 min                                                            | ~50 add, contract API surface                                                  | medium-heavy                                                     | YES                   |
+| D — remove `POST /transition` entirely (force `/accept` for every state change) | NOT RECOMMENDED                                                       | would invalidate `route_coverage.rs:373-414`, `atomic_acceptance_http.rs` etc. | very high — breaks the existing non-terminal transition contract | YES (in a sense)      |
 
 **Recommendation**: ship Design A; if operator later wants stronger
 guarantees, layer B.
@@ -624,41 +630,41 @@ mechanical.
 
 ## Appendix A: citation index (every claim above is anchored)
 
-| Claim | File:Line |
-|-------|-----------|
-| `Feature` struct has no `kind` field | `crates/agileplus-domain/src/domain/feature.rs:57-74` |
-| `Feature::transition()` allows terminal transitions | `crates/agileplus-domain/src/domain/feature.rs:96-114` |
-| HTTP `/transition` rejects terminal targets in production | `crates/agileplus-api/src/routes/features.rs:283-287` |
-| HTTP `create_feature` rejects terminal initial states | `crates/agileplus-api/src/routes/features.rs:168-172` |
-| HTTP `/transition` happy-path test (template) | `crates/agileplus-api/tests/api_integration/route_coverage.rs:373-383` |
-| HTTP `create_feature_rejects_terminal_states` (template) | `crates/agileplus-api/tests/api_integration/route_coverage.rs:254-269` |
-| HTTP `create_feature_state_test!` macro (template) | `crates/agileplus-api/tests/api_integration/route_coverage.rs:223-249` |
-| Tautology test (the gap) | `crates/agileplus-api/src/routes/features.rs:391-399` |
-| gRPC "generic" fails closed on validate/ship | `crates/agileplus-grpc/src/server/mod.rs:705-714` |
-| gRPC behaviour test mirroring the HTTP fix | `crates/agileplus-grpc/tests/rpc_dispatch_command.rs:255-268, 294-307` |
-| CLI "generic" MVP transition fails closed | `crates/agileplus-cli/src/commands/mvp.rs:755-769` |
-| Canonical atomic-acceptance use case | `crates/agileplus-application/src/use_cases/accept_feature.rs:1-17` |
-| `/accept` HTTP route | `crates/agileplus-api/src/routes/acceptance.rs:48, 132-181` |
-| WBS sub-task 3 sixth-case wording | `verification/FORWARD_WBS_2026-10-04.md:73-79` |
-| WBS P2 gRPC parity context | `verification/FORWARD_WBS_2026-10-04.md:84-103` |
-| t-rex carry-forward (misframed) | `docs/sessions/20261017-state-forward-docket/e2_e5_p1p2_val_2026-10-18-trex-result.md:170-210` |
-| DOCKET entry for E.2.P1-GENERIC | `docs/sessions/20261017-state-forward-docket/DOCKET_CLOSE_OUT.md:55, 119` |
-| AGENTS.md invariant (top-level) | `~/AGENTS.md` "Recovery Authority" section |
-| Mature contract spec (referenced but not authoritative for design) | `spec/product/mature-contract.v1.json` |
+| Claim                                                              | File:Line                                                                                      |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `Feature` struct has no `kind` field                               | `crates/agileplus-domain/src/domain/feature.rs:57-74`                                          |
+| `Feature::transition()` allows terminal transitions                | `crates/agileplus-domain/src/domain/feature.rs:96-114`                                         |
+| HTTP `/transition` rejects terminal targets in production          | `crates/agileplus-api/src/routes/features.rs:283-287`                                          |
+| HTTP `create_feature` rejects terminal initial states              | `crates/agileplus-api/src/routes/features.rs:168-172`                                          |
+| HTTP `/transition` happy-path test (template)                      | `crates/agileplus-api/tests/api_integration/route_coverage.rs:373-383`                         |
+| HTTP `create_feature_rejects_terminal_states` (template)           | `crates/agileplus-api/tests/api_integration/route_coverage.rs:254-269`                         |
+| HTTP `create_feature_state_test!` macro (template)                 | `crates/agileplus-api/tests/api_integration/route_coverage.rs:223-249`                         |
+| Tautology test (the gap)                                           | `crates/agileplus-api/src/routes/features.rs:391-399`                                          |
+| gRPC "generic" fails closed on validate/ship                       | `crates/agileplus-grpc/src/server/mod.rs:705-714`                                              |
+| gRPC behaviour test mirroring the HTTP fix                         | `crates/agileplus-grpc/tests/rpc_dispatch_command.rs:255-268, 294-307`                         |
+| CLI "generic" MVP transition fails closed                          | `crates/agileplus-cli/src/commands/mvp.rs:755-769`                                             |
+| Canonical atomic-acceptance use case                               | `crates/agileplus-application/src/use_cases/accept_feature.rs:1-17`                            |
+| `/accept` HTTP route                                               | `crates/agileplus-api/src/routes/acceptance.rs:48, 132-181`                                    |
+| WBS sub-task 3 sixth-case wording                                  | `verification/FORWARD_WBS_2026-10-04.md:73-79`                                                 |
+| WBS P2 gRPC parity context                                         | `verification/FORWARD_WBS_2026-10-04.md:84-103`                                                |
+| t-rex carry-forward (misframed)                                    | `docs/sessions/20261017-state-forward-docket/e2_e5_p1p2_val_2026-10-18-trex-result.md:170-210` |
+| DOCKET entry for E.2.P1-GENERIC                                    | `docs/sessions/20261017-state-forward-docket/DOCKET_CLOSE_OUT.md:55, 119`                      |
+| AGENTS.md invariant (top-level)                                    | `~/AGENTS.md` "Recovery Authority" section                                                     |
+| Mature contract spec (referenced but not authoritative for design) | `spec/product/mature-contract.v1.json`                                                         |
 
 ---
 
 ## Appendix B: what t-rex got right vs. wrong
 
-| T-rex claim | Truth |
-|------------|-------|
-| "There is no production enforcement" | WRONG. Production enforcement exists at HTTP (`features.rs:283-287, 168-172`) and gRPC (`mod.rs:705-714`). |
-| "The only test is a tautology" | CORRECT. Only `terminal_feature_states_are_not_generic_transition_targets` exists, and it is a tautology. |
-| WBS sub-task 3 sixth-case is uncovered | CORRECT. No behaviour test exists for the HTTP-rejection rule. |
+| T-rex claim                                                                | Truth                                                                                                                                           |
+| -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| "There is no production enforcement"                                       | WRONG. Production enforcement exists at HTTP (`features.rs:283-287, 168-172`) and gRPC (`mod.rs:705-714`).                                      |
+| "The only test is a tautology"                                             | CORRECT. Only `terminal_feature_states_are_not_generic_transition_targets` exists, and it is a tautology.                                       |
+| WBS sub-task 3 sixth-case is uncovered                                     | CORRECT. No behaviour test exists for the HTTP-rejection rule.                                                                                  |
 | "Decide whether 'generic' is a property of Feature or governance contract" | MISLEADING. "Generic" is not a property of Feature; it means "the generic transport path" (an established codebase term). The decision is moot. |
-| "Implement in `Feature::transition()` and/or `accept_feature.rs`" | MISLEADING. `accept_feature.rs` is already the canonical path (15 lines). The rule lives at the transport layer. |
-| "60 min ETA" | WRONG. The actual work is ~25 min. T-rex sized the design choice, not the gap. |
-| "Risk: medium" | WRONG. Implementation is zero behaviour change. |
+| "Implement in `Feature::transition()` and/or `accept_feature.rs`"          | MISLEADING. `accept_feature.rs` is already the canonical path (15 lines). The rule lives at the transport layer.                                |
+| "60 min ETA"                                                               | WRONG. The actual work is ~25 min. T-rex sized the design choice, not the gap.                                                                  |
+| "Risk: medium"                                                             | WRONG. Implementation is zero behaviour change.                                                                                                 |
 
 The t-rex carry-forward is **directionally correct but operationally
 mis-scoped**. The investigation here narrows the gap to a test-quality
@@ -682,4 +688,3 @@ The following evidence is captured to `/tmp/e2_p1_generic_2026-10-18.log`
 
 The result file at `/tmp/e2_p1_generic_2026-10-18-result.md` (this file)
 is the canonical deliverable; the log is the tee stream.
-

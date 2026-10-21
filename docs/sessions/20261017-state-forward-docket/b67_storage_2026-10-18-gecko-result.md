@@ -5,8 +5,9 @@
 **Wall-clock**: 261 s (4 m 21 s, under 10 m cap)
 **Database path**: `/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/.agileplus/agileplus.db`
 **Database size**: 671744 bytes (before) → 671744 bytes (after; SQLite reused pages)
-**Schema tables**: 40 tables identified (features, work_packages, governance_contracts, audit_log, evidence, _migrations, plus event/cycle/epic/backlog/snapshot/registry/metrics tables — see evidence)
+**Schema tables**: 40 tables identified (features, work_packages, governance_contracts, audit_log, evidence, \_migrations, plus event/cycle/epic/backlog/snapshot/registry/metrics tables — see evidence)
 **Corrupt row identified**:
+
 - `features` row `id=1` column `updated_at` (column index 7 of the SELECT in `crates/agileplus-sqlite/src/repository/features.rs:207`). Stored value: `"2026-08-07 10:43:55"` — `SQLite TEXT` form, NOT RFC3339 / `chrono::DateTime<Utc>` parseable. Parser at `features.rs:76-87` wraps the chrono error as `FromSqlConversionFailure(7, Type::Text, ...)` → "Conversion error from type Text at index: 7, premature end of input".
 - `backlog_items` rows `id=1..4`, column `updated_at` (column index 10 of the SELECT in `crates/agileplus-sqlite/src/repository/backlog.rs:170`). Same root cause: stored values `"2026-08-07 10:43:52"` (SQLite TEXT form, not RFC3339). Parser at `backlog.rs:105` produces the same `Conversion error from type Text at index: 10, premature end of input` error when `agileplus queue list` is run.
 
@@ -18,6 +19,7 @@
 Both rows now match their `created_at` (which is itself RFC3339 — `2026-08-07T08:48:11.807225+00:00`). Dev data, no behavioural meaning lost. Backups retained at `.agileplus/agileplus.db.bak-pre-fix-1792316706` (1:1 byte copy pre-fix).
 
 **Re-test result**:
+
 - `./target/debug/agileplus list` exit 0 — returns `1 | portage-fork-clean-followups | validated | # Portage Fork-Clean Follow-Ups`. Error gone.
 - `./target/debug/agileplus list --state validated` exit 0 — same row.
 - `./target/debug/agileplus queue list` exit 0 — 4 backlog items rendered. Previously this command also failed with `Conversion error from type Text at index: 10, premature end of input`; error now gone.
@@ -25,6 +27,7 @@ Both rows now match their `created_at` (which is itself RFC3339 — `2026-08-07T
 - Broader sweep: 0 remaining non-RFC3339 `updated_at`/`created_at` rows in features, work_packages, audit_log, evidence, spec_revisions, governance_contracts, cycles, attempts, snapshots, metrics, feature_acceptance_receipts. Backlog was the last category.
 
 **Cell movement recommendation**:
+
 - B.6 Storage Hygiene: NOT_RUN → **HEALTHY**
 - B.7 Storage Hygiene: NOT_RUN → **HEALTHY**
 - The two are tightly coupled here (same root cause, same row mapper shape, same SQLite TEXT-format pitfall), so I am moving them together.
@@ -110,6 +113,7 @@ ok
 **Blockers**: none.
 
 **Artifacts on disk**:
+
 - This file: `/tmp/b67_storage_2026-10-18-result.md`
 - Full tee log: `/tmp/b67_storage_2026-10-18.log` (29635 bytes, 692 lines)
 - DB pre-fix backup: `/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/.agileplus/agileplus.db.bak-pre-fix-1792316706`

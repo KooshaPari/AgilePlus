@@ -12,7 +12,7 @@
 
 ## Verdict vocabulary (SFD v1.0)
 
-`✓` PASS · `~` PARTIAL · `✗` FAIL · `…` NOT_RUN · `?` UNKNOWN · `S` STALE · `B` BLOCKED · `N/A` NOT_APPLICABLE · `_` n/a (dimension not meaningful for that row)
+`✓` PASS · `~` PARTIAL · `✗` FAIL · `…` NOT*RUN · `?` UNKNOWN · `S` STALE · `B` BLOCKED · `N/A` NOT_APPLICABLE · `*` n/a (dimension not meaningful for that row)
 
 ---
 
@@ -134,19 +134,19 @@ python3 scripts/sfd_validate_counts.py --write   # re-render JSON + this table
 1. **Breakdown drift.** The JSON `dimension_breakdown` never matched the per-cell tree body at any of the 4 commits that touched `PROGRESS_TREE.md` (`8179b549d3`, `61d921f726`, `17a40a8665`, `89473b6d03`). It was re-derived from the tree body.
 2. **One-cell hole.** The JSON per-dimension sums were 64/63/64/64 = **255**, not 256, while the JSON `total` field claimed 256. The missing cell was in **Usability** (introduced in `f5ffb09d`).
 3. **Headline off-by-one.** `cells_pass_any` said 49 while the breakdown held 50 PASS cells. The breakdown was right; the headline was stale.
-4. **Wrong denominator.** `cells_pass_meaningful` used **150**, which is `256 − 104 − 2` — the raw file's `§G.1` arithmetic, where `nm = 104` is itself wrong (a literal per-cell scan finds **87** `dim_not_meaningful` cells, not 104) and where `NOT_APPLICABLE = 2` undercounts the true **3**. The denominator is now `256 − 87 − 3 = 166`, using the rule stated in this section: *meaningful = every cell that is neither `dim_not_meaningful` nor `NOT_APPLICABLE`*.
+4. **Wrong denominator.** `cells_pass_meaningful` used **150**, which is `256 − 104 − 2` — the raw file's `§G.1` arithmetic, where `nm = 104` is itself wrong (a literal per-cell scan finds **87** `dim_not_meaningful` cells, not 104) and where `NOT_APPLICABLE = 2` undercounts the true **3**. The denominator is now `256 − 87 − 3 = 166`, using the rule stated in this section: _meaningful = every cell that is neither `dim_not_meaningful` nor `NOT_APPLICABLE`_.
 
-| Verdict | Impl | Usab | Val | Assur | Total |
-|---|---|---|---|---|---|
-| PASS | 36 | 5 | 6 | 3 | **50** |
-| PARTIAL | 11 | 2 | 9 | 0 | **22** |
-| FAIL | 6 | 15 | 3 | 0 | **24** |
-| NOT_RUN | 7 | 11 | 42 | 0 | **60** |
-| UNKNOWN | 2 | 6 | 1 | 0 | **9** |
-| STALE | 0 | 1 | 0 | 0 | **1** |
-| NOT_APPLICABLE | 1 | 1 | 1 | 0 | **3** |
-| dim-not-meaningful | 1 | 23 | 2 | 61 | **87** |
-| **Column total** | **64** | **64** | **64** | **64** | **256** |
+| Verdict            | Impl   | Usab   | Val    | Assur  | Total   |
+| ------------------ | ------ | ------ | ------ | ------ | ------- |
+| PASS               | 36     | 5      | 6      | 3      | **50**  |
+| PARTIAL            | 11     | 2      | 9      | 0      | **22**  |
+| FAIL               | 6      | 15     | 3      | 0      | **24**  |
+| NOT_RUN            | 7      | 11     | 42     | 0      | **60**  |
+| UNKNOWN            | 2      | 6      | 1      | 0      | **9**   |
+| STALE              | 0      | 1      | 0      | 0      | **1**   |
+| NOT_APPLICABLE     | 1      | 1      | 1      | 0      | **3**   |
+| dim-not-meaningful | 1      | 23     | 2      | 61     | **87**  |
+| **Column total**   | **64** | **64** | **64** | **64** | **256** |
 
 > **`dim_not_meaningful` = 87 (was 101).** The JSON previously counted 101 because it inherited the raw file's `§G.1` tally, which double-counted 17 Assurance strength cells (`LOW`/`MEDIUM`) and mis-tallied 3 more. A literal per-cell scan of the raw table gives **87**: `Implementation 1` (E.3) + `Usability 23` + `Validation 2` (A.1, E.1) + `Assurance 61` (42 literal `n/a` + 19 `LOW`/`MEDIUM` strength markers). The 3 `HIGH` Assurance markers (D.1, D.2, E.4) are the only Assurance `PASS` cells.
 >
@@ -185,29 +185,29 @@ This overlay updates the **Validation** column for B.5, C.4, C.5, C.7, and C.12 
 
 ### Cheap closes (no operator authority needed)
 
-| Cell | Cheapest move | ETA |
-|---|---|---|
-| A.4 / E.19 Validation | `cargo llvm-cov --workspace --summary-only --fail-under 85` on `d6b418a6`; record in `verification/QUALITY_GATES_2026-10-17.md` | 10–15m |
-| A.4 / E.20 Validation | `cargo deny check advisories sources licenses bans` on `d6b418a6` | 5m |
-| B.5 Validation → case-level | Read the 4 atomic_acceptance*.rs files; bind each test name to an `AP-VC-*` id; edit `semantic-verification-cases.v1.json` to `executed_with_witness` | 30m |
-| B.6 / E.6 Validation | `cargo test -p agileplus-events --test event_store_tests` + `replay_tests` + `proptest_audit` on `d6b418a6` | 5m |
-| B.3 / B.4 Usability | Smoke-run `target/debug/agileplus module list`, `feature list`, `agent review`; capture transcript | 10m |
-| D.3 Implementation | `cargo build -p agileplus-desktop --release`; `target/release/agileplus-desktop --help`; record exit code | 5m |
-| D.3 Validation | Start `agileplus-api`, hit `health_probes` test target, kill + relaunch, observe `atomic_acceptance_sqlite` reopen | 10m |
-| E.2 / E.5 Validation | Run P1/P2 command list in `FORWARD_WBS_2026-10-04.md` P1+P2 | 1–2h |
-| F.3 (all 6 doc gaps) | Open 1 docs PR with the 6 new files (RISK_REGISTER, COVERAGE_REPORT, DASHBOARD_PROD_OBSERVED, etc.) | 30m |
+| Cell                        | Cheapest move                                                                                                                                     | ETA    |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| A.4 / E.19 Validation       | `cargo llvm-cov --workspace --summary-only --fail-under 85` on `d6b418a6`; record in `verification/QUALITY_GATES_2026-10-17.md`                   | 10–15m |
+| A.4 / E.20 Validation       | `cargo deny check advisories sources licenses bans` on `d6b418a6`                                                                                 | 5m     |
+| B.5 Validation → case-level | Read the 4 atomic_acceptance*.rs files; bind each test name to an `AP-VC-*`id; edit`semantic-verification-cases.v1.json`to`executed_with_witness` | 30m    |
+| B.6 / E.6 Validation        | `cargo test -p agileplus-events --test event_store_tests` + `replay_tests` + `proptest_audit` on `d6b418a6`                                       | 5m     |
+| B.3 / B.4 Usability         | Smoke-run `target/debug/agileplus module list`, `feature list`, `agent review`; capture transcript                                                | 10m    |
+| D.3 Implementation          | `cargo build -p agileplus-desktop --release`; `target/release/agileplus-desktop --help`; record exit code                                         | 5m     |
+| D.3 Validation              | Start `agileplus-api`, hit `health_probes` test target, kill + relaunch, observe `atomic_acceptance_sqlite` reopen                                | 10m    |
+| E.2 / E.5 Validation        | Run P1/P2 command list in `FORWARD_WBS_2026-10-04.md` P1+P2                                                                                       | 1–2h   |
+| F.3 (all 6 doc gaps)        | Open 1 docs PR with the 6 new files (RISK_REGISTER, COVERAGE_REPORT, DASHBOARD_PROD_OBSERVED, etc.)                                               | 30m    |
 
 ### Operator-gated (cannot close in parent ctx)
 
-| Cell | Why |
-|---|---|
-| A.7 Usability (`agileplus-nats` / MinIO / Neo4j) | Operator must start the dormant homebrew binaries and provision missing S3/MinIO client code |
-| A.9 / A.10 Risk register | No central file; operator convening authority needed |
-| D.4–D.10 Validation (6 of 10 NDR) | Requires Tailscale provisioning on `kooshapari-desk`, Vercel team access, Windows deploy creds |
-| E.7 / E.8 / E.13 / E.17 Validation (production) | Vercel deploy + `PLANE_API_KEY` env vars + reachable URL |
-| E.9 Validation (GitHub live) | `GITHUB_TOKEN` + actual repo to list |
-| Cargo registry semver | Blocked on operator publish decision (`agileplus-agent-dispatch` baseline unpublished) |
-| Vercel team-scope access | FORWARD_DELTA: "scoped deployment inspection returned 403 for the owning team" |
+| Cell                                             | Why                                                                                            |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| A.7 Usability (`agileplus-nats` / MinIO / Neo4j) | Operator must start the dormant homebrew binaries and provision missing S3/MinIO client code   |
+| A.9 / A.10 Risk register                         | No central file; operator convening authority needed                                           |
+| D.4–D.10 Validation (6 of 10 NDR)                | Requires Tailscale provisioning on `kooshapari-desk`, Vercel team access, Windows deploy creds |
+| E.7 / E.8 / E.13 / E.17 Validation (production)  | Vercel deploy + `PLANE_API_KEY` env vars + reachable URL                                       |
+| E.9 Validation (GitHub live)                     | `GITHUB_TOKEN` + actual repo to list                                                           |
+| Cargo registry semver                            | Blocked on operator publish decision (`agileplus-agent-dispatch` baseline unpublished)         |
+| Vercel team-scope access                         | FORWARD_DELTA: "scoped deployment inspection returned 403 for the owning team"                 |
 
 ---
 
@@ -221,4 +221,4 @@ This tree and the policy it follows are now the canonical end-of-turn cockpit sh
 
 ---
 
-*Snapshot: `ap-sfd-2026-10-17T22-14Z@d6b418a6` · evidence file `PROGRESS_TREE_RAW.md` · policy `~/.jcode/memories/global/cockpit-progress-tree-policy.md` · memory `mem_1792275198980_10767103059655466859`*
+_Snapshot: `ap-sfd-2026-10-17T22-14Z@d6b418a6` · evidence file `PROGRESS_TREE_RAW.md` · policy `~/.jcode/memories/global/cockpit-progress-tree-policy.md` · memory `mem_1792275198980_10767103059655466859`_

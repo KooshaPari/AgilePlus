@@ -14,12 +14,12 @@
 
 Four checks fail across the 6 open PRs. This PR fixes **2 of 4** root causes. The other 2 are documented as carry-forward.
 
-| Check | PRs failing | Root cause | Fixed here? |
-|---|---|---|---|
-| **python-coverage** | 5/6 | `python-coverage-comment-action@v4.5` cannot read `/github/workspace/.coverage` (raw SQLite data file is not in the uploaded artifact) | **No** — needs action-config fix; out of scope for a 1-line config tweak |
-| **cargo-deny** | 3/6 | Dead `RUSTSEC-2024-0429` ignore entry → `advisory-not-detected` warning treated as hard fail. Three 2026-dated unmaintained advisories (`RUSTSEC-2026-0370/0371/0372`) also missing from `ignore` | **Yes** |
-| **cargo-mutants** | 3/6 | GitHub-hosted runner lost communication at 5h32m15s (close to the 360-min job timeout). Environmental, not code | **No** — no code fix possible |
-| **cargo-semver-checks** | 2/6 | Two manifests define `agileplus-proto` — `crates/agileplus-proto/Cargo.toml` (canonical) and `rust/Cargo.toml` (stale scaffolded sub-workspace). `cargo-semver-checks` walks the root path and ignores `[workspace] members`, so it sees both | **Yes** |
+| Check                   | PRs failing | Root cause                                                                                                                                                                                                                                    | Fixed here?                                                              |
+| ----------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| **python-coverage**     | 5/6         | `python-coverage-comment-action@v4.5` cannot read `/github/workspace/.coverage` (raw SQLite data file is not in the uploaded artifact)                                                                                                        | **No** — needs action-config fix; out of scope for a 1-line config tweak |
+| **cargo-deny**          | 3/6         | Dead `RUSTSEC-2024-0429` ignore entry → `advisory-not-detected` warning treated as hard fail. Three 2026-dated unmaintained advisories (`RUSTSEC-2026-0370/0371/0372`) also missing from `ignore`                                             | **Yes**                                                                  |
+| **cargo-mutants**       | 3/6         | GitHub-hosted runner lost communication at 5h32m15s (close to the 360-min job timeout). Environmental, not code                                                                                                                               | **No** — no code fix possible                                            |
+| **cargo-semver-checks** | 2/6         | Two manifests define `agileplus-proto` — `crates/agileplus-proto/Cargo.toml` (canonical) and `rust/Cargo.toml` (stale scaffolded sub-workspace). `cargo-semver-checks` walks the root path and ignores `[workspace] members`, so it sees both | **Yes**                                                                  |
 
 The 2 fixed causes are mechanically independent. The 2 carry-forward causes are documented at the bottom of this report with full evidence.
 
@@ -34,6 +34,7 @@ The 2 fixed causes are mechanically independent. The 2 carry-forward causes are 
 **Coverage achieved:** 86% (above threshold — `coverage report` step passes).
 
 **Actual failure point:** `python-coverage-comment-action@v4.5` step.
+
 ```
 stdout="Couldn't use data file '/github/workspace/.coverage': unable to open database file"
 ```
@@ -55,33 +56,37 @@ stdout="Couldn't use data file '/github/workspace/.coverage': unable to open dat
 **Two underlying issues** were both being treated as hard fails by `cargo deny`'s default `severity-threshold`:
 
 1. **Dead `RUSTSEC-2024-0429` ignore entry** (warning):
-   ```
-   warning[advisory-not-detected]: advisory was not encountered
-      ┌─ deny.toml:41:11
-      │
-   41 │   { id = "RUSTSEC-2024-0429", reason = "glib VariantStrIter: …" },
-      │           ━━━━━━━━━━━━━━━━━                ─────────────────────
-      │           │
-      │           no crate matched advisory criteria
-   ```
-   The deny.toml comment (operator 2026-10-14, commit `45bb5c9f`) claimed this entry was *required on Ubuntu CI* because `libappindicator -> tray-icon -> tauri` was a Linux-only path. The CI run **on the ubuntu-24.04 runner** reports the same `no crate matched advisory criteria` as a local macOS run — the libappindicator path was simplified out of the dep graph. The entry became dead code and the warning was being escalated to a hard fail.
+
+    ```
+    warning[advisory-not-detected]: advisory was not encountered
+       ┌─ deny.toml:41:11
+       │
+    41 │   { id = "RUSTSEC-2024-0429", reason = "glib VariantStrIter: …" },
+       │           ━━━━━━━━━━━━━━━━━                ─────────────────────
+       │           │
+       │           no crate matched advisory criteria
+    ```
+
+    The deny.toml comment (operator 2026-10-14, commit `45bb5c9f`) claimed this entry was _required on Ubuntu CI_ because `libappindicator -> tray-icon -> tauri` was a Linux-only path. The CI run **on the ubuntu-24.04 runner** reports the same `no crate matched advisory criteria` as a local macOS run — the libappindicator path was simplified out of the dep graph. The entry became dead code and the warning was being escalated to a hard fail.
 
 2. **Missing `RUSTSEC-2026-0370/0371/0372` ignore entries** (errors):
-   ```
-   error[unmaintained]: `zbus_names` is unmaintained
-       ├ ID: RUSTSEC-2026-0371
-   error[unmaintained]: `zvariant` is unmaintained
-       ├ ID: RUSTSEC-2026-0370
-   error[unmaintained]: `zvariant_derive` is unmaintained
-       ├ ID: RUSTSEC-2026-0372
-   ```
-   All transitive via `zbus 5.19.0 -> tauri tray-icon Linux path`, same blast radius as the existing `RUSTSEC-2024-0370 proc-macro-error` entry. The 2026-10-13 commit chain (deny.toml lines 7-11) removed other stale 2024-dated entries but missed the 2026-dated refresh.
+    ```
+    error[unmaintained]: `zbus_names` is unmaintained
+        ├ ID: RUSTSEC-2026-0371
+    error[unmaintained]: `zvariant` is unmaintained
+        ├ ID: RUSTSEC-2026-0370
+    error[unmaintained]: `zvariant_derive` is unmaintained
+        ├ ID: RUSTSEC-2026-0372
+    ```
+    All transitive via `zbus 5.19.0 -> tauri tray-icon Linux path`, same blast radius as the existing `RUSTSEC-2024-0370 proc-macro-error` entry. The 2026-10-13 commit chain (deny.toml lines 7-11) removed other stale 2024-dated entries but missed the 2026-dated refresh.
 
 **Fix applied in `deny.toml`:**
+
 - Removed the `RUSTSEC-2024-0429` entry.
 - Added 3 new entries: `RUSTSEC-2026-0370/0371/0372` with the tauri-stack coupling rationale.
 
 **Local verification:**
+
 ```
 $ cargo deny --manifest-path Cargo.toml check
 advisories ok, bans ok, licenses ok, sources ok
@@ -92,13 +97,15 @@ advisories ok, bans ok, licenses ok, sources ok
 **Sample failing run:** `run=39104463004`, `job=117607234077` (PR #1156).
 **Duration:** 5h32m15s (close to the workflow's `timeout-minutes: 360`).
 **Runner annotation:**
+
 > "The hosted runner lost communication with the server. Anything in your workflow that terminates the runner process, starves it for CPU/Memory, or blocks its network access can cause this error."
 
 **Root cause:** GitHub-hosted runner infrastructure failure mid-job. The mutation-testing job is one of the slowest in the matrix (cargo-mutants on `agileplus-domain` explores all mutants in that crate).
 
-**Why this is not a code fix:** the workflow uses `continue-on-error: true` on the cargo-mutants step, but the runner-level network failure happens *outside* the step boundary. The required action would be at the GitHub Actions runner level, not the repo.
+**Why this is not a code fix:** the workflow uses `continue-on-error: true` on the cargo-mutants step, but the runner-level network failure happens _outside_ the step boundary. The required action would be at the GitHub Actions runner level, not the repo.
 
 **Recommended operator action (not in this PR):**
+
 - Reduce `timeout-minutes: 360` to e.g. `300` so failures surface faster and look less like a network problem (currently a 5h32m run looks "in progress" until the runner disconnects).
 - Optionally split `agileplus-domain` mutation testing by submodule so each job is shorter.
 
@@ -106,6 +113,7 @@ advisories ok, bans ok, licenses ok, sources ok
 
 **Sample failing run:** `run=39104463006`, `job=117607233380` (PR #1156).
 **Error:**
+
 ```
 package `agileplus-proto` is ambiguous: it is defined by in multiple manifests
 within the root path:
@@ -116,6 +124,7 @@ within the root path:
 **Root cause:** `rust/Cargo.toml` is a leftover scaffolded sub-workspace (per `kitty-specs/003-agileplus-platform-completion`) that also defines a package named `agileplus-proto`. The root `[workspace] members = [...]` list does not include `rust/`, so the root `cargo metadata` reports only one `agileplus-proto`. **But** `cargo-semver-checks` walks the entire root path looking for manifests and ignores the `members` list — it sees both, hence the ambiguity.
 
 **Confirmation:**
+
 ```
 $ grep -r 'name = "agileplus-proto"' --include="Cargo.toml" .
 ./crates/agileplus-proto/Cargo.toml:name = "agileplus-proto"
@@ -127,6 +136,7 @@ $ grep -r 'name = "agileplus-proto"' --include="Cargo.toml" .
 **Fix applied in root `Cargo.toml`:** added `exclude = ["rust"]` to the `[workspace]` section. This excludes the `rust/` directory from cargo's discovery AND from cargo-semver-checks's root-path walk, without deleting the scaffolding (which the kitty-spec tracks separately).
 
 **Local verification:**
+
 ```
 $ cargo check --workspace
 Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.48s
@@ -146,6 +156,7 @@ total packages: 38
 **Files changed:** 2 (`Cargo.toml`, `deny.toml`), 29 insertions(+), 13 deletions(-)
 
 **DO NOT MERGE** — operator gates merges. This PR is the unblocker. Once merged, the 6 open PRs should rebase-trigger and:
+
 - `cargo-deny` and `cargo-semver-checks` jobs: PASS (root cause fixed here).
 - `python-coverage` and `cargo-mutants` jobs: still fail until CF-1 / CF-2 land independently.
 
@@ -186,13 +197,13 @@ total packages: 38
 
 ## Validation performed
 
-| Check | Local | CI (this PR) |
-|---|---|---|
-| `cargo deny --manifest-path Cargo.toml check` | PASS (`advisories ok, bans ok, licenses ok, sources ok`) | Awaiting operator merge |
-| `cargo check --workspace` | PASS (38 packages, 2.48s) | Awaiting operator merge |
-| `cargo metadata` package count | 38 packages, 1 `agileplus-proto` | n/a |
-| `python-coverage` | n/a (out of scope) | Will still fail until CF-1 lands |
-| `cargo-mutants` | n/a (environmental) | Will still fail at runner-level until CF-2 lands |
+| Check                                         | Local                                                    | CI (this PR)                                     |
+| --------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------ |
+| `cargo deny --manifest-path Cargo.toml check` | PASS (`advisories ok, bans ok, licenses ok, sources ok`) | Awaiting operator merge                          |
+| `cargo check --workspace`                     | PASS (38 packages, 2.48s)                                | Awaiting operator merge                          |
+| `cargo metadata` package count                | 38 packages, 1 `agileplus-proto`                         | n/a                                              |
+| `python-coverage`                             | n/a (out of scope)                                       | Will still fail until CF-1 lands                 |
+| `cargo-mutants`                               | n/a (environmental)                                      | Will still fail at runner-level until CF-2 lands |
 
 ---
 

@@ -42,6 +42,8 @@ Usage:
 import argparse
 import json
 import re
+import shutil
+import subprocess
 import sys
 from collections import Counter
 from pathlib import Path
@@ -223,6 +225,26 @@ def derive(rows):
     }
 
 
+def _table_rows(text):
+    """Parse a markdown table into normalized rows.
+
+    Prettier re-pads every cell and rewrites the separator row, so comparing
+    raw text would make this validator and `prettier --check` fight each other.
+    Comparing parsed cells instead keeps the two independent: any padding or
+    `**bold**` markup is ignored, only the values have to agree.
+    """
+    out = []
+    for ln in text.strip().splitlines():
+        ln = ln.strip()
+        if not ln.startswith("|"):
+            continue
+        cells = [c.strip().strip("*").strip() for c in ln.strip("|").split("|")]
+        if cells and all(set(c) <= set("-: ") for c in cells):
+            continue  # separator row
+        out.append(cells)
+    return out
+
+
 def md_count_table(breakdown):
     """Render the md Counts table from a breakdown."""
     order = [
@@ -291,16 +313,16 @@ def main():
             f"json headline cells_pass_meaningful: {hc.get('cells_pass_meaningful')} -> {want_mean}"
         )
 
-    # md counts table
+    # md counts table. Tolerant of prettier's padding and separator style.
     table_re = re.compile(
-        r"(\| Verdict \| Impl \| Usab \| Val \| Assur \| Total \|\n"
-        r"\|---\|---\|---\|---\|---\|---\|\n"
+        r"(\|\s*Verdict\s*\|\s*Impl\s*\|\s*Usab\s*\|\s*Val\s*\|\s*Assur\s*\|\s*Total\s*\|\n"
+        r"\|[\s\-:|]*\|\n"
         r"(?:\|[^\n]*\|\n)+)"
     )
     mm = table_re.search(md_text)
     if not mm:
         drift.append("md: counts table not found")
-    elif mm.group(0).strip() != md_count_table(d["dimension_breakdown"]).strip():
+    elif _table_rows(mm.group(0)) != _table_rows(md_count_table(d["dimension_breakdown"])):
         drift.append("md: counts table differs from derived breakdown")
 
     # derived headline counters (must be derivable from the tree body)
@@ -365,6 +387,27 @@ def main():
     with open(MD_PATH, "w") as f:
         f.write(md_text)
     print(f"wrote {MD_PATH}")
+
+    # md_count_table renders unpadded cells; the repo formats markdown with
+    # prettier, which re-pads every table cell. Run it here so a --write
+    # followed by `prettier --check` is stable instead of always dirty.
+    prettier = shutil.which("prettier")
+    if prettier:
+        rc = subprocess.run(
+            [prettier, "--write", MD_PATH],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if rc.returncode != 0:
+            print(f"WARN: prettier --write {MD_PATH} failed: {rc.stderr.strip()[:200]}")
+        else:
+            print(f"prettier --write {MD_PATH}: OK")
+    else:
+        print(
+            "NOTE: prettier not on PATH; run `prettier --write "
+            f"{MD_PATH}` so the markdown matches the repo's format check."
+        )
     return 0
 
 

@@ -4,15 +4,16 @@ DOCKET v1.0 closed at HEAD `ef83e117` on `docs/state-forward-docket-20261017` (P
 
 ## Subagents (3 new, all read-only)
 
-| Subagent | Session | Wall-clock | Cap | Verdict | Result file |
-|---|---|---|---|---|---|
-| **ci-scout v1** | `turkey_1792354187740_2cb8bea86a7596ce` | 44s | 10m | Informational (0 PRs green) | `ci-scout-v1-2026-10-18T20-10Z.md` |
-| **ci-scout v2** | `whale_1792354532488_ad872e050c23c71a` | 5m 28s (5m sleep + 28s read) | 15m | Informational (#1165 improved; #1166 regressed; 6 source PRs unchanged) | `ci-scout-v2-2026-10-18T20-22Z.md` |
-| **cf-4-investigator** | `turtle_1792354608617_965ea2774288c8d8` | 7m | 15m | **PASS — NOT a new CF-4** (3-sec `ci/lint` + 2-sec `ci/test` are aggregate gates over cargo-deny, not workflow misconfigs) | `cf-4-investigation-2026-10-18T20-24Z.md` |
+| Subagent              | Session                                 | Wall-clock                   | Cap | Verdict                                                                                                                    | Result file                               |
+| --------------------- | --------------------------------------- | ---------------------------- | --- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| **ci-scout v1**       | `turkey_1792354187740_2cb8bea86a7596ce` | 44s                          | 10m | Informational (0 PRs green)                                                                                                | `ci-scout-v1-2026-10-18T20-10Z.md`        |
+| **ci-scout v2**       | `whale_1792354532488_ad872e050c23c71a`  | 5m 28s (5m sleep + 28s read) | 15m | Informational (#1165 improved; #1166 regressed; 6 source PRs unchanged)                                                    | `ci-scout-v2-2026-10-18T20-22Z.md`        |
+| **cf-4-investigator** | `turtle_1792354608617_965ea2774288c8d8` | 7m                           | 15m | **PASS — NOT a new CF-4** (3-sec `ci/lint` + 2-sec `ci/test` are aggregate gates over cargo-deny, not workflow misconfigs) | `cf-4-investigation-2026-10-18T20-24Z.md` |
 
 ## What changed in the operator action sheet (replaces the close-out recommendations)
 
 ### OLD (from DOCKET v1.0 close-out, section 9):
+
 1. Merge order: #1165 → #1166 → 6 source PRs.
 2. PR #1165 + #1166 together cover "all 4 root causes for 6 of 6 PRs".
 3. E.2.P1-GENERIC: pick Design A (25 min) or B (45-60 min) or C (90-120 min).
@@ -20,12 +21,12 @@ DOCKET v1.0 closed at HEAD `ef83e117` on `docs/state-forward-docket-20261017` (P
 ### NEW (after re-entry investigations):
 
 1. **Merge #1165 (fox) FIRST**, not #1166. Rationale (cf-4 §2-§3):
-   - The 3-sec `ci / lint` + 2-sec `ci / test` failures on 6 source PRs are aggregate gates over `cargo-deny` and `rust`. They fail because `cargo-deny` is failing underneath. `ci.yml:172-214` is the `lint:` aggregate gate; `ci.yml:217-230` is the `test:` single-step gate.
-   - `cargo-deny` fails on the 6 source PRs because of TWO sub-causes:
-     - **a)** Dead `RUSTSEC-2024-0429` ignore entry in `deny.toml` + missing `RUSTSEC-2026-0370/0371/0372` ignores.
-     - **b)** `rust-toolchain.toml` pins `nightly-2026-07-31` (no longer in runner image); error: `override toolchain 'nightly-2026-07-31-x86_64-unknown-linux-musl' is not installed`.
-   - **PR #1165 fixes BOTH sub-causes** (verified: `cargo deny --manifest-path Cargo.toml check` shows `advisories ok, bans ok, licenses ok, sources ok`; `Cargo Deny PASS 2m29s` + `cargo-deny PASS 25s` in fox's own checks).
-   - **PR #1166 is orthogonal** (fixes `python-coverage` and `cargo-mutants`, not `cargo-deny`). Merging #1166 first would NOT clear `ci / lint` + `ci / test`.
+    - The 3-sec `ci / lint` + 2-sec `ci / test` failures on 6 source PRs are aggregate gates over `cargo-deny` and `rust`. They fail because `cargo-deny` is failing underneath. `ci.yml:172-214` is the `lint:` aggregate gate; `ci.yml:217-230` is the `test:` single-step gate.
+    - `cargo-deny` fails on the 6 source PRs because of TWO sub-causes:
+        - **a)** Dead `RUSTSEC-2024-0429` ignore entry in `deny.toml` + missing `RUSTSEC-2026-0370/0371/0372` ignores.
+        - **b)** `rust-toolchain.toml` pins `nightly-2026-07-31` (no longer in runner image); error: `override toolchain 'nightly-2026-07-31-x86_64-unknown-linux-musl' is not installed`.
+    - **PR #1165 fixes BOTH sub-causes** (verified: `cargo deny --manifest-path Cargo.toml check` shows `advisories ok, bans ok, licenses ok, sources ok`; `Cargo Deny PASS 2m29s` + `cargo-deny PASS 25s` in fox's own checks).
+    - **PR #1166 is orthogonal** (fixes `python-coverage` and `cargo-mutants`, not `cargo-deny`). Merging #1166 first would NOT clear `ci / lint` + `ci / test`.
 
 2. **After #1165 merges into `main`, the 6 source PRs will re-trigger ci.yml automatically** (they target `main`). The `cargo-deny` job will then PASS (via fox's fix), `ci / lint` aggregate gate will see `cargo-deny: success` and exit 0, and `ci / test` will see `lint: success` and exit 0. **No workflow file changes needed; no new unblocker PR needed.**
 
@@ -64,6 +65,7 @@ The close-out at `ef83e117` recommended merge order "PR #1165 → #1166 → 6 so
 ### Verdict
 
 **PREDICTED-BUT-NOT-TESTABLE.** The cf-4 prediction (4-6 of 6 source PRs flip green after #1165 merges) cannot be verified at v3 because:
+
 - #1165 is NOT merged to main. Its 5 FAILs are unchanged from v2 (Dry run publish, OSV Scanner, Vercel rate-limit, plan, semver-checks).
 - #1166 is NOT merged to main either. Its FAIL set is also unchanged.
 - The 6 source PRs have NOT been re-triggered since v2.
@@ -72,16 +74,16 @@ All 6 source PRs show **byte-identical failing-check sets vs v2** (no flips). Th
 
 ### v3 deltas vs v2 (8 PRs)
 
-| PR | v3 state | Delta vs v2 |
-|---|---|---|
-| #1156 | FAIL (12) | UNCHANGED. cargo-mutants 5h32m15s, ci/lint 3s, ci/test 2s still FAIL |
-| #1157 | FAIL (22) | UNCHANGED. cargo-fuzz build check NEW FAIL (was PASS in v2 — minor regression) |
-| #1161 | FAIL (12) | UNCHANGED. cargo-mutants 4h49m24s still FAIL |
-| #1162 | FAIL (12) | UNCHANGED. Vercel rate-limited (24-hr hold) |
-| #1163 | FAIL (11) | UNCHANGED. Vercel rate-limited |
-| #1164 | FAIL (13) | UNCHANGED. Vercel rate-limited |
-| #1165 | FAIL (5) | **IMPROVED.** Cargo Deny PASS 2m29s + cargo-deny PASS 25s (stable). Many new PASSes: CodeQL, gitleaks scan, go-coverage, osv-scanner, audit, coverage-gate, fuzz, gate, static-deploy-contract, python-coverage, rust-coverage. 5 FAILs UNCHANGED. |
-| #1166 | FAIL (8) + 1 PENDING | **REGRESSED.** 3 of 4 v2 PENDINGs flipped to FAIL. 1 PENDING remaining (cargo-mutants). Net worse than v2. |
+| PR    | v3 state             | Delta vs v2                                                                                                                                                                                                                                        |
+| ----- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #1156 | FAIL (12)            | UNCHANGED. cargo-mutants 5h32m15s, ci/lint 3s, ci/test 2s still FAIL                                                                                                                                                                               |
+| #1157 | FAIL (22)            | UNCHANGED. cargo-fuzz build check NEW FAIL (was PASS in v2 — minor regression)                                                                                                                                                                     |
+| #1161 | FAIL (12)            | UNCHANGED. cargo-mutants 4h49m24s still FAIL                                                                                                                                                                                                       |
+| #1162 | FAIL (12)            | UNCHANGED. Vercel rate-limited (24-hr hold)                                                                                                                                                                                                        |
+| #1163 | FAIL (11)            | UNCHANGED. Vercel rate-limited                                                                                                                                                                                                                     |
+| #1164 | FAIL (13)            | UNCHANGED. Vercel rate-limited                                                                                                                                                                                                                     |
+| #1165 | FAIL (5)             | **IMPROVED.** Cargo Deny PASS 2m29s + cargo-deny PASS 25s (stable). Many new PASSes: CodeQL, gitleaks scan, go-coverage, osv-scanner, audit, coverage-gate, fuzz, gate, static-deploy-contract, python-coverage, rust-coverage. 5 FAILs UNCHANGED. |
+| #1166 | FAIL (8) + 1 PENDING | **REGRESSED.** 3 of 4 v2 PENDINGs flipped to FAIL. 1 PENDING remaining (cargo-mutants). Net worse than v2.                                                                                                                                         |
 
 ### Key findings
 
@@ -121,29 +123,29 @@ cf-4 prediction status: **STILL PREDICTED-BUT-NOT-TESTABLE**, identical to v3 ve
 
 ### v4 deltas vs v3 (8 PRs)
 
-| PR | v4 state | Delta vs v3 |
-|---|---|---|
-| #1156 | FAIL (12) | UNCHANGED. Same failing set (cargo-mutants 5h32m15s, Cargo Deny, Cargo Deny A+L, Dry run publish, OSV Scanner, benchmark thresholds 26m9s, cargo-deny, ci/lint 3s, ci/test 2s, perf k6, python-coverage, semver-checks) |
-| #1157 | FAIL (22) | UNCHANGED. cargo-fuzz build check still FAIL (was PASS in v2). ci/lint 4s, ci/test 3s still FAIL |
-| #1161 | FAIL (12) | UNCHANGED. cargo-mutants 4h49m24s still FAIL |
-| #1162 | FAIL (12) | UNCHANGED. Vercel still rate-limited (24-hr hold) |
-| #1163 | FAIL (11) | UNCHANGED. Vercel still rate-limited |
-| #1164 | FAIL (13) | UNCHANGED. Vercel still rate-limited |
-| #1165 | FAIL (5) | UNCHANGED. Cargo Deny PASS 2m29s + cargo-deny PASS 25s stable. 5 FAILs unchanged. mergeStateStatus=UNSTABLE. Not merged. |
-| #1166 | FAIL (9) + 1 PENDING | **MINOR DELTA.** Vercel flipped FAIL → PASS (Vercel 24-hr hold elapsed for #1166). cargo-mutants still PENDING. mergeStateStatus=BLOCKED. Not merged. |
+| PR    | v4 state             | Delta vs v3                                                                                                                                                                                                             |
+| ----- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #1156 | FAIL (12)            | UNCHANGED. Same failing set (cargo-mutants 5h32m15s, Cargo Deny, Cargo Deny A+L, Dry run publish, OSV Scanner, benchmark thresholds 26m9s, cargo-deny, ci/lint 3s, ci/test 2s, perf k6, python-coverage, semver-checks) |
+| #1157 | FAIL (22)            | UNCHANGED. cargo-fuzz build check still FAIL (was PASS in v2). ci/lint 4s, ci/test 3s still FAIL                                                                                                                        |
+| #1161 | FAIL (12)            | UNCHANGED. cargo-mutants 4h49m24s still FAIL                                                                                                                                                                            |
+| #1162 | FAIL (12)            | UNCHANGED. Vercel still rate-limited (24-hr hold)                                                                                                                                                                       |
+| #1163 | FAIL (11)            | UNCHANGED. Vercel still rate-limited                                                                                                                                                                                    |
+| #1164 | FAIL (13)            | UNCHANGED. Vercel still rate-limited                                                                                                                                                                                    |
+| #1165 | FAIL (5)             | UNCHANGED. Cargo Deny PASS 2m29s + cargo-deny PASS 25s stable. 5 FAILs unchanged. mergeStateStatus=UNSTABLE. Not merged.                                                                                                |
+| #1166 | FAIL (9) + 1 PENDING | **MINOR DELTA.** Vercel flipped FAIL → PASS (Vercel 24-hr hold elapsed for #1166). cargo-mutants still PENDING. mergeStateStatus=BLOCKED. Not merged.                                                                   |
 
 ### cf-4-relevant checks (cargo-deny family) — v4 reading
 
-| PR    | Cargo Deny          | Cargo Deny (A+L)     | cargo-deny (single) | ci/lint | ci/test |
-|-------|---------------------|----------------------|---------------------|---------|---------|
-| #1156 | FAIL 2m40s          | FAIL 1m11s           | FAIL 23s            | FAIL 3s | FAIL 2s |
-| #1157 | FAIL 1m56s          | FAIL 1m14s           | FAIL 22s            | FAIL 4s | FAIL 3s |
-| #1161 | FAIL 2m29s          | FAIL 1m21s           | (n/a)               | FAIL 3s | FAIL 3s |
-| #1162 | FAIL 2m10s          | FAIL 1m17s           | (n/a)               | FAIL 3s | FAIL 3s |
-| #1163 | FAIL 2m12s          | FAIL 1m23s           | FAIL 27s            | FAIL 3s | FAIL 3s |
-| #1164 | FAIL 2m4s           | FAIL 1m38s           | FAIL 29s            | FAIL 3s | FAIL 2s |
-| #1165 | **PASS 2m29s**      | (n/a — not a target) | **PASS 25s**        | (n/a)   | (n/a)   |
-| #1166 | FAIL 2m30s          | FAIL 1m29s           | (n/a)               | FAIL 3s | FAIL 4s |
+| PR    | Cargo Deny     | Cargo Deny (A+L)     | cargo-deny (single) | ci/lint | ci/test |
+| ----- | -------------- | -------------------- | ------------------- | ------- | ------- |
+| #1156 | FAIL 2m40s     | FAIL 1m11s           | FAIL 23s            | FAIL 3s | FAIL 2s |
+| #1157 | FAIL 1m56s     | FAIL 1m14s           | FAIL 22s            | FAIL 4s | FAIL 3s |
+| #1161 | FAIL 2m29s     | FAIL 1m21s           | (n/a)               | FAIL 3s | FAIL 3s |
+| #1162 | FAIL 2m10s     | FAIL 1m17s           | (n/a)               | FAIL 3s | FAIL 3s |
+| #1163 | FAIL 2m12s     | FAIL 1m23s           | FAIL 27s            | FAIL 3s | FAIL 3s |
+| #1164 | FAIL 2m4s      | FAIL 1m38s           | FAIL 29s            | FAIL 3s | FAIL 2s |
+| #1165 | **PASS 2m29s** | (n/a — not a target) | **PASS 25s**        | (n/a)   | (n/a)   |
+| #1166 | FAIL 2m30s     | FAIL 1m29s           | (n/a)               | FAIL 3s | FAIL 4s |
 
 All 6 source PRs and `#1166` still FAIL the cargo-deny family; only `#1165` PASSes it (locally on fox's PR). The cf-4 gate chain (`cargo-deny` → `ci / lint` → `ci / test`) is unbroken on the 6 source PRs because fox's fix is not yet in `main`.
 
@@ -178,8 +180,8 @@ Snapshot identity chain: ADDED `ap-sfd-2026-10-19T00-10Z@ci-scout-v4-baseline2` 
 
 - **`main` HEAD moved**: from `4857b4095d5b35757a922cbf369e6f9260fabf63` to `c074506bfcae41e199a64c2f2e7dfdb63d2005f0` (24h 19m of frozen-ness broken).
 - **2 new PRs merged** to `main`:
-  - **`#1167`** "docs: add compete section stub" — merged 2026-10-19T02:10:32Z.
-  - **`#1168`** "docs: link compete section in site nav" — merged 2026-10-19T02:39:51Z.
+    - **`#1167`** "docs: add compete section stub" — merged 2026-10-19T02:10:32Z.
+    - **`#1168`** "docs: link compete section in site nav" — merged 2026-10-19T02:39:51Z.
 - **`#1165` (fox) is still NOT merged.** Cargo Deny + cargo-deny PASS on fox's own CI; 5 remaining FAILs unchanged.
 - **`#1166` (badger) is still NOT merged.** FAIL set unchanged from v4. 1 PENDING remaining (cargo-mutants long job).
 - **0 of 6 source PRs re-triggered after the 2 merges.** Their latest check `completedAt` timestamps are all pre-merge (latest: #1161/#1162 at 00:09:56Z for cargo-mutants; #1164 at 01:14:38Z for cargo-mutants). The 2 docs-only merges do not trigger a fresh CI run on the source PRs.
@@ -195,16 +197,16 @@ cf-4 prediction status: **STILL PREDICTED-BUT-NOT-TESTABLE**, identical to v3 + 
 
 ### v5 source PR re-trigger check
 
-| PR    | Latest check completedAt | Status                                |
-|-------|--------------------------|---------------------------------------|
-| #1156 | 2026-10-18T13:46:07Z     | Kilo Code Review (bot, not CI)         |
-| #1157 | 2026-10-18T14:31:09Z     | Kilo Code Review (bot, not CI)         |
-| #1161 | 2026-10-19T00:09:56Z     | cargo-mutants 14h run finish           |
-| #1162 | 2026-10-19T00:09:56Z     | cargo-mutants 14h run finish           |
-| #1163 | 2026-10-18T23:07:19Z     | cargo-mutants 13h run finish           |
-| #1164 | 2026-10-19T01:14:38Z     | cargo-mutants 15h run finish           |
-| #1165 | 2026-10-18T20:21:46Z     | fox's own CI (unchanged from v4)       |
-| #1166 | 2026-10-19T00:13:17Z     | cargo-mutants 14h run finish           |
+| PR    | Latest check completedAt | Status                           |
+| ----- | ------------------------ | -------------------------------- |
+| #1156 | 2026-10-18T13:46:07Z     | Kilo Code Review (bot, not CI)   |
+| #1157 | 2026-10-18T14:31:09Z     | Kilo Code Review (bot, not CI)   |
+| #1161 | 2026-10-19T00:09:56Z     | cargo-mutants 14h run finish     |
+| #1162 | 2026-10-19T00:09:56Z     | cargo-mutants 14h run finish     |
+| #1163 | 2026-10-18T23:07:19Z     | cargo-mutants 13h run finish     |
+| #1164 | 2026-10-19T01:14:38Z     | cargo-mutants 15h run finish     |
+| #1165 | 2026-10-18T20:21:46Z     | fox's own CI (unchanged from v4) |
+| #1166 | 2026-10-19T00:13:17Z     | cargo-mutants 14h run finish     |
 
 The 2 merges to `main` happened at 02:10:32Z and 02:39:51Z. **All 8 PRs' latest check timestamps are PRE-MERGE** (none of the 6 source PRs saw a new CI run after the merges landed). This is standard GitHub behavior: new commits on `main` do not auto-trigger fresh CI on dependent PRs.
 
@@ -268,6 +270,7 @@ v6 ran with a **5-min hard cap** instead of v5's 10-min cap. This worked: v6 fin
 ### v6 sentinel watchlist for v7
 
 Per v6's own recommendations:
+
 - Main HEAD advance (would invalidate UNCHANGED verdict).
 - Any `gh pr edit` / push / comment on the 8 cf-4 PRs (operator action).
 - New failure on #1165's `cargo-deny` check (would invalidate the audit-relevant flip).
