@@ -24,21 +24,31 @@ db-path = "$CARGO_HOME/advisory-db"
 # tauri/tray-icon bump to a version that drops the libappindicator default
 # or ships a maintained ksni-only path.
 #
-# RUSTSEC-2024-0429 (glib VariantStrIter): glib reaches this tree only through
-# libappindicator -> tray-icon -> tauri, a LINUX-ONLY path (macOS builds use
-# muda directly, with no gtk/glib). Consequence: cargo-deny emits
-# `advisory-not-detected` for this ignore entry when run on a macOS host,
-# because no crate in the host graph matches. On ubuntu (what CI uses) the
-# crate matches and the ignore is required. Do not remove it based on a
-# local macOS warning. glib 0.18.5 is the latest resolvable version in this
-# graph; upstream fixed only in 0.20.0, reachable once tauri PR #16170
-# ("chore(deps): update gtk crates to 0.19") lands. Dependabot run
-# 38524349833 (2026-10-14) confirmed security_update_not_possible:
-# latest-resolvable 0.18.5, lowest-non-vulnerable 0.20.0,
-# conflicting-dependencies [].
+# RUSTSEC-2024-0429 (glib VariantStrIter) was REMOVED 2026-10-18 by
+# subagent fox during CI diagnosis (PRs #1156/#1157/#1161/#1162/#1163/#1164).
+# Prior comment claimed "Linux-only path via libappindicator->tray-icon->tauri
+# matches on Ubuntu CI" — this no longer holds: cargo-deny run on the
+# ubuntu-latest CI runner (job 117607233915, run 39104463006) reports
+# `advisory-not-detected: no crate matched advisory criteria`, identical
+# to a local macOS run. The libappindicator path was simplified out of the
+# dep graph; the ignore entry became dead code and was turning the warning
+# into a hard fail. Revisit if tauri PR #16170 re-introduces the path.
+#
+# RUSTSEC-2026-0370/0371/0372 (zvariant / zbus_names / zvariant_derive
+# unmaintained): all transitive via zbus 5.19.0 -> Tauri tray-icon Linux
+# path (libappindicator -> tray-icon -> tauri). Same blast radius as the
+# RUSTSEC-2024-0370 proc-macro-error entry above: no fix until tauri/tray-icon
+# bump drops the libappindicator default or ships a maintained ksni-only path.
+# CI was failing on these for the same reason as the RUSTSEC-2024-0429 warning
+# (cargo-deny advisories FAILED); the operator's 2026-10-13 commit chain
+# removed the prior 2024-dated unmaintained entries but missed the 2026
+# refresh. Adding explicit ignores here so the next operator sees the
+# tauri-stack coupling in one place.
 ignore = [
   { id = "RUSTSEC-2024-0370", reason = "proc-macro-error unmaintained: build-time only via glib-macros 0.18 (tauri stack); glib 0.18 pins it, no fix until tauri/tray-icon bump." },
-  { id = "RUSTSEC-2024-0429", reason = "glib VariantStrIter: latest resolvable glib is 0.18.5; fixed in 0.20.0 behind tauri PR #16170. LINUX-ONLY path (libappindicator->tray-icon->tauri), so cargo-deny on a macOS host warns advisory-not-detected for this entry - benign, CI runs ubuntu. Re-evaluate when tauri PR #16170 lands." },
+  { id = "RUSTSEC-2026-0370", reason = "zvariant unmaintained: transitive via zbus 5.19.0 -> tauri tray-icon Linux path; no fix until tauri/tray-icon bump." },
+  { id = "RUSTSEC-2026-0371", reason = "zbus_names unmaintained: transitive via zbus 5.19.0 -> tauri tray-icon Linux path; no fix until tauri/tray-icon bump." },
+  { id = "RUSTSEC-2026-0372", reason = "zvariant_derive unmaintained: transitive via zbus 5.19.0 -> tauri tray-icon Linux path; no fix until tauri/tray-icon bump." },
 ]
 
 [licenses]
