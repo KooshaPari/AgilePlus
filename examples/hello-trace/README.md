@@ -65,12 +65,12 @@ Each command exits 0 on success; non-zero exit codes are described under
 The CLI follows the standard convention so scripts and dispatch agents can
 react without parsing stdout:
 
-| Code | Meaning |
-| ---- | ------- |
-| 0    | Success — query or seed completed and stdout is valid for the chosen format. |
-| 1    | Generic error — see stderr for context (e.g. database file missing, schema drift). |
-| 2    | Invalid arguments — the `clap` parser rejected the flag set; rerun with `--help`. |
-| 3    | I/O error — SQLite open or read failed (permissions, disk full, locked). |
+| Code | Meaning                                                                                           |
+| ---- | ------------------------------------------------------------------------------------------------- |
+| 0    | Success — query or seed completed and stdout is valid for the chosen format.                      |
+| 1    | Generic error — see stderr for context (e.g. database file missing, schema drift).                |
+| 2    | Invalid arguments — the `clap` parser rejected the flag set; rerun with `--help`.                 |
+| 3    | I/O error — SQLite open or read failed (permissions, disk full, locked).                          |
 | 4    | Catalog parse error — the embedded FR/NFR markdown could not be parsed; do not retry, file a bug. |
 
 If you see code 1, 3, or 4, the database may be in a half-initialised state;

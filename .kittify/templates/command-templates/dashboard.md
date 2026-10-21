@@ -1,12 +1,12 @@
 ---
 description: Open the Spec Kitty dashboard in your browser.
 ---
+
 **⚠️ CRITICAL: Read the project's AGENTS.md for universal rules (paths, UTF-8 encoding, context management, quality expectations).**
 
 **Finding AGENTS.md**: Look for `.kittify/AGENTS.md` in your current directory. If not found (e.g., in a worktree), find the main repo via `git worktree list --porcelain` (first "worktree" entry is the main repo) and read `.kittify/AGENTS.md` from there.
 
-*Path: [templates/commands/dashboard.md](templates/commands/dashboard.md)*
-
+_Path: [templates/commands/dashboard.md](templates/commands/dashboard.md)_
 
 ## Context: Dashboard Overview
 
@@ -14,6 +14,7 @@ description: Open the Spec Kitty dashboard in your browser.
 A real-time, read-only web interface showing the health and status of all features in your project.
 
 **Key characteristics**:
+
 - ✅ Read-only (for viewing/monitoring only)
 - ✅ Project-wide view (shows ALL features)
 - ✅ Live updates (refreshes as you work)
@@ -37,12 +38,14 @@ A real-time, read-only web interface showing the health and status of all featur
 **Where it fits**: This is a utility command, not part of the sequential workflow
 
 **You can run this**:
+
 - From main repository root
 - From inside a feature worktree (dashboard still shows all projects)
 - At any point during feature development
 - Multiple times (each run can start/reuse the dashboard)
 
 **What it shows**:
+
 - All features and their branches
 - Current status (in development, reviewed, accepted, merged)
 - File integrity checks
@@ -64,6 +67,7 @@ The dashboard is project-wide (shows all features) and the CLI handles worktree 
 ## Implementation
 
 Simply run the `spec-kitty dashboard` command to:
+
 - Start the dashboard if it's not already running
 - Open it in your default web browser
 - Display the dashboard URL

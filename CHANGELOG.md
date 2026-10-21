@@ -61,7 +61,7 @@ Format: [CalVer](https://calver.org) -- `YEAR.MONTH(WAVE).PATCH`
 ### Chores
 
 - Add .mailmap canonicalizing bot identities to <REDACTED> ([e8db364](https://github.com/KooshaPari/AgilePlus/commit/e8db3646))
-- Untrack __pycache__/*.pyc from index + gitignore ([bb7e413](https://github.com/KooshaPari/AgilePlus/commit/bb7e4139))
+- Untrack **pycache**/\*.pyc from index + gitignore ([bb7e413](https://github.com/KooshaPari/AgilePlus/commit/bb7e4139))
 - **deps**: Bump tokio, regex, uv group ([328f2ef](https://github.com/KooshaPari/AgilePlus/commit/328f2efa))
 
 ### Documentation
@@ -1074,5 +1074,3 @@ Format: [CalVer](https://calver.org) -- `YEAR.MONTH(WAVE).PATCH`
 ### Style
 
 - Apply keycap color palette to docs theme ([9939e5c](https://github.com/KooshaPari/thegent/commit/9939e5ce69a9948aca0bbbcd65d1ae61430584e8))
-
-

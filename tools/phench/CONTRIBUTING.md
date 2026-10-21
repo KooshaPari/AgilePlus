@@ -4,9 +4,9 @@
 
 - Python: `3.11+`
 - Install editable package:
-  - `python -m pip install -e .`
+    - `python -m pip install -e .`
 - Run tests:
-  - `python -m unittest discover -s tests -p 'test_*.py' -v`
+    - `python -m unittest discover -s tests -p 'test_*.py' -v`
 
 ## Change expectations
 

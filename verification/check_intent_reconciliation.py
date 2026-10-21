@@ -77,13 +77,9 @@ for row in rows:
     assert row["journey_ids"] == req["journeys"]
     assert set(row["source_refs"]) <= sources
     assert set(req["journeys"]) <= journeys
-    assert row["direct_oracle_ids"] == [
-        x["id"] for x in c if x.get("requirement_id") == req["id"]
-    ]
+    assert row["direct_oracle_ids"] == [x["id"] for x in c if x.get("requirement_id") == req["id"]]
     assert row["journey_context_oracle_ids"] == [
-        x["id"]
-        for x in c
-        if not x.get("requirement_id") and x["journey_id"] in req["journeys"]
+        x["id"] for x in c if not x.get("requirement_id") and x["journey_id"] in req["journeys"]
     ]
 files = [folder / p for p in ["README.md", "OWNER_EXCERPTS.md", "FUTURE_WORK.md"]] + [
     root / "docs/adr/proposed-product-work-simulation-boundary.md",

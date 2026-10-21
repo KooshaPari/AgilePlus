@@ -5,9 +5,9 @@ lane: planned
 dependencies: []
 subtasks: [T014, T023, T032, T041, T047]
 history:
-- date: '2026-03-03'
-  event: created
-  by: spec-kitty.tasks
+    - date: "2026-03-03"
+      event: created
+      by: spec-kitty.tasks
 ---
 
 # WP12: Audit Event Integration (All Repos)
@@ -32,14 +32,15 @@ Emit structured audit events from all 6 repos using the shared AuditEvent schema
 **Repo**: heliosCLI (Rust)
 
 **Steps**:
+
 1. Add `phenotype-proto` generated Rust types as dependency (via `phenotype-rs-protocol` or direct prost include)
 2. Emit events at key lifecycle points in codex-core:
-   - `SessionCreated` — when a new coding session starts
-   - `ToolExecuted` — when a tool is invoked
-   - `SessionCompleted` / `SessionFailed` — on session end
+    - `SessionCreated` — when a new coding session starts
+    - `ToolExecuted` — when a tool is invoked
+    - `SessionCompleted` / `SessionFailed` — on session end
 3. Create `audit/` module:
-   - `emitter.rs` — `AuditEmitter` trait + stdout/file implementations
-   - `events.rs` — helper functions to construct AuditEvent with correct fields
+    - `emitter.rs` — `AuditEmitter` trait + stdout/file implementations
+    - `events.rs` — helper functions to construct AuditEvent with correct fields
 4. Wire emitter into session manager
 
 **Validation**: Running a coding session produces audit events in structured format
@@ -49,15 +50,16 @@ Emit structured audit events from all 6 repos using the shared AuditEvent schema
 **Repo**: cliproxyapi++ (Go)
 
 **Steps**:
+
 1. Add phenotype-proto generated Go types
 2. Emit events at routing decisions:
-   - `RequestReceived` — incoming proxy request
-   - `ExecutorSelected` — routing decision made
-   - `ResponseForwarded` — response sent to client
-   - `ExecutorFailed` — executor error with fallback/retry info
+    - `RequestReceived` — incoming proxy request
+    - `ExecutorSelected` — routing decision made
+    - `ResponseForwarded` — response sent to client
+    - `ExecutorFailed` — executor error with fallback/retry info
 3. Create `internal/audit/` package:
-   - `emitter.go` — AuditEmitter interface + implementations
-   - `events.go` — event construction helpers
+    - `emitter.go` — AuditEmitter interface + implementations
+    - `events.go` — event construction helpers
 4. Wire into request handler middleware
 
 **Validation**: Proxied requests produce audit trail
@@ -67,14 +69,15 @@ Emit structured audit events from all 6 repos using the shared AuditEvent schema
 **Repo**: thegent (Python)
 
 **Steps**:
+
 1. Add phenotype-proto generated Python types (betterproto)
 2. Emit events at agent execution lifecycle:
-   - `AgentStarted` — agent begins execution
-   - `StepExecuted` — individual step completed
-   - `GovernanceDecision` — policy engine decision (approve/escalate/deny)
-   - `AgentCompleted` / `AgentFailed` — execution end
+    - `AgentStarted` — agent begins execution
+    - `StepExecuted` — individual step completed
+    - `GovernanceDecision` — policy engine decision (approve/escalate/deny)
+    - `AgentCompleted` / `AgentFailed` — execution end
 3. Create `thegent-audit/emitter.py`:
-   - `AuditEmitter` protocol + implementations
+    - `AuditEmitter` protocol + implementations
 4. Wire into run execution core
 
 **Validation**: Agent execution produces structured audit events
@@ -84,11 +87,12 @@ Emit structured audit events from all 6 repos using the shared AuditEvent schema
 **Repo**: portage (Python)
 
 **Steps**:
+
 1. Add phenotype-proto generated Python types
 2. Emit events:
-   - `TrialStarted` — benchmark trial begins
-   - `TrialCheckpoint` — intermediate measurement
-   - `TrialCompleted` — trial finishes with results
+    - `TrialStarted` — benchmark trial begins
+    - `TrialCheckpoint` — intermediate measurement
+    - `TrialCompleted` — trial finishes with results
 3. Wire into trial execution engine
 
 **Validation**: Running a benchmark trial produces audit events
@@ -98,10 +102,11 @@ Emit structured audit events from all 6 repos using the shared AuditEvent schema
 **Repo**: agentapi++ (Go)
 
 **Steps**:
+
 1. Add phenotype-proto generated Go types
 2. Emit events:
-   - `AgentRouted` — request routed to agent
-   - `SessionCreated` — new session established
+    - `AgentRouted` — request routed to agent
+    - `SessionCreated` — new session established
 3. Wire into request handlers
 
 **Validation**: API requests produce audit events

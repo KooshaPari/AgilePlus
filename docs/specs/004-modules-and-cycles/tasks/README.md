@@ -24,8 +24,8 @@ work_package_id: "WP01"
 title: "Work Package Title"
 lane: "planned"
 subtasks:
-  - "T001"
-  - "T002"
+    - "T001"
+    - "T002"
 phase: "Phase 1 - Setup"
 assignee: ""
 agent: ""
@@ -33,12 +33,11 @@ shell_pid: ""
 review_status: ""
 reviewed_by: ""
 history:
-  - timestamp: "2025-01-01T00:00:00Z"
-    lane: "planned"
-    agent: "system"
-    action: "Prompt generated via /spec-kitty.tasks"
+    - timestamp: "2025-01-01T00:00:00Z"
+      lane: "planned"
+      agent: "system"
+      action: "Prompt generated via /spec-kitty.tasks"
 ---
-
 # Work Package Prompt: WP01 – Work Package Title
 
 [Content follows...]
@@ -54,11 +53,13 @@ history:
 ## Moving Between Lanes
 
 Use the CLI (updates frontmatter only, no file movement):
+
 ```bash
 spec-kitty agent tasks move-task <WPID> --to <lane>
 ```
 
 Example:
+
 ```bash
 spec-kitty agent tasks move-task WP01 --to doing
 ```

@@ -57,7 +57,7 @@ adapter, OTLP telemetry). Evidence for exclusion:
    `WorkPackage[]`. Target: device-modality ports (mobile/desktop/sandbox/
    browser/vm/container) with `pointer()`, `key()`, `screenshot()`.
 3. **Zero file-level matches.** `grep -r "harmoniz|spec-kat|bmad|openspec"
-   ports/ package.json` in `agent-platform` returns no hits.
+ports/ package.json` in `agent-platform` returns no hits.
 4. **No consumer pull.** `agent-platform` has no spec-parsing use case
    identified; the consumer for the harmonizer is `agileplus-subcmds`, which
    itself is a stub crate in the `AgilePlus` workspace.

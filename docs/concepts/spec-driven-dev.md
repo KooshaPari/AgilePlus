@@ -18,6 +18,7 @@ Most development workflows fail in predictable ways:
 - **Compliance risk** — no evidence trail for regulated environments
 
 Traditional agile methods address some of these, but they often:
+
 - Rely on oral tradition and Jira descriptions
 - Assume human judgment at every gate
 - Don't scale to distributed AI-driven development
@@ -93,19 +94,19 @@ The system prevents concurrent modification of the same file using **topological
 
 Every state transition requires **preconditions** enforced by the system:
 
-| Transition | Enforced Requirement |
-|---|---|
-| Created → Specified | Spec artifact exists with minimum required fields |
-| Specified → Researched | Research output (codebase scan or feasibility doc) attached |
-| Researched → Planned | WP decomposition generated; dependency graph is acyclic |
-| Planned → Implementing | At least one WP assigned; branch created; agent/dev notified |
-| Implementing → Validated | All WPs marked `Done`; automated tests queued |
-| Validated → Shipped | All governance checks pass; all WPs merged cleanly |
-| Shipped → Retrospected | Post-incident analysis / lessons learned documented |
+| Transition               | Enforced Requirement                                         |
+| ------------------------ | ------------------------------------------------------------ |
+| Created → Specified      | Spec artifact exists with minimum required fields            |
+| Specified → Researched   | Research output (codebase scan or feasibility doc) attached  |
+| Researched → Planned     | WP decomposition generated; dependency graph is acyclic      |
+| Planned → Implementing   | At least one WP assigned; branch created; agent/dev notified |
+| Implementing → Validated | All WPs marked `Done`; automated tests queued                |
+| Validated → Shipped      | All governance checks pass; all WPs merged cleanly           |
+| Shipped → Retrospected   | Post-incident analysis / lessons learned documented          |
 
 You cannot move a feature to `Implementing` without a plan. You cannot `Ship` without validation passing. The system enforces this programmatically — it's not a human honor system.
 
-Each precondition check is recorded as an **evidence artifact** (test result, CI output, review approval, etc.). Evidence is stored in the domain and indexed by functional requirement (FR-*).
+Each precondition check is recorded as an **evidence artifact** (test result, CI output, review approval, etc.). Evidence is stored in the domain and indexed by functional requirement (FR-\*).
 
 ### Agent-Agnostic Dispatch
 
@@ -117,6 +118,7 @@ AgilePlus doesn't care which agent writes the code:
 - **Copilot** — prompt files in `.github/prompts/`
 
 All agents receive:
+
 1. **Spec context** — what to build
 2. **Plan context** — how to decompose it
 3. **WP definition** — exactly which piece to implement
@@ -124,6 +126,7 @@ All agents receive:
 5. **File scope** — which files can be touched
 
 Agents can call **hidden sub-commands** (25 total, across 8 categories) to:
+
 - Manage branches (`agileplus branch create`, `checkout`, `delete`)
 - Commit atomically (`agileplus commit create`, `amend`, `fixup`)
 - Write governance artifacts (`agileplus artifact write`, `hash`)

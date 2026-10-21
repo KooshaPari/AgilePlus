@@ -6,7 +6,7 @@ workspace.
 
 ## What phench gains from shard discipline
 
-Phench is a workspace of *requirements + ADRs + agents*, not a service.
+Phench is a workspace of _requirements + ADRs + agents_, not a service.
 The shard protocol here is documentation-first:
 
 - Each ADR is its own shard — one ADR per subagent pass
@@ -23,13 +23,13 @@ The shard protocol here is documentation-first:
 
 ## Concrete phench shards ready to dispatch
 
-| Shard | File | Effort |
-|---|---|---|
-| S1 | `docs/spec/data-model.md` | S |
-| S2 | `docs/spec/api.md` | S |
-| S3 | `docs/spec/cli.md` | S |
-| S4 | `tests/integration/test_data_model.py` | S |
-| S5 | `tests/integration/test_api.py` | M |
+| Shard | File                                   | Effort |
+| ----- | -------------------------------------- | ------ |
+| S1    | `docs/spec/data-model.md`              | S      |
+| S2    | `docs/spec/api.md`                     | S      |
+| S3    | `docs/spec/cli.md`                     | S      |
+| S4    | `tests/integration/test_data_model.py` | S      |
+| S5    | `tests/integration/test_api.py`        | M      |
 
 Each shard is fully disjoint (different file). The tests in S4/S5 depend
 on the spec shards S1-S3 (parent verifies in order).

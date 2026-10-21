@@ -7,8 +7,8 @@ description: DEPRECATED — use `ap governance constitution` instead. See docs/d
 
 ## Migration
 
-| SpecKitty | AgilePlus (`ap`) |
-|-----------|-------------------|
+| SpecKitty                  | AgilePlus (`ap`)             |
+| -------------------------- | ---------------------------- |
 | `/spec-kitty.constitution` | `ap governance constitution` |
 
 ```bash

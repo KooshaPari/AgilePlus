@@ -7,6 +7,7 @@ Codify and enforce an anti-regression rule across the ecosystem: every feature m
 ## Scope
 
 In scope:
+
 - `Changes` template requiring per-FR MVP/Mature tags.
 - `fr-regression-check` autograder step (reusable task `task fr:check`).
 - `spec-lint` step enforcing append-only spec edits with `supersedes:` linkage.
@@ -14,6 +15,7 @@ In scope:
 - Quick-start guide for greenfield adoption.
 
 Out of scope:
+
 - Migrating historical FRs to tagged status (handled by eco-018 follow-up).
 - Replacing the existing autograder harness.
 - Any new CI runners or billing-impacting changes.
@@ -31,13 +33,13 @@ Out of scope:
 
 ## Dependencies (DAG)
 
-| Step | Depends On |
-|------|------------|
-| 1 Discovery | — |
-| 2 Design | 1 |
-| 3 Autograder | 2 |
-| 4 Spec-lint | 2 |
-| 5 Changes template | 2 |
-| 6 Dashboard | 3 |
-| 7 Validate | 3, 4, 5 |
-| 8 Handoff | 6, 7 |
+| Step               | Depends On |
+| ------------------ | ---------- |
+| 1 Discovery        | —          |
+| 2 Design           | 1          |
+| 3 Autograder       | 2          |
+| 4 Spec-lint        | 2          |
+| 5 Changes template | 2          |
+| 6 Dashboard        | 3          |
+| 7 Validate         | 3, 4, 5    |
+| 8 Handoff          | 6, 7       |

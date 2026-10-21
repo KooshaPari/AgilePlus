@@ -12,17 +12,18 @@
 - **Sequence:** 1
 - **File Scope:** koosha-portfolio repository (TypeScript/Next.js)
 - **Acceptance Criteria:**
-  - Complete portfolio site with project showcases linked to active repos
-  - Responsive design with mobile, tablet, and desktop breakpoints
-  - Accessibility compliance (WCAG 2.1 AA)
-  - Performance: Lighthouse score ≥90 for performance, accessibility, SEO
-  - Deployed to production with CI/CD pipeline
-  - All tests passing
+    - Complete portfolio site with project showcases linked to active repos
+    - Responsive design with mobile, tablet, and desktop breakpoints
+    - Accessibility compliance (WCAG 2.1 AA)
+    - Performance: Lighthouse score ≥90 for performance, accessibility, SEO
+    - Deployed to production with CI/CD pipeline
+    - All tests passing
 - **Estimated Effort:** M
 
 Complete the koosha-portfolio personal portfolio site with project showcases, responsive design, and accessibility. The site links to active repositories in the Phenotype ecosystem, providing a public-facing showcase of work.
 
 ### Subtasks
+
 - [ ] T001 Audit current koosha-portfolio: existing pages, components, gaps
 - [ ] T002 Complete homepage: hero section, about, featured projects
 - [ ] T003 Complete project showcase pages with links to active repos
@@ -36,9 +37,11 @@ Complete the koosha-portfolio personal portfolio site with project showcases, re
 - [ ] T011 Run quality checks: lint, type-check, test
 
 ### Dependencies
+
 - None (can start independently)
 
 ### Risks & Mitigations
+
 - Design scope creep: Define MVP pages first, add enhancements incrementally
 - Performance issues: Audit early, optimize images and bundles
 
@@ -50,17 +53,18 @@ Complete the koosha-portfolio personal portfolio site with project showcases, re
 - **Sequence:** 2
 - **File Scope:** Parpoura repositories (private and public — deduplication required)
 - **Acceptance Criteria:**
-  - Parpoura deduplicated across private and public contexts (single source of truth)
-  - Data pipeline web app complete with core features
-  - API endpoints functional and documented
-  - UI complete with data visualization
-  - ≥80% test coverage
-  - All quality checks passing
+    - Parpoura deduplicated across private and public contexts (single source of truth)
+    - Data pipeline web app complete with core features
+    - API endpoints functional and documented
+    - UI complete with data visualization
+    - ≥80% test coverage
+    - All quality checks passing
 - **Estimated Effort:** M
 
 Complete the Parpoura data pipeline web app and resolve the duplication between private and public repositories. One version is kept as the source of truth, the other is archived with a migration path.
 
 ### Subtasks
+
 - [ ] T012 Audit private Parpoura: features, code quality, test coverage
 - [ ] T013 Audit public Parpoura: features, code quality, test coverage
 - [ ] T014 Compare private vs public: identify differences, decide keep/archive
@@ -74,9 +78,11 @@ Complete the Parpoura data pipeline web app and resolve the duplication between 
 - [ ] T022 Run quality checks across kept version
 
 ### Dependencies
+
 - None (can start independently, but benefits from WP-001 patterns)
 
 ### Risks & Mitigations
+
 - Data loss during deduplication: Comprehensive feature audit before merge decision
 - API compatibility: Version APIs, document breaking changes
 
@@ -88,18 +94,19 @@ Complete the Parpoura data pipeline web app and resolve the duplication between 
 - **Sequence:** 3
 - **File Scope:** phenodocs repository (TypeScript/VitePress)
 - **Acceptance Criteria:**
-  - Complete VitePress documentation federation hub
-  - Integrated with phenotype-docs-engine for content sourcing
-  - All Phenotype ecosystem docs federated and accessible
-  - Search functionality across all federated docs
-  - Responsive design with mobile support
-  - Deployed to production
-  - All quality checks passing
+    - Complete VitePress documentation federation hub
+    - Integrated with phenotype-docs-engine for content sourcing
+    - All Phenotype ecosystem docs federated and accessible
+    - Search functionality across all federated docs
+    - Responsive design with mobile support
+    - Deployed to production
+    - All quality checks passing
 - **Estimated Effort:** M
 
 Complete phenodocs as the VitePress federation hub that aggregates documentation from across the Phenotype ecosystem. It integrates with phenotype-docs-engine for content sourcing and provides unified search across all federated documentation.
 
 ### Subtasks
+
 - [ ] T023 Audit current phenodocs: existing pages, federation setup, gaps
 - [ ] T024 Complete VitePress configuration: theme, navigation, sidebar
 - [ ] T025 Integrate with phenotype-docs-engine: content sourcing, sync mechanism
@@ -114,9 +121,11 @@ Complete phenodocs as the VitePress federation hub that aggregates documentation
 - [ ] T034 Audit shared VitePress asset handling across phenodocs, koosha-portfolio, and other web-app surfaces so deployed docs do not 404 on CSS, JS, fonts, or favicon assets.
 
 ### Dependencies
+
 - None (can start independently)
 
 ### Risks & Mitigations
+
 - Federation complexity: Start with single source, add sources incrementally
 - Search performance: Use VitePress built-in search, optimize for large doc sets
 
@@ -128,16 +137,17 @@ Complete phenodocs as the VitePress federation hub that aggregates documentation
 - **Sequence:** 4
 - **File Scope:** FixitGo repository (Go/HTMX), FixitRs repository (Rust/Leptos)
 - **Acceptance Criteria:**
-  - FixitGo: complete bug tracking tool with HTMX-based UI
-  - FixitRs: complete bug tracking tool with Leptos-based UI
-  - Decision documented: keep both, merge into one, or archive one
-  - Both tools have ≥80% test coverage (if kept)
-  - All quality checks passing
+    - FixitGo: complete bug tracking tool with HTMX-based UI
+    - FixitRs: complete bug tracking tool with Leptos-based UI
+    - Decision documented: keep both, merge into one, or archive one
+    - Both tools have ≥80% test coverage (if kept)
+    - All quality checks passing
 - **Estimated Effort:** M
 
 Complete both FixitGo and FixitRs as bug tracking tools, then decide whether to keep both implementations or consolidate into one. FixitGo uses Go/HTMX for a server-rendered approach, while FixitRs uses Rust/Leptos for a WASM-based approach.
 
 ### Subtasks
+
 - [ ] T035 Audit FixitGo: existing bug tracking features, HTMX integration, gaps
 - [ ] T036 Complete FixitGo: bug creation, assignment, status tracking, search
 - [ ] T037 Complete FixitGo UI: HTMX-based forms, real-time updates, responsive design
@@ -151,9 +161,11 @@ Complete both FixitGo and FixitRs as bug tracking tools, then decide whether to 
 - [ ] T045 Run quality checks across both repos
 
 ### Dependencies
+
 - None (can start independently)
 
 ### Risks & Mitigations
+
 - Maintaining two implementations: The keep/merge/archive decision should favor one unless both serve distinct purposes
 - Leptos maturity: Test WASM compatibility, document any limitations
 
@@ -165,17 +177,18 @@ Complete both FixitGo and FixitRs as bug tracking tools, then decide whether to 
 - **Sequence:** 5
 - **File Scope:** 7 external repositories (portage, colab, vibeproxy, Planify, MCPForge, Synthia, Tossy)
 - **Acceptance Criteria:**
-  - Each external repo evaluated with: purpose, completion status, strategic value, maintenance cost
-  - Decision documented for each: keep, archive, or integrate
-  - Approved integrations planned with migration paths
-  - Archived repos documented with rationale
-  - Maintenance strategy established for kept repos
-  - All decisions documented with rationale
+    - Each external repo evaluated with: purpose, completion status, strategic value, maintenance cost
+    - Decision documented for each: keep, archive, or integrate
+    - Approved integrations planned with migration paths
+    - Archived repos documented with rationale
+    - Maintenance strategy established for kept repos
+    - All decisions documented with rationale
 - **Estimated Effort:** M
 
 Evaluate the 7 external repositories and decide whether to keep, archive, or integrate each. This includes portage (package manager UI), colab (collaboration tool), vibeproxy (vibe coding proxy), Planify (planning tool), MCPForge (MCP web interface), Synthia (AI assistant UI), and Tossy (utility app).
 
 ### Subtasks
+
 - [ ] T046 Audit portage: purpose, completion status, strategic value
 - [ ] T047 Audit colab: purpose, completion status, strategic value
 - [ ] T048 Audit vibeproxy: purpose, completion status, strategic value
@@ -191,9 +204,11 @@ Evaluate the 7 external repositories and decide whether to keep, archive, or int
 - [ ] T058 Document all decisions with rationale in portfolio documentation
 
 ### Dependencies
+
 - WP-001 through WP-004 (understanding of completed apps informs external repo decisions)
 
 ### Risks & Mitigations
+
 - Integration complexity: Start with simple integrations, defer complex ones
 - Maintenance burden: Be realistic about kept repos, archive aggressively for non-strategic apps
 

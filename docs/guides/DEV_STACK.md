@@ -27,19 +27,19 @@ The full AgilePlus development stack is managed via [`process-compose`](https://
 
 ## Service URLs
 
-| Service | URL | Notes |
-|---------|-----|-------|
-| **agileplus-api** | `http://localhost:3000` | Rust API, primary backend |
-| **agileplus-api health** | `http://localhost:3000/health` | Readiness probe |
-| **Plane.so (web)** | `http://localhost:3100` | Project management UI |
-| **Plane API** | `http://localhost:8000` | Django REST API |
-| **NATS** | `nats://localhost:4222` | JetStream messaging |
-| **NATS monitoring** | `http://localhost:8222/healthz` | Health + metrics |
-| **Dragonfly** | `redis://localhost:6379` | Redis-compatible cache/queue |
-| **PostgreSQL** | `postgresql://localhost:5432` | Plane database |
-| **Neo4j** | `bolt://localhost:7687` | Graph DB (agileplus-api) |
-| **MinIO** | `http://localhost:9000` | Object storage |
-| **MinIO Console** | `http://localhost:9001` | Admin UI |
+| Service                  | URL                             | Notes                        |
+| ------------------------ | ------------------------------- | ---------------------------- |
+| **agileplus-api**        | `http://localhost:3000`         | Rust API, primary backend    |
+| **agileplus-api health** | `http://localhost:3000/health`  | Readiness probe              |
+| **Plane.so (web)**       | `http://localhost:3100`         | Project management UI        |
+| **Plane API**            | `http://localhost:8000`         | Django REST API              |
+| **NATS**                 | `nats://localhost:4222`         | JetStream messaging          |
+| **NATS monitoring**      | `http://localhost:8222/healthz` | Health + metrics             |
+| **Dragonfly**            | `redis://localhost:6379`        | Redis-compatible cache/queue |
+| **PostgreSQL**           | `postgresql://localhost:5432`   | Plane database               |
+| **Neo4j**                | `bolt://localhost:7687`         | Graph DB (agileplus-api)     |
+| **MinIO**                | `http://localhost:9000`         | Object storage               |
+| **MinIO Console**        | `http://localhost:9001`         | Admin UI                     |
 
 ---
 
@@ -53,16 +53,16 @@ brew bundle --file=Brewfile
 
 Key requirements:
 
-| Tool | Purpose |
-|------|---------|
-| `process-compose` | Process orchestrator |
-| `orb` | OrbStack CLI (manages Dragonfly + PostgreSQL containers) |
-| `nats-server` | NATS JetStream server |
-| `minio` | S3-compatible object storage |
-| `neo4j` | Graph database |
-| `cargo` / Rust toolchain | Build agileplus-api |
-| Python 3.11+ + `.venv` | Plane API/worker |
-| Node.js + `npx` | Plane web frontend |
+| Tool                     | Purpose                                                  |
+| ------------------------ | -------------------------------------------------------- |
+| `process-compose`        | Process orchestrator                                     |
+| `orb`                    | OrbStack CLI (manages Dragonfly + PostgreSQL containers) |
+| `nats-server`            | NATS JetStream server                                    |
+| `minio`                  | S3-compatible object storage                             |
+| `neo4j`                  | Graph database                                           |
+| `cargo` / Rust toolchain | Build agileplus-api                                      |
+| Python 3.11+ + `.venv`   | Plane API/worker                                         |
+| Node.js + `npx`          | Plane web frontend                                       |
 
 OrbStack must be installed and running: <https://orbstack.dev>
 
@@ -96,14 +96,14 @@ task down
 
 All tasks are defined in `Taskfile.yml`.
 
-| Task | Equivalent | Description |
-|------|-----------|-------------|
-| `task up` | `process-compose up` | Start full stack (detached) |
-| `task down` | `process-compose down` | Stop all services |
-| `task logs` | `process-compose logs` | Tail all service logs |
-| `task status` | `process-compose list` | Show service health |
-| `task dev:restart` | down + up | Full restart |
-| `task dev:deps` | — | Verify brew deps installed |
+| Task               | Equivalent             | Description                 |
+| ------------------ | ---------------------- | --------------------------- |
+| `task up`          | `process-compose up`   | Start full stack (detached) |
+| `task down`        | `process-compose down` | Stop all services           |
+| `task logs`        | `process-compose logs` | Tail all service logs       |
+| `task status`      | `process-compose list` | Show service health         |
+| `task dev:restart` | down + up              | Full restart                |
+| `task dev:deps`    | —                      | Verify brew deps installed  |
 
 ---
 
@@ -148,25 +148,29 @@ cp .env.example .env
 
 Key variables:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PLANE_POSTGRES_PASSWORD` | `agileplus-dev` | Postgres password for Plane |
-| `PLANE_SECRET_KEY` | `agileplus-dev-secret-key` | Django secret key |
-| `RUST_LOG` | `info,agileplus=debug` | Rust log level |
+| Variable                  | Default                    | Description                 |
+| ------------------------- | -------------------------- | --------------------------- |
+| `PLANE_POSTGRES_PASSWORD` | `agileplus-dev`            | Postgres password for Plane |
+| `PLANE_SECRET_KEY`        | `agileplus-dev-secret-key` | Django secret key           |
+| `RUST_LOG`                | `info,agileplus=debug`     | Rust log level              |
 
 ---
 
 ## Troubleshooting
 
 **OrbStack containers fail to start**
+
 - Ensure OrbStack is running: open OrbStack.app or `open -a OrbStack`
 - Check: `orb list`
 
 **Neo4j fails readiness probe**
+
 - Neo4j takes ~15 s to start. If it times out: `process-compose restart neo4j`
 
 **agileplus-api fails to compile**
+
 - Run `cargo build -p agileplus-api` manually to see errors
 
 **Port already in use**
+
 - Check: `lsof -i :<port>` and kill the conflicting process

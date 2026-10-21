@@ -6,38 +6,38 @@ Add to your Claude Code configuration (`~/.claude/projects.d/agileplus.json` or 
 
 ```json
 {
-  "name": "AgilePlus",
-  "description": "Spec-driven development engine with xDD methodologies",
-  "command": "agileplus",
-  "args": ["--project", "{PROJECT_PATH}"],
-  "env": {
-    "AGILEPLUS_HOME": "/Users/<REDACTED>/CodeProjects/Phenotype/repos/AgilePlus",
-    "AGILEPLUS_MCP": "true"
-  }
+    "name": "AgilePlus",
+    "description": "Spec-driven development engine with xDD methodologies",
+    "command": "agileplus",
+    "args": ["--project", "{PROJECT_PATH}"],
+    "env": {
+        "AGILEPLUS_HOME": "/Users/<REDACTED>/CodeProjects/Phenotype/repos/AgilePlus",
+        "AGILEPLUS_MCP": "true"
+    }
 }
 ```
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `agileplus specify <feature>` | Create feature specification |
-| `agileplus research <feature>` | Research feature feasibility |
-| `agileplus plan <feature>` | Generate implementation plan |
-| `agileplus implement <feature>` | Implement work packages |
-| `agileplus validate <feature>` | Validate governance compliance |
-| `agileplus ship <feature>` | Ship feature to main |
-| `agileplus cycle list` | List active cycles |
-| `agileplus triage <item>` | Classify incoming item |
+| Command                         | Description                    |
+| ------------------------------- | ------------------------------ |
+| `agileplus specify <feature>`   | Create feature specification   |
+| `agileplus research <feature>`  | Research feature feasibility   |
+| `agileplus plan <feature>`      | Generate implementation plan   |
+| `agileplus implement <feature>` | Implement work packages        |
+| `agileplus validate <feature>`  | Validate governance compliance |
+| `agileplus ship <feature>`      | Ship feature to main           |
+| `agileplus cycle list`          | List active cycles             |
+| `agileplus triage <item>`       | Classify incoming item         |
 
 ## Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `AGILEPLUS_HOME` | `~/.agileplus` | AgilePlus data directory |
-| `AGILEPLUS_MCP` | `false` | Enable MCP mode |
-| `AGILEPLUS_CYCLE` | `current` | Active cycle ID |
-| `AGILEPLUS_BRANCH_PREFIX` | `feat/` | Work package branch prefix |
+| Variable                  | Default        | Description                |
+| ------------------------- | -------------- | -------------------------- |
+| `AGILEPLUS_HOME`          | `~/.agileplus` | AgilePlus data directory   |
+| `AGILEPLUS_MCP`           | `false`        | Enable MCP mode            |
+| `AGILEPLUS_CYCLE`         | `current`      | Active cycle ID            |
+| `AGILEPLUS_BRANCH_PREFIX` | `feat/`        | Work package branch prefix |
 
 ## MCP Server
 
@@ -45,12 +45,12 @@ To use AgilePlus as an MCP server:
 
 ```json
 {
-  "mcpServers": {
-    "agileplus": {
-      "command": "npx",
-      "args": ["-y", "@agileplus/mcp"]
+    "mcpServers": {
+        "agileplus": {
+            "command": "npx",
+            "args": ["-y", "@agileplus/mcp"]
+        }
     }
-  }
 }
 ```
 

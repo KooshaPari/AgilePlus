@@ -14,16 +14,16 @@ per-signal; PII redaction runs at the port boundary.
 
 ## Acceptance Criteria
 
-| AC  | Criterion |
-|-----|-----------|
+| AC  | Criterion                                                                                     |
+| --- | --------------------------------------------------------------------------------------------- |
 | AC1 | `TelemetrySink` trait exposes `span(name, attrs)`, `counter(name, value)`, `log(level, msg)`. |
-| AC2 | No-op adapter compiles and never panics on any input. |
-| AC3 | In-memory recorder exposes `recorded()` for test assertions. |
-| AC4 | OTLP adapter serializes to the documented JSON shape. |
-| AC5 | PII redaction runs before any span/counter/log reaches a sink. |
-| AC6 | Sampling config is per-signal and hot-reloadable from `agileplus-config`. |
-| AC7 | Backpressure on a sink does not block callers for more than 10ms. |
-| AC8 | `telemetry_integration.rs` proves ACs above with at least one assertion per AC. |
+| AC2 | No-op adapter compiles and never panics on any input.                                         |
+| AC3 | In-memory recorder exposes `recorded()` for test assertions.                                  |
+| AC4 | OTLP adapter serializes to the documented JSON shape.                                         |
+| AC5 | PII redaction runs before any span/counter/log reaches a sink.                                |
+| AC6 | Sampling config is per-signal and hot-reloadable from `agileplus-config`.                     |
+| AC7 | Backpressure on a sink does not block callers for more than 10ms.                             |
+| AC8 | `telemetry_integration.rs` proves ACs above with at least one assertion per AC.               |
 
 ## Traceability
 

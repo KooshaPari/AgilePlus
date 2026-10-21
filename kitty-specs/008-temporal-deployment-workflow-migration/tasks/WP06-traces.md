@@ -19,6 +19,7 @@ Emit OpenTelemetry traces from Temporal workflows to Jaeger. Every workflow exec
 ## Context
 
 Temporal has built-in OpenTelemetry support. Enable it via the `TemporalSdk` config. The worker SDK emits spans automatically for:
+
 - Workflow execution
 - Activity execution
 - Child workflow calls
@@ -36,31 +37,35 @@ Jaeger should already be in the planned monitoring stack but may not be deployed
 ```yaml
 # infra/jaeger/docker-compose.yml
 services:
-  jaeger:
-    image: jaegertracing/all-in-one:1.59
-    container_name: jaeger
-    command:
-      - "--memory.max-traces=10000"
-      - "--retention.time=7d"
-      - "--span-gateways.enabled=true"
-    environment:
-      - SPAN_STORAGE_TYPE=badger
-      - BADGER_EPHEMERAL=false
-      - BADGER_DIRECTORY=/var/lib/jaeger
-    ports:
-      - "16686:16686"   # UI
-      - "4317:4317"     # OTLP gRPC
-      - "4318:4318"     # OTLP HTTP
-    volumes:
-      - jaeger_data:/var/lib/jaeger
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:16686 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    jaeger:
+        image: jaegertracing/all-in-one:1.59
+        container_name: jaeger
+        command:
+            - "--memory.max-traces=10000"
+            - "--retention.time=7d"
+            - "--span-gateways.enabled=true"
+        environment:
+            - SPAN_STORAGE_TYPE=badger
+            - BADGER_EPHEMERAL=false
+            - BADGER_DIRECTORY=/var/lib/jaeger
+        ports:
+            - "16686:16686" # UI
+            - "4317:4317" # OTLP gRPC
+            - "4318:4318" # OTLP HTTP
+        volumes:
+            - jaeger_data:/var/lib/jaeger
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "wget --no-verbose --tries=1 --spider http://localhost:16686 || exit 1",
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
 
 volumes:
-  jaeger_data:
+    jaeger_data:
 ```
 
 ```caddy
@@ -117,7 +122,7 @@ fn init_tracing() {
 
 ```yaml
 jaeger:
-  command: docker compose -f infra/jaeger/docker-compose.yml up -d
+    command: docker compose -f infra/jaeger/docker-compose.yml up -d
 ```
 
 ### 4. Add Custom Spans to Activities

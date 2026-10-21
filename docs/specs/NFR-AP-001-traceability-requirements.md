@@ -2,7 +2,7 @@
 
 **Status:** Draft  
 **Version:** 1.0  
-**Last Updated:** 2026-06-16  
+**Last Updated:** 2026-06-16
 
 ## Overview
 
@@ -25,13 +25,13 @@ This document specifies the non-functional requirements (NFRs) governing traceab
 
 ### Specification
 
-| Aspect | Detail |
-|--------|--------|
-| **Scope** | Story.transition_status(StoryStatus::Done) |
-| **Trigger** | Story attempting transition from Review→Done, InProgress→Done, or any→Done |
-| **Rule** | If attempted transition target is `Done`, verify: (a) AcceptanceContract exists for story_id, AND (b) AcceptanceContract.lifecycle_status == `Verified` |
-| **Enforcement** | Domain layer (Story aggregate) checks before state transition; returns `DomainError::InvalidTransition` with reason "story requires verified acceptance contract" |
-| **Scope Exception** | Stories in `Cancelled` status do NOT require acceptance contracts (terminal state without contract) |
+| Aspect              | Detail                                                                                                                                                            |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Scope**           | Story.transition_status(StoryStatus::Done)                                                                                                                        |
+| **Trigger**         | Story attempting transition from Review→Done, InProgress→Done, or any→Done                                                                                        |
+| **Rule**            | If attempted transition target is `Done`, verify: (a) AcceptanceContract exists for story_id, AND (b) AcceptanceContract.lifecycle_status == `Verified`           |
+| **Enforcement**     | Domain layer (Story aggregate) checks before state transition; returns `DomainError::InvalidTransition` with reason "story requires verified acceptance contract" |
+| **Scope Exception** | Stories in `Cancelled` status do NOT require acceptance contracts (terminal state without contract)                                                               |
 
 ### Acceptance Criteria
 
@@ -75,19 +75,20 @@ This document specifies the non-functional requirements (NFRs) governing traceab
 
 ### Specification
 
-| Aspect | Detail |
-|--------|--------|
-| **Scope** | AcceptanceCriteria.transition(VerificationStatus::Verified) |
-| **Trigger** | Attempting to mark criterion as Verified |
-| **Rule** | If target status is `Verified`, verify: (a) AcceptanceCriteria.trace_ref_ids is non-empty, AND (b) All referenced trace IDs resolve in Tracera (via TraceabilityPort.get_traces()) |
-| **Enforcement** | Domain layer checks before verification; returns error if no trace_refs or Tracera resolution fails |
-| **Scope Exception** | Criteria in `Pending` or `Unverified` status may exist without trace_refs; only Verified requires them |
+| Aspect              | Detail                                                                                                                                                                             |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Scope**           | AcceptanceCriteria.transition(VerificationStatus::Verified)                                                                                                                        |
+| **Trigger**         | Attempting to mark criterion as Verified                                                                                                                                           |
+| **Rule**            | If target status is `Verified`, verify: (a) AcceptanceCriteria.trace_ref_ids is non-empty, AND (b) All referenced trace IDs resolve in Tracera (via TraceabilityPort.get_traces()) |
+| **Enforcement**     | Domain layer checks before verification; returns error if no trace_refs or Tracera resolution fails                                                                                |
+| **Scope Exception** | Criteria in `Pending` or `Unverified` status may exist without trace_refs; only Verified requires them                                                                             |
 
 ### Specification Details
 
 **Minimum Linking Rule:** Each criterion must have ≥1 `trace_ref_id` before verification.
 
 **Valid Evidence Types (artifact_type in TraceRef):**
+
 - `evidence` — Test result, screenshot, log, execution trace
 - `test_case` — Test specification or test automation run
 - `issue` — GitHub issue, PR comment, bug tracker link
@@ -95,6 +96,7 @@ This document specifies the non-functional requirements (NFRs) governing traceab
 - `commit` — Git commit SHA confirming implementation
 
 **Resolution Validation:**
+
 - TraceabilityPort.get_traces(criterion_entity_id) must return non-empty Vec<TraceRef>
 - If Tracera is unavailable (network error), defer verification with clear error
 - If trace_ref_id does not exist in Tracera, reject with "trace not found" error
@@ -142,14 +144,14 @@ This document specifies the non-functional requirements (NFRs) governing traceab
 
 ### Specification
 
-| Aspect | Detail |
-|--------|--------|
-| **Scope** | TraceRef creation and usage |
-| **Trigger** | Creating or reading a TraceRef link |
-| **Rule** | When linking AgilePlus entity to external artifact: (a) Create TraceRef in AgilePlus, (b) Call TraceabilityPort.link_trace() to notify Tracera, (c) Verify Tracera responds with confirmation, (d) Only on success, persist TraceRef locally |
-| **Query Rule** | When reading traceability: (a) Query AgilePlus TraceRefs, (b) Call TraceabilityPort.get_traces() to verify Tracera still knows about the link, (c) Flag stale links (Tracera says no) for audit |
-| **Enforcement** | Persistence and query adapters implement bidirectional checks; return error if Tracera doesn't confirm |
-| **Scope Exception** | NoopTraceAdapter (testing, local mode) skips Tracera confirmation |
+| Aspect              | Detail                                                                                                                                                                                                                                       |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Scope**           | TraceRef creation and usage                                                                                                                                                                                                                  |
+| **Trigger**         | Creating or reading a TraceRef link                                                                                                                                                                                                          |
+| **Rule**            | When linking AgilePlus entity to external artifact: (a) Create TraceRef in AgilePlus, (b) Call TraceabilityPort.link_trace() to notify Tracera, (c) Verify Tracera responds with confirmation, (d) Only on success, persist TraceRef locally |
+| **Query Rule**      | When reading traceability: (a) Query AgilePlus TraceRefs, (b) Call TraceabilityPort.get_traces() to verify Tracera still knows about the link, (c) Flag stale links (Tracera says no) for audit                                              |
+| **Enforcement**     | Persistence and query adapters implement bidirectional checks; return error if Tracera doesn't confirm                                                                                                                                       |
+| **Scope Exception** | NoopTraceAdapter (testing, local mode) skips Tracera confirmation                                                                                                                                                                            |
 
 ### Linking Lifecycle
 
@@ -190,13 +192,13 @@ Later: AgilePlus queries traceability
 1. **On Creation:** TraceRef.link_trace() must return success before local persistence
 2. **On Query:** Mismatch between AgilePlus and Tracera TraceRefs logged as audit event
 3. **Stale Link Detection:** If AgilePlus has TraceRef but Tracera.get_traces() doesn't return it:
-   - Log warning: `stale_trace_detected { story_id: 42, trace_id: "FR-001" }`
-   - Include in reports as "Dangling Reference"
-   - Do NOT auto-delete (require manual reconciliation)
+    - Log warning: `stale_trace_detected { story_id: 42, trace_id: "FR-001" }`
+    - Include in reports as "Dangling Reference"
+    - Do NOT auto-delete (require manual reconciliation)
 4. **Orphaned Requirement:** If Tracera requirement is deleted but AgilePlus still references it:
-   - TraceabilityPort.get_traces() returns empty for that entity
-   - Update affected entity status to "Orphaned" (special flag)
-   - Notify product/PM for decision
+    - TraceabilityPort.get_traces() returns empty for that entity
+    - Update affected entity status to "Orphaned" (special flag)
+    - Notify product/PM for decision
 
 ### Acceptance Criteria
 
@@ -244,22 +246,22 @@ Later: AgilePlus queries traceability
 
 ### Specification
 
-| Aspect | Detail |
-|--------|--------|
-| **Scope** | Setting requirement_id on Epic/Story; creating TraceRef; linking Plane issue |
-| **Rule** | Before persisting reference: Call source system (Tracera, Plane) to verify artifact exists; on failure, return error with context |
-| **Lazy Validation** | Validation deferred to persistence adapter (not domain layer) to allow testing with NoopTraceAdapter |
-| **Async** | Validation is async (network I/O); adapters return `async fn` results |
+| Aspect              | Detail                                                                                                                            |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Scope**           | Setting requirement_id on Epic/Story; creating TraceRef; linking Plane issue                                                      |
+| **Rule**            | Before persisting reference: Call source system (Tracera, Plane) to verify artifact exists; on failure, return error with context |
+| **Lazy Validation** | Validation deferred to persistence adapter (not domain layer) to allow testing with NoopTraceAdapter                              |
+| **Async**           | Validation is async (network I/O); adapters return `async fn` results                                                             |
 
 ### Reference Types
 
-| Reference | Source | Validation Method |
-|-----------|--------|-------------------|
-| Epic.requirement_id | Tracera | Query Tracera for requirement ID (FR/NFR format) |
-| Story.requirement_id | Tracera | Query Tracera for requirement ID |
-| TraceRef.trace_id | Various | Query appropriate system (Tracera, GitHub, Plane) |
-| WorkPackage.plane_sub_issue_id | Plane | Query Plane API for sub-issue |
-| Feature.plane_issue_id | Plane | Query Plane API for issue |
+| Reference                      | Source  | Validation Method                                 |
+| ------------------------------ | ------- | ------------------------------------------------- |
+| Epic.requirement_id            | Tracera | Query Tracera for requirement ID (FR/NFR format)  |
+| Story.requirement_id           | Tracera | Query Tracera for requirement ID                  |
+| TraceRef.trace_id              | Various | Query appropriate system (Tracera, GitHub, Plane) |
+| WorkPackage.plane_sub_issue_id | Plane   | Query Plane API for sub-issue                     |
+| Feature.plane_issue_id         | Plane   | Query Plane API for issue                         |
 
 ### Validation Rules
 
@@ -304,6 +306,7 @@ Later: AgilePlus queries traceability
 ## Traceability Audit Report
 
 **Requirement:** The system must generate a traceability audit report showing:
+
 - All entities with requirement_id links
 - All criteria with evidence links
 - Stale/orphaned references
@@ -345,12 +348,12 @@ Generated: 2026-06-16 14:32:00 UTC
 
 ### Report Generation
 
-| Metric | Method | Frequency |
-|--------|--------|-----------|
-| **Link Coverage** | COUNT(entities WITH requirement_id) / COUNT(entities) | Daily |
-| **Verification Coverage** | COUNT(criteria.verified) / COUNT(criteria) | Daily |
-| **Stale Detection** | Mismatch between AgilePlus TraceRefs and Tracera.get_traces() | Nightly |
-| **Orphaned Detection** | Tracera requirement not found for epic/story requirement_id | Nightly |
+| Metric                    | Method                                                        | Frequency |
+| ------------------------- | ------------------------------------------------------------- | --------- |
+| **Link Coverage**         | COUNT(entities WITH requirement_id) / COUNT(entities)         | Daily     |
+| **Verification Coverage** | COUNT(criteria.verified) / COUNT(criteria)                    | Daily     |
+| **Stale Detection**       | Mismatch between AgilePlus TraceRefs and Tracera.get_traces() | Nightly   |
+| **Orphaned Detection**    | Tracera requirement not found for epic/story requirement_id   | Nightly   |
 
 ---
 
@@ -380,6 +383,7 @@ pub enum TraceabilityError {
 ### Deprecation
 
 Future versions may:
+
 - Auto-delete stale links after N days (requires policy setting)
 - Require bidirectional checks (hard, not soft validation)
 - Archive orphaned entities automatically

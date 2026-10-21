@@ -116,6 +116,7 @@ agileplus implement WP01
 ```
 
 This:
+
 - Creates worktree at `.worktrees/001-feature-WP01`
 - Checks out dedicated branch `feat/001-feature-WP01`
 - Loads the WP prompt file
@@ -140,9 +141,11 @@ Example prompt:
 # WP01: Database Schema
 
 ## Your Task
+
 Create database migrations for email tables.
 
 ## Subtasks
+
 - [ ] Create 001_email_schema.sql (up migration)
 - [ ] Create 001_email_schema.down.sql (down migration)
 - [ ] Define email table with proper indexes
@@ -150,10 +153,12 @@ Create database migrations for email tables.
 - [ ] Test migration up/down cycle
 
 ## Deliverables
+
 - src/db/migrations/001_email_schema.sql
 - src/db/migrations/001_email_schema.down.sql
 
 ## Acceptance Criteria
+
 - [ ] Both migrations run without errors
 - [ ] Migrations are reversible
 - [ ] Tables have proper indexes and constraints
@@ -302,6 +307,7 @@ Dependent WPs waiting on this:
 ```
 
 This:
+
 - Moves WP from `doing` → `for_review`
 - Marks ready for code review
 - Unblocks dependent WPs (they can start planning)
@@ -350,6 +356,7 @@ agileplus implement WP01 --agent claude-code
 ```
 
 Claude receives:
+
 - WP prompt
 - Spec and plan context
 - File paths to modify
@@ -477,6 +484,7 @@ git commit -m "feat(WP01): do everything"
 
 ```markdown
 # Good
+
 feat(WP01): create Email model with validation
 
 - Add Email struct with id, recipient, subject, body
@@ -485,6 +493,7 @@ feat(WP01): create Email model with validation
 - Write unit tests for Email model
 
 # Avoid
+
 feat: stuff
 ```
 

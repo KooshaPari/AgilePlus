@@ -2,14 +2,14 @@
 
 ## Scope
 
-| Area | Path | Status |
-|------|------|--------|
+| Area               | Path                              | Status  |
+| ------------------ | --------------------------------- | ------- |
 | Dashboard Frontend | `crates/agileplus-dashboard/web/` | Audited |
-| Dashboard Backend | `crates/agileplus-dashboard/src/` | Audited |
-| API Layer | `crates/agileplus-api/src/` | Audited |
-| OpenAPI Spec | `openapi.yaml` | Audited |
-| Desktop App | `desktop/src/` | Audited |
-| Edge Config | `vercel.json`, `wrangler.toml` | Audited |
+| Dashboard Backend  | `crates/agileplus-dashboard/src/` | Audited |
+| API Layer          | `crates/agileplus-api/src/`       | Audited |
+| OpenAPI Spec       | `openapi.yaml`                    | Audited |
+| Desktop App        | `desktop/src/`                    | Audited |
+| Edge Config        | `vercel.json`, `wrangler.toml`    | Audited |
 
 ---
 
@@ -18,6 +18,7 @@
 ### C-1: Dashboard Backend Has Zero Authentication — All Routes Unauthenticated
 
 **Files:**
+
 - `crates/agileplus-dashboard/src/routes/mod.rs` (lines 96–182)
 - `crates/agileplus-dashboard/src/main.rs` (lines 19–22)
 - `crates/agileplus-api/src/router.rs` (lines 105–114)
@@ -40,6 +41,7 @@ The entire dashboard router (`agileplus_dashboard::routes::router()`) is mounted
 ### C-2: Command Injection via Service Restart Endpoint
 
 **Files:**
+
 - `crates/agileplus-dashboard/src/routes/health.rs` (lines 277–326)
 - `crates/agileplus-dashboard/src/routes/helpers.rs` (lines 345–378)
 
@@ -53,6 +55,7 @@ Additionally, this endpoint has **no authentication** (see C-1), so any network-
 **Exploitability:** HIGH. Unauthenticated command execution with partial argument injection. If the env var `AGILEPLUS_SERVICE_RESTART_CMD` points to `docker`, an attacker could potentially restart or stop arbitrary containers.
 
 **Recommendation:**
+
 1. Validate that the `{name}` parameter matches an alphanumeric allowlist of known service names.
 2. Add authentication to this endpoint.
 3. Use a lookup table mapping service names to specific, pre-validated restart commands instead of string interpolation.
@@ -62,12 +65,14 @@ Additionally, this endpoint has **no authentication** (see C-1), so any network-
 ### C-3: Permissive CORS on All Endpoints
 
 **Files:**
+
 - `crates/agileplus-dashboard/src/main.rs` (line 22): `.layer(CorsLayer::permissive())`
 - `crates/agileplus-api/src/router.rs` (line 120): `.layer(CorsLayer::permissive())`
 - `vercel.json` (lines 11–16): `"Access-Control-Allow-Origin": "*"`
 
 **Description:**
 All three deployment surfaces use fully permissive CORS:
+
 - The dashboard backend allows `*` origin with all methods and headers.
 - The API server uses the same `CorsLayer::permissive()`.
 - The Vercel configuration explicitly sets `Access-Control-Allow-Origin: *` on all `/api/*` routes.
@@ -92,6 +97,7 @@ This means any website on the internet can make authenticated cross-origin reque
 **Exploitability:** MEDIUM. Depends on how `generate-evidence.sh` handles its argument. Direct shell injection is mitigated by `Command::arg()` passing it as a single argument, but the script itself may be vulnerable.
 
 **Recommendation:**
+
 1. Validate `feature_id` against a strict pattern (e.g., numeric or slug-only).
 2. Add authentication.
 3. Rate-limit this endpoint.
@@ -127,6 +133,7 @@ The evidence module properly uses `html_escape()` (evidence.rs:54–60), but the
 
 **Description:**
 The auth middleware accepts `?api_key=<key>` as a query parameter fallback. This means:
+
 - API keys will appear in server access logs, proxy logs, and browser history.
 - Referrer headers may leak the key to third-party sites.
 - The key is visible in URL bars if endpoints are opened in a browser.
@@ -138,6 +145,7 @@ The auth middleware accepts `?api_key=<key>` as a query parameter fallback. This
 ### H-4: Static File Serving Without Path Normalization
 
 **Files:**
+
 - `crates/agileplus-dashboard/src/main.rs` (line 20): `.nest_service("/static", ServeDir::new("templates/static"))`
 - `crates/agileplus-api/src/router.rs` (line 118): `.nest_service("/static", ServeDir::new("templates/static"))`
 
@@ -155,6 +163,7 @@ The auth middleware accepts `?api_key=<key>` as a query parameter fallback. This
 ### M-1: Plane API Key Stored in Plaintext Config File
 
 **Files:**
+
 - `crates/agileplus-dashboard/src/routes/settings.rs` (lines 404–432, `save_plane_settings`)
 - `crates/agileplus-dashboard/src/routes/health.rs` (lines 94–126, `Config`)
 
@@ -248,13 +257,13 @@ The renderer uses `innerHTML` to populate lists, but all values are passed throu
 
 **File:** `openapi.yaml`
 
-| Finding | Detail |
-|---------|--------|
-| Auth coverage | All 5 documented endpoints (`/api/v1/features`, `/api/v1/work-packages/{id}`, `/api/v1/events`, `/api/v1/features/{slug}/audit`, `/api/v1/features/{slug}/governance`) require `api_key` security. This is correctly enforced in `router.rs` via the `validate_api_key` middleware layer. |
-| Public endpoints | Not documented in the spec but exist: `/health`, `/detailed-health`, `/info`. These are intentionally public. |
-| Rate limiting | **Not defined** in the OpenAPI spec. No `x-ratelimit-*` headers or descriptions. The backend has no rate limiting implementation. |
-| Request validation | Schema validation is defined for `CreateFeatureRequest` (requires `title`). No `maxLength`, `pattern`, or format constraints on string fields. |
-| Dashboard endpoints | The ~40 dashboard endpoints under `/api/dashboard/*` and `/api/settings/*` are **not documented** in the OpenAPI spec, and critically, they are **not protected** by the API key middleware. |
+| Finding             | Detail                                                                                                                                                                                                                                                                                    |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth coverage       | All 5 documented endpoints (`/api/v1/features`, `/api/v1/work-packages/{id}`, `/api/v1/events`, `/api/v1/features/{slug}/audit`, `/api/v1/features/{slug}/governance`) require `api_key` security. This is correctly enforced in `router.rs` via the `validate_api_key` middleware layer. |
+| Public endpoints    | Not documented in the spec but exist: `/health`, `/detailed-health`, `/info`. These are intentionally public.                                                                                                                                                                             |
+| Rate limiting       | **Not defined** in the OpenAPI spec. No `x-ratelimit-*` headers or descriptions. The backend has no rate limiting implementation.                                                                                                                                                         |
+| Request validation  | Schema validation is defined for `CreateFeatureRequest` (requires `title`). No `maxLength`, `pattern`, or format constraints on string fields.                                                                                                                                            |
+| Dashboard endpoints | The ~40 dashboard endpoints under `/api/dashboard/*` and `/api/settings/*` are **not documented** in the OpenAPI spec, and critically, they are **not protected** by the API key middleware.                                                                                              |
 
 **Recommendation:** Document all endpoints in the OpenAPI spec. Add rate limiting definitions and enforce them in the backend. Add string length/pattern constraints to schemas.
 
@@ -264,19 +273,19 @@ The renderer uses `innerHTML` to populate lists, but all values are passed throu
 
 ### Vercel (`vercel.json`)
 
-| Finding | Detail |
-|---------|--------|
-| SPA fallback | `"rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]` — This is a standard SPA pattern and serves the React dashboard. No serverless functions or API proxies are defined. |
-| CORS wildcard | `"Access-Control-Allow-Origin": "*"` on `/api/*` — see C-3. |
-| No API proxy | The Vercel deployment serves only the static frontend. API calls from the browser would need to go to a separate backend origin, which means the wildcard CORS is likely intentional but still risky. |
+| Finding       | Detail                                                                                                                                                                                                |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SPA fallback  | `"rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]` — This is a standard SPA pattern and serves the React dashboard. No serverless functions or API proxies are defined.              |
+| CORS wildcard | `"Access-Control-Allow-Origin": "*"` on `/api/*` — see C-3.                                                                                                                                           |
+| No API proxy  | The Vercel deployment serves only the static frontend. API calls from the browser would need to go to a separate backend origin, which means the wildcard CORS is likely intentional but still risky. |
 
 ### Cloudflare (`wrangler.toml`)
 
-| Finding | Detail |
-|---------|--------|
+| Finding                | Detail                                                                                                    |
+| ---------------------- | --------------------------------------------------------------------------------------------------------- |
 | Worker not implemented | `main = "src/worker.ts"` is configured but the file **does not exist**. The edge worker is a placeholder. |
-| API origin exposed | `AGILEPLUS_API = "https://agileplus.<REDACTED>.dev"` — the production API hostname is hardcoded. |
-| KV/R2 bindings | KV namespace `AGILEPLUS_KV` and R2 bucket `agileplus-builds` are configured but with placeholder IDs. |
+| API origin exposed     | `AGILEPLUS_API = "https://agileplus.<REDACTED>.dev"` — the production API hostname is hardcoded.          |
+| KV/R2 bindings         | KV namespace `AGILEPLUS_KV` and R2 bucket `agileplus-builds` are configured but with placeholder IDs.     |
 
 **Risk:** No actual edge worker code exists, so there are no edge-specific vulnerabilities. However, when implemented, the worker must enforce auth on proxied requests to prevent the pattern where an edge proxy strips or bypasses auth headers.
 
@@ -286,33 +295,33 @@ The renderer uses `innerHTML` to populate lists, but all values are passed throu
 
 **Files:** `desktop/src/index.ts`, `desktop/src/cli.ts`, `desktop/src/repo-bridge.ts`, `desktop/src/paths.ts`, `desktop/src/views/main.ts`, `desktop/src/views/index.ts`
 
-| Finding | Detail |
-|---------|--------|
-| IPC | Uses Electrobun RPC (typed `defineRPC`) with a single `getRepoState` request. No dangerous operations exposed via RPC. |
-| Network isolation | The app explicitly makes **no network calls** — it reads from local filesystem only. |
-| Path traversal guard | `repo-bridge.ts:89–93`: The `abs()` method validates that resolved paths stay within `repoRoot` via `startsWith()` check. This is correct. |
-| Shell execution | `cli.ts:29`: Uses `spawn()` with array args (not shell interpolation). See L-3 for PATH-based lookup risk. |
-| No `shell.openExternal` | No external URL handling found. |
+| Finding                   | Detail                                                                                                                                        |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| IPC                       | Uses Electrobun RPC (typed `defineRPC`) with a single `getRepoState` request. No dangerous operations exposed via RPC.                        |
+| Network isolation         | The app explicitly makes **no network calls** — it reads from local filesystem only.                                                          |
+| Path traversal guard      | `repo-bridge.ts:89–93`: The `abs()` method validates that resolved paths stay within `repoRoot` via `startsWith()` check. This is correct.    |
+| Shell execution           | `cli.ts:29`: Uses `spawn()` with array args (not shell interpolation). See L-3 for PATH-based lookup risk.                                    |
+| No `shell.openExternal`   | No external URL handling found.                                                                                                               |
 | No `nodeIntegration` risk | Uses Electrobun (not Electron), which has a different security model. The renderer uses a typed RPC bridge rather than direct Node.js access. |
 
 ---
 
 ## Summary Matrix
 
-| ID | Severity | Category | Exploitable Now? | Fix Priority |
-|----|----------|----------|-----------------|--------------|
-| C-1 | CRITICAL | AuthN | Yes | Immediate |
-| C-2 | CRITICAL | Injection | Yes | Immediate |
-| C-3 | CRITICAL | CORS | Yes | Immediate |
-| H-1 | HIGH | Injection | Partially | High |
-| H-2 | HIGH | XSS | Not yet (seed data) | High |
-| H-3 | HIGH | AuthN | Yes (log leakage) | High |
-| H-4 | HIGH | Path Traversal | Edge case | Medium |
-| M-1 | MEDIUM | Secret Storage | Requires local access | Medium |
-| M-2 | MEDIUM | Path Traversal | Requires C-1 | Medium |
-| M-3 | MEDIUM | DoS | Yes | Medium |
-| M-4 | MEDIUM | Info Disclosure | Requires file write | Medium |
-| L-1 | LOW | CSRF | Yes (via C-3) | Low |
-| L-2 | LOW | AuthZ | Design gap | Low |
-| L-3 | LOW | Binary Trust | Local only | Low |
-| L-4 | LOW | XSS | No | Low |
+| ID  | Severity | Category        | Exploitable Now?      | Fix Priority |
+| --- | -------- | --------------- | --------------------- | ------------ |
+| C-1 | CRITICAL | AuthN           | Yes                   | Immediate    |
+| C-2 | CRITICAL | Injection       | Yes                   | Immediate    |
+| C-3 | CRITICAL | CORS            | Yes                   | Immediate    |
+| H-1 | HIGH     | Injection       | Partially             | High         |
+| H-2 | HIGH     | XSS             | Not yet (seed data)   | High         |
+| H-3 | HIGH     | AuthN           | Yes (log leakage)     | High         |
+| H-4 | HIGH     | Path Traversal  | Edge case             | Medium       |
+| M-1 | MEDIUM   | Secret Storage  | Requires local access | Medium       |
+| M-2 | MEDIUM   | Path Traversal  | Requires C-1          | Medium       |
+| M-3 | MEDIUM   | DoS             | Yes                   | Medium       |
+| M-4 | MEDIUM   | Info Disclosure | Requires file write   | Medium       |
+| L-1 | LOW      | CSRF            | Yes (via C-3)         | Low          |
+| L-2 | LOW      | AuthZ           | Design gap            | Low          |
+| L-3 | LOW      | Binary Trust    | Local only            | Low          |
+| L-4 | LOW      | XSS             | No                    | Low          |

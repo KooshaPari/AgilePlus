@@ -30,12 +30,12 @@ graph TD
 
 PhenoDocs serves as a **framework/library**, not a monolithic aggregator:
 
-| Concern | Owned By | Description |
-|---------|----------|-------------|
+| Concern         | Owned By  | Description                                                |
+| --------------- | --------- | ---------------------------------------------------------- |
 | Theme + styling | PhenoDocs | Layer badges, status badges, doc-type cards, brand palette |
-| Taxonomy | PhenoDocs | 5-layer model, doc types, frontmatter schema |
-| Content | AgilePlus | All markdown content, custom components |
-| Build | AgilePlus | VitePress config, deployment pipeline |
+| Taxonomy        | PhenoDocs | 5-layer model, doc types, frontmatter schema               |
+| Content         | AgilePlus | All markdown content, custom components                    |
+| Build           | AgilePlus | VitePress config, deployment pipeline                      |
 
 ## Federation Model
 
@@ -67,6 +67,7 @@ docs hub --hub-dir ../phenodocs
 ```
 
 This generates:
+
 - Combined navigation across all repos
 - Cross-repo search
 - Unified layer views (all L2 specs across projects)
@@ -102,6 +103,7 @@ traces_to: ["WP01", "ADR-003"]
 ### Reuse Protocol
 
 When content is valuable across repos:
+
 1. Extract to PhenoDocs as a shared template
 2. Reference from AgilePlus via import or link
 3. PhenoDocs hub surfaces shared content automatically

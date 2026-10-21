@@ -45,18 +45,18 @@ Do not broaden product scope until this gate has authoritative execution.
 
 1. Run Rust formatting, Clippy, compile and workspace tests on the canonical head.
 2. Execute canonical SQLite atomic acceptance witnesses:
-   - complete commit;
-   - exact replay;
-   - conflicting request reuse;
-   - invalid existing audit chain;
-   - forced late receipt failure rollback.
+    - complete commit;
+    - exact replay;
+    - conflicting request reuse;
+    - invalid existing audit chain;
+    - forced late receipt failure rollback.
 3. Execute real-SQLite HTTP acceptance witnesses:
-   - auth required;
-   - commit;
-   - exact replay;
-   - conflict;
-   - validation/precondition failure is 422;
-   - failure leaves terminal state unchanged.
+    - auth required;
+    - commit;
+    - exact replay;
+    - conflict;
+    - validation/precondition failure is 422;
+    - failure leaves terminal state unchanged.
 4. Preserve the corrected CI truth rule:
    test not executed != test passed.
 5. Separate unrelated repository debt from this gate:
@@ -71,12 +71,12 @@ actually executed and the atomic acceptance suite passed.
 1. Add OpenAPI contract for the dedicated acceptance endpoint.
 2. Pin request/response/idempotency semantics.
 3. Prove:
-   - missing feature -> 404;
-   - stale governance version -> 409;
-   - bad correctness/governance -> 422;
-   - storage failure -> sanitized 500;
-   - exact replay returns the original receipt;
-   - generic feature transition cannot award Validated or Shipped.
+    - missing feature -> 404;
+    - stale governance version -> 409;
+    - bad correctness/governance -> 422;
+    - storage failure -> sanitized 500;
+    - exact replay returns the original receipt;
+    - generic feature transition cannot award Validated or Shipped.
 4. Ensure acceptance receipt identity can be retrieved after restart.
 5. Add restart-backed database integration witness.
 

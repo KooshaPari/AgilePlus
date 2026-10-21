@@ -62,17 +62,17 @@
 
 These specs accurately reflect their in-progress state with no completion claim drift:
 
-| Spec ID | Tasks Done | Tasks Total | Notes |
-|---------|-----------|-------------|-------|
-| `004-modules-and-cycles` | 0 | 38 | Early stage, has all three artifacts |
-| `008-temporal-deployment-workflow-migration` | 0 | 24 | No impl files |
-| `012-github-portfolio-triage` | 0 | 33 | 4 milestones in plan, no impl |
-| `015-plugin-system-completion` | 2 | 49 | 4% complete, no impl |
-| `017-cli-tools-consolidation` | 2 | 73 | 3% complete, no impl |
-| `018-template-repo-cleanup` | 12 | 54 | 22% complete |
-| `019-private-repo-catalog` | 0 | 55 | Not started |
-| `020-portfolio-and-web-apps` | 0 | 58 | 5 milestones, no impl |
-| `022-batch13-repo-remediation` | 0 | 18 | No plan.md |
+| Spec ID                                      | Tasks Done | Tasks Total | Notes                                |
+| -------------------------------------------- | ---------- | ----------- | ------------------------------------ |
+| `004-modules-and-cycles`                     | 0          | 38          | Early stage, has all three artifacts |
+| `008-temporal-deployment-workflow-migration` | 0          | 24          | No impl files                        |
+| `012-github-portfolio-triage`                | 0          | 33          | 4 milestones in plan, no impl        |
+| `015-plugin-system-completion`               | 2          | 49          | 4% complete, no impl                 |
+| `017-cli-tools-consolidation`                | 2          | 73          | 3% complete, no impl                 |
+| `018-template-repo-cleanup`                  | 12         | 54          | 22% complete                         |
+| `019-private-repo-catalog`                   | 0          | 55          | Not started                          |
+| `020-portfolio-and-web-apps`                 | 0          | 58          | 5 milestones, no impl                |
+| `022-batch13-repo-remediation`               | 0          | 18          | No plan.md                           |
 
 ---
 
@@ -80,11 +80,11 @@ These specs accurately reflect their in-progress state with no completion claim 
 
 ### Kitty Specs Missing plan.md (have tasks but no plan)
 
-| Spec ID | Task Count | Done | Notes |
-|---------|-----------|------|-------|
-| `022-batch13-repo-remediation` | 18 | 0 | No plan at all |
-| `012-github-portfolio-triage` | 33 | 0 | Has plan, no impl |
-| `eco-012-orgops-capital-ledger` | 48 | 0 | No plan |
+| Spec ID                         | Task Count | Done | Notes             |
+| ------------------------------- | ---------- | ---- | ----------------- |
+| `022-batch13-repo-remediation`  | 18         | 0    | No plan at all    |
+| `012-github-portfolio-triage`   | 33         | 0    | Has plan, no impl |
+| `eco-012-orgops-capital-ledger` | 48         | 0    | No plan           |
 
 ### Kitty Specs Missing tasks.md Entirely (plan exists but no task tracking)
 
@@ -133,23 +133,24 @@ These are spec-only stubs -- valid for early stage but cannot be tracked:
 
 Most research change directories lack spec.md and plan.md entirely -- only tasks.md where it exists. Outstanding research work with unchecked tasks:
 
-| Change Dir | Done | Total | Status |
-|------------|------|-------|--------|
-| `research-cross-platform-coordination` | 0 | 92 | Not started |
-| `research-cross-platform-isolation` | 0 | 106 | Not started |
-| `research-cross-platform-shell` | 0 | 194 | Not started |
-| `research-economic-governance` | 18 | 99 | 18% |
-| `research-hook-rust-phase1` | 7 | 87 | 8% |
-| `research-idea-seed-system` | 23 | 151 | 15% |
-| `research-library-cache` | 0 | 84 | Not started |
-| `research-library-retry` | 3 | 130 | 2% |
-| `research-maif-artifacts` | 0 | 59 | Not started |
-| `research-pareto-routing` | 18 | 113 | 16% |
-| `research-simulation-replay` | 0 | 103 | Not started |
-| `research-supermemory-integration` | 0 | 103 | Not started |
-| `research-tui-compositor` | 2 | 142 | 1% |
+| Change Dir                             | Done | Total | Status      |
+| -------------------------------------- | ---- | ----- | ----------- |
+| `research-cross-platform-coordination` | 0    | 92    | Not started |
+| `research-cross-platform-isolation`    | 0    | 106   | Not started |
+| `research-cross-platform-shell`        | 0    | 194   | Not started |
+| `research-economic-governance`         | 18   | 99    | 18%         |
+| `research-hook-rust-phase1`            | 7    | 87    | 8%          |
+| `research-idea-seed-system`            | 23   | 151   | 15%         |
+| `research-library-cache`               | 0    | 84    | Not started |
+| `research-library-retry`               | 3    | 130   | 2%          |
+| `research-maif-artifacts`              | 0    | 59    | Not started |
+| `research-pareto-routing`              | 18   | 113   | 16%         |
+| `research-simulation-replay`           | 0    | 103   | Not started |
+| `research-supermemory-integration`     | 0    | 103   | Not started |
+| `research-tui-compositor`              | 2    | 142   | 1%          |
 
 Completed (100% tasks done):
+
 - `cli-dag-extraction` -- 6/6 done
 - `mcp-server-extraction` -- 4/4 done
 
@@ -158,18 +159,21 @@ Completed (100% tasks done):
 ## High-Priority Spec Deep Findings
 
 ### `001-spec-driven-development-engine` (Spec-Driven Dev Engine)
+
 - **94.3% tasks complete (150/159)** -- remaining 9 tasks guard the governance/audit domain model (WP04)
 - Implementation files exist in spec directory
 - Status still says "Draft" -- appropriately not claimed complete
 - **Risk**: WP04 domain model is security-critical (hash-chained audit logs, evidence linking, policy evaluation); tasks.md may be truncated at line 169
 
 ### `003-agileplus-platform-completion` (Platform Completion)
+
 - **100% tasks complete (120/120)** -- yet spec status says "Draft"
 - **Major discrepancy**: Tasks all marked done, but AgilePlus Rust workspace has no production code (per CLAUDE.md: scaffolding only, `.rs files yet`)
 - Tasks may represent planning/documentation work rather than implementation delivery
 - **Recommend**: Reclassify as "integration testing" phase rather than marking all implementation as done
 
 ### `021-polyrepo-ecosystem-stabilization` (PolyRepo Stabilization)
+
 - **11% tasks complete (28/254)** with no impl files
 - P0 critical cross-repo spec with 22 milestones
 - 226 remaining tasks is the largest open gap in the kitty-specs
@@ -196,5 +200,5 @@ Completed (100% tasks done):
 
 ---
 
-*Audit performed: 2026-05-05 (scan date: 2026-05-04)*
-*No repo code was modified during this audit.*
+_Audit performed: 2026-05-05 (scan date: 2026-05-04)_
+_No repo code was modified during this audit._

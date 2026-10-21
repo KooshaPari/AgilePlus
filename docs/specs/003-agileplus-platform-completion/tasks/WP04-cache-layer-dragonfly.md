@@ -5,16 +5,16 @@ lane: "done"
 dependencies: []
 base_branch: main
 base_commit: 54550549c478ffb46ae18db57710e2ac84cf027c
-created_at: '2026-03-02T11:46:55.991736+00:00'
+created_at: "2026-03-02T11:46:55.991736+00:00"
 subtasks: [T022, T023, T024, T025, T026, T027]
 shell_pid: "45986"
 agent: "claude-opus"
 reviewed_by: "Koosha Paridehpour"
 review_status: "approved"
 history:
-- date: '2026-03-02'
-  action: created
-  by: spec-kitty
+    - date: "2026-03-02"
+      action: created
+      by: spec-kitty
 ---
 
 # Cache Layer (Dragonfly) (WP04)
@@ -26,6 +26,7 @@ Create the `agileplus-cache` crate with Dragonfly (Redis-compatible) connection 
 ## Objective
 
 Implement:
+
 - Thread-safe connection pool to Dragonfly
 - Generic typed get/set operations
 - ProjectionCache for feature/WP state caching
@@ -35,6 +36,7 @@ Implement:
 ## Architecture
 
 The cache layer provides:
+
 - **Connection pooling** via bb8 for efficient resource use
 - **Type safety** through serde serialization
 - **TTL support** for automatic expiration
@@ -48,6 +50,7 @@ The cache layer provides:
 Create a new crate at `crates/agileplus-cache/`.
 
 **Cargo.toml:**
+
 ```toml
 [package]
 name = "agileplus-cache"
@@ -71,6 +74,7 @@ tokio = { version = "1", features = ["full"] }
 ```
 
 **Directory structure:**
+
 ```
 crates/agileplus-cache/
 ├── Cargo.toml
@@ -85,6 +89,7 @@ crates/agileplus-cache/
 ```
 
 **lib.rs content:**
+
 ```rust
 pub mod config;
 pub mod health;

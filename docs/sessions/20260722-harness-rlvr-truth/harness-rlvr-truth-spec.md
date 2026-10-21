@@ -1,7 +1,9 @@
 # Specification: Harness RLVR Truth
+
 **Slug**: harness-rlvr-truth | **Date**: 2026-07-22 | **State**: specified
 
 ## Problem Statement
+
 Ablation and comparison surfaces must report honest RLVR (reward / verifier) truth —
 finite composite and layer scores from the harness — rather than placeholder or
 adversarial-stub patterns that look like perfect intent with zero judge/hallucination
@@ -17,10 +19,12 @@ This feature closes the truth gap end-to-end: dry ablation cells carry finite
 `resolveRlvr` reports `source: harness` when harness fields are present.
 
 ## Target Users
+
 Harness / eval engineers running ablation and stock-vs-ours comparisons;
 cockpit operators reading RLVR panels; agents validating cell contracts.
 
 ## Functional Requirements
+
 - **FR-1**: Dry ablation runs SHALL emit cells with finite numeric
   `rlvr_composite` and `rlvr_l0`, `rlvr_l1`, `rlvr_l2`, `rlvr_l3` (no NaN/Inf/null
   for completed dry cells).
@@ -35,6 +39,7 @@ cockpit operators reading RLVR panels; agents validating cell contracts.
   `rlvr_*` field set and finiteness expectations for dry ablation cells.
 
 ## Non-Functional Requirements
+
 - Changes stay scoped to pheno-harness ablation/comparison contracts and
   phenotype-omlx bench-cockpit RLVR resolve path; no unrelated cockpit UI churn.
 - Tests MUST reference FR IDs (tag, marker, or docstring) per Phenotype QA policy.
@@ -42,6 +47,7 @@ cockpit operators reading RLVR panels; agents validating cell contracts.
   zero-fill that masquerades as truth.
 
 ## Constraints & Dependencies
+
 - Depends on merged: pheno-harness #33 (`rlvr_*` emission), phenotype-omlx #46
   (Cell passthrough).
 - Coordinates with in-flight PR-C (`stock_vs_ours` quality stubs rewrite); do not
@@ -52,6 +58,7 @@ cockpit operators reading RLVR panels; agents validating cell contracts.
   harness/omlx unit tests before merge.
 
 ## Acceptance Criteria
+
 - Dry ablation cells have finite `rlvr_composite` and `rlvr_l0..l3`.
 - Go Cell round-trip preserves `rlvr_*`.
 - `stock_vs_ours` does not emit intent≈1 + judge=0 + hallu=0 for adversarial fixtures.

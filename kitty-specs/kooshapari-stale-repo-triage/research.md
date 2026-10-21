@@ -1,4 +1,5 @@
 # Research: <REDACTED>-stale-repo-triage (Post-Specify)
+
 **Date**: 2026-04-01 | **Mode**: delete-readiness validation
 
 ## Validated Case: `thegent-cache`
@@ -10,13 +11,13 @@
 ### Evidence
 
 - Local active code still exists in:
-  - `/Users/<REDACTED>/CodeProjects/Phenotype/repos/thegent/crates/thegent-cache`
-  - `/Users/<REDACTED>/CodeProjects/Phenotype/repos/platforms/thegent/crates/thegent-cache`
+    - `/Users/<REDACTED>/CodeProjects/Phenotype/repos/thegent/crates/thegent-cache`
+    - `/Users/<REDACTED>/CodeProjects/Phenotype/repos/platforms/thegent/crates/thegent-cache`
 - The active `thegent` workspace still includes `thegent-cache` in `crates/Cargo.toml`.
 - Package identity has **not** been migrated:
-  - Rust package: `thegent-cache-rs`
-  - Rust lib: `thegent_cache`
-  - Python package: `thegent_cache_rs`
+    - Rust package: `thegent-cache-rs`
+    - Rust lib: `thegent_cache`
+    - Python package: `thegent_cache_rs`
 - No local `pyfacet` references were found.
 - Shelf docs still refer to `thegent-cache` as a live crate and component.
 

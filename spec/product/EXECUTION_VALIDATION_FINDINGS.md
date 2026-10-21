@@ -6,6 +6,7 @@
 ## F1 — WorkPackage Done is not bound to an immutable attempt/evaluation
 
 Current `implement` path:
+
 1. creates/reuses worktree;
 2. sets WP Doing;
 3. dispatches agent and receives ephemeral job_id;
@@ -15,6 +16,7 @@ Current `implement` path:
 7. cleans worktree.
 
 Missing durable binding:
+
 - AttemptId;
 - exact assignment/spec revision;
 - exact candidate/tree/commit set;
@@ -29,6 +31,7 @@ Therefore current `Done` means the orchestration review loop returned Approved, 
 `--resume` reuses a worktree for a WP in Doing state.
 
 It does not reconstruct:
+
 - which prior attempt owned it;
 - whether the prior worker died vs is still active;
 - which candidate was last verified;
@@ -57,6 +60,7 @@ Expected mature result should be Unknown/NotConfigured/NotEvaluated unless an ex
 ## F5 — CLI and HTTP validation semantics diverge
 
 CLI validation includes richer:
+
 - evidence parsing by FR/type;
 - active policy rules;
 - built-in policy mapping;

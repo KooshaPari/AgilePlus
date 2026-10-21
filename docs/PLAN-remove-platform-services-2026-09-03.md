@@ -4,7 +4,7 @@
 **Status:** Proposed  
 **Owner:** [assignee]  
 **Affected Crates:** `agileplus-cli`, `agileplus-mcp`, `agileplus-grpc`, `agileplus-domain`  
-**Verification:** `./target/release/agileplus --db .agileplus/agileplus.db dashboard` works without platform services  
+**Verification:** `./target/release/agileplus --db .agileplus/agileplus.db dashboard` works without platform services
 
 ---
 
@@ -13,6 +13,7 @@
 AgilePlus is a client-side, VSCode-like spec-driven development engine with state in `.agileplus/agileplus.db` (SQLite). Platform services (NATS, Dragonfly/Redis, Neo4j, MinIO, API) were added as optional extensions but have become hard dependencies in the gRPC core, breaking MCP functionality and contradicting the local-first architecture.
 
 **Evidence:**
+
 - CLI works standalone: `./target/release/agileplus --db .agileplus/agileplus.db dashboard` returns feature data
 - MCP server fails: gRPC core timeouts waiting for platform services
 - User confirmed: "AgilePlus is a CLI, a semantic process, an app, a tray app — NOT a platform. State lives in repo and device. Tracera is the platform."
@@ -23,6 +24,7 @@ AgilePlus is a client-side, VSCode-like spec-driven development engine with stat
 ## Scope
 
 ### In Scope
+
 1. Remove `process-compose.yml` from repo root
 2. Remove `platform` subcommand from CLI
 3. Update MCP to use SQLite directly (no service deps)
@@ -30,6 +32,7 @@ AgilePlus is a client-side, VSCode-like spec-driven development engine with stat
 5. Verify all interfaces work with SQLite only
 
 ### Out of Scope
+
 - Building the full desktop client (separate work item)
 - Completing the MCP tool surface (separate work item)
 - Platform service implementations (Tracera's concern)
@@ -41,6 +44,7 @@ AgilePlus is a client-side, VSCode-like spec-driven development engine with stat
 ### Phase 1: Remove Platform Infrastructure (Safe, Low Risk)
 
 **Work Package 1.1: Remove process-compose.yml**
+
 ```bash
 # Files to delete:
 AgilePlus/process-compose.yml
@@ -51,6 +55,7 @@ git ls-files | grep process-compose  # should return nothing
 ```
 
 **Work Package 1.2: Remove platform subcommand from CLI**
+
 ```bash
 # Files to modify:
 crates/agileplus-subcmds/src/platform/  # entire directory
@@ -63,6 +68,7 @@ crates/agileplus-cli/src/lib.rs           # remove platform from commands
 ```
 
 **Work Package 1.3: Remove platform references from Cargo.toml**
+
 ```toml
 # Remove from workspace dependencies if any reference to:
 # - nats, dragonfly, neo4j, minio (these shouldn't exist in core anyway)
@@ -72,6 +78,7 @@ crates/agileplus-cli/src/lib.rs           # remove platform from commands
 ### Phase 2: Update MCP to SQLite-Only (Medium Risk)
 
 **Work Package 2.1: Update agileplus-mcp to use SQLite directly**
+
 ```python
 # Files to modify:
 agileplus-mcp/src/server.py           # remove service health checks
@@ -84,6 +91,7 @@ agileplus-mcp/src/tools/              # update all tools to use SQLite
 ```
 
 **Work Package 2.2: Remove gRPC service dependencies from agileplus-grpc**
+
 ```rust
 // Files to modify:
 crates/agileplus-grpc/src/server.rs    # remove service channel deps
@@ -96,6 +104,7 @@ crates/agileplus-domain/src/domain/    # remove ServiceHealth, PlatformStatus
 ```
 
 **Work Package 2.3: Update agileplus-grpc daemon**
+
 ```bash
 # Files to modify:
 crates/agileplus-grpc/src/main.rs      # remove service startup
@@ -109,6 +118,7 @@ crates/agileplus-grpc/src/lib.rs       # simplify
 ### Phase 3: Verify All Interfaces (Required Before Merge)
 
 **Work Package 3.1: CLI verification**
+
 ```bash
 # All of these must work without platform services:
 ./target/release/agileplus --db .agileplus/agileplus.db dashboard
@@ -118,6 +128,7 @@ crates/agileplus-grpc/src/lib.rs       # simplify
 ```
 
 **Work Package 3.2: MCP verification**
+
 ```bash
 # Health check passes:
 curl -s http://127.0.0.1:8765/mcp -X POST \
@@ -127,6 +138,7 @@ curl -s http://127.0.0.1:8765/mcp -X POST \
 ```
 
 **Work Package 3.3: Desktop verification**
+
 ```bash
 cd desktop/
 bun run dev
@@ -168,12 +180,12 @@ REM-PLATFORM-SERVICES
 
 ## Risks
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| MCP tools break during refactor | Medium | High | Extensive verification after each step |
-| Desktop client breaks | Low | Medium | Test desktop separately |
-| Governance logic depends on services | Low | Medium | Domain logic review |
-| Git history of platform files needed | Low | Low | Keep git history, just delete files |
+| Risk                                 | Likelihood | Impact | Mitigation                             |
+| ------------------------------------ | ---------- | ------ | -------------------------------------- |
+| MCP tools break during refactor      | Medium     | High   | Extensive verification after each step |
+| Desktop client breaks                | Low        | Medium | Test desktop separately                |
+| Governance logic depends on services | Low        | Medium | Domain logic review                    |
+| Git history of platform files needed | Low        | Low    | Keep git history, just delete files    |
 
 ---
 

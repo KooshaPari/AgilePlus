@@ -5,23 +5,25 @@ Use this skeleton to capture entities, attributes, and relationships uncovered d
 ## Entities
 
 ### Entity: <!-- e.g., Customer -->
+
 - **Description**: <!-- Summary -->
 - **Attributes**:
-  - `field_name` (type) – purpose / constraints
+    - `field_name` (type) – purpose / constraints
 - **Identifiers**: <!-- Primary / alternate keys -->
 - **Lifecycle Notes**: <!-- Creation, updates, archival -->
 
 ### Entity: <!-- e.g., Account -->
+
 - **Description**:
 - **Attributes**:
-  - `field_name` (type) – purpose / constraints
+    - `field_name` (type) – purpose / constraints
 - **Identifiers**:
 - **Lifecycle Notes**:
 
 ## Relationships
 
-| Source | Relation | Target | Cardinality | Notes |
-|--------|----------|--------|-------------|-------|
+| Source                  | Relation      | Target           | Cardinality  | Notes                   |
+| ----------------------- | ------------- | ---------------- | ------------ | ----------------------- |
 | <!-- e.g., Customer --> | <!-- owns --> | <!-- Account --> | <!-- 1:N --> | <!-- Business rules --> |
 
 ## Validation & Governance

@@ -15,12 +15,14 @@ Complete modernization and stabilization of heliosApp (1022 commits since 2025-0
 ## Past Work (Retroactive Specs)
 
 ### Core Runtime (Completed)
+
 - TypeScript/Bun runtime implementation
 - Biome linting migration (oxc)
 - Desktop/solid-jsx components
 - Consolidated stabilization efforts
 
 ### CI/CD (Completed)
+
 - Policy gate workflows
 - Quality gate integration
 - Biome formatting standards
@@ -28,16 +30,19 @@ Complete modernization and stabilization of heliosApp (1022 commits since 2025-0
 ## Present Work (Current)
 
 ### WP001: OXC Migration
+
 - State: merged
 - Commits: oxc-migration-20260305-heliosapp-consolidated
 - Files: biome.json, package configs
 
 ### WP002: Consolidated Stabilization
+
 - State: merged
 - Focus: CI and runtime stability
 - PR: #306
 
 ### WP003: Phase 2 Decomposition
+
 - State: merged
 - Feature decomposition
 - PR: #305
@@ -45,30 +50,33 @@ Complete modernization and stabilization of heliosApp (1022 commits since 2025-0
 ## Future Work (Planned)
 
 ### WP010: Feature Completeness Audit
+
 - Audit all features against PRD
 - Identify stubbed/unimplemented features
 - Complete missing implementations
 
 ### WP011: Performance Optimization
+
 - Bundle size reduction
 - Runtime performance
 - Memory profiling
 
 ### WP012: Desktop Integration
+
 - Complete desktop app features
 - IPC communication
 - System tray integration
 
 ## Work Packages
 
-| ID | Description | State |
-|----|-------------|-------|
-| WP001 | OXC Migration | shipped |
-| WP002 | Consolidated Stabilization | shipped |
-| WP003 | Phase 2 Decomposition | shipped |
+| ID    | Description                | State     |
+| ----- | -------------------------- | --------- |
+| WP001 | OXC Migration              | shipped   |
+| WP002 | Consolidated Stabilization | shipped   |
+| WP003 | Phase 2 Decomposition      | shipped   |
 | WP010 | Feature Completeness Audit | specified |
-| WP011 | Performance Optimization | specified |
-| WP012 | Desktop Integration | specified |
+| WP011 | Performance Optimization   | specified |
+| WP012 | Desktop Integration        | specified |
 
 ## Traces
 
