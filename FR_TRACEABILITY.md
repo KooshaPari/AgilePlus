@@ -7,15 +7,18 @@ Complete functional requirement traceability infrastructure for AgilePlus.
 ## Quick Links
 
 ### For Implementers
+
 - **[FR_TRACKER.md](docs/reference/FR_TRACKER.md)** - Find FR implementation status, code location, test file, and progress
 - **[CODE_ENTITY_MAP.md](docs/reference/CODE_ENTITY_MAP.md)** - Find code implementing a given FR
 - **[FR_ANNOTATION_GUIDE.md](docs/guides/FR_ANNOTATION_GUIDE.md)** - Add FR annotations to new test files
 
 ### For QA/Verification
+
 - **[FR_TRACKER.md](docs/reference/FR_TRACKER.md)** - Verify coverage and identify missing tests
 - **[FR_TRACEABILITY_COMPLETION.md](docs/reports/FR_TRACEABILITY_COMPLETION.md)** - Gap analysis and next steps
 
 ### For Architecture Review
+
 - **[CODE_ENTITY_MAP.md](docs/reference/CODE_ENTITY_MAP.md)** - Reverse index showing code → FR mapping
 - **[FUNCTIONAL_REQUIREMENTS.md](FUNCTIONAL_REQUIREMENTS.md)** - Authoritative requirement specifications
 
@@ -26,6 +29,7 @@ Complete functional requirement traceability infrastructure for AgilePlus.
 ### What This Is
 
 A bidirectional traceability system connecting:
+
 - **63 Functional Requirements** (in FUNCTIONAL_REQUIREMENTS.md)
 - **100+ Code Entities** (structs, traits, functions, modules)
 - **Test Coverage** (test files and functions)
@@ -34,44 +38,47 @@ Enables rapid lookup: FR → Code → Tests or Code → FR → Requirements
 
 ### Key Documents
 
-| Document | Purpose | Audience |
-|----------|---------|----------|
-| **FR_TRACKER.md** | Implementation status for all 63 FRs | Implementers, QA, Project Leads |
-| **CODE_ENTITY_MAP.md** | Bidirectional code ↔ FR mapping | Architects, Implementers |
-| **FR_ANNOTATION_GUIDE.md** | How to add FR IDs to tests | All developers |
-| **FR_TRACEABILITY_COMPLETION.md** | Gap analysis & next steps | Project Leads, Architects |
+| Document                          | Purpose                              | Audience                        |
+| --------------------------------- | ------------------------------------ | ------------------------------- |
+| **FR_TRACKER.md**                 | Implementation status for all 63 FRs | Implementers, QA, Project Leads |
+| **CODE_ENTITY_MAP.md**            | Bidirectional code ↔ FR mapping     | Architects, Implementers        |
+| **FR_ANNOTATION_GUIDE.md**        | How to add FR IDs to tests           | All developers                  |
+| **FR_TRACEABILITY_COMPLETION.md** | Gap analysis & next steps            | Project Leads, Architects       |
 
 ---
 
 ## By the Numbers
 
 ### Implementation Status
+
 - **Total FRs:** 63
 - **Implemented:** 46 (73%)
 - **Partial:** 16 (25%)
 - **Missing:** 1 (2%)
 
 ### By Category
-| Category | Status | Count |
-|----------|--------|-------|
-| FR-DOMAIN | 15/16 Implemented | Domain entities, state machines |
-| FR-AUDIT | 5/6 Implemented | Immutable audit trail with hash-chaining |
-| FR-CLI | 8/11 Implemented | Command-line interface (missing: validate cmd) |
-| FR-API | 7/8 Implemented | HTTP REST API (all core routes) |
-| FR-GRPC | 4/5 Implemented | gRPC service layer |
-| FR-STORAGE | 3/4 Implemented | SQLite and cache layers |
-| FR-EVENTS | 2/3 Implemented | NATS event bus |
-| FR-GRAPH | 3/5 Implemented | Neo4j graph storage (partial: critical path) |
-| FR-IMPORT | 2/4 Implemented | Import manifest system |
-| FR-TRIAGE | 2/4 Implemented | Triage classifier/router |
-| FR-PLANE | 2/3 Implemented | Plane.so integration |
-| FR-GIT | 2/3 Implemented | Git worktree and PR management |
-| FR-GOVERN | 2/4 Implemented | Governance engine |
-| FR-P2P | 2/6 Implemented | Peer-to-peer replication (complex; 4 partial) |
-| FR-AGENT | 3/5 Implemented | Agent dispatch and review ports |
-| FR-CONTENT | 2/3 Implemented | Content storage port |
+
+| Category   | Status            | Count                                          |
+| ---------- | ----------------- | ---------------------------------------------- |
+| FR-DOMAIN  | 15/16 Implemented | Domain entities, state machines                |
+| FR-AUDIT   | 5/6 Implemented   | Immutable audit trail with hash-chaining       |
+| FR-CLI     | 8/11 Implemented  | Command-line interface (missing: validate cmd) |
+| FR-API     | 7/8 Implemented   | HTTP REST API (all core routes)                |
+| FR-GRPC    | 4/5 Implemented   | gRPC service layer                             |
+| FR-STORAGE | 3/4 Implemented   | SQLite and cache layers                        |
+| FR-EVENTS  | 2/3 Implemented   | NATS event bus                                 |
+| FR-GRAPH   | 3/5 Implemented   | Neo4j graph storage (partial: critical path)   |
+| FR-IMPORT  | 2/4 Implemented   | Import manifest system                         |
+| FR-TRIAGE  | 2/4 Implemented   | Triage classifier/router                       |
+| FR-PLANE   | 2/3 Implemented   | Plane.so integration                           |
+| FR-GIT     | 2/3 Implemented   | Git worktree and PR management                 |
+| FR-GOVERN  | 2/4 Implemented   | Governance engine                              |
+| FR-P2P     | 2/6 Implemented   | Peer-to-peer replication (complex; 4 partial)  |
+| FR-AGENT   | 3/5 Implemented   | Agent dispatch and review ports                |
+| FR-CONTENT | 2/3 Implemented   | Content storage port                           |
 
 ### Coverage Highlights
+
 - ✓ All core features (feature CRUD, state transitions, work packages)
 - ✓ All API endpoints (REST + gRPC)
 - ✓ Audit and governance framework
@@ -85,6 +92,7 @@ Enables rapid lookup: FR → Code → Tests or Code → FR → Requirements
 ## How to Use
 
 ### I want to implement FR-ABC-123
+
 1. Open [FR_TRACKER.md](docs/reference/FR_TRACKER.md)
 2. Search for "FR-ABC-123"
 3. Check Status (Implemented/Partial/Missing)
@@ -93,6 +101,7 @@ Enables rapid lookup: FR → Code → Tests or Code → FR → Requirements
 6. Review [CODE_ENTITY_MAP.md](docs/reference/CODE_ENTITY_MAP.md) for related entities
 
 ### I want to verify test coverage for a feature
+
 1. Open [FR_TRACKER.md](docs/reference/FR_TRACKER.md)
 2. Find the FR(s) for your feature
 3. Check "Status" column (Implemented = has tests, Partial = incomplete tests)
@@ -100,6 +109,7 @@ Enables rapid lookup: FR → Code → Tests or Code → FR → Requirements
 5. Review the test to understand coverage
 
 ### I want to add tests to an existing test file
+
 1. Identify the FR(s) your tests verify
 2. Open [FR_ANNOTATION_GUIDE.md](docs/guides/FR_ANNOTATION_GUIDE.md)
 3. Follow the pattern: `// Traces to: FR-XXX-YYY`
@@ -107,6 +117,7 @@ Enables rapid lookup: FR → Code → Tests or Code → FR → Requirements
 5. Commit with message: `test(traceability): add FR annotations to <module>`
 
 ### I want to understand code structure for an FR
+
 1. Open [CODE_ENTITY_MAP.md](docs/reference/CODE_ENTITY_MAP.md)
 2. Search for "FR-ABC-123" in "Maps To FR" column
 3. Find the entity (struct, trait, module, function)
@@ -130,6 +141,7 @@ async fn test_feature_transition() {
 ```
 
 This enables:
+
 - Finding which tests cover a given FR
 - Identifying missing test coverage
 - Automated traceability reports
@@ -141,6 +153,7 @@ See [FR_ANNOTATION_GUIDE.md](docs/guides/FR_ANNOTATION_GUIDE.md) for examples an
 ## Key Locations
 
 ### Documentation
+
 ```
 docs/
   reference/
@@ -153,6 +166,7 @@ docs/
 ```
 
 ### Tests (by category)
+
 ```
 crates/agileplus-api/tests/api_integration/
   core_routes.rs                   # FR-API-001 through FR-API-007
@@ -172,6 +186,7 @@ crates/agileplus-integration-tests/tests/
 ```
 
 ### Implementation (by category)
+
 ```
 crates/agileplus-api/src/
   routes/                          # FR-API-001 through FR-API-008
@@ -197,21 +212,25 @@ crates/agileplus-nats/
 ## Common Tasks
 
 ### Find all tests for FR-API-001
+
 ```bash
 grep -r "Traces to:.*FR-API-001" crates/
 # Returns: crates/agileplus-api/tests/api_integration/core_routes.rs:response_content_type_is_json
 ```
 
 ### Find code implementing FR-DOMAIN-003
+
 Look in [CODE_ENTITY_MAP.md](docs/reference/CODE_ENTITY_MAP.md) → FR-DOMAIN → "State Machine"
 → `crates/agileplus-domain/src/domain/state_machine.rs`
 
 ### Verify coverage for a feature
+
 1. List all FRs for the feature (e.g., FR-API-002, FR-DOMAIN-003, FR-AUDIT-001)
 2. Check [FR_TRACKER.md](docs/reference/FR_TRACKER.md) Status column for each
 3. All "Implemented" = full coverage; "Partial" = gaps; "Missing" = not tested
 
 ### Create PR for missing FR implementation
+
 1. Identify missing/partial FR in [FR_TRACKER.md](docs/reference/FR_TRACKER.md)
 2. Reference the FR ID in commit message: `Implement FR-CLI-011: validate command`
 3. Add test with annotation: `// Traces to: FR-CLI-011`
@@ -222,6 +241,7 @@ Look in [CODE_ENTITY_MAP.md](docs/reference/CODE_ENTITY_MAP.md) → FR-DOMAIN �
 ## Next Steps
 
 ### Immediate
+
 1. ✓ Create FR_TRACKER.md with all 63 FRs
 2. ✓ Create CODE_ENTITY_MAP.md with 100+ entities
 3. ✓ Add test annotations to core_routes.rs as example
@@ -229,12 +249,14 @@ Look in [CODE_ENTITY_MAP.md](docs/reference/CODE_ENTITY_MAP.md) → FR-DOMAIN �
 5. ⏳ **Expand test annotations** - Add to all test files (high impact, low effort)
 
 ### Medium Term
+
 1. **Implement FR-CLI-011** - Governance validation command
 2. **Complete partial implementations** - P2P replication, graph queries, triage heuristics
 3. **Automated gap reports** - CI job to identify untested FRs
 4. **Coverage dashboard** - Visual progress tracker
 
 ### Long Term
+
 1. **Auto-generate trackers** - From code annotations via CI pipeline
 2. **Enforce traceability** - Pre-commit hook to require FR annotations on new tests
 3. **Metrics dashboard** - Track implementation progress over time
@@ -244,13 +266,16 @@ Look in [CODE_ENTITY_MAP.md](docs/reference/CODE_ENTITY_MAP.md) → FR-DOMAIN �
 ## Maintenance
 
 ### Updating Trackers
+
 When implementing a new FR or adding tests:
+
 1. Update [FR_TRACKER.md](docs/reference/FR_TRACKER.md) Status column
 2. Add test reference if applicable
 3. Commit with clear message
 4. [CODE_ENTITY_MAP.md](docs/reference/CODE_ENTITY_MAP.md) updates automatically from code
 
 ### When to Review
+
 - **Monthly:** Check for new FRs that need status updates
 - **Before major release:** Run gap analysis (see [FR_TRACEABILITY_COMPLETION.md](docs/reports/FR_TRACEABILITY_COMPLETION.md))
 - **On code review:** Verify test annotations match implementation
@@ -270,6 +295,7 @@ When implementing a new FR or adding tests:
 ## Summary
 
 **This system enables:**
+
 - Developers to find code implementing any FR in seconds
 - QA to verify test coverage for requirements
 - Architects to understand code structure and dependencies

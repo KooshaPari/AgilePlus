@@ -16,18 +16,18 @@ load.
 
 ## Acceptance Criteria
 
-| AC  | Criterion |
-|-----|-----------|
-| AC1 | `HealthChecker` trait exposes `check(&self) -> (bool, Option<u64>)` returning `(healthy, latency_ms)`. |
-| AC2 | `SqliteChecker` returns `healthy == true` and a non-negative latency in ms. |
-| AC3 | `MemoryStoreChecker` returns `healthy == true` and a non-negative latency in ms. |
-| AC4 | `ProcessChecker` returns `healthy == true` and a non-negative latency in ms. |
-| AC5 | `BuildInfoChecker` returns `healthy == true` and a non-negative latency in ms. |
-| AC6 | `run_health_checks()` returns a `Vec<ServiceHealth>` with exactly 4 entries (one per checker), all `healthy`. |
-| AC7 | At least one service reports a measurable latency (`latency_ms.is_some()`). |
-| AC8 | `ServiceHealth` shape: `{ name, healthy, degraded, latency_ms, last_check }`. |
-| AC9 | No checker silently swallows I/O errors; failure modes surface as `healthy == false`. |
-| AC10 | `health_integration.rs` proves all ACs above with at least one assertion per AC. |
+| AC   | Criterion                                                                                                     |
+| ---- | ------------------------------------------------------------------------------------------------------------- |
+| AC1  | `HealthChecker` trait exposes `check(&self) -> (bool, Option<u64>)` returning `(healthy, latency_ms)`.        |
+| AC2  | `SqliteChecker` returns `healthy == true` and a non-negative latency in ms.                                   |
+| AC3  | `MemoryStoreChecker` returns `healthy == true` and a non-negative latency in ms.                              |
+| AC4  | `ProcessChecker` returns `healthy == true` and a non-negative latency in ms.                                  |
+| AC5  | `BuildInfoChecker` returns `healthy == true` and a non-negative latency in ms.                                |
+| AC6  | `run_health_checks()` returns a `Vec<ServiceHealth>` with exactly 4 entries (one per checker), all `healthy`. |
+| AC7  | At least one service reports a measurable latency (`latency_ms.is_some()`).                                   |
+| AC8  | `ServiceHealth` shape: `{ name, healthy, degraded, latency_ms, last_check }`.                                 |
+| AC9  | No checker silently swallows I/O errors; failure modes surface as `healthy == false`.                         |
+| AC10 | `health_integration.rs` proves all ACs above with at least one assertion per AC.                              |
 
 ## Traceability
 

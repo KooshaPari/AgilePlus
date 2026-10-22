@@ -35,11 +35,11 @@ Scanning project...
 ✓ Detected frameworks: Axum, Vitepress
 ```
 
-| Type | Criterion | Behavior |
-|------|-----------|----------|
-| **Brownfield** | 5+ source files | Scans for languages, frameworks, conventions |
-| **Greenfield** | < 5 files | Creates minimal scaffold |
-| **Monorepo** | Multiple workspace roots | Detects workspace structure |
+| Type           | Criterion                | Behavior                                     |
+| -------------- | ------------------------ | -------------------------------------------- |
+| **Brownfield** | 5+ source files          | Scans for languages, frameworks, conventions |
+| **Greenfield** | < 5 files                | Creates minimal scaffold                     |
+| **Monorepo**   | Multiple workspace roots | Detects workspace structure                  |
 
 ### 2. Language & Framework Detection
 

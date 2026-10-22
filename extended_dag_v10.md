@@ -1,4 +1,5 @@
 # Extended Workspace DAG v10
+
 Generated: 2026-05-06 (extension of v7, 2026-05-05)
 
 This v10 consolidates findings from the evening audit sprint (2026-05-05/06):
@@ -9,33 +10,33 @@ WS-AC Secrets/Pre-commit, WS-AD README/Docs, WS-AE Python Ecosystem, WS-AF GitHu
 
 ## Executive Summary
 
-| Dimension | Finding | Severity |
-|---|---|---:|
-| CI Coverage | Almost all repos already have CI; only `rust/` bootstrap repo needed CI added | P0 — RESOLVED |
-| GitHub Actions Quality | 7,013 workflows: 151 non-SHA-pinned (trufflehog@main in 128+), 91% missing timeout-minutes, 51% missing permissions | P0 |
-| Dependabot | 10 repos missing Dependabot; 92 repos have it | P1 |
-| CODEOWNERS | 30+ canonical repos missing .github/CODEOWNERS | P1 |
-| Python Type Safety | 16/23 Python repos have zero type checking | P1 |
-| Secrets | Clean — no hardcoded secrets in tracked source | P2 — CLEAR |
-| Pre-commit | 20 repos missing .pre-commit-config.yaml | P2 |
-| README Accuracy | helios-cli/phenoData/Civis false test claims (helios-cli is actually accurate — has inline #[cfg(test)]) | P2 |
+| Dimension              | Finding                                                                                                             |      Severity |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------: |
+| CI Coverage            | Almost all repos already have CI; only `rust/` bootstrap repo needed CI added                                       | P0 — RESOLVED |
+| GitHub Actions Quality | 7,013 workflows: 151 non-SHA-pinned (trufflehog@main in 128+), 91% missing timeout-minutes, 51% missing permissions |            P0 |
+| Dependabot             | 10 repos missing Dependabot; 92 repos have it                                                                       |            P1 |
+| CODEOWNERS             | 30+ canonical repos missing .github/CODEOWNERS                                                                      |            P1 |
+| Python Type Safety     | 16/23 Python repos have zero type checking                                                                          |            P1 |
+| Secrets                | Clean — no hardcoded secrets in tracked source                                                                      |    P2 — CLEAR |
+| Pre-commit             | 20 repos missing .pre-commit-config.yaml                                                                            |            P2 |
+| README Accuracy        | helios-cli/phenoData/Civis false test claims (helios-cli is actually accurate — has inline #[cfg(test)])            |            P2 |
 
 ---
 
 ## Completed Workstreams
 
-| WS | Action | Repos | Status |
-|---|---|---|---|
-| WS-R | Add Go CI | BytePort | ✅ PR#213 (`ci/go-workflow`) |
-| WS-T | Fix lock-copying | netweave-final2 | ✅ `0e378d8` |
-| WS-U | Fix broken symlinks | 5 repos | ✅ 5 commits |
-| WS-V | Add FUNDING.yml | 5 repos | ✅ 5 FUNDING.yml added |
-| WS-W | Fix npm vulns | AtomsBot | ✅ `4d32914` — undici update |
-| WS-X | Fix npm vulns | thegent | ✅ `9d08d44` |
-| WS-Y | Add Rust CI | eyetracker, thegent-dispatch, phenotype-bus, FocalPoint, phenoUtils, Sidekick | ✅ pushed to branches; 3 already had CI |
-| WS-Z | Add Go CI | kwality | ✅ `bc43ca0`; most repos already had CI |
-| WS-AA | Add Node CI | Paginary, phenoData, PhenoHandbook, docs, phenodocs-scorecard-remediation | ✅ pushed; PhenoCompose archived |
-| WS-S | Fix argis-extensions interface drift | argis-extensions | ⏸️ Paused — multi-module GraphQL schema sync needs architectural decision |
+| WS    | Action                               | Repos                                                                         | Status                                                                    |
+| ----- | ------------------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| WS-R  | Add Go CI                            | BytePort                                                                      | ✅ PR#213 (`ci/go-workflow`)                                              |
+| WS-T  | Fix lock-copying                     | netweave-final2                                                               | ✅ `0e378d8`                                                              |
+| WS-U  | Fix broken symlinks                  | 5 repos                                                                       | ✅ 5 commits                                                              |
+| WS-V  | Add FUNDING.yml                      | 5 repos                                                                       | ✅ 5 FUNDING.yml added                                                    |
+| WS-W  | Fix npm vulns                        | AtomsBot                                                                      | ✅ `4d32914` — undici update                                              |
+| WS-X  | Fix npm vulns                        | thegent                                                                       | ✅ `9d08d44`                                                              |
+| WS-Y  | Add Rust CI                          | eyetracker, thegent-dispatch, phenotype-bus, FocalPoint, phenoUtils, Sidekick | ✅ pushed to branches; 3 already had CI                                   |
+| WS-Z  | Add Go CI                            | kwality                                                                       | ✅ `bc43ca0`; most repos already had CI                                   |
+| WS-AA | Add Node CI                          | Paginary, phenoData, PhenoHandbook, docs, phenodocs-scorecard-remediation     | ✅ pushed; PhenoCompose archived                                          |
+| WS-S  | Fix argis-extensions interface drift | argis-extensions                                                              | ⏸️ Paused — multi-module GraphQL schema sync needs architectural decision |
 
 ---
 
@@ -48,6 +49,7 @@ WS-AC Secrets/Pre-commit, WS-AD README/Docs, WS-AE Python Ecosystem, WS-AF GitHu
 **Fix:** Replace all instances of `trufflehog/actions/setup@main` with the pinned SHA. Get current SHA from `https://github.com/trufflehog/actions/releases`.
 
 **Pattern:**
+
 ```yaml
 # Before
 - uses: trufflehog/actions/setup@main
@@ -74,6 +76,7 @@ WS-AC Secrets/Pre-commit, WS-AD README/Docs, WS-AE Python Ecosystem, WS-AF GitHu
 ### WS-AI: Add Dependabot to 10 repos (P1)
 
 **Finding:** 10 repos have package managers but no Dependabot:
+
 - `AgilePlus/` (cargo), `agileplus-agents/` (cargo), `agileplus-mcp/` (pip)
 - `bdd-integration/` (cargo), `dispatch-mcp/` (pip), `docs/` (npm)
 - `pheno-cli/` (go), `PhenoLang/` (go), `python/` (pip), `rust/` (cargo)
@@ -103,6 +106,7 @@ WS-AC Secrets/Pre-commit, WS-AD README/Docs, WS-AE Python Ecosystem, WS-AF GitHu
 ### WS-AL: Fix README accuracy — phenoData and Civis (P2)
 
 **Finding:**
+
 - **phenoData:** README claims tests but `tests/` doesn't exist (only has minisearch tests in `node_modules/`)
 - **Civis:** README claims tests but `tests/` doesn't exist
 
@@ -115,6 +119,7 @@ WS-AC Secrets/Pre-commit, WS-AD README/Docs, WS-AE Python Ecosystem, WS-AF GitHu
 ## Existing Findings (Reference)
 
 See `findings/` for full reports:
+
 - `go_ecosystem_audit_2026-05-05.md` — 7 Go repos without CI (superseded — most had CI)
 - `dependency_hygiene_audit_2026-05-05.md` — npm staleness, Actions SHA-pinning
 - `repo_metadata_completeness_2026-05-05.md` — 37 repos need CI (superseded)
@@ -132,12 +137,12 @@ See `findings/` for full reports:
 
 ## Repo Language Distribution (2026-05-05)
 
-| Language | Count |
-|---|---|
-| Rust | 48 |
-| Node/TypeScript | 35 |
-| Python | 23 |
-| Go | 16 |
+| Language        | Count |
+| --------------- | ----- |
+| Rust            | 48    |
+| Node/TypeScript | 35    |
+| Python          | 23    |
+| Go              | 16    |
 
 ---
 

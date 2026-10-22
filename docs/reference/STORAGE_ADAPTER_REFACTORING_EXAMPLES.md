@@ -9,6 +9,7 @@ This document shows concrete code examples demonstrating how the storage adapter
 ### Before: Scattered Error Handling
 
 **agileplus-sqlite/src/repository/features.rs** (~30 LOC of error mapping):
+
 ```rust
 fn map_rusqlite_error(err: rusqlite::Error) -> DomainError {
     match err {
@@ -43,6 +44,7 @@ pub fn create_feature(conn: &Connection, feature: &Feature) -> Result<i64, Domai
 ```
 
 **agileplus-graph/src/store.rs** (~20 LOC of error definitions):
+
 ```rust
 #[derive(Debug, thiserror::Error)]
 pub enum GraphError {
@@ -70,6 +72,7 @@ pub async fn create_feature(store: &GraphStore, ...) -> Result<i64, GraphError> 
 ```
 
 **agileplus-plane/src/client/transport.rs** (~15 LOC of error handling):
+
 ```rust
 pub async fn request_json<T: Serialize + ?Sized>(
     client: &reqwest::Client,
@@ -104,6 +107,7 @@ pub async fn create_work_item(...) -> Result<i64, DomainError> {
 ### After: Unified Error Handling
 
 **storage-adapter-base/src/error.rs** (~30 LOC, shared):
+
 ```rust
 #[derive(Debug, Error)]
 pub enum StorageAdapterError {
@@ -135,6 +139,7 @@ pub trait ErrorMapper {
 ```
 
 **agileplus-sqlite/src/error_mapper.rs** (~15 LOC, adapter-specific):
+
 ```rust
 pub struct SqliteErrorMapper;
 
@@ -157,6 +162,7 @@ impl ErrorMapper for SqliteErrorMapper {
 ```
 
 **agileplus-graph/src/error_mapper.rs** (~10 LOC, adapter-specific):
+
 ```rust
 pub struct NeoErrorMapper;
 
@@ -177,6 +183,7 @@ impl ErrorMapper for NeoErrorMapper {
 ```
 
 **agileplus-plane/src/error_mapper.rs** (~15 LOC, adapter-specific):
+
 ```rust
 pub struct PlaneErrorMapper;
 
@@ -204,6 +211,7 @@ impl ErrorMapper for PlaneErrorMapper {
 ```
 
 **Result**:
+
 - Before: 65 LOC (scattered, inconsistent)
 - After: 30 (shared) + 40 (specific per adapter) = 70 LOC
 - **But** shared logic is now centralized, consistent across adapters
@@ -216,6 +224,7 @@ impl ErrorMapper for PlaneErrorMapper {
 ### Before: Each Adapter Manages Pooling Differently
 
 **agileplus-sqlite** (mutex-based locking):
+
 ```rust
 pub struct SqliteStorageAdapter {
     pub(crate) conn: Arc<Mutex<Connection>>,
@@ -260,6 +269,7 @@ impl StoragePort for SqliteStorageAdapter {
 ```
 
 **agileplus-graph** (not yet implemented, but would need):
+
 ```rust
 pub struct GraphStore {
     backend: Box<dyn GraphBackend>,
@@ -271,6 +281,7 @@ pub struct GraphStore {
 ```
 
 **agileplus-plane** (HTTP client):
+
 ```rust
 pub struct PlaneClient {
     client: reqwest::Client,
@@ -308,6 +319,7 @@ pub async fn create_work_item(&self, ...) -> Result<i64, DomainError> {
 ### After: Unified Pool Management
 
 **storage-adapter-base/src/pool.rs** (~60 LOC, shared):
+
 ```rust
 #[async_trait]
 pub trait StorageConnectionPool: Send + Sync {
@@ -335,6 +347,7 @@ pub struct PoolMetrics {
 ```
 
 **agileplus-sqlite/src/pool.rs** (~25 LOC, adapter-specific):
+
 ```rust
 pub struct SqlitePool {
     conn: Arc<Mutex<Connection>>,
@@ -379,6 +392,7 @@ impl StorageConnectionPool for SqlitePool {
 ```
 
 **agileplus-graph/src/pool.rs** (~40 LOC, adapter-specific):
+
 ```rust
 pub struct NeoPool {
     driver: neo4rs::Driver,
@@ -414,6 +428,7 @@ impl StorageConnectionPool for NeoPool {
 ```
 
 **agileplus-plane/src/pool.rs** (~30 LOC, adapter-specific):
+
 ```rust
 pub struct PlanePool {
     client: reqwest::Client,
@@ -446,6 +461,7 @@ impl StorageConnectionPool for PlanePool {
 ```
 
 **Result**:
+
 - Before: 45 LOC + duplicated patterns + incomplete implementations
 - After: 60 (shared trait) + 25 + 40 + 30 = 155 LOC
 - **But** complete, consistent, testable pooling interface
@@ -458,6 +474,7 @@ impl StorageConnectionPool for PlanePool {
 ### Before: No Shared Retry Logic
 
 **agileplus-sqlite/src/lib.rs** (no retry logic at all):
+
 ```rust
 impl StoragePort for SqliteStorageAdapter {
     async fn create_feature(&self, feature: &Feature) -> Result<i64, DomainError> {
@@ -469,6 +486,7 @@ impl StoragePort for SqliteStorageAdapter {
 ```
 
 **agileplus-graph/src/lib.rs** (no retry logic):
+
 ```rust
 pub async fn create_feature(&self, feature: &Feature) -> Result<i64, GraphError> {
     self.backend().run_cypher(query, params).await
@@ -477,6 +495,7 @@ pub async fn create_feature(&self, feature: &Feature) -> Result<i64, GraphError>
 ```
 
 **agileplus-plane/src/client/resources/work_items.rs** (partial retry):
+
 ```rust
 pub async fn create_work_item(&self, ...) -> Result<WorkItem> {
     for attempt in 0..3 {
@@ -512,6 +531,7 @@ pub async fn create_work_item(&self, ...) -> Result<WorkItem> {
 ### After: Unified Retry Policy
 
 **storage-adapter-base/src/retry.rs** (~70 LOC, shared):
+
 ```rust
 #[async_trait]
 pub trait RetryPolicy: Send + Sync {
@@ -572,6 +592,7 @@ impl RetryPolicy for ExponentialBackoffRetry {
 ```
 
 **agileplus-sqlite/src/lib.rs** (uses shared retry):
+
 ```rust
 impl StoragePort for SqliteStorageAdapter {
     async fn create_feature(&self, feature: &Feature) -> Result<i64, DomainError> {
@@ -592,6 +613,7 @@ impl StoragePort for SqliteStorageAdapter {
 ```
 
 **agileplus-graph/src/lib.rs** (uses shared retry):
+
 ```rust
 impl StoragePort for GraphStorageAdapter {
     async fn create_feature(&self, feature: &Feature) -> Result<i64, DomainError> {
@@ -611,6 +633,7 @@ impl StoragePort for GraphStorageAdapter {
 ```
 
 **agileplus-plane/src/lib.rs** (uses shared retry):
+
 ```rust
 impl StoragePort for PlaneStorageAdapter {
     async fn create_feature(&self, feature: &Feature) -> Result<i64, DomainError> {
@@ -630,13 +653,14 @@ impl StoragePort for PlaneStorageAdapter {
 ```
 
 **Result**:
+
 - Before: 45 LOC (scattered, incomplete)
 - After: 70 LOC (shared) + 8 LOC per adapter = 70 + 24 = 94 LOC
 - **But** now:
-  - ✅ All adapters have consistent retry behavior
-  - ✅ Exponential backoff calculated correctly everywhere
-  - ✅ Transient errors detected uniformly
-  - ✅ Easy to test retry policy in isolation
+    - ✅ All adapters have consistent retry behavior
+    - ✅ Exponential backoff calculated correctly everywhere
+    - ✅ Transient errors detected uniformly
+    - ✅ Easy to test retry policy in isolation
 - **Savings**: -5 LOC net, but **+100% behavior improvement**
 
 ---
@@ -646,6 +670,7 @@ impl StoragePort for PlaneStorageAdapter {
 ### Before: Scattered, Inconsistent Config
 
 **agileplus-sqlite/src/lib.rs**:
+
 ```rust
 impl SqliteStorageAdapter {
     pub fn new(db_path: &Path) -> Result<Self, DomainError> {
@@ -665,6 +690,7 @@ impl SqliteStorageAdapter {
 ```
 
 **agileplus-graph/src/lib.rs**:
+
 ```rust
 pub struct GraphConfig {
     pub uri: String,
@@ -692,6 +718,7 @@ impl GraphStore {
 ```
 
 **agileplus-plane/src/lib.rs**:
+
 ```rust
 pub struct PlaneClient {
     client: reqwest::Client,
@@ -728,6 +755,7 @@ impl PlaneClient {
 ### After: Unified Configuration
 
 **storage-adapter-base/src/config.rs** (~50 LOC, shared):
+
 ```rust
 pub trait StorageAdapterConfig: Send + Sync {
     fn validate(&self) -> Result<(), StorageAdapterError>;
@@ -764,6 +792,7 @@ impl Default for BaseAdapterConfig {
 ```
 
 **agileplus-sqlite/src/config.rs** (~20 LOC, adapter-specific):
+
 ```rust
 pub struct SqliteConfig {
     base: BaseAdapterConfig,
@@ -807,6 +836,7 @@ impl SqliteConfig {
 ```
 
 **agileplus-graph/src/config.rs** (~20 LOC, adapter-specific):
+
 ```rust
 pub struct NeoConfig {
     base: BaseAdapterConfig,
@@ -864,6 +894,7 @@ impl NeoConfig {
 ```
 
 **agileplus-plane/src/config.rs** (~20 LOC, adapter-specific):
+
 ```rust
 pub struct PlaneConfig {
     base: BaseAdapterConfig,
@@ -917,31 +948,33 @@ impl PlaneConfig {
 ```
 
 **Result**:
+
 - Before: 25 LOC (three different patterns)
 - After: 50 (shared) + 20 + 20 + 20 = 110 LOC
 - **But** now:
-  - ✅ All three adapters follow same initialization pattern
-  - ✅ Validation happens consistently
-  - ✅ Environment variable loading standardized
-  - ✅ Diagnostics available uniformly
-  - ✅ Configuration serializable/testable
+    - ✅ All three adapters follow same initialization pattern
+    - ✅ Validation happens consistently
+    - ✅ Environment variable loading standardized
+    - ✅ Diagnostics available uniformly
+    - ✅ Configuration serializable/testable
 - **Savings**: -85 LOC net, but **+500% consistency & testability**
 
 ---
 
 ## Summary: Total Code Reduction
 
-| Category | Before | After | Savings |
-|----------|--------|-------|---------|
-| Error handling | 65 LOC | 70 LOC | -5 LOC (but +100% consistency) |
-| Connection pooling | 45 LOC | 155 LOC | -110 LOC (but +100% completeness) |
-| Retry logic | 45 LOC | 94 LOC | -49 LOC (but universal) |
-| Configuration | 25 LOC | 110 LOC | -85 LOC (but standardized) |
-| **TOTAL** | **180 LOC** | **429 LOC** | **-249 LOC** |
-| Base framework | 0 LOC | 200 LOC | +200 LOC (shared) |
-| **NET** | | | **~932 LOC** (with full 3-adapter scope + tests) |
+| Category           | Before      | After       | Savings                                          |
+| ------------------ | ----------- | ----------- | ------------------------------------------------ |
+| Error handling     | 65 LOC      | 70 LOC      | -5 LOC (but +100% consistency)                   |
+| Connection pooling | 45 LOC      | 155 LOC     | -110 LOC (but +100% completeness)                |
+| Retry logic        | 45 LOC      | 94 LOC      | -49 LOC (but universal)                          |
+| Configuration      | 25 LOC      | 110 LOC     | -85 LOC (but standardized)                       |
+| **TOTAL**          | **180 LOC** | **429 LOC** | **-249 LOC**                                     |
+| Base framework     | 0 LOC       | 200 LOC     | +200 LOC (shared)                                |
+| **NET**            |             |             | **~932 LOC** (with full 3-adapter scope + tests) |
 
 **Key wins**:
+
 - ✅ Unified error handling interface
 - ✅ Consistent retry behavior across adapters
 - ✅ Standardized configuration and initialization

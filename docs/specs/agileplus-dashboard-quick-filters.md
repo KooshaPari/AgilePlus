@@ -9,6 +9,7 @@ Add a small dashboard polish increment: quick filter chips for the live backlog 
 AgilePlus already ships a live dashboard backed by SQLite data, including the epics backlog and a filtered story list. The product also has read-only CLI list commands for projects, epics, and stories, plus syncing and triage flows that map external work into local domain entities. That means the data is present, but the day-to-day PM workflow still depends on visually hunting through the board to isolate the most urgent items.
 
 Traceability:
+
 - FR-AGP-014: Web dashboard for project/backlog visualization
 - FR-AGP-016: CLI read/list subcommands
 - FR-AGP-017: Triage automation for synced items
@@ -54,4 +55,3 @@ Out of scope:
 ## Risk / Cost
 
 Low implementation risk and low performance impact. The filter operates on already-loaded data, so it should not increase backend load. The only expected cost is a small amount of client-side state and rendering logic.
-

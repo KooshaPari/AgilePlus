@@ -84,17 +84,17 @@ pub fn build_tray_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, tauri::Error
 
 **Menu structure (top to bottom):**
 
-| Item | Type | Action |
-|------|------|--------|
-| **AgilePlus** | Submenu | Dashboard summary (feature/WP counts) |
-| --- | Separator | |
-| **Features** | Submenu | Dynamic list of active features with state badges |
-| → `feature-slug` | Submenu per feature | Advance, View, Open Spec |
-| --- | Separator | |
-| **Quick Actions** | Submenu | Triage, Open API Dashboard, Refresh |
-| --- | Separator | |
-| **Show Window** | MenuItem | Existing show-window action |
-| **Quit** | MenuItem | Existing quit action |
+| Item              | Type                | Action                                            |
+| ----------------- | ------------------- | ------------------------------------------------- |
+| **AgilePlus**     | Submenu             | Dashboard summary (feature/WP counts)             |
+| ---               | Separator           |                                                   |
+| **Features**      | Submenu             | Dynamic list of active features with state badges |
+| → `feature-slug`  | Submenu per feature | Advance, View, Open Spec                          |
+| ---               | Separator           |                                                   |
+| **Quick Actions** | Submenu             | Triage, Open API Dashboard, Refresh               |
+| ---               | Separator           |                                                   |
+| **Show Window**   | MenuItem            | Existing show-window action                       |
+| **Quit**          | MenuItem            | Existing quit action                              |
 
 **Dynamic rebuild:** The menu is rebuilt after each write operation or on a 30-second
 polling interval (configurable). Tauri 2.x supports `tray.set_menu(...)` for hot-swapping.
@@ -161,22 +161,22 @@ pub fn notify(app: &AppHandle, title: &str, body: &str);
 
 These call the existing `commands.rs` functions directly — no CLI binary needed.
 
-| Tray Action | Tauri Command | Result Display |
-|-------------|--------------|----------------|
-| Dashboard submenu (counts) | `get_dashboard_stats` | Submenu header text |
-| Feature list (with state) | `list_features` | Dynamic submenu items |
-| Feature detail | `get_feature` | Tooltip / info panel |
+| Tray Action                | Tauri Command         | Result Display        |
+| -------------------------- | --------------------- | --------------------- |
+| Dashboard submenu (counts) | `get_dashboard_stats` | Submenu header text   |
+| Feature list (with state)  | `list_features`       | Dynamic submenu items |
+| Feature detail             | `get_feature`         | Tooltip / info panel  |
 
 ### 4.2 Lifecycle (Shell Out to CLI Binary)
 
 These invoke the `agileplus` binary. They require the binary to be installed.
 
-| Tray Action | CLI Command | Notes |
-|-------------|-------------|-------|
-| Advance feature state | `agileplus <next-state> --feature <slug>` | e.g., `agileplus specify --feature auth` |
-| Triage a string | `agileplus triage "<text>" --output json` | Opens input dialog first |
-| Open API dashboard | Opens `http://localhost:<port>` in browser | Uses `open` crate or shell |
-| Refresh | Rebuilds menu from DB | Re-reads SQLite, updates tooltip |
+| Tray Action           | CLI Command                                | Notes                                    |
+| --------------------- | ------------------------------------------ | ---------------------------------------- |
+| Advance feature state | `agileplus <next-state> --feature <slug>`  | e.g., `agileplus specify --feature auth` |
+| Triage a string       | `agileplus triage "<text>" --output json`  | Opens input dialog first                 |
+| Open API dashboard    | Opens `http://localhost:<port>` in browser | Uses `open` crate or shell               |
+| Refresh               | Rebuilds menu from DB                      | Re-reads SQLite, updates tooltip         |
 
 ### 4.3 Lifecycle Commands Detail
 
@@ -291,23 +291,23 @@ tauri-plugin-shell = "2"
 
 ## 7. Error Handling
 
-| Error Class | User-Facing Behavior |
-|-------------|---------------------|
-| Binary not found | Lifecycle menu items are grayed out; tooltip says "CLI not installed" |
-| CLI command timeout | Notification: "Command timed out. Open window for details." |
-| CLI command failure (non-zero exit) | Notification with stderr excerpt |
-| SQLite read failure | Menu shows cached/stale data; refresh retries |
-| Invalid state transition | Domain error displayed in notification; menu only shows valid next states |
+| Error Class                         | User-Facing Behavior                                                      |
+| ----------------------------------- | ------------------------------------------------------------------------- |
+| Binary not found                    | Lifecycle menu items are grayed out; tooltip says "CLI not installed"     |
+| CLI command timeout                 | Notification: "Command timed out. Open window for details."               |
+| CLI command failure (non-zero exit) | Notification with stderr excerpt                                          |
+| SQLite read failure                 | Menu shows cached/stale data; refresh retries                             |
+| Invalid state transition            | Domain error displayed in notification; menu only shows valid next states |
 
 ## 8. File Changes Summary
 
-| File | Change Type | Description |
-|------|-------------|-------------|
-| `src/tray/mod.rs` | **New** | Module root, re-exports |
-| `src/tray/menu.rs` | **New** | Dynamic menu builder |
-| `src/tray/cli.rs` | **New** | CLI bridge to agileplus binary |
-| `src/tray/notify.rs` | **New** | Tooltip + notification helpers |
-| `src/lib.rs` | **Modified** | Replace inline tray setup with `tray::` calls |
-| `Cargo.toml` | **Modified** | Add `open` crate (optional) |
+| File                 | Change Type  | Description                                   |
+| -------------------- | ------------ | --------------------------------------------- |
+| `src/tray/mod.rs`    | **New**      | Module root, re-exports                       |
+| `src/tray/menu.rs`   | **New**      | Dynamic menu builder                          |
+| `src/tray/cli.rs`    | **New**      | CLI bridge to agileplus binary                |
+| `src/tray/notify.rs` | **New**      | Tooltip + notification helpers                |
+| `src/lib.rs`         | **Modified** | Replace inline tray setup with `tray::` calls |
+| `Cargo.toml`         | **Modified** | Add `open` crate (optional)                   |
 
 Estimated size: ~250 lines across the 4 new files; ~15 lines changed in `lib.rs`.

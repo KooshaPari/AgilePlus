@@ -15,16 +15,16 @@ the HTTP adapter in `agileplus-api`.
 
 ## Acceptance Criteria
 
-| AC  | Criterion |
-|-----|-----------|
+| AC  | Criterion                                                                               |
+| --- | --------------------------------------------------------------------------------------- |
 | AC1 | gRPC service `AgilePlusService` implements at least one unary and one streaming method. |
-| AC2 | Health check returns SERVING when dependencies are healthy. |
-| AC3 | Reflection is enabled and lists every registered service. |
-| AC4 | Domain errors map to canonical gRPC status codes (NOT_FOUND, INVALID_ARGUMENT, etc.). |
-| AC5 | Proto schemas live in `agileplus-proto` and are generated, never hand-edited. |
-| AC6 | `agileplus-grpc` and `agileplus-api` share request/response shapes for parity. |
-| AC7 | TLS termination is configurable; insecure mode is only available in dev/test. |
-| AC8 | `grpc_integration.rs` proves ACs above with at least one assertion per AC. |
+| AC2 | Health check returns SERVING when dependencies are healthy.                             |
+| AC3 | Reflection is enabled and lists every registered service.                               |
+| AC4 | Domain errors map to canonical gRPC status codes (NOT_FOUND, INVALID_ARGUMENT, etc.).   |
+| AC5 | Proto schemas live in `agileplus-proto` and are generated, never hand-edited.           |
+| AC6 | `agileplus-grpc` and `agileplus-api` share request/response shapes for parity.          |
+| AC7 | TLS termination is configurable; insecure mode is only available in dev/test.           |
+| AC8 | `grpc_integration.rs` proves ACs above with at least one assertion per AC.              |
 
 ## Traceability
 

@@ -3,6 +3,7 @@
 ## Audit Summary
 
 Three dependency hygiene audits conducted across the Phenotype repos:
+
 1. GitHub Actions version pinning (SHA verification)
 2. npm dependency staleness (5 active repos)
 3. Go module replace directive analysis
@@ -24,11 +25,13 @@ All workflow files scanned use SHA-pinned or `@latest`/`@main` references, which
 ### 2.1 thegent
 
 **Outdated packages:**
+
 - `markdown-it-mathjax3`: 4.3.2 (current) -> 5.2.0 (latest)
 - `vite-imagetools`: 9.0.3 -> 10.0.0
 - `vitest`: 3.2.4 -> 4.1.5
 
 **Security audit:**
+
 - 7 moderate vulnerabilities
 - Critical: `markdown-it` ReDoS (GHSA-38c4-r59v-3vqw) - no fix available
 
@@ -52,6 +55,7 @@ All workflow files scanned use SHA-pinned or `@latest`/`@main` references, which
 | discord-interactions | 4.3.0 | 4.4.0 |
 
 **Security audit:** 34 vulnerabilities
+
 - 2 critical
 - 20 high
 - 10 moderate
@@ -75,14 +79,15 @@ All workflow files scanned use SHA-pinned or `@latest`/`@main` references, which
 
 ### Findings
 
-| Repo | Replace Directive |
-|------|------------------|
-| argis-extensions | `replace github.com/maximhq/bifrost/core => ./bifrost/core` |
+| Repo                 | Replace Directive                                                                    |
+| -------------------- | ------------------------------------------------------------------------------------ |
+| argis-extensions     | `replace github.com/maximhq/bifrost/core => ./bifrost/core`                          |
 | cliproxyapi-plusplus | `replace github.com/KooshaPari/phenotype-go-auth => ./third_party/phenotype-go-auth` |
 
 ### Assessment: ACCEPTABLE
 
 Both replace directives are for local path overrides (using `./` paths), which is standard practice for:
+
 - Vendoring internal modules
 - Development of local forks
 
@@ -92,12 +97,12 @@ These are NOT masking stale dependency issues.
 
 ## Action Items
 
-| Priority | Repo | Issue | Recommended Action |
-|----------|------|-------|-------------------|
-| CRITICAL | AtomsBot | 2 critical + 20 high severity npm vulnerabilities | Run `npm audit fix --force` |
-| HIGH | thegent | markdown-it ReDoS vulnerability (no fix) | Consider alternative markdown parser |
-| MEDIUM | AtomsBot | 21 outdated packages including major version bumps | `npm update` for minor, review major |
-| LOW | thegent | 3 outdated packages | `npm update` |
+| Priority | Repo     | Issue                                              | Recommended Action                   |
+| -------- | -------- | -------------------------------------------------- | ------------------------------------ |
+| CRITICAL | AtomsBot | 2 critical + 20 high severity npm vulnerabilities  | Run `npm audit fix --force`          |
+| HIGH     | thegent  | markdown-it ReDoS vulnerability (no fix)           | Consider alternative markdown parser |
+| MEDIUM   | AtomsBot | 21 outdated packages including major version bumps | `npm update` for minor, review major |
+| LOW      | thegent  | 3 outdated packages                                | `npm update`                         |
 
 ---
 

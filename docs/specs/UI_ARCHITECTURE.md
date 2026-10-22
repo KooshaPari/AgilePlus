@@ -31,16 +31,16 @@ This document specifies all four. It does not implement them.
 
 ## 1. Terminology
 
-| Term              | Definition                                                                 |
-|-------------------|----------------------------------------------------------------------------|
-| Project           | A tracked codebase using AgilePlus (e.g. the `AgilePlus` repo itself).     |
-| Active Project    | A project whose `agileplus.db` / `kitty-specs/` is currently registered.   |
-| Session           | A live UI render (browser tab, Electron window, etc.).                     |
-| Plugin            | A first-class UI surface (Tracera / Planify / Plane-clone) registered via `agileplus-plugin-core`. |
-| Frontend Surface  | A UI page or partial contributed by a plugin.                              |
-| Server-Render     | HTML produced by a Rust handler and sent complete to the browser (no SPA). |
-| Static-Gen        | A pre-rendered `.html` artifact with no live backend dependency.           |
-| Refresh-Driven    | State is fetched **at page load** (or F5) by JS reading local files/DB.    |
+| Term             | Definition                                                                                         |
+| ---------------- | -------------------------------------------------------------------------------------------------- |
+| Project          | A tracked codebase using AgilePlus (e.g. the `AgilePlus` repo itself).                             |
+| Active Project   | A project whose `agileplus.db` / `kitty-specs/` is currently registered.                           |
+| Session          | A live UI render (browser tab, Electron window, etc.).                                             |
+| Plugin           | A first-class UI surface (Tracera / Planify / Plane-clone) registered via `agileplus-plugin-core`. |
+| Frontend Surface | A UI page or partial contributed by a plugin.                                                      |
+| Server-Render    | HTML produced by a Rust handler and sent complete to the browser (no SPA).                         |
+| Static-Gen       | A pre-rendered `.html` artifact with no live backend dependency.                                   |
+| Refresh-Driven   | State is fetched **at page load** (or F5) by JS reading local files/DB.                            |
 
 ---
 
@@ -49,14 +49,14 @@ This document specifies all four. It does not implement them.
 This section grounds the spec in what already exists in this branch.
 
 - `crates/agileplus-dashboard/` — Axum-based dashboard server.
-  - `src/main.rs` — binds `127.0.0.1:3000` (configurable via `AGILEPLUS_DASHBOARD_PORT`),
-    mounts `/static` from `templates/static`, exposes the routes in
-    `src/routes/mod.rs` (e.g. `/dashboard`, `/api/dashboard/kanban`,
-    `/api/dashboard/projects/{id}/activate`, `/api/stream`).
-  - `src/templates.rs` — one Askama `#[derive(Template)]` struct per template file
-    (`pages/home.html`, `pages/dashboard.html`, `partials/kanban.html`, …).
-  - `Cargo.toml` declares `askama = "0.12"` and `axum = "0.8"`, with the askama
-    template root pointing at `templates/` via `[package.metadata.askama]`.
+    - `src/main.rs` — binds `127.0.0.1:3000` (configurable via `AGILEPLUS_DASHBOARD_PORT`),
+      mounts `/static` from `templates/static`, exposes the routes in
+      `src/routes/mod.rs` (e.g. `/dashboard`, `/api/dashboard/kanban`,
+      `/api/dashboard/projects/{id}/activate`, `/api/stream`).
+    - `src/templates.rs` — one Askama `#[derive(Template)]` struct per template file
+      (`pages/home.html`, `pages/dashboard.html`, `partials/kanban.html`, …).
+    - `Cargo.toml` declares `askama = "0.12"` and `axum = "0.8"`, with the askama
+      template root pointing at `templates/` via `[package.metadata.askama]`.
 - `templates/base.html` — global layout with nav, sidebar, SSE wrapper, htmx +
   Alpine.js + htmx-sse `<script>` includes from `/static/`.
 - `templates/pages/`, `templates/partials/`, `templates/static/` — pages, reusable
@@ -104,14 +104,14 @@ time, see `crates/agileplus-dashboard/Cargo.toml` line 16). The task brief
 references "Handlebars." This spec therefore defines the architecture to be
 **engine-agnostic at the template level** but commits to two implementations:
 
-| Concern                | Askama (current)                                 | Handlebars (target)                                            |
-|------------------------|--------------------------------------------------|----------------------------------------------------------------|
-| Crate                  | `askama = "0.12"`                                | `handlebars = "6"` + `handlebars-rust` helpers                  |
-| Syntax                 | `{% block %}`, `{{ field }}`, `{% for %}`        | `{{field}}`, `{{#each}}`, `{{#if}}`                            |
-| Type checking          | Yes, via `#[derive(Template)]` + struct fields   | No — runtime context with JSON value                          |
-| Helpers                | Methods on context struct, registered via `#[template]` | `handlebars.register_helper(...)`                       |
-| Partials               | `{% include "partials/foo.html" %}`              | `{{> partials/foo }}`                                          |
-| Existing use           | `templates/pages/*.html`, `templates/partials/*.html` | None yet — greenfield                                      |
+| Concern       | Askama (current)                                        | Handlebars (target)                            |
+| ------------- | ------------------------------------------------------- | ---------------------------------------------- |
+| Crate         | `askama = "0.12"`                                       | `handlebars = "6"` + `handlebars-rust` helpers |
+| Syntax        | `{% block %}`, `{{ field }}`, `{% for %}`               | `{{field}}`, `{{#each}}`, `{{#if}}`            |
+| Type checking | Yes, via `#[derive(Template)]` + struct fields          | No — runtime context with JSON value           |
+| Helpers       | Methods on context struct, registered via `#[template]` | `handlebars.register_helper(...)`              |
+| Partials      | `{% include "partials/foo.html" %}`                     | `{{> partials/foo }}`                          |
+| Existing use  | `templates/pages/*.html`, `templates/partials/*.html`   | None yet — greenfield                          |
 
 **Decision.** We extend the **Askama** path for the existing dashboard
 (because every existing page already uses it and Askama is type-checked). We
@@ -285,11 +285,11 @@ existing `agileplus-trace-validator` crate.
 
 **Surface.**
 
-| Route                              | Engine     | Template                                |
-|------------------------------------|------------|-----------------------------------------|
-| `GET /plugins/tracera`             | Handlebars | `pages/tracera/index.html`              |
-| `GET /plugins/tracera/feature/{slug}` | Handlebars | `pages/tracera/feature.html`         |
-| `GET /plugins/tracera/graph.json`  | —          | (returns JSON of nodes/edges for SVG)   |
+| Route                                 | Engine     | Template                              |
+| ------------------------------------- | ---------- | ------------------------------------- |
+| `GET /plugins/tracera`                | Handlebars | `pages/tracera/index.html`            |
+| `GET /plugins/tracera/feature/{slug}` | Handlebars | `pages/tracera/feature.html`          |
+| `GET /plugins/tracera/graph.json`     | —          | (returns JSON of nodes/edges for SVG) |
 
 **Data flow.**
 
@@ -314,11 +314,11 @@ estimated vs. shipped. Lives over `agileplus-domain` Cycle + Module entities.
 
 **Surface.**
 
-| Route                          | Engine     | Template                              |
-|--------------------------------|------------|---------------------------------------|
-| `GET /plugins/planify`         | Handlebars | `pages/planify/index.html`            |
-| `GET /plugins/planify/cycle/{n}` | Handlebars | `pages/planify/cycle.html`          |
-| `GET /plugins/planify/roadmap.json` | —    | (returns JSON timeline)                |
+| Route                               | Engine     | Template                   |
+| ----------------------------------- | ---------- | -------------------------- |
+| `GET /plugins/planify`              | Handlebars | `pages/planify/index.html` |
+| `GET /plugins/planify/cycle/{n}`    | Handlebars | `pages/planify/cycle.html` |
+| `GET /plugins/planify/roadmap.json` | —          | (returns JSON timeline)    |
 
 **Data flow.**
 
@@ -341,12 +341,12 @@ require Plane connectivity.
 
 **Surface.**
 
-| Route                              | Engine     | Template                              |
-|------------------------------------|------------|---------------------------------------|
-| `GET /plugins/plane/board`         | Askama     | `pages/plane/board.html`              |
-| `GET /plugins/plane/issue/{id}`    | Askama     | `pages/plane/issue.html`              |
-| `POST /api/plane/issues/{id}/transition` | —    | existing feature transition handler   |
-| `GET /plugins/plane/cycles.json`   | —          | JSON                                  |
+| Route                                    | Engine | Template                            |
+| ---------------------------------------- | ------ | ----------------------------------- |
+| `GET /plugins/plane/board`               | Askama | `pages/plane/board.html`            |
+| `GET /plugins/plane/issue/{id}`          | Askama | `pages/plane/issue.html`            |
+| `POST /api/plane/issues/{id}/transition` | —      | existing feature transition handler |
+| `GET /plugins/plane/cycles.json`         | —      | JSON                                |
 
 **Data flow.**
 
@@ -414,47 +414,47 @@ This is "dynamic on refresh," not "dynamic live." It targets use cases like:
 The generator emits one HTML document with:
 
 1. **The full DOM tree of the status page**, rendered server-side at generation
-   time as a *baseline*. This is what the user sees before any JS runs.
+   time as a _baseline_. This is what the user sees before any JS runs.
 2. **A `<script type="application/json" id="agileplus-state-index">…</script>`
    block** describing where to fetch state from. Example:
 
-   ```html
-   <script type="application/json" id="agileplus-state-index">
-   {
-     "project_root": "../",
-     "sqlite": { "path": "agileplus.db", "mode": "readonly" },
-     "specs_dir": "kitty-specs",
-     "worklog": "AgilePlus/.work-audit/worklog.md",
-     "captured_at": "2026-06-25T10:00:00Z"
-   }
-   </script>
-   ```
+    ```html
+    <script type="application/json" id="agileplus-state-index">
+        {
+            "project_root": "../",
+            "sqlite": { "path": "agileplus.db", "mode": "readonly" },
+            "specs_dir": "kitty-specs",
+            "worklog": "AgilePlus/.work-audit/worklog.md",
+            "captured_at": "2026-06-25T10:00:00Z"
+        }
+    </script>
+    ```
 
 3. **A small `embedded.js`** (≈6 KB, no deps) that runs on `DOMContentLoaded`:
 
-   ```
-   fetch -> File System Access API (Chromium) OR
-            input[type=file] fallback (Firefox/Safari) OR
-            pre-baked snapshot if neither available
-   parse -> JSON / sqlite via sql.js / frontmatter via yaml.js
-   diff  -> last-known-state (in localStorage)
-   apply -> mutate the DOM to reflect fresh state
-   ```
+    ```
+    fetch -> File System Access API (Chromium) OR
+             input[type=file] fallback (Firefox/Safari) OR
+             pre-baked snapshot if neither available
+    parse -> JSON / sqlite via sql.js / frontmatter via yaml.js
+    diff  -> last-known-state (in localStorage)
+    apply -> mutate the DOM to reflect fresh state
+    ```
 
-   The diff/apply step uses `data-agp-key="feature:42"` attributes placed by
-   the server renderer so the JS knows exactly which nodes to update without
-   re-rendering the whole page.
+    The diff/apply step uses `data-agp-key="feature:42"` attributes placed by
+    the server renderer so the JS knows exactly which nodes to update without
+    re-rendering the whole page.
 
 ### 6.3 Reading state without a server
 
 Browsers cannot read arbitrary local files from a `file://` page by default.
 We define three progressively richer modes:
 
-| Mode              | Browser support       | What it reads                                                       |
-|-------------------|-----------------------|---------------------------------------------------------------------|
-| **Snapshot**      | All                   | Only the JSON snapshot inlined at generation time. **Default.**     |
-| **Manifest-pick** | All                   | User clicks a button; file picker reads `agileplus.db` and a chosen specs dir. |
-| **FS Access**     | Chromium-based        | Auto-reads `agileplus.db`, `kitty-specs/`, `worklog.md` from the path in the state index. |
+| Mode              | Browser support | What it reads                                                                             |
+| ----------------- | --------------- | ----------------------------------------------------------------------------------------- |
+| **Snapshot**      | All             | Only the JSON snapshot inlined at generation time. **Default.**                           |
+| **Manifest-pick** | All             | User clicks a button; file picker reads `agileplus.db` and a chosen specs dir.            |
+| **FS Access**     | Chromium-based  | Auto-reads `agileplus.db`, `kitty-specs/`, `worklog.md` from the path in the state index. |
 
 **Snapshot mode** is the always-works baseline — the HTML is a frozen picture.
 **Manifest-pick** and **FS Access** are progressive enhancements; the JS
@@ -491,11 +491,11 @@ agileplus ui static-gen
 
 The generator lives in `crates/agileplus-dashboard/src/static_gen/`:
 
-| File              | Responsibility                                                  |
-|-------------------|-----------------------------------------------------------------|
-| `mod.rs`          | CLI subcommand, orchestrates plugins, writes the file.          |
-| `embedded_js.rs`  | Inlines `embedded.js` (compiled at build time via `include_str!`). |
-| `sqlite_bridge.rs`| Generates the `state-index` JSON for the embedded JS.           |
+| File               | Responsibility                                                     |
+| ------------------ | ------------------------------------------------------------------ |
+| `mod.rs`           | CLI subcommand, orchestrates plugins, writes the file.             |
+| `embedded_js.rs`   | Inlines `embedded.js` (compiled at build time via `include_str!`). |
+| `sqlite_bridge.rs` | Generates the `state-index` JSON for the embedded JS.              |
 
 ### 6.7 What static-gen is **not**
 
@@ -632,16 +632,16 @@ streamed to a browser.
 
 ## 9. Crate-by-crate deliverable summary
 
-| Crate                         | Spec impact                                                     |
-|-------------------------------|-----------------------------------------------------------------|
-| `agileplus-dashboard`         | Add `plugins/`, `render/`, `static_gen/`, plugin routes, hub multi-project. |
-| `agileplus-plugin-core`       | New trait crate (Plugin, PluginContext, PluginRoute, StaticGen).|
-| `agileplus-plane`             | Unchanged. Becomes the optional sync backend for the Plane-clone. |
-| `agileplus-domain`            | Unchanged.                                                       |
-| `agileplus-sqlite`            | Unchanged.                                                       |
-| `agileplus-trace-validator`   | Unchanged. Consumed by Tracera plugin.                          |
-| `agileplus-cli`               | Wire `agileplus ui serve`, `agileplus ui static-gen`, `agileplus ui hub`. |
-| `agileplus-trace-validator`   | Add optional JSON export (already produced by validator core).  |
+| Crate                       | Spec impact                                                                 |
+| --------------------------- | --------------------------------------------------------------------------- |
+| `agileplus-dashboard`       | Add `plugins/`, `render/`, `static_gen/`, plugin routes, hub multi-project. |
+| `agileplus-plugin-core`     | New trait crate (Plugin, PluginContext, PluginRoute, StaticGen).            |
+| `agileplus-plane`           | Unchanged. Becomes the optional sync backend for the Plane-clone.           |
+| `agileplus-domain`          | Unchanged.                                                                  |
+| `agileplus-sqlite`          | Unchanged.                                                                  |
+| `agileplus-trace-validator` | Unchanged. Consumed by Tracera plugin.                                      |
+| `agileplus-cli`             | Wire `agileplus ui serve`, `agileplus ui static-gen`, `agileplus ui hub`.   |
+| `agileplus-trace-validator` | Add optional JSON export (already produced by validator core).              |
 
 ---
 

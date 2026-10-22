@@ -16,29 +16,32 @@ tests/contract/
 ## Running
 
 Consumer-side contract tests (Python):
+
 ```bash
 cd python && uv run pytest tests/contract/ -v
 ```
 
 Provider verification (Rust):
+
 ```bash
 cargo test --test pact_provider_test
 ```
 
 Or use the Makefile:
+
 ```bash
 make test-contracts
 ```
 
 ## Pact Interactions
 
-| Interaction | Provider State |
-|-------------|---------------|
-| GetFeature | feature test-feature exists in planned state |
-| DispatchCommand (plan) | feature test-feature exists in planned state |
-| GetAuditTrail | feature test-feature has 3 audit entries |
-| VerifyAuditChain | feature test-feature has 3 audit entries |
-| CheckGovernanceGate | feature test-feature has all evidence for implementing -> validated |
+| Interaction            | Provider State                                                      |
+| ---------------------- | ------------------------------------------------------------------- |
+| GetFeature             | feature test-feature exists in planned state                        |
+| DispatchCommand (plan) | feature test-feature exists in planned state                        |
+| GetAuditTrail          | feature test-feature has 3 audit entries                            |
+| VerifyAuditChain       | feature test-feature has 3 audit entries                            |
+| CheckGovernanceGate    | feature test-feature has all evidence for implementing -> validated |
 
 ## Notes
 

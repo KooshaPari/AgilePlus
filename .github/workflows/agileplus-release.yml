@@ -10,124 +10,124 @@
 name: AgilePlus Release
 
 on:
-  workflow_dispatch:
+    workflow_dispatch:
 
 permissions:
-  contents: write
+    contents: write
 
 concurrency:
-  group: agileplus-release-${{ github.ref }}
-  cancel-in-progress: false
+    group: agileplus-release-${{ github.ref }}
+    cancel-in-progress: false
 
 env:
-  CARGO_TERM_COLOR: always
-  RUSTFLAGS: ""
-  PACKAGE: agileplus-cli
-  BIN_NAME: agileplus
+    CARGO_TERM_COLOR: always
+    RUSTFLAGS: ""
+    PACKAGE: agileplus-cli
+    BIN_NAME: agileplus
 
 jobs:
-  build-matrix:
-    name: Build (${{ matrix.target }})
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-24.04
-            target: x86_64-unknown-linux-gnu
-            archive: tar.gz
-            asset_name: agileplus-linux-x86_64
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            archive: tar.gz
-            asset_name: agileplus-macos-aarch64
-          - os: macos-15-intel
-            target: x86_64-apple-darwin
-            archive: tar.gz
-            asset_name: agileplus-macos-x86_64
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            archive: zip
-            asset_name: agileplus-windows-x86_64
-    steps:
-      - uses: actions/checkout@v7
+    build-matrix:
+        name: Build (${{ matrix.target }})
+        runs-on: ${{ matrix.os }}
+        timeout-minutes: 60
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - os: ubuntu-24.04
+                      target: x86_64-unknown-linux-gnu
+                      archive: tar.gz
+                      asset_name: agileplus-linux-x86_64
+                    - os: macos-latest
+                      target: aarch64-apple-darwin
+                      archive: tar.gz
+                      asset_name: agileplus-macos-aarch64
+                    - os: macos-15-intel
+                      target: x86_64-apple-darwin
+                      archive: tar.gz
+                      asset_name: agileplus-macos-x86_64
+                    - os: windows-latest
+                      target: x86_64-pc-windows-msvc
+                      archive: zip
+                      asset_name: agileplus-windows-x86_64
+        steps:
+            - uses: actions/checkout@v7
 
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  targets: ${{ matrix.target }}
 
-      - name: Build from source
-        run: |
-          cargo build --release --package ${{ env.PACKAGE }} --target ${{ matrix.target }}
+            - name: Build from source
+              run: |
+                  cargo build --release --package ${{ env.PACKAGE }} --target ${{ matrix.target }}
 
-      - name: Stage artifact
-        shell: bash
-        run: |
-          set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
-          staging="dist/${{ matrix.asset_name }}"
-          mkdir -p "$staging"
-          # The built binary is named by [[bin]] target (`agileplus`) or the
-          # package name (`agileplus-cli`). Accept either.
-          src_bin=""
-          for candidate in "${{ env.BIN_NAME }}" "${{ env.PACKAGE }}"; do
-            for ext in "" ".exe"; do
-              if [ -f "target/${{ matrix.target }}/release/${candidate}${ext}" ]; then
-                src_bin="target/${{ matrix.target }}/release/${candidate}${ext}"
-                break 2
-              fi
-            done
-          done
-          if [ -z "$src_bin" ]; then
-            echo "ERROR: could not find built binary" >&2
-            find target/${{ matrix.target }}/release/ -maxdepth 1 -type f 2>&1
-            exit 1
-          fi
-          dest_name="${{ env.BIN_NAME }}"
-          if [ "${{ matrix.archive }}" = "zip" ]; then
-            cp "$src_bin" "$staging/${dest_name}.exe"
-          else
-            cp "$src_bin" "$staging/${dest_name}"
-          fi
-          cp LICENSE "$staging/" 2>/dev/null || cp LICENSE.md "$staging/" 2>/dev/null || true
-          cp docs/INSTALL.md "$staging/" 2>/dev/null || true
-          mkdir -p release-upload
-          if [ "${{ matrix.archive }}" = "zip" ]; then
-            # windows-latest's Git Bash does not ship a `zip` binary on PATH
-            # (only tar/gzip are guaranteed); use PowerShell's native
-            # Compress-Archive instead of depending on an external tool.
-            pwsh -NoLogo -NoProfile -Command "Compress-Archive -Path 'dist/${{ matrix.asset_name }}' -DestinationPath 'release-upload/agileplus-${version}-${{ matrix.asset_name }}.zip' -Force"
-          else
-            tar -C dist -czf "release-upload/agileplus-${version}-${{ matrix.asset_name }}.tar.gz" "${{ matrix.asset_name }}"
-          fi
-          ls -la release-upload/
+            - name: Stage artifact
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  version="${GITHUB_REF_NAME#v}"
+                  staging="dist/${{ matrix.asset_name }}"
+                  mkdir -p "$staging"
+                  # The built binary is named by [[bin]] target (`agileplus`) or the
+                  # package name (`agileplus-cli`). Accept either.
+                  src_bin=""
+                  for candidate in "${{ env.BIN_NAME }}" "${{ env.PACKAGE }}"; do
+                    for ext in "" ".exe"; do
+                      if [ -f "target/${{ matrix.target }}/release/${candidate}${ext}" ]; then
+                        src_bin="target/${{ matrix.target }}/release/${candidate}${ext}"
+                        break 2
+                      fi
+                    done
+                  done
+                  if [ -z "$src_bin" ]; then
+                    echo "ERROR: could not find built binary" >&2
+                    find target/${{ matrix.target }}/release/ -maxdepth 1 -type f 2>&1
+                    exit 1
+                  fi
+                  dest_name="${{ env.BIN_NAME }}"
+                  if [ "${{ matrix.archive }}" = "zip" ]; then
+                    cp "$src_bin" "$staging/${dest_name}.exe"
+                  else
+                    cp "$src_bin" "$staging/${dest_name}"
+                  fi
+                  cp LICENSE "$staging/" 2>/dev/null || cp LICENSE.md "$staging/" 2>/dev/null || true
+                  cp docs/INSTALL.md "$staging/" 2>/dev/null || true
+                  mkdir -p release-upload
+                  if [ "${{ matrix.archive }}" = "zip" ]; then
+                    # windows-latest's Git Bash does not ship a `zip` binary on PATH
+                    # (only tar/gzip are guaranteed); use PowerShell's native
+                    # Compress-Archive instead of depending on an external tool.
+                    pwsh -NoLogo -NoProfile -Command "Compress-Archive -Path 'dist/${{ matrix.asset_name }}' -DestinationPath 'release-upload/agileplus-${version}-${{ matrix.asset_name }}.zip' -Force"
+                  else
+                    tar -C dist -czf "release-upload/agileplus-${version}-${{ matrix.asset_name }}.tar.gz" "${{ matrix.asset_name }}"
+                  fi
+                  ls -la release-upload/
 
-      - uses: actions/upload-artifact@v7
-        with:
-          name: ${{ matrix.asset_name }}
-          path: release-upload/*
-          if-no-files-found: error
-          retention-days: 14
+            - uses: actions/upload-artifact@v7
+              with:
+                  name: ${{ matrix.asset_name }}
+                  path: release-upload/*
+                  if-no-files-found: error
+                  retention-days: 14
 
-  publish-crates:
-    name: Publish to crates.io
-    needs: build-matrix
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v7
+    publish-crates:
+        name: Publish to crates.io
+        needs: build-matrix
+        runs-on: ubuntu-24.04
+        timeout-minutes: 45
+        steps:
+            - uses: actions/checkout@v7
 
-      - uses: dtolnay/rust-toolchain@nightly
+            - uses: dtolnay/rust-toolchain@nightly
 
-      - uses: Swatinem/rust-cache@v2
+            - uses: Swatinem/rust-cache@v2
 
-      - uses: arduino/setup-protoc@v3
-        with:
-          version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+            - uses: arduino/setup-protoc@v3
+              with:
+                  version: "28.x"
+                  repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish workspace crates (dependency order)
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        run: bash scripts/publish-crates.sh
+            - name: Publish workspace crates (dependency order)
+              env:
+                  CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+              run: bash scripts/publish-crates.sh

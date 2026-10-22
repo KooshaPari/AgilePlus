@@ -18,12 +18,15 @@ autograder is:
      pass before `status` may move from `pending-capture` to
      `captured` or `published`.
 -->
+
 ---
-fr_id: <FR-XXX-NNN>                # registered in FUNCTIONAL_REQUIREMENTS.md
-spec_slug: <kitty-spec-slug>        # e.g. eco-022-rich-journey-embeds
-spec_anchor: "#<heading-anchor>"    # exact heading anchor in the spec
-status: pending-capture             # pending-capture | captured | published | deprecated
-captured_at: null                   # ISO 8601 timestamp once status flips
+
+fr_id: <FR-XXX-NNN> # registered in FUNCTIONAL_REQUIREMENTS.md
+spec_slug: <kitty-spec-slug> # e.g. eco-022-rich-journey-embeds
+spec_anchor: "#<heading-anchor>" # exact heading anchor in the spec
+status: pending-capture # pending-capture | captured | published | deprecated
+captured_at: null # ISO 8601 timestamp once status flips
+
 ---
 
 # Journey: <Human-Readable Title>
@@ -55,30 +58,30 @@ Traceability table below.)
 ## Steps
 
 1. <First transition — e.g. "Run `agileplus <subcommand>`">
-   <!-- RICH-MEDIA-STUB type="recording-gif" subject="<short description of what the GIF will show>" journey="<journey-id>" status="TODO" -->
-   > **[RICH MEDIA PLACEHOLDER]** *<one-line human description of what will go here>*
-   <!-- END-RICH-MEDIA-STUB -->
+    <!-- RICH-MEDIA-STUB type="recording-gif" subject="<short description of what the GIF will show>" journey="<journey-id>" status="TODO" -->
+    > **[RICH MEDIA PLACEHOLDER]** _<one-line human description of what will go here>_
+    <!-- END-RICH-MEDIA-STUB -->
 2. <Second transition — e.g. "Open `http://localhost:<port>/health`">
-   <!-- RICH-MEDIA-STUB type="annotated-screenshot" subject="<short description>" journey="<journey-id>" status="TODO" -->
-   > **[RICH MEDIA PLACEHOLDER]** *<one-line human description of what will go here>*
-   <!-- END-RICH-MEDIA-STUB -->
+    <!-- RICH-MEDIA-STUB type="annotated-screenshot" subject="<short description>" journey="<journey-id>" status="TODO" -->
+    > **[RICH MEDIA PLACEHOLDER]** _<one-line human description of what will go here>_
+    <!-- END-RICH-MEDIA-STUB -->
 3. <Third transition — e.g. "Confirm `healthy: true` and numeric latency">
-   <!-- RICH-MEDIA-STUB type="recording-gif" subject="<short description>" journey="<journey-id>" status="TODO" -->
-   > **[RICH MEDIA PLACEHOLDER]** *<one-line human description of what will go here>*
-   <!-- END-RICH-MEDIA-STUB -->
+    <!-- RICH-MEDIA-STUB type="recording-gif" subject="<short description>" journey="<journey-id>" status="TODO" -->
+    > **[RICH MEDIA PLACEHOLDER]** _<one-line human description of what will go here>_
+    <!-- END-RICH-MEDIA-STUB -->
 4. <Fourth transition — e.g. "Hit the JSON endpoint and compare payload">
-   <!-- RICH-MEDIA-STUB type="annotated-screenshot" subject="<short description>" journey="<journey-id>" status="TODO" -->
-   > **[RICH MEDIA PLACEHOLDER]** *<one-line human description of what will go here>*
-   <!-- END-RICH-MEDIA-STUB -->
+    <!-- RICH-MEDIA-STUB type="annotated-screenshot" subject="<short description>" journey="<journey-id>" status="TODO" -->
+    > **[RICH MEDIA PLACEHOLDER]** _<one-line human description of what will go here>_
+    <!-- END-RICH-MEDIA-STUB -->
 
 ## Traceability
 
-| AC | Criterion | Test / Evidence |
-|----|-----------|-----------------|
-| AC1 | <criterion verbatim> | `crates/<crate>/tests/<file>.rs::<test_name>` |
+| AC  | Criterion            | Test / Evidence                                               |
+| --- | -------------------- | ------------------------------------------------------------- |
+| AC1 | <criterion verbatim> | `crates/<crate>/tests/<file>.rs::<test_name>`                 |
 | AC2 | <criterion verbatim> | `specs/<spec_slug>/bdd/<journey-id>.feature::<scenario_name>` |
-| AC3 | <criterion verbatim> | `docs/journeys/manifests/<journey-id>.journey.yaml` |
-| AC4 | <criterion verbatim> | (repeat per AC) |
+| AC3 | <criterion verbatim> | `docs/journeys/manifests/<journey-id>.journey.yaml`           |
+| AC4 | <criterion verbatim> | (repeat per AC)                                               |
 
 > **Rule:** every `Test / Evidence` cell MUST point at a real path
 > that exists in the working tree at PR time. `TBD`, `TBA`, or empty

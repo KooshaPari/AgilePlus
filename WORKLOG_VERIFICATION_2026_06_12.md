@@ -84,13 +84,13 @@ at `crates/agileplus-cli/src/commands/worklog.rs:11-20`.
 
 ### 3.2 `agileplus-cli worklog list` (per focus repo)
 
-| Repo | Files seen as "raw" | Files seen as "canonical" |
-|------|---------------------|---------------------------|
-| AgilePlus | 6 (incl. 4 canonical) | 4 (canonical-only) |
-| PhenoCompose | 2 (incl. 2 canonical) | 2 (canonical-only) |
-| nanovms | 8 (incl. 4 canonical) | 4 (canonical-only) |
-| PlayCua | 8 (incl. 5 canonical) | 5 (canonical-only) |
-| BytePort | 7 (incl. 4 canonical) | 4 (canonical-only) |
+| Repo         | Files seen as "raw"   | Files seen as "canonical" |
+| ------------ | --------------------- | ------------------------- |
+| AgilePlus    | 6 (incl. 4 canonical) | 4 (canonical-only)        |
+| PhenoCompose | 2 (incl. 2 canonical) | 2 (canonical-only)        |
+| nanovms      | 8 (incl. 4 canonical) | 4 (canonical-only)        |
+| PlayCua      | 8 (incl. 5 canonical) | 5 (canonical-only)        |
+| BytePort     | 7 (incl. 4 canonical) | 4 (canonical-only)        |
 
 `list` does enumerate all worklog files (raw + canonical), but the "Raw
 worklogs" section header is misleading because the underlying
@@ -101,13 +101,13 @@ bug-prone filter.
 
 ### 3.3 `agileplus-cli worklog validate` (per focus repo)
 
-| Repo | Files checked | OK | FAIL | Exit |
-|------|---------------|----|------|------|
-| AgilePlus | 3 | 2 | 1 | 1 |
-| PhenoCompose | 2 | 2 | 0 | 0 |
-| nanovms | 8 | 6 | 2 | 1 |
-| PlayCua | 8 | 5 | 3 | 1 |
-| BytePort | 7 | 5 | 2 | 1 |
+| Repo         | Files checked | OK  | FAIL | Exit |
+| ------------ | ------------- | --- | ---- | ---- |
+| AgilePlus    | 3             | 2   | 1    | 1    |
+| PhenoCompose | 2             | 2   | 0    | 0    |
+| nanovms      | 8             | 6   | 2    | 1    |
+| PlayCua      | 8             | 5   | 3    | 1    |
+| BytePort     | 7             | 5   | 2    | 1    |
 
 Sample FAIL output (AgilePlus L2-029 raw):
 
@@ -181,13 +181,13 @@ Conversion semantics observations:
    (correct) but for `canonical_only = false` it degenerates to
    `is_worklog` (no filter — all worklog files are returned, including
    canonical ones). Concrete effect:
-   - `list`'s "Raw worklogs" header is a misnomer; the section contains
-     every worklog file in the directory.
-   - `validate` and `convert` (both call with `canonical_only = false`)
-     process already-canonical files, which leads to issue #3.
-   Fix: change the condition to
-   `is_worklog && (canonical_only == is_canonical)` (XOR would also
-   work; this is the intended `match canonical_only`).
+    - `list`'s "Raw worklogs" header is a misnomer; the section contains
+      every worklog file in the directory.
+    - `validate` and `convert` (both call with `canonical_only = false`)
+      process already-canonical files, which leads to issue #3.
+      Fix: change the condition to
+      `is_worklog && (canonical_only == is_canonical)` (XOR would also
+      work; this is the intended `match canonical_only`).
 
 3. **`path_with_suffix` produces `-canonical-canonical.json` for already-
    canonical sources** — `crates/agileplus-cli/src/commands/worklog.rs:266-273`.
@@ -222,16 +222,16 @@ Conversion semantics observations:
 
 ## 5. Summary
 
-| Check | Outcome |
-|-------|---------|
-| `cargo test -p agileplus-cli --offline` | PASS (45/45) |
-| `cargo clippy … -D warnings` | FAIL (`items-after-test-module` in `main.rs`, not `worklog.rs`) |
-| `worklog schema` | PASS (8 fields, correct order) |
-| `worklog list` on 5 repos | PASS functionally; "Raw worklogs" label is misleading (issue #2) |
-| `worklog validate` on 5 repos | PASS functionally; raw L2-029 / L2-033 worklogs FAIL as expected; L1-008-retry passes type-strict checks (issue #4) |
-| `worklog convert` on 5 repos | PASS; produces `…-canonical-canonical.json` for already-canonical files (issue #3) |
-| Commit to AgilePlus main | Report committed to current branch `feature/agileplus-sota-wraps-cleanup-2026-06-12`; no `main` branch exists locally and the user said do NOT push |
-| Modify `worklog.rs` | NO (per task brief) |
+| Check                                   | Outcome                                                                                                                                             |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cargo test -p agileplus-cli --offline` | PASS (45/45)                                                                                                                                        |
+| `cargo clippy … -D warnings`            | FAIL (`items-after-test-module` in `main.rs`, not `worklog.rs`)                                                                                     |
+| `worklog schema`                        | PASS (8 fields, correct order)                                                                                                                      |
+| `worklog list` on 5 repos               | PASS functionally; "Raw worklogs" label is misleading (issue #2)                                                                                    |
+| `worklog validate` on 5 repos           | PASS functionally; raw L2-029 / L2-033 worklogs FAIL as expected; L1-008-retry passes type-strict checks (issue #4)                                 |
+| `worklog convert` on 5 repos            | PASS; produces `…-canonical-canonical.json` for already-canonical files (issue #3)                                                                  |
+| Commit to AgilePlus main                | Report committed to current branch `feature/agileplus-sota-wraps-cleanup-2026-06-12`; no `main` branch exists locally and the user said do NOT push |
+| Modify `worklog.rs`                     | NO (per task brief)                                                                                                                                 |
 
 ## 6. Commit
 

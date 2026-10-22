@@ -8,25 +8,25 @@
 
 ## Receipt: 17 repos confirmed deleted (HTTP 404 via `gh api repos/<REDACTED>/<name>`)
 
-| # | Repo | Reason | Verification |
-|---|---|---|---|
-| 1 | `.dot-prefix-test-x` | dot-prefix test, expired | `gh api repos/<REDACTED>/.dot-prefix-test-x` → HTTP 404 |
-| 2 | `.test-dot-prefix` | dot-prefix test, expired | 404 |
-| 3 | `test-plain-aaa1` | naming test, expired | 404 |
-| 4 | `test-dot-prefix` | naming test, expired | 404 |
-| 5 | `Tracera-workos-hostname-reconcile-20260715` | recovery snapshot, completed | 404 |
-| 6 | `Tracera-recovery-20260713` | recovery snapshot, completed | 404 |
-| 7 | `Tracera-jwt-contract-recovery-wt` | recovery snapshot, completed | 404 |
-| 8 | `Tracera-jwks-runtime-recovery-20260715` | recovery snapshot, completed | 404 |
-| 9 | `Tracera-electrobun-recovery-20260715` | recovery snapshot, completed | 404 |
-| 10 | `OmniRoute-superroot-recovery` | recovery snapshot, completed | 404 |
-| 11 | `planify-wt-archive` | worktree archive, cleaned | 404 |
-| 12 | `Eidolon-archive` | obsolete archive | 404 |
-| 13 | `phenotype-org-audits-archive` | obsolete archive | 404 |
-| 14 | `4sgm-archive2` | obsolete archive | 404 |
-| 15 | `forge-AgilePlus` | empty agent stub (origin of this docket chain) | 404 — user explicitly deleted |
-| 16 | `thegent-pr2-v2-uncommitted-2026-07-14` | empty agent stub | 1-branch 404 |
-| 17 | `vibeproxy` | empty agent stub | 0-branch 404 |
+| #   | Repo                                         | Reason                                         | Verification                                            |
+| --- | -------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------- |
+| 1   | `.dot-prefix-test-x`                         | dot-prefix test, expired                       | `gh api repos/<REDACTED>/.dot-prefix-test-x` → HTTP 404 |
+| 2   | `.test-dot-prefix`                           | dot-prefix test, expired                       | 404                                                     |
+| 3   | `test-plain-aaa1`                            | naming test, expired                           | 404                                                     |
+| 4   | `test-dot-prefix`                            | naming test, expired                           | 404                                                     |
+| 5   | `Tracera-workos-hostname-reconcile-20260715` | recovery snapshot, completed                   | 404                                                     |
+| 6   | `Tracera-recovery-20260713`                  | recovery snapshot, completed                   | 404                                                     |
+| 7   | `Tracera-jwt-contract-recovery-wt`           | recovery snapshot, completed                   | 404                                                     |
+| 8   | `Tracera-jwks-runtime-recovery-20260715`     | recovery snapshot, completed                   | 404                                                     |
+| 9   | `Tracera-electrobun-recovery-20260715`       | recovery snapshot, completed                   | 404                                                     |
+| 10  | `OmniRoute-superroot-recovery`               | recovery snapshot, completed                   | 404                                                     |
+| 11  | `planify-wt-archive`                         | worktree archive, cleaned                      | 404                                                     |
+| 12  | `Eidolon-archive`                            | obsolete archive                               | 404                                                     |
+| 13  | `phenotype-org-audits-archive`               | obsolete archive                               | 404                                                     |
+| 14  | `4sgm-archive2`                              | obsolete archive                               | 404                                                     |
+| 15  | `forge-AgilePlus`                            | empty agent stub (origin of this docket chain) | 404 — user explicitly deleted                           |
+| 16  | `thegent-pr2-v2-uncommitted-2026-07-14`      | empty agent stub                               | 1-branch 404                                            |
+| 17  | `vibeproxy`                                  | empty agent stub                               | 0-branch 404                                            |
 
 ## STATE — confirmed upstream
 

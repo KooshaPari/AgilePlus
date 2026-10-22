@@ -25,30 +25,30 @@ stateDiagram-v2
 
 ### States
 
-| State | Meaning | Entry Condition |
-|-------|---------|-----------------|
-| **Created** | Idea exists but not yet formalized | Feature record created |
-| **Specified** | Specification document is complete and reviewed | Spec artifact present; minimum fields validated |
-| **Researched** | Codebase scanned for patterns and feasibility assessed | Research artifact linked; decision recorded |
-| **Planned** | Work packages generated; dependency graph is acyclic | WPs created with file scopes; all dependencies explicit |
-| **Implementing** | WPs assigned to agents/developers; code is being written | At least one WP in `Doing` state; branch created |
-| **Validated** | All tests pass; reviews approved; governance checks succeed | All WPs in `Done` state; CI pipeline green |
-| **Shipped** | Code merged to target branch; deployed (or ready for deploy) | All checks passed; branches merged; git commit recorded |
-| **Retrospected** | Post-incident analysis complete; lessons documented | Retrospective artifact exists |
+| State            | Meaning                                                      | Entry Condition                                         |
+| ---------------- | ------------------------------------------------------------ | ------------------------------------------------------- |
+| **Created**      | Idea exists but not yet formalized                           | Feature record created                                  |
+| **Specified**    | Specification document is complete and reviewed              | Spec artifact present; minimum fields validated         |
+| **Researched**   | Codebase scanned for patterns and feasibility assessed       | Research artifact linked; decision recorded             |
+| **Planned**      | Work packages generated; dependency graph is acyclic         | WPs created with file scopes; all dependencies explicit |
+| **Implementing** | WPs assigned to agents/developers; code is being written     | At least one WP in `Doing` state; branch created        |
+| **Validated**    | All tests pass; reviews approved; governance checks succeed  | All WPs in `Done` state; CI pipeline green              |
+| **Shipped**      | Code merged to target branch; deployed (or ready for deploy) | All checks passed; branches merged; git commit recorded |
+| **Retrospected** | Post-incident analysis complete; lessons documented          | Retrospective artifact exists                           |
 
 ### Transitions and Preconditions
 
 Each forward transition is **one-way** (no backtracking) and guarded by preconditions:
 
-| From | To | Enforced Precondition | Evidence Type |
-|---|---|---|---|
-| Created | Specified | Spec artifact exists with functional requirements, scope, acceptance criteria | `ArtifactPresent` (spec hash) |
-| Specified | Researched | Research output attached (codebase scan, feasibility doc, or design notes) | `ManualAttestation` or `CiOutput` |
-| Researched | Planned | WPs generated; dependency graph computed (Kahn's algorithm); no cycles detected | `CiOutput` (plan validation) |
-| Planned | Implementing | At least one WP assigned; git branch created; agent/dev notified | `ManualAttestation` (assignment) |
-| Implementing | Validated | All WPs complete (`Done` state); CI pipeline runs successfully | `TestResult`, `LintResult`, `CiOutput` |
-| Validated | Shipped | All governance checks pass; all evidence requirements satisfied; merge approved | `ReviewApproval`, `SecurityScan` |
-| Shipped | Retrospected | Retrospective artifact exists; action items (if any) documented | `ManualAttestation` |
+| From         | To           | Enforced Precondition                                                           | Evidence Type                          |
+| ------------ | ------------ | ------------------------------------------------------------------------------- | -------------------------------------- |
+| Created      | Specified    | Spec artifact exists with functional requirements, scope, acceptance criteria   | `ArtifactPresent` (spec hash)          |
+| Specified    | Researched   | Research output attached (codebase scan, feasibility doc, or design notes)      | `ManualAttestation` or `CiOutput`      |
+| Researched   | Planned      | WPs generated; dependency graph computed (Kahn's algorithm); no cycles detected | `CiOutput` (plan validation)           |
+| Planned      | Implementing | At least one WP assigned; git branch created; agent/dev notified                | `ManualAttestation` (assignment)       |
+| Implementing | Validated    | All WPs complete (`Done` state); CI pipeline runs successfully                  | `TestResult`, `LintResult`, `CiOutput` |
+| Validated    | Shipped      | All governance checks pass; all evidence requirements satisfied; merge approved | `ReviewApproval`, `SecurityScan`       |
+| Shipped      | Retrospected | Retrospective artifact exists; action items (if any) documented                 | `ManualAttestation`                    |
 
 Attempting to transition without meeting all preconditions raises a `DomainError::InvalidTransition`.
 
@@ -97,6 +97,7 @@ pub struct AuditEntry {
 ### Hash Chain Integrity
 
 Each entry computes its hash from:
+
 - Feature ID
 - Work package ID (if applicable)
 - Timestamp
@@ -118,6 +119,7 @@ Entry 3: hash(feature=123, actor=claude-code, transition=researched->planned, pr
 ```
 
 The chain can be **verified** by calling `AuditChain::verify_chain()`:
+
 1. Recompute each entry's hash
 2. Verify each entry's `prev_hash` matches the previous entry's computed hash
 3. Return `Ok(())` if all entries match, or `AuditChainError::HashMismatch` if any entry was tampered
@@ -180,6 +182,7 @@ pub enum PolicyCheck {
 ```
 
 Example: A `Security` domain policy might require:
+
 - **Evidence Type**: `SecurityScan`
 - **Policy Check**: `ThresholdMet { metric: "cve_count", min: 0 }` (zero CVEs allowed)
 - Policy applies to all features transitioning `Implementing → Validated`
@@ -189,6 +192,7 @@ Example: A `Security` domain policy might require:
 ### For Humans
 
 You get a **complete, cryptographically verifiable record** of:
+
 - Every decision made about the feature
 - Who made each decision (agent or developer ID)
 - When it happened
@@ -196,6 +200,7 @@ You get a **complete, cryptographically verifiable record** of:
 - A signed chain that proves nobody tampered with the log
 
 Useful for:
+
 - **Compliance** — auditors can verify the log
 - **Post-mortems** — understand what went wrong and when
 - **Onboarding** — new team members see the full context
@@ -204,6 +209,7 @@ Useful for:
 ### For Agents
 
 Agents **cannot skip steps**. The system enforces preconditions:
+
 - They receive a structured prompt derived from the approved spec and plan
 - Their output (branches, commits) are validated automatically
 - If they produce bad code, the validation stage catches it before ship
@@ -212,6 +218,7 @@ Agents **cannot skip steps**. The system enforces preconditions:
 ### For Teams
 
 Multiple agents can work on different WPs in **parallel**:
+
 - Each WP has its own git branch (no conflicts by design)
 - Dependencies are explicit (via the dependency graph)
 - The system prevents premature merges (WP2 can't merge until WP1 is done, if they depend)

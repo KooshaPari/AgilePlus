@@ -5,16 +5,16 @@ workspace and its cross-repo integrations.
 
 ## What is collected
 
-| Source | Artifact | Location |
-|---|---|---|
-| `forge/AgilePlus` | ADR-0001 shard-lock DAG protocol | `docs/adr/0001-shard-lock-dag.md` |
-| `forge/AgilePlus` | Ontology spec (12 node types, 12 edge types) | `docs/spec/intent-graph-ontology.md` |
-| `forge/AgilePlus` | Ontology expansion research | `docs/research/ontology-expansion.md` |
-| `forge/AgilePlus` | Roadmap through v1.0 | `docs/roadmap.md` |
-| `~/intent/workspaces/` | Multi-agent intent workspaces × 3 | `intent/workspaces/*/` |
-| `~/Repos/polyhex-architecture/` | Rust integration consumer crate | `crates/integrations/agileplus/` |
-| `~/Repos/phenodocs/` | Agent protocol registry | `agents.toml`, `agents.lock` |
-| `~/Repos/template-commons/` | Testing methodology ADR | `docs/adr/019-shard-lock-dag.md` |
+| Source                          | Artifact                                     | Location                              |
+| ------------------------------- | -------------------------------------------- | ------------------------------------- |
+| `forge/AgilePlus`               | ADR-0001 shard-lock DAG protocol             | `docs/adr/0001-shard-lock-dag.md`     |
+| `forge/AgilePlus`               | Ontology spec (12 node types, 12 edge types) | `docs/spec/intent-graph-ontology.md`  |
+| `forge/AgilePlus`               | Ontology expansion research                  | `docs/research/ontology-expansion.md` |
+| `forge/AgilePlus`               | Roadmap through v1.0                         | `docs/roadmap.md`                     |
+| `~/intent/workspaces/`          | Multi-agent intent workspaces × 3            | `intent/workspaces/*/`                |
+| `~/Repos/polyhex-architecture/` | Rust integration consumer crate              | `crates/integrations/agileplus/`      |
+| `~/Repos/phenodocs/`            | Agent protocol registry                      | `agents.toml`, `agents.lock`          |
+| `~/Repos/template-commons/`     | Testing methodology ADR                      | `docs/adr/019-shard-lock-dag.md`      |
 
 ## How to use
 

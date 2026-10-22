@@ -34,33 +34,33 @@ Standardize on **mise** (v2026.x) as the organization-wide task runner, with per
 
 ### Alternatives Considered
 
-| Tool | Reason Rejected |
-|------|-----------------|
-| Taskfile (task) | Already in use but YAML verbosity; no tool version management |
-| Make | Non-portable (BSD vs GNU), whitespace-sensitive, poor Windows support |
-| npm scripts | Node.js dependency for non-JS repos; JSON not ideal for complex tasks |
-| just | Good ergonomics but no tool version management; smaller ecosystem |
-| Earthly | Build-system overkill for task running; steeper learning curve |
+| Tool            | Reason Rejected                                                       |
+| --------------- | --------------------------------------------------------------------- |
+| Taskfile (task) | Already in use but YAML verbosity; no tool version management         |
+| Make            | Non-portable (BSD vs GNU), whitespace-sensitive, poor Windows support |
+| npm scripts     | Node.js dependency for non-JS repos; JSON not ideal for complex tasks |
+| just            | Good ergonomics but no tool version management; smaller ecosystem     |
+| Earthly         | Build-system overkill for task running; steeper learning curve        |
 
 ## Required Tasks
 
 Every repo `mise.toml` must define the following tasks:
 
-| Task | Purpose |
-|------|---------|
-| `lint` | Static analysis (golangci-lint, ruff check, eslint, clippy) |
-| `test` | Run test suite |
-| `build` | Produce build artifact |
-| `format` | Auto-format source code |
+| Task     | Purpose                                                     |
+| -------- | ----------------------------------------------------------- |
+| `lint`   | Static analysis (golangci-lint, ruff check, eslint, clippy) |
+| `test`   | Run test suite                                              |
+| `build`  | Produce build artifact                                      |
+| `format` | Auto-format source code                                     |
 
 Optional but recommended:
 
-| Task | Purpose |
-|------|---------|
-| `audit` | Security vulnerability scan |
-| `docs:build` | Generate documentation |
-| `release:promote` | Promote release candidate |
-| `release:status` | Check release pipeline status |
+| Task              | Purpose                       |
+| ----------------- | ----------------------------- |
+| `audit`           | Security vulnerability scan   |
+| `docs:build`      | Generate documentation        |
+| `release:promote` | Promote release candidate     |
+| `release:status`  | Check release pipeline status |
 
 ## Migration Path
 

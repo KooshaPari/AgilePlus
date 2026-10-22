@@ -6,18 +6,18 @@ MCP server for tier-based dispatch delegation via OmniRoute.
 
 ### Per-tier dispatch tools
 
-| Tool name | Tier |
-|---|---|
-| `dispatch_worker` | `worker` |
-| `dispatch_main` | `main` |
-| `dispatch_codeman` | `codeman` |
-| `dispatch_freetier` | `freetier` |
-| `dispatch_kimi` | `kimi` |
+| Tool name                | Tier            |
+| ------------------------ | --------------- |
+| `dispatch_worker`        | `worker`        |
+| `dispatch_main`          | `main`          |
+| `dispatch_codeman`       | `codeman`       |
+| `dispatch_freetier`      | `freetier`      |
+| `dispatch_kimi`          | `kimi`          |
 | `dispatch_kimi_thinking` | `kimi_thinking` |
-| `dispatch_minimax` | `minimax` |
-| `dispatch_opus` | `opus` |
-| `dispatch_haiku` | `haiku` |
-| `dispatch_gemini` | `gemini` |
+| `dispatch_minimax`       | `minimax`       |
+| `dispatch_opus`          | `opus`          |
+| `dispatch_haiku`         | `haiku`         |
+| `dispatch_gemini`        | `gemini`        |
 
 Each accepts a single `message: str` argument and dispatches it to the configured OmniRoute backend under the corresponding tier.
 
@@ -32,10 +32,10 @@ Each accepts a single `message: str` argument and dispatches it to the configure
 
 ## Configuration
 
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `OMNIROUTE_URL` | Yes | — | Base URL of the OmniRoute dispatch backend (e.g. `http://localhost:8080`). Must use `http://` or `https://` scheme. |
-| `LOG_LEVEL` | No | (root logger) | Logging verbosity. Accepted values: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`. Invalid values fall through to the root logger's level. |
+| Variable        | Required | Default       | Description                                                                                                                                  |
+| --------------- | -------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `OMNIROUTE_URL` | Yes      | —             | Base URL of the OmniRoute dispatch backend (e.g. `http://localhost:8080`). Must use `http://` or `https://` scheme.                          |
+| `LOG_LEVEL`     | No       | (root logger) | Logging verbosity. Accepted values: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`. Invalid values fall through to the root logger's level. |
 
 ### Constraints
 

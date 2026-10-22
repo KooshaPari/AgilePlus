@@ -13,15 +13,19 @@ superseded_by: null
 title: Observability Baseline
 type: operational
 ---
+
 # Observability Baseline
 
 ## Problem
+
 <REDACTED> services emit logs in inconsistent formats (plain text, JSON, mixed) and have no standardized metrics or traces. When a user reports an issue, the team cannot correlate logs to performance data or reconstruct a request flow. There is no single dashboard that surfaces the health of the ecosystem.
 
 ## Target Users
+
 Repo stewards, on-call operators, spec authors, downstream consumers, and end users reporting issues.
 
 ## Functional Requirements
+
 1. Every user-facing service emits structured logs (JSON, RFC 3339 timestamps, stable field names: `level`, `msg`, `service`, `trace_id`, `span_id`).
 2. Every user-facing service exposes OpenTelemetry metrics (RED metrics: rate, errors, duration) over OTLP.
 3. Every user-facing service emits OpenTelemetry traces with W3C `traceparent` propagation.
@@ -30,18 +34,21 @@ Repo stewards, on-call operators, spec authors, downstream consumers, and end us
 6. A linter (eco-031-lint) fails any service that is active but missing one of the three signals.
 
 ## Non-Functional Requirements
+
 - Log emission overhead < 1% of request latency at p99
 - UTF-8 no BOM
 - Idempotent report generation
 - OpenTelemetry SDK version pinned in a shared governance doc
 
 ## Acceptance Criteria
+
 - Observability coverage = 100% for active services (every active service has logs + metrics + traces = true)
 - Dashboard URL is published in `docs/operations/observability.md`
 - Coverage report lists every active service with a timestamp
 - Removing instrumentation from any service breaks `make observability-check`
 
 ## Constraints
+
 - Depends on eco-006 governance-sync (coverage must be tracked)
 - Depends on eco-018 spec-first (this spec must be referenced by the linter)
 - Depends on eco-026 autograder (`make observability-check` is a gate)

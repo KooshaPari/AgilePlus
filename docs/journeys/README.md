@@ -57,7 +57,7 @@ The template enforces, in order:
    `docs/journeys/assets/stubs/<journey-id>/` and is greppable by
    `journey="<journey-id>"`.
 5. **Traceability table** with explicit columns `AC | Criterion |
-   Test / Evidence`. The `Test / Evidence` cell must point at a real
+Test / Evidence`. The `Test / Evidence` cell must point at a real
    path (test file, BDD scenario, or YAML manifest) — never at
    `TBD`.
 6. **Eval checklist** enumerating the autograder gates that must pass
@@ -71,8 +71,10 @@ section carries a stub block:
 
 ```html
 <!-- RICH-MEDIA-STUB type="recording-gif" subject="<what the media will show>" journey="<journey-id>" status="TODO" -->
-> **[RICH MEDIA PLACEHOLDER]** *<one-line human description of what will go here>*
-<!-- END-RICH-MEDIA-STUB -->
+> **[RICH MEDIA PLACEHOLDER]** *<one-line human description of what will go here
+    >*
+    <!-- END-RICH-MEDIA-STUB --></one-line
+>
 ```
 
 Rules (strict, enforced by `phenotype-journey lint` once wired into
@@ -110,27 +112,27 @@ verify` reads; missing manifests fail the eco-021 docs gate.
 id: <journey-id>
 intent: <one-line user story>
 keyframe_count: <int>
-passed: false                       # set true after `phenotype-journey verify` accepts
+passed: false # set true after `phenotype-journey verify` accepts
 recording: assets/stubs/<journey-id>/replay.gif
 steps:
-  - index: 1
-    slug: <short-state-name>
-    assertions:
-      must_contain: ["..."]
-      must_not_contain: ["error:"]
-      expected_exit: 0
-      ocr_required: true
+    - index: 1
+      slug: <short-state-name>
+      assertions:
+          must_contain: ["..."]
+          must_not_contain: ["error:"]
+          expected_exit: 0
+          ocr_required: true
 ```
 
 ## Spec Linkage
 
 Every journey page MUST cross-link three layers:
 
-| Layer | Where it lives | Required link from the page |
-|-------|----------------|-----------------------------|
-| FR/NFR | [`FUNCTIONAL_REQUIREMENTS.md`](../../FUNCTIONAL_REQUIREMENTS.md) | `fr_id` in front-matter; row in Traceability table |
-| Spec | [`kitty-specs/<spec_slug>/spec.md`](../../kitty-specs/) | `spec_slug` + `spec_anchor` in front-matter; "User story" mirrors the spec verbatim |
-| BDD | `specs/<spec_slug>/bdd/<journey-id>.feature` (or a sibling path) | one `Scenario:` per AC; linked from Traceability table |
+| Layer  | Where it lives                                                   | Required link from the page                                                         |
+| ------ | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| FR/NFR | [`FUNCTIONAL_REQUIREMENTS.md`](../../FUNCTIONAL_REQUIREMENTS.md) | `fr_id` in front-matter; row in Traceability table                                  |
+| Spec   | [`kitty-specs/<spec_slug>/spec.md`](../../kitty-specs/)          | `spec_slug` + `spec_anchor` in front-matter; "User story" mirrors the spec verbatim |
+| BDD    | `specs/<spec_slug>/bdd/<journey-id>.feature` (or a sibling path) | one `Scenario:` per AC; linked from Traceability table                              |
 
 Spec linkage is verified by `tooling/trace-validator/` (eco-024) on
 every PR. A journey page that points at a missing slug, a missing

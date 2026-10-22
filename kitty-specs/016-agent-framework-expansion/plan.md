@@ -113,37 +113,37 @@ Per-repo unit + integration suites, then cross-repo end-to-end scenarios.
 
 ## Dependency DAG
 
-| Phase | Task ID | Description | Depends On |
-|-------|---------|-------------|------------|
-| 1 | D1.1 | Audit Agentora orchestration | — |
-| 1 | D1.2 | Audit AgentMCP protocol | — |
-| 1 | D1.3 | Audit agent-wave events | — |
-| 1 | D1.4 | Audit agentops-policy-federation | — |
-| 1 | D1.5 | Audit helMo mobility | — |
-| 1 | D1.6 | Audit agent-devops-setups | — |
-| 1 | D1.7 | Cross-repo reuse audit | D1.1–D1.6 |
-| 2 | D2.1 | Unified lifecycle state machine spec | D1.1, D1.7 |
-| 2 | D2.2 | Orchestration ↔ MCP contract | D1.1, D1.2, D2.1 |
-| 2 | D2.3 | Lifecycle ↔ event-bus contract | D1.3, D2.1 |
-| 2 | D2.4 | Policy attachment model | D1.4, D2.1 |
-| 2 | D2.5 | Mobility protocol | D1.5, D2.1 |
-| 2 | D2.6 | DevOps template matrix | D1.6, D2.1–D2.5 |
-| 3 | WP-001 | Agentora orchestration build | D2.1 |
-| 3 | WP-002 | AgentMCP build | WP-001, D2.2 |
-| 3 | WP-003 | agent-wave build | WP-001, D2.3 |
-| 3 | WP-004 | agentops-policy-federation build | WP-001, D2.4 |
-| 3 | WP-005 | helMo build | WP-001, D2.5 |
-| 3 | WP-006 | agent-devops-setups build | WP-001..WP-005, D2.6 |
-| 4 | V4.1 | Per-repo quality gates | WP-001..WP-006 |
-| 4 | V4.2 | Multi-agent orchestration scenario | WP-001 |
-| 4 | V4.3 | MCP-client → Agentora scenario | WP-001, WP-002 |
-| 4 | V4.4 | Event + policy scenario | WP-001, WP-003, WP-004 |
-| 4 | V4.5 | Mobility scenario | WP-001, WP-005 |
-| 4 | V4.6 | Template smoke | WP-006 |
-| 5 | H5.1 | CHANGELOG + tag | V4.1–V4.6 |
-| 5 | H5.2 | Org-pages portfolio update | H5.1 |
-| 5 | H5.3 | ARCHITECTURE worklog update | H5.1 |
-| 5 | H5.4 | Handoff to specs 011, 015 | H5.1 |
+| Phase | Task ID | Description                          | Depends On             |
+| ----- | ------- | ------------------------------------ | ---------------------- |
+| 1     | D1.1    | Audit Agentora orchestration         | —                      |
+| 1     | D1.2    | Audit AgentMCP protocol              | —                      |
+| 1     | D1.3    | Audit agent-wave events              | —                      |
+| 1     | D1.4    | Audit agentops-policy-federation     | —                      |
+| 1     | D1.5    | Audit helMo mobility                 | —                      |
+| 1     | D1.6    | Audit agent-devops-setups            | —                      |
+| 1     | D1.7    | Cross-repo reuse audit               | D1.1–D1.6              |
+| 2     | D2.1    | Unified lifecycle state machine spec | D1.1, D1.7             |
+| 2     | D2.2    | Orchestration ↔ MCP contract        | D1.1, D1.2, D2.1       |
+| 2     | D2.3    | Lifecycle ↔ event-bus contract      | D1.3, D2.1             |
+| 2     | D2.4    | Policy attachment model              | D1.4, D2.1             |
+| 2     | D2.5    | Mobility protocol                    | D1.5, D2.1             |
+| 2     | D2.6    | DevOps template matrix               | D1.6, D2.1–D2.5        |
+| 3     | WP-001  | Agentora orchestration build         | D2.1                   |
+| 3     | WP-002  | AgentMCP build                       | WP-001, D2.2           |
+| 3     | WP-003  | agent-wave build                     | WP-001, D2.3           |
+| 3     | WP-004  | agentops-policy-federation build     | WP-001, D2.4           |
+| 3     | WP-005  | helMo build                          | WP-001, D2.5           |
+| 3     | WP-006  | agent-devops-setups build            | WP-001..WP-005, D2.6   |
+| 4     | V4.1    | Per-repo quality gates               | WP-001..WP-006         |
+| 4     | V4.2    | Multi-agent orchestration scenario   | WP-001                 |
+| 4     | V4.3    | MCP-client → Agentora scenario       | WP-001, WP-002         |
+| 4     | V4.4    | Event + policy scenario              | WP-001, WP-003, WP-004 |
+| 4     | V4.5    | Mobility scenario                    | WP-001, WP-005         |
+| 4     | V4.6    | Template smoke                       | WP-006                 |
+| 5     | H5.1    | CHANGELOG + tag                      | V4.1–V4.6              |
+| 5     | H5.2    | Org-pages portfolio update           | H5.1                   |
+| 5     | H5.3    | ARCHITECTURE worklog update          | H5.1                   |
+| 5     | H5.4    | Handoff to specs 011, 015            | H5.1                   |
 
 Critical path: D1.1 → D1.7 → D2.1 → WP-001 → WP-002 → V4.3 → H5.1 → H5.4
 (8 nodes). After WP-001, WP-002..WP-005 fan out in parallel; WP-006 is the
@@ -154,15 +154,15 @@ final convergence node before validation.
 Per global "Timescales: Agent-Led, Aggressive Estimates" — quoted in tool
 calls / parallel subagents / wall-clock minutes. No human checkpoints.
 
-| Phase | Profile | Wall-clock target |
-|-------|---------|-------------------|
-| 1 — Discovery | 6 parallel `Explore` subagents (one per repo) + 1 reuse audit | 8–12 min |
-| 2 — Design | 3 parallel design subagents on independent contracts; lifecycle anchor sequenced first | 10–15 min |
-| 3 — Build (WP-001) | Major refactor: 3–5 parallel `general-purpose` subagents, 15–30 tool calls | 15–20 min |
-| 3 — Build (WP-002..WP-005) | 4 cross-stack features in parallel, each 8–15 tool calls | 12–18 min |
-| 3 — Build (WP-006) | Small feature, 3–6 tool calls | ~3 min |
-| 4 — Test / Validate | Per-repo gates parallel; scenarios sequential on shared harness | 8–12 min |
-| 5 — Deploy / Handoff | 4 small docs/tag tasks in parallel | 3–5 min |
+| Phase                      | Profile                                                                                | Wall-clock target |
+| -------------------------- | -------------------------------------------------------------------------------------- | ----------------- |
+| 1 — Discovery              | 6 parallel `Explore` subagents (one per repo) + 1 reuse audit                          | 8–12 min          |
+| 2 — Design                 | 3 parallel design subagents on independent contracts; lifecycle anchor sequenced first | 10–15 min         |
+| 3 — Build (WP-001)         | Major refactor: 3–5 parallel `general-purpose` subagents, 15–30 tool calls             | 15–20 min         |
+| 3 — Build (WP-002..WP-005) | 4 cross-stack features in parallel, each 8–15 tool calls                               | 12–18 min         |
+| 3 — Build (WP-006)         | Small feature, 3–6 tool calls                                                          | ~3 min            |
+| 4 — Test / Validate        | Per-repo gates parallel; scenarios sequential on shared harness                        | 8–12 min          |
+| 5 — Deploy / Handoff       | 4 small docs/tag tasks in parallel                                                     | 3–5 min           |
 
 Total wall-clock budget: ~60–90 min of orchestrated agent activity, no human
 intervention beyond initial prompt and merge approvals.

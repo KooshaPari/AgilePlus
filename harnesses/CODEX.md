@@ -4,7 +4,7 @@
 
 Add to `~/.codex/AGENTS.md` or project-level `AGENTS.md`:
 
-```markdown
+````markdown
 ## AgilePlus Integration
 
 You have access to the AgilePlus spec-driven development engine.
@@ -38,19 +38,22 @@ For all feature development, follow this workflow:
 export PATH="$HOME/bin:$PATH"
 export AGILEPLUS_HOME="/Users/<REDACTED>/CodeProjects/Phenotype/repos/AgilePlus"
 ```
+````
 
 ### xDD Methodologies
 
 Reference: `/Users/<REDACTED>/CodeProjects/Phenotype/repos/AgilePlus/docs/governance/xdd-methodologies-encyclopedia.md`
 
 Follow these methodologies:
+
 - TDD: Test before implementation
 - BDD: Behavior-driven specs
 - DDD: Domain-driven design
 - SpecDD: Specification-driven development
 - CQRS: Command/query responsibility segregation
 - Event Sourcing: Event-driven architecture
-```
+
+````
 
 ## Codex Agent Config
 
@@ -63,7 +66,7 @@ description = "Spec-driven development with xDD methodologies"
 command = "agileplus"
 args = ["--agent"]
 env = { AGILEPLUS_HOME = "/Users/<REDACTED>/CodeProjects/Phenotype/repos/AgilePlus" }
-```
+````
 
 ## Codex RC File
 

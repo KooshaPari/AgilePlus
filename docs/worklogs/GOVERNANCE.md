@@ -17,18 +17,18 @@ Current status of governance implementation in AgilePlus. Phase 4 (Governance & 
 
 ### Phase 4 Status
 
-| Task ID | Description | Status | Dependencies |
-|---------|-------------|--------|--------------|
-| P4.1 | Governance contract model | Partial | P1.1 |
-| P4.2 | Evidence types enum | Partial | P1.1 |
-| P4.3 | Evidence collection RPC | Partial | P2.9, P4.2 |
-| P4.4 | Evidence linking to FR IDs | Partial | P4.3 |
-| P4.5 | Policy rule model | Partial | P1.1 |
-| P4.6 | Policy evaluation engine | Planned | P4.5 |
-| P4.7 | Validation command (CLI) | Planned | P4.1-P4.6 |
-| P4.8 | Validation API endpoint | Planned | P2.9, P4.6 |
-| P4.9 | Governance gap report | Planned | P4.6 |
-| P4.10 | Batch evidence import | Planned | P4.3 |
+| Task ID | Description                | Status  | Dependencies |
+| ------- | -------------------------- | ------- | ------------ |
+| P4.1    | Governance contract model  | Partial | P1.1         |
+| P4.2    | Evidence types enum        | Partial | P1.1         |
+| P4.3    | Evidence collection RPC    | Partial | P2.9, P4.2   |
+| P4.4    | Evidence linking to FR IDs | Partial | P4.3         |
+| P4.5    | Policy rule model          | Partial | P1.1         |
+| P4.6    | Policy evaluation engine   | Planned | P4.5         |
+| P4.7    | Validation command (CLI)   | Planned | P4.1-P4.6    |
+| P4.8    | Validation API endpoint    | Planned | P2.9, P4.6   |
+| P4.9    | Governance gap report      | Planned | P4.6         |
+| P4.10   | Batch evidence import      | Planned | P4.3         |
 
 ### Deliverables
 
@@ -64,26 +64,26 @@ Completed governance implementation for ecosystem cleanup work.
 
 ### Governance Tools Implemented
 
-| Tool | Status | Location |
-|------|--------|----------|
-| worktree_governance_inventory.py | ✅ | thegent/scripts/ |
-| worktree_legacy_remediation_report.py | ✅ | thegent/scripts/ |
-| worktree_governance.sh | ✅ | thegent/scripts/ |
-| cli_git_worktree_governance.py | ✅ | thegent/src/thegent/cli/commands/ |
-| MCP server worktree export | ✅ | thegent/src/thegent/mcp/ |
+| Tool                                  | Status | Location                          |
+| ------------------------------------- | ------ | --------------------------------- |
+| worktree_governance_inventory.py      | ✅     | thegent/scripts/                  |
+| worktree_legacy_remediation_report.py | ✅     | thegent/scripts/                  |
+| worktree_governance.sh                | ✅     | thegent/scripts/                  |
+| cli_git_worktree_governance.py        | ✅     | thegent/src/thegent/cli/commands/ |
+| MCP server worktree export            | ✅     | thegent/src/thegent/mcp/          |
 
 ### Tests
 
-| Suite | Passed | Total |
-|-------|--------|-------|
-| Unit tests | 10 | 10 |
+| Suite      | Passed | Total |
+| ---------- | ------ | ----- |
+| Unit tests | 10     | 10    |
 
 ### Non-Canonical Worktrees (By Design)
 
-| Worktree | Branch | Reason |
-|----------|--------|--------|
-| rebase-fix-cache-test-pyright | fix/cache-test-pyright | WIP |
-| rescued-detached-head | feat/rescued-detached-head-work | Recovery |
+| Worktree                      | Branch                          | Reason   |
+| ----------------------------- | ------------------------------- | -------- |
+| rebase-fix-cache-test-pyright | fix/cache-test-pyright          | WIP      |
+| rescued-detached-head         | feat/rescued-detached-head-work | Recovery |
 
 ### Related
 
@@ -105,14 +105,14 @@ Patterns for evidence collection based on great_expectations research.
 
 ### Evidence Types
 
-| Type | Source | Validation |
-|------|--------|------------|
-| TestResults | CI, local test runs | Pass/fail, coverage |
-| CiOutput | GitHub Actions, CI | Job status, artifacts |
-| SecurityScan | SAST, DAST tools | Findings severity |
-| ReviewApproval | PR reviews | Approval count |
-| LintResults | Ruff, Clippy | Error count |
-| ManualAttestation | Human sign-off | Signer identity |
+| Type              | Source              | Validation            |
+| ----------------- | ------------------- | --------------------- |
+| TestResults       | CI, local test runs | Pass/fail, coverage   |
+| CiOutput          | GitHub Actions, CI  | Job status, artifacts |
+| SecurityScan      | SAST, DAST tools    | Findings severity     |
+| ReviewApproval    | PR reviews          | Approval count        |
+| LintResults       | Ruff, Clippy        | Error count           |
+| ManualAttestation | Human sign-off      | Signer identity       |
 
 ### Evidence Collection Pipeline
 
@@ -128,12 +128,12 @@ Agent Output → Expectation Suite → Checkpoint → Evidence Artifact
 
 ### Integration with llm-eval
 
-| Component | AgilePlus | llm-eval |
-|-----------|-----------|----------|
-| Expectation Suite | Policy rules | ExpectationSuite |
-| Checkpoint | Evidence checkpoint | Checkpoint |
-| Validator | Policy engine | Validator |
-| Reporter | Gap report | HTML report |
+| Component         | AgilePlus           | llm-eval         |
+| ----------------- | ------------------- | ---------------- |
+| Expectation Suite | Policy rules        | ExpectationSuite |
+| Checkpoint        | Evidence checkpoint | Checkpoint       |
+| Validator         | Policy engine       | Validator        |
+| Reporter          | Gap report          | HTML report      |
 
 ### Next Steps
 
@@ -161,23 +161,23 @@ Implementation of quality gates for feature lifecycle transitions.
 
 ### Quality Gate Model
 
-| Gate | Trigger | Checks |
-|------|---------|--------|
-| Spec Gate | Created → Specified | Spec hash, required fields |
-| Plan Gate | Specified → Planned | WBS valid, dependencies resolvable |
-| Implement Gate | Planned → Implementing | Agent assigned, worktree created |
-| Review Gate | Implementing → Validated | PR approved, tests pass |
-| Ship Gate | Validated → Shipped | All evidence collected |
+| Gate           | Trigger                  | Checks                             |
+| -------------- | ------------------------ | ---------------------------------- |
+| Spec Gate      | Created → Specified      | Spec hash, required fields         |
+| Plan Gate      | Specified → Planned      | WBS valid, dependencies resolvable |
+| Implement Gate | Planned → Implementing   | Agent assigned, worktree created   |
+| Review Gate    | Implementing → Validated | PR approved, tests pass            |
+| Ship Gate      | Validated → Shipped      | All evidence collected             |
 
 ### Evidence Requirements by Gate
 
-| Gate | Evidence Required |
-|------|-------------------|
-| Spec Gate | None |
-| Plan Gate | None |
-| Implement Gate | Agent assignment confirmation |
-| Review Gate | PR approval, lint clean, tests pass |
-| Ship Gate | CI green, security scan clean, coverage met |
+| Gate           | Evidence Required                           |
+| -------------- | ------------------------------------------- |
+| Spec Gate      | None                                        |
+| Plan Gate      | None                                        |
+| Implement Gate | Agent assignment confirmation               |
+| Review Gate    | PR approval, lint clean, tests pass         |
+| Ship Gate      | CI green, security scan clean, coverage met |
 
 ### Implementation Tasks
 
@@ -206,20 +206,20 @@ Plan for tracking DORA (DevOps Research and Assessment) metrics.
 
 ### DORA Metrics
 
-| Metric | Definition | Measurement |
-|--------|------------|-------------|
-| Deployment Frequency | How often deploys occur | Per feature, per week |
-| Lead Time for Changes | Commit to production | Feature lifecycle |
-| Change Failure Rate | % of deploys causing failure | Post-ship validation |
-| Mean Time to Recovery | Time to recover from failure | Incident tracking |
+| Metric                | Definition                   | Measurement           |
+| --------------------- | ---------------------------- | --------------------- |
+| Deployment Frequency  | How often deploys occur      | Per feature, per week |
+| Lead Time for Changes | Commit to production         | Feature lifecycle     |
+| Change Failure Rate   | % of deploys causing failure | Post-ship validation  |
+| Mean Time to Recovery | Time to recover from failure | Incident tracking     |
 
 ### Implementation
 
-| Component | Status | Location |
-|-----------|--------|----------|
-| Metrics schema | Partial | `crates/agileplus-domain/src/metrics.rs` |
-| Telemetry export | Partial | `crates/agileplus-telemetry/` |
-| Dashboard visualization | Partial | `crates/agileplus-dashboard/` |
+| Component               | Status  | Location                                 |
+| ----------------------- | ------- | ---------------------------------------- |
+| Metrics schema          | Partial | `crates/agileplus-domain/src/metrics.rs` |
+| Telemetry export        | Partial | `crates/agileplus-telemetry/`            |
+| Dashboard visualization | Partial | `crates/agileplus-dashboard/`            |
 
 ### Next Steps
 

@@ -21,29 +21,29 @@ AgilePlus, and how external frameworks map to layers.
 1. **Adopt the five-layer model** as the organizing principle for all PM tooling in the
    Phenotype stack:
 
-   | Layer | Purpose | Primary frameworks |
-   |-------|---------|-------------------|
-   | L4 Outcomes | Why — portfolio alignment | OKRs, Shape Up, Lean metrics |
-   | L3 Governance | What — rules and intent | Constitution, FR/NFR, ADRs, BMAD PRD |
-   | L2 Delivery | How organized — WPs and cadence | Spec Kitty, GSD phases, Scrum (optional) |
-   | L1 Execution | How done — code deltas | OpenSpec, Spec-Kit tasks, worktrees |
-   | L0 Evidence | Proof — audit and links | trace.json, TraceLink, CI, worklogs |
+    | Layer         | Purpose                         | Primary frameworks                       |
+    | ------------- | ------------------------------- | ---------------------------------------- |
+    | L4 Outcomes   | Why — portfolio alignment       | OKRs, Shape Up, Lean metrics             |
+    | L3 Governance | What — rules and intent         | Constitution, FR/NFR, ADRs, BMAD PRD     |
+    | L2 Delivery   | How organized — WPs and cadence | Spec Kitty, GSD phases, Scrum (optional) |
+    | L1 Execution  | How done — code deltas          | OpenSpec, Spec-Kit tasks, worktrees      |
+    | L0 Evidence   | Proof — audit and links         | trace.json, TraceLink, CI, worklogs      |
 
 2. **Runtime ownership:**
 
-   | Layer | AgilePlus | Tracera (embedded) |
-   |-------|-----------|-------------------|
-   | L4 | Charter hooks (future) | Initiative ↔ requirement linking |
-   | L3 | FSM, GovernanceContract, harmonizer | Contract read, FR ingest |
-   | L2 | WP lanes, claim engine | CoverageMatrix build |
-   | L1 | Worktrees, MCP, spec CLI | Artifact ingest, impact API |
-   | L0 | trace-validator, audit chain | TraceLink store, RTM export |
+    | Layer | AgilePlus                           | Tracera (embedded)                |
+    | ----- | ----------------------------------- | --------------------------------- |
+    | L4    | Charter hooks (future)              | Initiative ↔ requirement linking |
+    | L3    | FSM, GovernanceContract, harmonizer | Contract read, FR ingest          |
+    | L2    | WP lanes, claim engine              | CoverageMatrix build              |
+    | L1    | Worktrees, MCP, spec CLI            | Artifact ingest, impact API       |
+    | L0    | trace-validator, audit chain        | TraceLink store, RTM export       |
 
 3. **Framework selection by change type** follows FRAMEWORK_ANALYSIS §4.4 (bug → GSD quick;
    feature → Spec Kitty; brownfield → OpenSpec + Tracera impact; epic → BMAD; portfolio →
    OKRs + Shape Up).
 4. **SAFe / Waterfall / PMBOK / PRINCE2** vocabulary is permitted at **L4 and compliance
-   export only** — not as execution FSMs. Six Sigma tollgate *concept* maps to L0 CI gates.
+   export only** — not as execution FSMs. Six Sigma tollgate _concept_ maps to L0 CI gates.
 5. **No new layer may bypass L0** on merge. L4 approval does not waive trace-validator.
 
 ## Consequences

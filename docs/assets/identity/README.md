@@ -4,10 +4,10 @@ Animated SVG + MP4 showcasing the [Backbone-2 lab-graphite + pulse-green palette
 
 ## Files
 
-| File | Purpose |
-|---|---|
+| File       | Purpose                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------ |
 | `demo.svg` | 480×270 animated SVG — pulse heartbeat + scanline + orbit ring (looped CSS animation, ~5s) |
-| `demo.mp4` | H.264/MP4 rendered from `demo.svg` via ffmpeg (24fps, 5s loop) |
+| `demo.mp4` | H.264/MP4 rendered from `demo.svg` via ffmpeg (24fps, 5s loop)                             |
 
 ## Palette (Backbone-2 — lab-graphite + pulse-green)
 

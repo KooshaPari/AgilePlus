@@ -24,15 +24,15 @@ canonical_home: github.com/KooshaPari/phenoShared/crates/phenotype-event-sourcin
 
 The 2026-04-25 cross-project reuse audit identified `phenotype-event-sourcing` as physically duplicated across **6 host workspaces** with measurable API drift:
 
-| Host workspace | LOC of `src/lib.rs` | Last touched |
-|----------------|---------------------|--------------|
-| `phenoShared` (canonical, per ADR) | 42 | 2026-04-25 (today) |
-| `pheno` | 26 | 2026-03-31 |
-| `PhenoProc` (root copy) | 57 | 2026-04-03 |
-| `PhenoProc` (nested `crates/phenotype-shared/crates/`) | 57 | 2026-04-03 |
-| `DataKit/rust` | 57 | 2026-04-05 |
-| `PhenoKits/HexaKit` | 26 | 2026-03-31 |
-| `hwLedger/vendor` | (vendored snapshot) | snapshot |
+| Host workspace                                         | LOC of `src/lib.rs` | Last touched       |
+| ------------------------------------------------------ | ------------------- | ------------------ |
+| `phenoShared` (canonical, per ADR)                     | 42                  | 2026-04-25 (today) |
+| `pheno`                                                | 26                  | 2026-03-31         |
+| `PhenoProc` (root copy)                                | 57                  | 2026-04-03         |
+| `PhenoProc` (nested `crates/phenotype-shared/crates/`) | 57                  | 2026-04-03         |
+| `DataKit/rust`                                         | 57                  | 2026-04-05         |
+| `PhenoKits/HexaKit`                                    | 26                  | 2026-03-31         |
+| `hwLedger/vendor`                                      | (vendored snapshot) | snapshot           |
 
 External (cross-workspace) consumers: **0**. All current dependency edges are local `path = "crates/..."` references inside their host workspaces.
 
@@ -60,14 +60,14 @@ External (cross-workspace) consumers: **0**. All current dependency edges are lo
 
 ## Functional Requirements
 
-| FR ID | Requirement |
-|-------|-------------|
+| FR ID      | Requirement                                                                                                                                |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | FR-CES-001 | Each non-canonical host workspace MUST replace its `crates/phenotype-event-sourcing/` member with a workspace dep targeting `phenoShared`. |
-| FR-CES-002 | Each deprecated copy MUST carry a `DEPRECATED.md` (per ADR §"Deprecation plan" template) before physical deletion. |
-| FR-CES-003 | Each deprecated copy's `src/lib.rs` MUST carry a `// DEPRECATED — see DEPRECATED.md` banner during the transition window. |
-| FR-CES-004 | Host workspace `cargo build --workspace` and `cargo test --workspace` MUST pass after the swap. |
-| FR-CES-005 | `cargo metadata --workspace` from any host MUST resolve exactly one `phenotype-event-sourcing` entry across the dep graph. |
-| FR-CES-006 | The audit doc `cross-project-reuse-audit-2026-04-25.md` MUST receive a "superseded for canonical-home decision" pointer to the ADR. |
+| FR-CES-002 | Each deprecated copy MUST carry a `DEPRECATED.md` (per ADR §"Deprecation plan" template) before physical deletion.                         |
+| FR-CES-003 | Each deprecated copy's `src/lib.rs` MUST carry a `// DEPRECATED — see DEPRECATED.md` banner during the transition window.                  |
+| FR-CES-004 | Host workspace `cargo build --workspace` and `cargo test --workspace` MUST pass after the swap.                                            |
+| FR-CES-005 | `cargo metadata --workspace` from any host MUST resolve exactly one `phenotype-event-sourcing` entry across the dep graph.                 |
+| FR-CES-006 | The audit doc `cross-project-reuse-audit-2026-04-25.md` MUST receive a "superseded for canonical-home decision" pointer to the ADR.        |
 
 ## Acceptance Criteria
 
@@ -79,9 +79,9 @@ External (cross-workspace) consumers: **0**. All current dependency edges are lo
 
 ## Risk Register
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| 57-LOC variants depend on API surface absent from 42-LOC canonical | Medium | High | Phase 2 design step enumerates the API delta and either lifts missing surface into canonical or wraps in host-side adapter. |
-| Hash-chain on-disk schema diverges between variants | Low | High | Phase 4 validation compares replay of fixture events; mismatch triggers explicit migration step. |
-| Host workspace has unrelated red CI; merge blocked | Medium | Medium | Use HOOKS_SKIP=1 on pre-existing failures; document in PR. |
-| `hwLedger/vendor` snapshot is intentionally pinned | Low | Medium | If vendored to satisfy compliance, swap to git-pinned canonical commit instead of removal. |
+| Risk                                                               | Likelihood | Impact | Mitigation                                                                                                                  |
+| ------------------------------------------------------------------ | ---------- | ------ | --------------------------------------------------------------------------------------------------------------------------- |
+| 57-LOC variants depend on API surface absent from 42-LOC canonical | Medium     | High   | Phase 2 design step enumerates the API delta and either lifts missing surface into canonical or wraps in host-side adapter. |
+| Hash-chain on-disk schema diverges between variants                | Low        | High   | Phase 4 validation compares replay of fixture events; mismatch triggers explicit migration step.                            |
+| Host workspace has unrelated red CI; merge blocked                 | Medium     | Medium | Use HOOKS_SKIP=1 on pre-existing failures; document in PR.                                                                  |
+| `hwLedger/vendor` snapshot is intentionally pinned                 | Low        | Medium | If vendored to satisfy compliance, swap to git-pinned canonical commit instead of removal.                                  |
