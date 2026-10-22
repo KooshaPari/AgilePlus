@@ -39,6 +39,10 @@ db-path = "$CARGO_HOME/advisory-db"
 ignore = [
   { id = "RUSTSEC-2024-0370", reason = "proc-macro-error unmaintained: build-time only via glib-macros 0.18 (tauri stack); glib 0.18 pins it, no fix until tauri/tray-icon bump." },
   { id = "RUSTSEC-2024-0429", reason = "glib VariantStrIter: latest resolvable glib is 0.18.5; fixed in 0.20.0 behind tauri PR #16170. LINUX-ONLY path (libappindicator->tray-icon->tauri), so cargo-deny on a macOS host warns advisory-not-detected for this entry - benign, CI runs ubuntu. Re-evaluate when tauri PR #16170 lands." },
+  { id = "RUSTSEC-2026-0370", reason = "zvariant unmaintained as a standalone crate: transitive via zbus (keyring/secret-service path); no safe upgrade exists. Re-evaluate when zbus drops it." },
+  { id = "RUSTSEC-2026-0371", reason = "zbus_names unmaintained as a standalone crate: transitive via zbus; no safe upgrade exists." },
+  { id = "RUSTSEC-2026-0372", reason = "zvariant_derive unmaintained: proc-macro of zvariant, build-time only; no safe upgrade exists." },
+  { id = "RUSTSEC-2026-0374", reason = "basic-toml unmaintained (archived upstream): transitive, build-time only; no safe upgrade exists." },
 ]
 
 [licenses]
