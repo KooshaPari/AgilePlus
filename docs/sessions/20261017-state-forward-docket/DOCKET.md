@@ -27,7 +27,7 @@
 
 `PASS` · `FAIL` · `NOT_RUN` · `UNKNOWN` · `STALE` · `BLOCKED` · `NOT_APPLICABLE` (per SFD v1.0)
 
-The three questions that **never** collapse:
+The four questions that **never** collapse:
 
 1. **Implementation** — is the code present in this branch? (cite path/line)
 2. **Usability** — can an operator reach it from outside the developer's shell? (cite URL/env/probe)
@@ -341,7 +341,7 @@ An MVP is the projection that "early operator" use is feasible. The MVP bar is l
 - **Architecture diagram** lives in `DOCKET.architecture.mmd` in this folder. It shows: Plane.so, GitHub, NATS, MinIO, Neo4j, Cache/Redis, MCP, P2P/Tailscale, Vercel, the owner's desktop, the operator's device, with each link labeled by its F-row verdict.
 - **Delta tree** lives in `DOCKET.delta-tree.mmd` in this folder. It shows the 2026-10-08 recovery branch and the 2026-10-14 intent-reconciliation branch with the gap from each to today's HEAD `00397a59`.
 - **HTML render** lives in `DOCKET.html`.
-- **PDF** lives in `DOCKET.pdf`. Open in Safari via `open DOCKET.pdf` from the docket folder (Safari will refuse if the file is not present; the dossier will report `NOT_OPENED` in that case rather than claim success).
+- **PDF** lives in `DOCKET.pdf`. Open it from the docket folder with `open DOCKET.pdf` on macOS, `xdg-open DOCKET.pdf` on Linux, or `start DOCKET.pdf` on Windows. If the file is not present the viewer refuses to open it, and the dossier reports `NOT_OPENED` rather than claiming success.
 
 ---
 
