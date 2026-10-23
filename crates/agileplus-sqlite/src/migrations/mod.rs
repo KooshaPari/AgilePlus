@@ -114,6 +114,7 @@ const MIGRATIONS: &[(&str, &str)] = &[
         include_str!("030_atomic_acceptance.sql"),
     ),
     ("031_promotion_saga", include_str!("031_promotion_saga.sql")),
+    ("032_work_items", include_str!("032_work_items.sql")),
 ];
 
 fn find_up_body_start(sql: &str) -> Option<usize> {
@@ -225,6 +226,13 @@ impl<'a> MigrationRunner<'a> {
         let Some(name) = last_name else {
             return Ok(());
         };
+        // Append-only history is retained. Keep its migration marker as well,
+        // otherwise the next startup would try to recreate existing tables.
+        if name == "032_work_items" {
+            return Err(DomainError::Conflict(
+                "work-item audit history is irreversible; rollback refused".into(),
+            ));
+        }
         if let Some((_, sql)) = MIGRATIONS.iter().find(|(n, _)| *n == name.as_str()) {
             let down = parse_down(sql);
             if !down.is_empty() {

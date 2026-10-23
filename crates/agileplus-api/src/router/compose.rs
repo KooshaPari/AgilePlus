@@ -40,6 +40,10 @@ where
         .route("/cycles/{id}", get(cycle::cycle_detail_page::<S, V, O>))
         .with_state(state.clone());
     let protected = Router::new()
+        .nest(
+            "/api/v1/work-items",
+            crate::routes::work_items::routes::<S, V, O>(),
+        )
         .nest("/api/v1/features", features::routes::<S, V, O>())
         .nest("/api/v1/work-packages", work_packages::routes::<S, V, O>())
         .nest(

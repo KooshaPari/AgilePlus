@@ -215,19 +215,20 @@ fn file_backed_adapter_reopens_existing_database() {
 // ---------------------------------------------------------------------------
 
 #[test]
-fn rollback_last_removes_most_recent_migration() {
+fn rollback_last_preserves_irreversible_migration_and_reopens() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
-    // 026_feature_labels is applied last; its DOWN drops nothing (ALTER concerns),
-    // so instead verify the bookkeeping row is removed.
+    // Append-only work-item history cannot be rolled back or marked unapplied.
     let before: i64 = conn
         .query_row("SELECT COUNT(*) FROM _migrations", [], |r| r.get(0))
         .unwrap();
-    MigrationRunner::new(&conn).rollback_last().unwrap();
+    let error = MigrationRunner::new(&conn).rollback_last().unwrap_err();
+    assert!(error.to_string().contains("irreversible"));
     let after: i64 = conn
         .query_row("SELECT COUNT(*) FROM _migrations", [], |r| r.get(0))
         .unwrap();
-    assert_eq!(after, before - 1);
+    assert_eq!(after, before);
+    MigrationRunner::new(&conn).run_all().unwrap();
 }
 
 #[test]
@@ -238,7 +239,7 @@ fn rollback_last_on_empty_database_is_noop() {
 }
 
 #[test]
-fn rollback_last_removes_tracking_row_for_last_migration() {
+fn rollback_last_retains_tracking_row_for_append_only_schema() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
     let last: String = conn
@@ -248,7 +249,8 @@ fn rollback_last_removes_tracking_row_for_last_migration() {
             |r| r.get(0),
         )
         .unwrap();
-    MigrationRunner::new(&conn).rollback_last().unwrap();
+    assert_eq!(last, "032_work_items");
+    assert!(MigrationRunner::new(&conn).rollback_last().is_err());
     let still: i64 = conn
         .query_row(
             "SELECT COUNT(*) FROM _migrations WHERE name = ?1",
@@ -256,7 +258,7 @@ fn rollback_last_removes_tracking_row_for_last_migration() {
             |r| r.get(0),
         )
         .unwrap();
-    assert_eq!(still, 0, "rolled-back migration must no longer be tracked");
+    assert_eq!(still, 1, "irreversible migration must remain tracked");
 }
 
 // ---------------------------------------------------------------------------
