@@ -52,3 +52,11 @@ if [ "$rc" -ne 0 ]; then
 fi
 
 echo "[hooks] pre-commit OK"
+
+# Chain: enforce .agileplus/*.db RFC3339 timestamp integrity (B.y guard).
+hooks_dir="$(dirname "$0")"
+if [ -x "$hooks_dir/pre-commit-validate-timestamps" ]; then
+  "$hooks_dir/pre-commit-validate-timestamps"
+else
+  echo "[hooks] pre-commit-validate-timestamps not found or not executable; skipping"
+fi

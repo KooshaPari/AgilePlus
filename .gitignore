@@ -44,6 +44,15 @@ target/
 **/.fingerprint/
 **/build-script-build
 .agileplus/
+# Explicit DB patterns below also untrack already-tracked SQLite files
+# (the .agileplus/ line above does not untrack files git already knows about).
+# See .githooks/pre-commit-validate-timestamps for the durability guard
+# against future non-RFC3339 updated_at rows.
+.agileplus/*.db
+.agileplus/*.db-*
+.agileplus/*.db-wal
+.agileplus/*.db-shm
+.agileplus/*.db-journal
 
 # python test cache
 **/__pycache__/
