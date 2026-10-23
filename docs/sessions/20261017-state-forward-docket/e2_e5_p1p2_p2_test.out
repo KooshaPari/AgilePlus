@@ -1,0 +1,13 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+     Running tests/atomic_acceptance_rpc.rs (target/debug/build/agileplus-grpc/8862bf7a81073df0/out/atomic_acceptance_rpc-8862bf7a81073df0)
+
+running 6 tests
+test grpc_requires_auth_and_rejects_grading_overrides_without_mutation ... ok
+test grpc_rejects_foreign_scope ... ok
+test grpc_rejects_stale_governance_version_without_mutation ... ok
+test grpc_storage_failure_rolls_back_and_redacts_details ... ok
+test grpc_commits_and_replays_canonical_acceptance ... ok
+test grpc_same_request_id_with_changed_command_conflicts_instead_of_regrading ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
