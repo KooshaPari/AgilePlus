@@ -14,6 +14,7 @@ use agileplus_grpc::event_bus::EventBus;
 use agileplus_grpc::proxy::ProxyRouter;
 use agileplus_grpc::runtime::CoreConfig;
 use agileplus_grpc::server::AgilePlusCoreServer;
+use agileplus_grpc::writer_lock::ProjectWriterLock;
 use agileplus_sqlite::SqliteStorageAdapter;
 
 #[derive(Debug, Default)]
@@ -97,6 +98,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
     let config = CoreConfig::from_env()?;
     let context = config.context()?;
+    let _writer_lock = ProjectWriterLock::acquire(context.repo_root())?;
     let database = context.database_path();
     if let Some(parent) = database.parent() {
         std::fs::create_dir_all(parent)?;
