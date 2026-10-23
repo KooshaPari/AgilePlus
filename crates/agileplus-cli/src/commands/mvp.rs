@@ -616,7 +616,7 @@ mod tests {
                         wp: "WP01".into(),
                         fr: "FR-001".into(),
                         artifact: receipts.path().join("fr001.json"),
-                        command: vec!["/bin/true".into()],
+                        command: parse_csv("true"),
                     },
                 ),
             },
