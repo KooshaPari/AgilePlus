@@ -1,0 +1,68 @@
+{
+  "contract_version": "1.0.0",
+  "project_uid": "0199f2a5-4a64-7f90-8000-000000000001",
+  "exported_at": "2026-10-13T21:40:00Z",
+  "external_refs": [
+    {
+      "external_ref_uid": "0199f2a5-4a64-7f90-8000-000000000101",
+      "provider": "tracera",
+      "instance_uid": "0199f2a5-4a64-7f90-8000-000000000010",
+      "external_kind": "change",
+      "external_id": "TASK-42",
+      "revision_state": "pinned",
+      "external_revision": "product-revision:7",
+      "content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "first_observed_at": "2026-10-13T20:00:00Z",
+      "last_verified_at": "2026-10-13T21:39:00Z"
+    },
+    {
+      "external_ref_uid": "0199f2a5-4a64-7f90-8000-000000000102",
+      "provider": "plane",
+      "instance_uid": "0199f2a5-4a64-7f90-8000-000000000011",
+      "external_kind": "work_item",
+      "external_id": "TASK-42",
+      "revision_state": "provider_has_no_revision",
+      "external_url": "https://example.invalid/work-items/TASK-42",
+      "first_observed_at": "2026-10-13T20:05:00Z",
+      "last_verified_at": "2026-10-13T21:39:00Z"
+    }
+  ],
+  "external_links": [
+    {
+      "link_uid": "0199f2a5-4a64-7f90-8000-000000000201",
+      "project_uid": "0199f2a5-4a64-7f90-8000-000000000001",
+      "local_kind": "work_package",
+      "local_uid": "0199f2a5-4a64-7f90-8000-000000000003",
+      "external_ref_uid": "0199f2a5-4a64-7f90-8000-000000000101",
+      "relation": "implements",
+      "direction": "bidirectional_projection",
+      "authority_domain": "product",
+      "conflict_state": "none",
+      "created_at": "2026-10-13T20:10:00Z"
+    },
+    {
+      "link_uid": "0199f2a5-4a64-7f90-8000-000000000202",
+      "project_uid": "0199f2a5-4a64-7f90-8000-000000000001",
+      "local_kind": "work_package",
+      "local_uid": "0199f2a5-4a64-7f90-8000-000000000003",
+      "external_ref_uid": "0199f2a5-4a64-7f90-8000-000000000102",
+      "relation": "tracked_by",
+      "direction": "bidirectional_projection",
+      "authority_domain": "planning",
+      "conflict_state": "none",
+      "created_at": "2026-10-13T20:11:00Z"
+    },
+    {
+      "link_uid": "0199f2a5-4a64-7f90-8000-000000000203",
+      "project_uid": "0199f2a5-4a64-7f90-8000-000000000001",
+      "local_kind": "work_package",
+      "local_uid": "0199f2a5-4a64-7f90-8000-000000000004",
+      "external_ref_uid": "0199f2a5-4a64-7f90-8000-000000000102",
+      "relation": "tracked_by",
+      "direction": "bidirectional_projection",
+      "authority_domain": "planning",
+      "conflict_state": "none",
+      "created_at": "2026-10-13T20:12:00Z"
+    }
+  ]
+}
