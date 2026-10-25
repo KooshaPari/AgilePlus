@@ -158,7 +158,11 @@ prost-build = "0.14"
 async-trait = "0.1"
 
 # Templating
-askama = "0.16"
+# `config` is intentionally disabled: it pulls in the unmaintained
+# basic-toml crate (RUSTSEC-2026-0374) solely to read an optional
+# askama.toml. Templates live in each crate's own `templates/` directory,
+# which is askama's built-in default location, so no config file is needed.
+askama = { version = "0.16", default-features = false, features = ["derive", "std"] }
 
 # Plugin crates (external from separate repos) — disabled for standalone build
 # agileplus-plugin-core = { git = "https://github.com/KooshaPari/agileplus-plugin-core" }
