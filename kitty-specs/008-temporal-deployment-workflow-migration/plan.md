@@ -17,11 +17,13 @@ Big Bang migration of all NATS JetStream workflow logic to Temporal (critical) +
 ---
 
 #### WP01: Temporal Docker Compose Deployment
+
 **ID**: 1 | **Wave**: 0 | **Dependencies**: none
 
 Deploy Temporal as a Docker Compose stack on Hetzner AX101.
 
 **Tasks**:
+
 - Write `temporal/docker-compose.yml` with: temporal-auto-setup, postgres:16, elasticsearch:8.14
 - Configure Temporal ports: gRPC 7233, Frontend 8233
 - Configure Postgres backend with schema initialization
@@ -33,6 +35,7 @@ Deploy Temporal as a Docker Compose stack on Hetzner AX101.
 - Test: `curl` health endpoints, Temporal Web UI accessible at `:8233`
 
 **Acceptance Criteria**:
+
 - Temporal Web UI is reachable at `https://temporal.internal:8233`
 - Temporal gRPC endpoint responds at `temporal.internal:7233`
 - Elasticsearch is reachable and returning cluster health
@@ -42,11 +45,13 @@ Deploy Temporal as a Docker Compose stack on Hetzner AX101.
 ---
 
 #### WP02: Temporal Worker SDK Integration
+
 **ID**: 2 | **Wave**: 0 | **Dependencies**: WP01
 
 Integrate Temporal SDK into the existing codebase. Rust primary.
 
 **Tasks**:
+
 - Add Temporal Rust SDK (`temporal-sdk`) as a workspace dependency in the relevant crate
 - Write a minimal `temporal_worker.rs` module: connects to Temporal, registers a dummy workflow and activity
 - Implement a `workflow_result!` macro or wrapper for converting existing workflow logic into Temporal workflows
@@ -58,6 +63,7 @@ Integrate Temporal SDK into the existing codebase. Rust primary.
 - Test: worker process starts, connects to Temporal, polls tasks
 
 **Acceptance Criteria**:
+
 - Worker process starts and connects to Temporal without errors
 - Dummy workflow appears in Temporal Web UI when triggered via `tctl workflow start`
 - Worker logs show activity polling every 10 seconds
@@ -70,17 +76,19 @@ Integrate Temporal SDK into the existing codebase. Rust primary.
 ---
 
 #### WP03: Agent Dispatch Workflow Migration
+
 **ID**: 3 | **Wave**: 1 | **Dependencies**: WP02
 
 Migrate the primary agent task dispatch workflow from NATS JetStream to Temporal.
 
 **Tasks**:
+
 - Audit existing NATS agent dispatch queue: identify all subjects, consumers, and retry logic
 - Map each NATS dispatch step to a Temporal activity:
-  - `validate_task` (activity with 30s timeout)
-  - `dispatch_to_agent` (activity with 60min timeout, heartbeat every 60s)
-  - `collect_agent_result` (activity with 30min timeout, heartbeat every 60s)
-  - `notify_completion` (activity with 30s timeout)
+    - `validate_task` (activity with 30s timeout)
+    - `dispatch_to_agent` (activity with 60min timeout, heartbeat every 60s)
+    - `collect_agent_result` (activity with 30min timeout, heartbeat every 60s)
+    - `notify_completion` (activity with 30s timeout)
 - Write retry policies: exponential backoff, max 3 retries, non-retryable on validation errors
 - Write heartbeat timeout: if agent step misses 3 heartbeats, fail and retry
 - Add saga compensation: on final failure, emit a failure signal to the agent
@@ -92,6 +100,7 @@ Migrate the primary agent task dispatch workflow from NATS JetStream to Temporal
 - Test crash recovery: kill worker mid-workflow, verify resume
 
 **Acceptance Criteria**:
+
 - Agent dispatch workflow completes all 4 steps when run end-to-end
 - Simulated agent crash (timeout) triggers retry with exponential backoff
 - Workflow state is visible in Temporal Web UI with step-by-step timeline
@@ -101,25 +110,28 @@ Migrate the primary agent task dispatch workflow from NATS JetStream to Temporal
 ---
 
 #### WP04: CI Pipeline Workflow Migration to Hatchet
+
 **ID**: 4 | **Wave**: 1 | **Dependencies**: WP01
 
 Deploy Hatchet and migrate CI pipeline trigger workflows.
 
 **Tasks**:
+
 - Write Hatchet `docker-compose.yml`: hatchet server, postgres backend (can reuse existing Postgres)
 - Configure Hatchet API on port 8080, dashboard on port 8081
 - Wire Hatchet behind Caddy with `hatchet.internal` subdomain
 - Add Hatchet to process-compose.yml
 - Register a Hatchet worker process: connects to Hatchet server, registers workflow step handlers
 - Write CI pipeline workflow in Hatchet YAML or code:
-  - Trigger: GitHub webhook received
-  - Steps: checkout → lint → test → build → notify
-  - Concurrency limit: 5 concurrent runs
-  - Retry: exponential backoff, max 3 attempts
+    - Trigger: GitHub webhook received
+    - Steps: checkout → lint → test → build → notify
+    - Concurrency limit: 5 concurrent runs
+    - Retry: exponential backoff, max 3 attempts
 - Configure Hatchet dashboard for non-technical user visibility
 - Test: send GitHub webhook, observe workflow in Hatchet dashboard, verify all steps execute
 
 **Acceptance Criteria**:
+
 - Hatchet dashboard is reachable at `https://hatchet.internal`
 - GitHub webhook triggers a workflow run visible in Hatchet dashboard within 30 seconds
 - Workflow steps execute in order with retry on failure
@@ -129,16 +141,18 @@ Deploy Hatchet and migrate CI pipeline trigger workflows.
 ---
 
 #### WP05: Data Sync Workflow Migration to Hatchet
+
 **ID**: 5 | **Wave**: 1 | **Dependencies**: WP04
 
 Migrate data synchronization pipeline workflows from NATS to Hatchet.
 
 **Tasks**:
+
 - Audit existing NATS data sync consumers: identify sources, destinations, and sync intervals
 - Define Hatchet workflows for each sync pipeline:
-  - Sync scope: source → transform → destination
-  - Schedule: cron-based (hourly or daily)
-  - Concurrency: 1 per pipeline (no parallel runs for same pipeline)
+    - Sync scope: source → transform → destination
+    - Schedule: cron-based (hourly or daily)
+    - Concurrency: 1 per pipeline (no parallel runs for same pipeline)
 - Add retry logic: transient failures retry up to 3 times
 - Add alerting: if sync fails after all retries, emit alert to notification channel
 - Wire sync pipelines to Hatchet via the worker SDK
@@ -147,6 +161,7 @@ Migrate data synchronization pipeline workflows from NATS to Hatchet.
 - Set up monitoring: Hatchet dashboard shows sync history, success/failure rates
 
 **Acceptance Criteria**:
+
 - Scheduled sync workflows run automatically at configured cron intervals
 - Failed sync steps retry per retry policy and emit alerts after exhausting retries
 - Sync history is visible in Hatchet dashboard with timestamps and step durations
@@ -159,11 +174,13 @@ Migrate data synchronization pipeline workflows from NATS to Hatchet.
 ---
 
 #### WP06: Distributed Tracing Integration
+
 **ID**: 6 | **Wave**: 2 | **Dependencies**: WP03, WP05
 
 Emit OpenTelemetry traces from Temporal workflows to Jaeger.
 
 **Tasks**:
+
 - Add OpenTelemetry SDK to the worker process (Rust: `opentelemetry-sdk`, `opentelemetry_otlp`)
 - Configure OTLP exporter pointing to Jaeger endpoint
 - Add trace context propagation: Temporal workflow → activity → agent runtime → database
@@ -174,6 +191,7 @@ Emit OpenTelemetry traces from Temporal workflows to Jaeger.
 - Test: run a complete workflow, find its trace in Jaeger, verify span waterfall
 
 **Acceptance Criteria**:
+
 - Jaeger UI is reachable at `https://jaeger.internal`
 - Every Temporal workflow execution produces a trace in Jaeger
 - Traces show a waterfall: workflow root span → activity child spans → database child spans
@@ -183,31 +201,34 @@ Emit OpenTelemetry traces from Temporal workflows to Jaeger.
 ---
 
 #### WP07: SLO Monitoring Dashboard
+
 **ID**: 7 | **Wave**: 2 | **Dependencies**: WP06
 
 Create Grafana dashboards for workflow-level SLO monitoring.
 
 **Tasks**:
+
 - Add Temporal data source to Grafana (Prometheus scrape or Temporal's Prometheus metrics endpoint)
 - Create dashboard: "Temporal Workflow SLOs"
-  - Panel 1: Workflow completion rate (last 7 days, per workflow type)
-  - Panel 2: p50/p95/p99 latency per workflow type
-  - Panel 3: Error rate per workflow type
-  - Panel 4: In-progress workflows count (per workflow type)
+    - Panel 1: Workflow completion rate (last 7 days, per workflow type)
+    - Panel 2: p50/p95/p99 latency per workflow type
+    - Panel 3: Error rate per workflow type
+    - Panel 4: In-progress workflows count (per workflow type)
 - Create dashboard: "Hatchet Job Health"
-  - Panel 1: Job success rate per workflow
-  - Panel 2: Average duration per step
-  - Panel 3: Concurrency utilization (runs vs. limit)
-  - Panel 4: Failed job count with retry status
+    - Panel 1: Job success rate per workflow
+    - Panel 2: Average duration per step
+    - Panel 3: Concurrency utilization (runs vs. limit)
+    - Panel 4: Failed job count with retry status
 - Define SLO thresholds:
-  - Completion rate: 99.9%
-  - p99 latency: 5 minutes for agent dispatch
-  - Error rate: 0.1%
+    - Completion rate: 99.9%
+    - p99 latency: 5 minutes for agent dispatch
+    - Error rate: 0.1%
 - Configure Grafana alerting rules for SLO breach (5-minute window)
 - Wire alert to notification channel (Slack/webhook/NATS alert subject)
 - Add dashboards to Grafana provisioning (no manual dashboard creation)
 
 **Acceptance Criteria**:
+
 - Grafana is reachable at `https://grafana.internal`
 - Temporal SLO dashboard shows live data for all workflow types
 - Hatchet dashboard shows live data for all job types
@@ -218,24 +239,27 @@ Create Grafana dashboards for workflow-level SLO monitoring.
 ---
 
 #### WP08: Rollback Capability
+
 **ID**: 8 | **Wave**: 2 | **Dependencies**: WP03, WP04, WP05
 
 Ensure NATS can be restored as the workflow engine within 10 minutes of a critical failure.
 
 **Tasks**:
+
 - Create a git branch `rollback/nats-workflow-logic` containing the current NATS workflow implementation (all queue consumers and dispatch logic)
 - Verify the branch compiles and passes tests independently
 - Document the rollback procedure:
-  1. Toggle `USE_TEMPORAL=false` env var in process-compose
-  2. Restart NATS JetStream consumer services
-  3. Verify NATS workflows are accepting new work via test dispatch
-  4. Monitor for 1 hour before proceeding
+    1. Toggle `USE_TEMPORAL=false` env var in process-compose
+    2. Restart NATS JetStream consumer services
+    3. Verify NATS workflows are accepting new work via test dispatch
+    4. Monitor for 1 hour before proceeding
 - Implement rollback toggle as a feature flag: `WORKFLOW_ENGINE=temporal|hatchet|nats`
 - All dispatch clients read `WORKFLOW_ENGINE` and route accordingly
 - Verify rollback works: start a NATS workflow, toggle to Temporal, verify Temporal picks up new work
 - Test: simulate Temporal outage, trigger rollback, verify NATS resumes within 10 minutes
 
 **Acceptance Criteria**:
+
 - Git branch `rollback/nats-workflow-logic` exists and builds cleanly
 - Rollback procedure documented in `docs/ROLLBACK.md`
 - Feature flag `WORKFLOW_ENGINE` routes all dispatch to Temporal when set to `temporal`
@@ -249,11 +273,13 @@ Ensure NATS can be restored as the workflow engine within 10 minutes of a critic
 ---
 
 #### WP09: NATS Workflow Logic Removal
+
 **ID**: 9 | **Wave**: 3 | **Dependencies**: WP03, WP04, WP05, WP07, WP08
 
 Remove all workflow and queue logic from NATS JetStream. Retain only pub/sub for non-critical events.
 
 **Tasks**:
+
 - Audit all NATS subjects and consumers across all services
 - For each queue consumer: verify equivalent Temporal or Hatchet workflow is running and handling the same work
 - For each consumer: remove the consumer, mark subject as pub/sub only
@@ -265,6 +291,7 @@ Remove all workflow and queue logic from NATS JetStream. Retain only pub/sub for
 - Add Grafana panel: NATS message throughput (retained pub/sub subjects only)
 
 **Acceptance Criteria**:
+
 - No NATS queue consumers exist in the deployment
 - No workflow dispatch logic remains in any service connecting to NATS
 - Test events on retained NATS subjects result in no workflow actions
@@ -274,11 +301,13 @@ Remove all workflow and queue logic from NATS JetStream. Retain only pub/sub for
 ---
 
 #### WP10: 48-Hour Dual-Write Observation
+
 **ID**: 10 | **Wave**: 3 | **Dependencies**: WP09
 
 Run a 48-hour observation period monitoring for dispatch discrepancies between the old NATS behavior and new Temporal/Hatchet behavior.
 
 **Tasks**:
+
 - Enable dual-write mode: all dispatch calls write to both NATS (frozen) and Temporal/Hatchet
 - Build a discrepancy monitor: query Temporal/Hatchet for completed work, compare against NATS activity log
 - Run the monitor as a scheduled job every 15 minutes for 48 hours
@@ -288,6 +317,7 @@ Run a 48-hour observation period monitoring for dispatch discrepancies between t
 - If discrepancies found: execute rollback procedure (WP08)
 
 **Acceptance Criteria**:
+
 - Dual-write mode active for 48 continuous hours
 - Discrepancy monitor runs every 15 minutes without error
 - Zero discrepancies detected over 48 hours confirms successful migration
@@ -301,17 +331,19 @@ Run a 48-hour observation period monitoring for dispatch discrepancies between t
 ---
 
 #### WP11: Documentation and Runbooks
+
 **ID**: 11 | **Wave**: 4 | **Dependencies**: WP10
 
 Complete documentation for the new infrastructure.
 
 **Tasks**:
+
 - Write `docs/temporal/DEPLOYMENT.md`: how to deploy Temporal on a fresh Hetzner install
 - Write `docs/temporal/TROUBLESHOOTING.md`: common failures and remediation
-  - Worker not connecting to Temporal
-  - Workflow stuck in pending
-  - Elasticsearch out of disk space
-  - Temporal server OOM on AX101
+    - Worker not connecting to Temporal
+    - Workflow stuck in pending
+    - Elasticsearch out of disk space
+    - Temporal server OOM on AX101
 - Write `docs/temporal/WORKFLOW_AUTHORING.md`: how to write new Temporal workflows (activity registration, retry policies, heartbeat patterns)
 - Write `docs/hatchet/DEPLOYMENT.md`: how to deploy Hatchet
 - Write `docs/hatchet/AUTHORING.md`: how to write new Hatchet workflows and cron triggers
@@ -320,6 +352,7 @@ Complete documentation for the new infrastructure.
 - Update `process-compose.yml` comments to reflect new service responsibilities
 
 **Acceptance Criteria**:
+
 - All 6 runbooks/documents exist and are accurate
 - A new engineer can deploy Temporal from scratch using DEPLOYMENT.md alone
 - TROUBLESHOOTING.md covers at least 10 common failure scenarios
@@ -328,11 +361,13 @@ Complete documentation for the new infrastructure.
 ---
 
 #### WP12: Capacity Planning and AX101 Resource Audit
+
 **ID**: 12 | **Wave**: 4 | **Dependencies**: WP01
 
 Profile actual resource usage on the AX101 and verify all services fit within headroom.
 
 **Tasks**:
+
 - Measure RAM usage at baseline: Temporal + Elasticsearch + Postgres + Hatchet + existing services
 - Measure RAM under load: run 10 concurrent workflows, observe peak RAM
 - Measure CPU utilization at baseline and under load
@@ -344,6 +379,7 @@ Profile actual resource usage on the AX101 and verify all services fit within he
 - Document resource allocation per service on AX101
 
 **Acceptance Criteria**:
+
 - All services have resource limits set in docker-compose.yml
 - RAM usage at peak load stays below 56GB (leaving 8GB headroom for OS and kernel)
 - Elasticsearch index retention policy is set (default: 30-day rolling window)
@@ -379,34 +415,34 @@ WP01 → WP02 → WP03 → WP06 → WP07 → WP08 → WP09 → WP10 → WP11
 
 ## Dependency Graph
 
-| WP | Depends On | Blocks |
-|----|-----------|--------|
-| WP01 | — | WP02, WP03, WP12 |
-| WP02 | WP01 | WP03 |
-| WP03 | WP02 | WP06, WP08 |
-| WP04 | WP01 | WP05, WP08 |
-| WP05 | WP04 | WP08 |
-| WP06 | WP03 | WP07 |
-| WP07 | WP06 | WP08 |
-| WP08 | WP03, WP04, WP05 | WP09 |
-| WP09 | WP07, WP08 | WP10 |
-| WP10 | WP09 | WP11 |
-| WP11 | WP10 | — |
-| WP12 | WP01 | — (revisit after real usage) |
+| WP   | Depends On       | Blocks                       |
+| ---- | ---------------- | ---------------------------- |
+| WP01 | —                | WP02, WP03, WP12             |
+| WP02 | WP01             | WP03                         |
+| WP03 | WP02             | WP06, WP08                   |
+| WP04 | WP01             | WP05, WP08                   |
+| WP05 | WP04             | WP08                         |
+| WP06 | WP03             | WP07                         |
+| WP07 | WP06             | WP08                         |
+| WP08 | WP03, WP04, WP05 | WP09                         |
+| WP09 | WP07, WP08       | WP10                         |
+| WP10 | WP09             | WP11                         |
+| WP11 | WP10             | —                            |
+| WP12 | WP01             | — (revisit after real usage) |
 
 ---
 
 ## Success Criteria (from spec.md, mapped to WPs)
 
-| SC | Criterion | WP(s) |
-|----|-----------|--------|
-| SC-001 | Workflows survive restart (100% resume) | WP03 |
-| SC-002 | p99 latency < 5 min | WP07 |
-| SC-003 | 99.9% completion rate | WP07 |
-| SC-004 | Traces available in 60s | WP06 |
-| SC-005 | Zero workflow logic in NATS | WP09 |
-| SC-006 | Hatchet first step < 30s | WP04 |
-| SC-007 | Rollback in 10 min | WP08 |
-| SC-008 | SLO alerts fire on breach | WP07 |
-| SC-009 | 100% trace coverage | WP06 |
-| SC-010 | 48h zero discrepancies | WP10 |
+| SC     | Criterion                               | WP(s) |
+| ------ | --------------------------------------- | ----- |
+| SC-001 | Workflows survive restart (100% resume) | WP03  |
+| SC-002 | p99 latency < 5 min                     | WP07  |
+| SC-003 | 99.9% completion rate                   | WP07  |
+| SC-004 | Traces available in 60s                 | WP06  |
+| SC-005 | Zero workflow logic in NATS             | WP09  |
+| SC-006 | Hatchet first step < 30s                | WP04  |
+| SC-007 | Rollback in 10 min                      | WP08  |
+| SC-008 | SLO alerts fire on breach               | WP07  |
+| SC-009 | 100% trace coverage                     | WP06  |
+| SC-010 | 48h zero discrepancies                  | WP10  |

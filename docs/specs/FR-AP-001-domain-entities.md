@@ -2,7 +2,7 @@
 
 **Status:** Draft  
 **Version:** 1.0  
-**Last Updated:** 2026-06-16  
+**Last Updated:** 2026-06-16
 
 ## Overview
 
@@ -16,14 +16,14 @@ This document specifies the SSOT (Single Source of Truth) for all AgilePlus doma
 
 ### Fields
 
-| Field | Type | Required | Constraints | Notes |
-|-------|------|----------|-------------|-------|
-| `id` | i64 | Yes | Primary key, auto-generated | Unique per system |
-| `slug` | String | Yes | `[a-z0-9-]+`, non-empty | URL-safe identifier; must be unique per system |
-| `name` | String | Yes | Non-empty, max 255 chars | Human-readable display name |
-| `description` | Option<String> | No | Max 2000 chars | Optional long-form description |
-| `created_at` | DateTime<Utc> | Yes | Immutable | System-generated timestamp |
-| `updated_at` | DateTime<Utc> | Yes | Mutable | System-updated timestamp |
+| Field         | Type           | Required | Constraints                 | Notes                                          |
+| ------------- | -------------- | -------- | --------------------------- | ---------------------------------------------- |
+| `id`          | i64            | Yes      | Primary key, auto-generated | Unique per system                              |
+| `slug`        | String         | Yes      | `[a-z0-9-]+`, non-empty     | URL-safe identifier; must be unique per system |
+| `name`        | String         | Yes      | Non-empty, max 255 chars    | Human-readable display name                    |
+| `description` | Option<String> | No       | Max 2000 chars              | Optional long-form description                 |
+| `created_at`  | DateTime<Utc>  | Yes      | Immutable                   | System-generated timestamp                     |
+| `updated_at`  | DateTime<Utc>  | Yes      | Mutable                     | System-updated timestamp                       |
 
 ### Validation Rules
 
@@ -48,17 +48,17 @@ This document specifies the SSOT (Single Source of Truth) for all AgilePlus doma
 
 ### Fields
 
-| Field | Type | Required | Constraints | Notes |
-|-------|------|----------|-------------|-------|
-| `id` | i64 | Yes | Primary key, auto-generated | Unique per system |
-| `project_id` | i64 | Yes | Foreign key | Must reference existing Project |
-| `title` | String | Yes | Non-empty, max 500 chars | Trimmed on construction |
-| `description` | Option<String> | No | Max 5000 chars | Optional narrative description |
-| `status` | EpicStatus | Yes | Enum value | Default: `Backlog` |
-| `owner_id` | Option<i64> | No | Foreign key to User | Optional epic owner/sponsor |
-| `requirement_id` | Option<String> | No | Max 100 chars | External traceability (e.g., Tracera FR ID) |
-| `created_at` | DateTime<Utc> | Yes | Immutable | System-generated |
-| `updated_at` | DateTime<Utc> | Yes | Mutable | System-updated |
+| Field            | Type           | Required | Constraints                 | Notes                                       |
+| ---------------- | -------------- | -------- | --------------------------- | ------------------------------------------- |
+| `id`             | i64            | Yes      | Primary key, auto-generated | Unique per system                           |
+| `project_id`     | i64            | Yes      | Foreign key                 | Must reference existing Project             |
+| `title`          | String         | Yes      | Non-empty, max 500 chars    | Trimmed on construction                     |
+| `description`    | Option<String> | No       | Max 5000 chars              | Optional narrative description              |
+| `status`         | EpicStatus     | Yes      | Enum value                  | Default: `Backlog`                          |
+| `owner_id`       | Option<i64>    | No       | Foreign key to User         | Optional epic owner/sponsor                 |
+| `requirement_id` | Option<String> | No       | Max 100 chars               | External traceability (e.g., Tracera FR ID) |
+| `created_at`     | DateTime<Utc>  | Yes      | Immutable                   | System-generated                            |
+| `updated_at`     | DateTime<Utc>  | Yes      | Mutable                     | System-updated                              |
 
 ### Lifecycle States
 
@@ -69,13 +69,13 @@ Active -> Cancelled
 Review -> Active (reopen)
 ```
 
-| State | Meaning | Terminal? |
-|-------|---------|-----------|
-| `Backlog` | Epic created but not started | No |
-| `Active` | Epic currently in execution | No |
-| `Review` | Epic complete, awaiting verification | No |
-| `Done` | Epic successfully completed | No |
-| `Cancelled` | Epic abandoned or deprioritized | Yes |
+| State       | Meaning                              | Terminal? |
+| ----------- | ------------------------------------ | --------- |
+| `Backlog`   | Epic created but not started         | No        |
+| `Active`    | Epic currently in execution          | No        |
+| `Review`    | Epic complete, awaiting verification | No        |
+| `Done`      | Epic successfully completed          | No        |
+| `Cancelled` | Epic abandoned or deprioritized      | Yes       |
 
 ### Validation Rules
 
@@ -103,19 +103,19 @@ Review -> Active (reopen)
 
 ### Fields
 
-| Field | Type | Required | Constraints | Notes |
-|-------|------|----------|-------------|-------|
-| `id` | i64 | Yes | Primary key, auto-generated | Unique per system |
-| `epic_id` | i64 | Yes | Foreign key | Must reference existing Epic |
-| `project_id` | i64 | Yes | Foreign key (denormalized) | Copied from Epic for query efficiency |
-| `title` | String | Yes | Non-empty, max 500 chars | Trimmed on construction |
-| `description` | Option<String> | No | Max 5000 chars | User story narrative: "As a <role>, I want <goal> so that <benefit>" |
-| `status` | StoryStatus | Yes | Enum value | Default: `Todo` |
-| `points` | Option<u32> | No | > 0 when set | Story point estimate (Fibonacci/planning poker scale) |
-| `assignee_id` | Option<i64> | No | Foreign key to User | Developer/owner responsible for story |
-| `requirement_id` | Option<String> | No | Max 100 chars | External traceability (e.g., Tracera FR ID) |
-| `created_at` | DateTime<Utc> | Yes | Immutable | System-generated |
-| `updated_at` | DateTime<Utc> | Yes | Mutable | System-updated |
+| Field            | Type           | Required | Constraints                 | Notes                                                                |
+| ---------------- | -------------- | -------- | --------------------------- | -------------------------------------------------------------------- |
+| `id`             | i64            | Yes      | Primary key, auto-generated | Unique per system                                                    |
+| `epic_id`        | i64            | Yes      | Foreign key                 | Must reference existing Epic                                         |
+| `project_id`     | i64            | Yes      | Foreign key (denormalized)  | Copied from Epic for query efficiency                                |
+| `title`          | String         | Yes      | Non-empty, max 500 chars    | Trimmed on construction                                              |
+| `description`    | Option<String> | No       | Max 5000 chars              | User story narrative: "As a <role>, I want <goal> so that <benefit>" |
+| `status`         | StoryStatus    | Yes      | Enum value                  | Default: `Todo`                                                      |
+| `points`         | Option<u32>    | No       | > 0 when set                | Story point estimate (Fibonacci/planning poker scale)                |
+| `assignee_id`    | Option<i64>    | No       | Foreign key to User         | Developer/owner responsible for story                                |
+| `requirement_id` | Option<String> | No       | Max 100 chars               | External traceability (e.g., Tracera FR ID)                          |
+| `created_at`     | DateTime<Utc>  | Yes      | Immutable                   | System-generated                                                     |
+| `updated_at`     | DateTime<Utc>  | Yes      | Mutable                     | System-updated                                                       |
 
 ### Lifecycle States
 
@@ -127,14 +127,14 @@ Blocked -> InProgress
 Review -> InProgress (rework)
 ```
 
-| State | Meaning | Terminal? |
-|-------|---------|-----------|
-| `Todo` | Story not yet started | No |
-| `InProgress` | Story actively being worked | No |
-| `Review` | Story complete, awaiting verification | No |
-| `Done` | Story successfully completed | No |
-| `Blocked` | Story waiting on external dependency | No |
-| `Cancelled` | Story abandoned or out of scope | Yes |
+| State        | Meaning                               | Terminal? |
+| ------------ | ------------------------------------- | --------- |
+| `Todo`       | Story not yet started                 | No        |
+| `InProgress` | Story actively being worked           | No        |
+| `Review`     | Story complete, awaiting verification | No        |
+| `Done`       | Story successfully completed          | No        |
+| `Blocked`    | Story waiting on external dependency  | No        |
+| `Cancelled`  | Story abandoned or out of scope       | Yes       |
 
 ### Validation Rules
 
@@ -166,23 +166,23 @@ Review -> InProgress (rework)
 
 ### Fields
 
-| Field | Type | Required | Constraints | Notes |
-|-------|------|----------|-------------|-------|
-| `id` | i64 | Yes | Primary key, auto-generated | Unique per system |
-| `slug` | String | Yes | `[a-z0-9-]+`, non-empty | URL-safe feature identifier |
-| `friendly_name` | String | Yes | Non-empty, max 500 chars | Human-readable display name |
-| `state` | FeatureState | Yes | Enum value | Default: `Created` |
-| `spec_hash` | [u8; 32] | Yes | SHA256 hash | Content hash of specification document |
-| `target_branch` | String | Yes | Git branch name | Merge target (default: `main`) |
-| `plane_issue_id` | Option<String> | No | Max 100 chars | External issue tracker link (Plane) |
-| `plane_state_id` | Option<String> | No | Max 100 chars | External state sync ID (Plane) |
-| `labels` | Vec<String> | Yes | Variable length | Classification labels (type, domain, priority) |
-| `module_id` | Option<i64> | No | Foreign key | Optional containing module |
-| `project_id` | Option<i64> | No | Foreign key | Optional containing project |
-| `created_at_commit` | Option<String> | No | Git SHA | Commit where feature was created |
-| `last_modified_commit` | Option<String> | No | Git SHA | Latest commit modifying feature |
-| `created_at` | DateTime<Utc> | Yes | Immutable | System-generated |
-| `updated_at` | DateTime<Utc> | Yes | Mutable | System-updated |
+| Field                  | Type           | Required | Constraints                 | Notes                                          |
+| ---------------------- | -------------- | -------- | --------------------------- | ---------------------------------------------- |
+| `id`                   | i64            | Yes      | Primary key, auto-generated | Unique per system                              |
+| `slug`                 | String         | Yes      | `[a-z0-9-]+`, non-empty     | URL-safe feature identifier                    |
+| `friendly_name`        | String         | Yes      | Non-empty, max 500 chars    | Human-readable display name                    |
+| `state`                | FeatureState   | Yes      | Enum value                  | Default: `Created`                             |
+| `spec_hash`            | [u8; 32]       | Yes      | SHA256 hash                 | Content hash of specification document         |
+| `target_branch`        | String         | Yes      | Git branch name             | Merge target (default: `main`)                 |
+| `plane_issue_id`       | Option<String> | No       | Max 100 chars               | External issue tracker link (Plane)            |
+| `plane_state_id`       | Option<String> | No       | Max 100 chars               | External state sync ID (Plane)                 |
+| `labels`               | Vec<String>    | Yes      | Variable length             | Classification labels (type, domain, priority) |
+| `module_id`            | Option<i64>    | No       | Foreign key                 | Optional containing module                     |
+| `project_id`           | Option<i64>    | No       | Foreign key                 | Optional containing project                    |
+| `created_at_commit`    | Option<String> | No       | Git SHA                     | Commit where feature was created               |
+| `last_modified_commit` | Option<String> | No       | Git SHA                     | Latest commit modifying feature                |
+| `created_at`           | DateTime<Utc>  | Yes      | Immutable                   | System-generated                               |
+| `updated_at`           | DateTime<Utc>  | Yes      | Mutable                     | System-updated                                 |
 
 ### Lifecycle States
 
@@ -190,16 +190,16 @@ Review -> InProgress (rework)
 Created -> Specified -> Researched -> Planned -> Implementing -> Validated -> Shipped -> Retrospected (terminal)
 ```
 
-| State | Meaning | Terminal? |
-|-------|---------|-----------|
-| `Created` | Feature initialized, minimal spec | No |
-| `Specified` | Full specification document written | No |
-| `Researched` | Research/spike completed, risks identified | No |
-| `Planned` | Architecture and work packages defined | No |
-| `Implementing` | Development actively in progress | No |
-| `Validated` | Testing and verification complete | No |
-| `Shipped` | Merged to target branch and deployed | No |
-| `Retrospected` | Post-release review completed | Yes |
+| State          | Meaning                                    | Terminal? |
+| -------------- | ------------------------------------------ | --------- |
+| `Created`      | Feature initialized, minimal spec          | No        |
+| `Specified`    | Full specification document written        | No        |
+| `Researched`   | Research/spike completed, risks identified | No        |
+| `Planned`      | Architecture and work packages defined     | No        |
+| `Implementing` | Development actively in progress           | No        |
+| `Validated`    | Testing and verification complete          | No        |
+| `Shipped`      | Merged to target branch and deployed       | No        |
+| `Retrospected` | Post-release review completed              | Yes       |
 
 ### Validation Rules
 
@@ -229,24 +229,24 @@ Created -> Specified -> Researched -> Planned -> Implementing -> Validated -> Sh
 
 ### Fields
 
-| Field | Type | Required | Constraints | Notes |
-|-------|------|----------|-------------|-------|
-| `id` | i64 | Yes | Primary key, auto-generated | Unique per system |
-| `feature_id` | i64 | Yes | Foreign key | Must reference existing Feature |
-| `title` | String | Yes | Non-empty, max 500 chars | Work package name |
-| `state` | WpState | Yes | Enum value | Default: `Planned` |
-| `sequence` | i32 | Yes | Non-negative integer | Execution order within feature |
-| `file_scope` | Vec<String> | Yes | Variable length | Paths to affected source files |
-| `acceptance_criteria` | String | Yes | Non-empty, max 5000 chars | Concrete, verifiable completion criteria |
-| `agent_id` | Option<String> | No | Max 100 chars | Claude agent assigned to implement |
-| `pr_url` | Option<String> | No | Max 500 chars | Link to GitHub PR (if created) |
-| `pr_state` | Option<PrState> | No | Enum value | Current PR state (Open, Review, etc.) |
-| `worktree_path` | Option<String> | No | Max 500 chars | Git worktree path (local development) |
-| `plane_sub_issue_id` | Option<String> | No | Max 100 chars | External sub-issue ID (Plane) |
-| `base_commit` | Option<String> | No | Git SHA | PR base commit |
-| `head_commit` | Option<String> | No | Git SHA | PR head commit |
-| `created_at` | DateTime<Utc> | Yes | Immutable | System-generated |
-| `updated_at` | DateTime<Utc> | Yes | Mutable | System-updated |
+| Field                 | Type            | Required | Constraints                 | Notes                                    |
+| --------------------- | --------------- | -------- | --------------------------- | ---------------------------------------- |
+| `id`                  | i64             | Yes      | Primary key, auto-generated | Unique per system                        |
+| `feature_id`          | i64             | Yes      | Foreign key                 | Must reference existing Feature          |
+| `title`               | String          | Yes      | Non-empty, max 500 chars    | Work package name                        |
+| `state`               | WpState         | Yes      | Enum value                  | Default: `Planned`                       |
+| `sequence`            | i32             | Yes      | Non-negative integer        | Execution order within feature           |
+| `file_scope`          | Vec<String>     | Yes      | Variable length             | Paths to affected source files           |
+| `acceptance_criteria` | String          | Yes      | Non-empty, max 5000 chars   | Concrete, verifiable completion criteria |
+| `agent_id`            | Option<String>  | No       | Max 100 chars               | Claude agent assigned to implement       |
+| `pr_url`              | Option<String>  | No       | Max 500 chars               | Link to GitHub PR (if created)           |
+| `pr_state`            | Option<PrState> | No       | Enum value                  | Current PR state (Open, Review, etc.)    |
+| `worktree_path`       | Option<String>  | No       | Max 500 chars               | Git worktree path (local development)    |
+| `plane_sub_issue_id`  | Option<String>  | No       | Max 100 chars               | External sub-issue ID (Plane)            |
+| `base_commit`         | Option<String>  | No       | Git SHA                     | PR base commit                           |
+| `head_commit`         | Option<String>  | No       | Git SHA                     | PR head commit                           |
+| `created_at`          | DateTime<Utc>   | Yes      | Immutable                   | System-generated                         |
+| `updated_at`          | DateTime<Utc>   | Yes      | Mutable                     | System-updated                           |
 
 ### Lifecycle States
 
@@ -257,13 +257,13 @@ Planned -> Doing -> Review -> Done
         Review -> Doing (rework)
 ```
 
-| State | Meaning | Terminal? |
-|-------|---------|-----------|
-| `Planned` | Work package initialized, waiting to start | No |
-| `Doing` | Implementation actively in progress | No |
-| `Review` | Implementation complete, awaiting review | No |
-| `Done` | Work package complete and merged | Yes |
-| `Blocked` | Work blocked on external dependency/decision | No |
+| State     | Meaning                                      | Terminal? |
+| --------- | -------------------------------------------- | --------- |
+| `Planned` | Work package initialized, waiting to start   | No        |
+| `Doing`   | Implementation actively in progress          | No        |
+| `Review`  | Implementation complete, awaiting review     | No        |
+| `Done`    | Work package complete and merged             | Yes       |
+| `Blocked` | Work blocked on external dependency/decision | No        |
 
 ### Validation Rules
 
@@ -295,23 +295,23 @@ Planned -> Doing -> Review -> Done
 
 ### Fields
 
-| Field | Type | Required | Constraints | Notes |
-|-------|------|----------|-------------|-------|
-| `trace_id` | String | Yes | Max 100 chars | External artifact ID (e.g., "FR-001", UUID) |
-| `artifact_type` | String | Yes | Max 50 chars | Classification (see enum values below) |
-| `entity_id` | Uuid | Yes | Valid v4 UUID | AgilePlus domain entity (Epic, Story, Task, etc.) |
+| Field           | Type   | Required | Constraints   | Notes                                             |
+| --------------- | ------ | -------- | ------------- | ------------------------------------------------- |
+| `trace_id`      | String | Yes      | Max 100 chars | External artifact ID (e.g., "FR-001", UUID)       |
+| `artifact_type` | String | Yes      | Max 50 chars  | Classification (see enum values below)            |
+| `entity_id`     | Uuid   | Yes      | Valid v4 UUID | AgilePlus domain entity (Epic, Story, Task, etc.) |
 
 ### Artifact Type Enum
 
-| Type | Example | Meaning |
-|------|---------|---------|
-| `requirement` | FR-001, NFR-005 | Functional or non-functional requirement |
-| `specification` | SPEC-123 | Detailed specification document |
-| `evidence` | EV-042 | Test result, acceptance evidence, proof artifact |
-| `architecture` | ARCH-008 | System design document |
-| `test_case` | TC-101 | Test specification or automation |
-| `issue` | GH#1234, JIRA#456 | External issue tracker reference |
-| `commit` | abc1234def5678 | Git commit hash for traceability |
+| Type            | Example           | Meaning                                          |
+| --------------- | ----------------- | ------------------------------------------------ |
+| `requirement`   | FR-001, NFR-005   | Functional or non-functional requirement         |
+| `specification` | SPEC-123          | Detailed specification document                  |
+| `evidence`      | EV-042            | Test result, acceptance evidence, proof artifact |
+| `architecture`  | ARCH-008          | System design document                           |
+| `test_case`     | TC-101            | Test specification or automation                 |
+| `issue`         | GH#1234, JIRA#456 | External issue tracker reference                 |
+| `commit`        | abc1234def5678    | Git commit hash for traceability                 |
 
 ### Linking Rules
 
@@ -345,46 +345,46 @@ Planned -> Doing -> Review -> Done
 
 ### Fields
 
-| Field | Type | Required | Constraints | Notes |
-|-------|------|----------|-------------|-------|
-| `id` | i64 | Yes | Primary key, auto-generated | Unique per system |
-| `story_id` | i64 | Yes | Foreign key | Must reference existing Story |
-| `title` | String | Yes | Non-empty, max 500 chars | Contract name/version |
-| `criteria` | Vec<AcceptanceCriteria> | Yes | Non-empty | List of acceptance criteria (see below) |
-| `lifecycle_status` | ContractStatus | Yes | Enum value | Default: `Draft` |
-| `verified_count` | i32 | Yes | >= 0 | Count of verified criteria |
-| `total_count` | i32 | Yes | > 0 | Total criteria count |
-| `created_at` | DateTime<Utc> | Yes | Immutable | System-generated |
-| `updated_at` | DateTime<Utc> | Yes | Mutable | System-updated |
+| Field              | Type                    | Required | Constraints                 | Notes                                   |
+| ------------------ | ----------------------- | -------- | --------------------------- | --------------------------------------- |
+| `id`               | i64                     | Yes      | Primary key, auto-generated | Unique per system                       |
+| `story_id`         | i64                     | Yes      | Foreign key                 | Must reference existing Story           |
+| `title`            | String                  | Yes      | Non-empty, max 500 chars    | Contract name/version                   |
+| `criteria`         | Vec<AcceptanceCriteria> | Yes      | Non-empty                   | List of acceptance criteria (see below) |
+| `lifecycle_status` | ContractStatus          | Yes      | Enum value                  | Default: `Draft`                        |
+| `verified_count`   | i32                     | Yes      | >= 0                        | Count of verified criteria              |
+| `total_count`      | i32                     | Yes      | > 0                         | Total criteria count                    |
+| `created_at`       | DateTime<Utc>           | Yes      | Immutable                   | System-generated                        |
+| `updated_at`       | DateTime<Utc>           | Yes      | Mutable                     | System-updated                          |
 
 ### AcceptanceCriteria Substructure
 
-| Field | Type | Required | Constraints | Notes |
-|-------|------|----------|-------------|-------|
-| `id` | i64 | Yes | Primary key | Unique within contract |
-| `sequence` | i32 | Yes | Non-negative | Ordering within criteria list |
-| `criterion_text` | String | Yes | Non-empty, max 1000 chars | Human-readable acceptance criterion |
-| `verifiable` | bool | Yes | Always true | Criteria must be testable |
-| `trace_ref_ids` | Vec<String> | No | Variable length | Links to external evidence (Tracera) |
-| `verification_status` | VerificationStatus | Yes | Enum value | (see below) |
+| Field                 | Type               | Required | Constraints               | Notes                                |
+| --------------------- | ------------------ | -------- | ------------------------- | ------------------------------------ |
+| `id`                  | i64                | Yes      | Primary key               | Unique within contract               |
+| `sequence`            | i32                | Yes      | Non-negative              | Ordering within criteria list        |
+| `criterion_text`      | String             | Yes      | Non-empty, max 1000 chars | Human-readable acceptance criterion  |
+| `verifiable`          | bool               | Yes      | Always true               | Criteria must be testable            |
+| `trace_ref_ids`       | Vec<String>        | No       | Variable length           | Links to external evidence (Tracera) |
+| `verification_status` | VerificationStatus | Yes      | Enum value                | (see below)                          |
 
 ### Contract Lifecycle Status
 
-| Status | Meaning | Terminal? |
-|--------|---------|-----------|
-| `Draft` | Contract under construction | No |
-| `Active` | Contract ready for work (linked to story) | No |
-| `Verified` | All criteria verified; story can transition to Done | No |
-| `Archived` | Contract superseded or no longer active | Yes |
+| Status     | Meaning                                             | Terminal? |
+| ---------- | --------------------------------------------------- | --------- |
+| `Draft`    | Contract under construction                         | No        |
+| `Active`   | Contract ready for work (linked to story)           | No        |
+| `Verified` | All criteria verified; story can transition to Done | No        |
+| `Archived` | Contract superseded or no longer active             | Yes       |
 
 ### Verification Status
 
-| Status | Meaning |
-|--------|---------|
-| `Unverified` | Criterion not yet checked |
-| `Pending` | Verification in progress |
-| `Verified` | Criterion confirmed satisfied |
-| `Failed` | Criterion check failed; rework required |
+| Status       | Meaning                                 |
+| ------------ | --------------------------------------- |
+| `Unverified` | Criterion not yet checked               |
+| `Pending`    | Verification in progress                |
+| `Verified`   | Criterion confirmed satisfied           |
+| `Failed`     | Criterion check failed; rework required |
 
 ### Validation Rules
 

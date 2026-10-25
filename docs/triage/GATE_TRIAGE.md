@@ -4,19 +4,19 @@ Generated: 2026-06-25. Diagnosis based on workflow source + PR #805 (`gh pr chec
 
 ## Summary
 
-| Gate | Blocks merge? | Root cause | Fix class | Workflow fix applied? |
-|------|---------------|------------|-----------|----------------------|
-| Autograder | Advisory* | Clones missing private repo `<REDACTED>/phenoShared` before any Rust work | **(a) broken** | Yes — removed stale phenoShared checkout |
-| Conventional Commits | Advisory* | Commitlint `subject-case` rejects Title-Case subjects (e.g. `AgilePlus`) | **(b) comply** | No — authors must use lowercase subjects |
-| gitleaks scan | Advisory* | Invalid action pin `gitleaks/gitleaks-action@1c4d3b6…` (placeholder SHA); config path `.gitleaks.toml` vs `gitleaks.toml` | **(a) broken** | Yes — pin `@v2`, fix config path |
-| governance-index | Advisory* | `kitty-specs/INDEX.md` drifts from generator on every PR even when specs unchanged | **(a) broken** | Yes — PR path filter + skip verify when index unchanged |
-| guard | Advisory* | pre-commit `legacy-tooling-scan` expects local scanner/policy files that are not vendored | **(a) broken** | Yes — bootstrap scanner + policy before pre-commit |
-| policy-gate | **REQUIRED** | `fix/*` → `main` blocked unless `layered-pr-exception` label | **(b) comply** | No — intentional branch policy |
-| pr-governance-gate | **REQUIRED** | Requires PR template sections, layered targeting, all checks green | **(b) comply** | No — meta-gate; passes when other gates + body comply |
-| sonar | Advisory* | Empty `sonar-project.properties` — missing `sonar.projectKey` / `sonar.organization` | **(a) broken** | Yes — pass keys via workflow `args` |
-| SonarCloud | Advisory* | Same as `sonar` + needs org `SONAR_TOKEN` secret for authenticated analysis | **(c) user-gated** | Partial — keys in workflow; token must be set in repo settings |
-| spec-first | Advisory* | PR body must contain `spec: eco-NNN-slug` matching an active `kitty-specs/` entry | **(b) comply** | No — intentional traceability gate |
-| Workspace Path Dependency Audit | Advisory* | Same broken `phenoShared` clone as Autograder | **(a) broken** | Yes — removed stale phenoShared checkout |
+| Gate                            | Blocks merge? | Root cause                                                                                                                | Fix class          | Workflow fix applied?                                          |
+| ------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------ | -------------------------------------------------------------- |
+| Autograder                      | Advisory\*    | Clones missing private repo `<REDACTED>/phenoShared` before any Rust work                                                 | **(a) broken**     | Yes — removed stale phenoShared checkout                       |
+| Conventional Commits            | Advisory\*    | Commitlint `subject-case` rejects Title-Case subjects (e.g. `AgilePlus`)                                                  | **(b) comply**     | No — authors must use lowercase subjects                       |
+| gitleaks scan                   | Advisory\*    | Invalid action pin `gitleaks/gitleaks-action@1c4d3b6…` (placeholder SHA); config path `.gitleaks.toml` vs `gitleaks.toml` | **(a) broken**     | Yes — pin `@v2`, fix config path                               |
+| governance-index                | Advisory\*    | `kitty-specs/INDEX.md` drifts from generator on every PR even when specs unchanged                                        | **(a) broken**     | Yes — PR path filter + skip verify when index unchanged        |
+| guard                           | Advisory\*    | pre-commit `legacy-tooling-scan` expects local scanner/policy files that are not vendored                                 | **(a) broken**     | Yes — bootstrap scanner + policy before pre-commit             |
+| policy-gate                     | **REQUIRED**  | `fix/*` → `main` blocked unless `layered-pr-exception` label                                                              | **(b) comply**     | No — intentional branch policy                                 |
+| pr-governance-gate              | **REQUIRED**  | Requires PR template sections, layered targeting, all checks green                                                        | **(b) comply**     | No — meta-gate; passes when other gates + body comply          |
+| sonar                           | Advisory\*    | Empty `sonar-project.properties` — missing `sonar.projectKey` / `sonar.organization`                                      | **(a) broken**     | Yes — pass keys via workflow `args`                            |
+| SonarCloud                      | Advisory\*    | Same as `sonar` + needs org `SONAR_TOKEN` secret for authenticated analysis                                               | **(c) user-gated** | Partial — keys in workflow; token must be set in repo settings |
+| spec-first                      | Advisory\*    | PR body must contain `spec: eco-NNN-slug` matching an active `kitty-specs/` entry                                         | **(b) comply**     | No — intentional traceability gate                             |
+| Workspace Path Dependency Audit | Advisory\*    | Same broken `phenoShared` clone as Autograder                                                                             | **(a) broken**     | Yes — removed stale phenoShared checkout                       |
 
 \*Not listed in `.github/RULESET_BASELINE.md` required checks (`policy-gate`, `pr-governance-gate`, `verify`, `semgrep`, `secrets`, `lint-rust`, `license-check`). Still surfaces as red on PRs and is aggregated by `pr-governance-gate`.
 
@@ -25,7 +25,7 @@ Generated: 2026-06-25. Diagnosis based on workflow source + PR #805 (`gh pr chec
 ### Autograder (`autograder.yml`)
 
 - **Required vs advisory:** Advisory for ruleset baseline; fails on every PR today.
-- **Why it fails:** Step `Checkout phenoShared sibling` clones `https://github.com/KooshaPari/phenoShared.git`, which returns *Repository not found* for `GITHUB_TOKEN`. Workspace `Cargo.toml` only lists member `rust` — no phenoShared path dependency.
+- **Why it fails:** Step `Checkout phenoShared sibling` clones `https://github.com/KooshaPari/phenoShared.git`, which returns _Repository not found_ for `GITHUB_TOKEN`. Workspace `Cargo.toml` only lists member `rust` — no phenoShared path dependency.
 - **Fix class:** **(a) broken** — stale clone from pre–workspace-cleanup layout.
 - **Repair:** Remove phenoShared checkout step.
 

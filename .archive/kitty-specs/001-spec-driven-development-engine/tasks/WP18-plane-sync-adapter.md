@@ -3,28 +3,28 @@ work_package_id: WP18
 title: Plane.so Sync Adapter (agileplus-integrations)
 lane: "done"
 dependencies:
-- WP17
+    - WP17
 base_branch: 001-spec-driven-development-engine-WP17
 base_commit: 2df69d4d7fa7363fc68caade1ca49438eb272f15
-created_at: '2026-02-28T13:25:19.519790+00:00'
+created_at: "2026-02-28T13:25:19.519790+00:00"
 subtasks:
-- T104
-- T105
-- T106
-- T107
-- T108
+    - T104
+    - T105
+    - T106
+    - T107
+    - T108
 phase: Phase 5 - Triage, Sync & Sub-Commands
-assignee: ''
+assignee: ""
 agent: "claude-opus"
 shell_pid: "78530"
 review_status: "approved"
 reviewed_by: "Koosha Paridehpour"
 history:
-- timestamp: '2026-02-27T00:00:00Z'
-  lane: planned
-  agent: system
-  shell_pid: ''
-  action: Prompt generated via /spec-kitty.tasks
+    - timestamp: "2026-02-27T00:00:00Z"
+      lane: planned
+      agent: system
+      shell_pid: ""
+      action: Prompt generated via /spec-kitty.tasks
 ---
 
 # WP18 — Plane.so Sync Adapter (agileplus-integrations)
@@ -58,11 +58,11 @@ All outbound HTTP calls must go through the client struct; no `reqwest` calls ma
 - Authentication: `X-API-Key: <token>` header on every request.
 - Workspace and project are identified by slug, not UUID, in the URL path.
 - Relevant endpoints:
-  - `POST /workspaces/{workspace_slug}/projects/{project_slug}/issues/` — create issue
-  - `PATCH /workspaces/{workspace_slug}/projects/{project_slug}/issues/{issue_id}/` — update issue
-  - `GET /workspaces/{workspace_slug}/projects/{project_slug}/issues/{issue_id}/` — get issue
-  - `GET /workspaces/{workspace_slug}/projects/{project_slug}/issues/?updated_at__gt={iso8601}` — list issues updated since timestamp
-  - Sub-issues are created as issues with a `parent` field set to the parent issue ID.
+    - `POST /workspaces/{workspace_slug}/projects/{project_slug}/issues/` — create issue
+    - `PATCH /workspaces/{workspace_slug}/projects/{project_slug}/issues/{issue_id}/` — update issue
+    - `GET /workspaces/{workspace_slug}/projects/{project_slug}/issues/{issue_id}/` — get issue
+    - `GET /workspaces/{workspace_slug}/projects/{project_slug}/issues/?updated_at__gt={iso8601}` — list issues updated since timestamp
+    - Sub-issues are created as issues with a `parent` field set to the parent issue ID.
 - Rate limits: 60 requests/minute on the free tier; 600 requests/minute on paid. The adapter must not exceed 50 requests/minute to leave headroom for manual usage.
 - Plane.so issue states are workspace-level and referenced by UUID. The adapter maps AgilePlus states to Plane.so state UUIDs via a config-supplied mapping.
 
@@ -276,20 +276,20 @@ CREATE TABLE IF NOT EXISTS plane_sync_state (
 1. Look up `plane_sync_state` for `(entity_type='feature', entity_id=feature.id)`.
 2. Map `feature.state` to a Plane.so state UUID via `PlaneConfig::state_map`. If no mapping exists, use a configured default UUID or return `Err(PlaneError::NotFound(...))`.
 3. If no existing `plane_issue_id`:
-   - Call `client.create_issue(CreateIssueRequest { name: feature.title.clone(), state: plane_state_uuid, identifier: Some(feature.slug.clone()), parent: None })`.
-   - Insert row into `plane_sync_state`.
+    - Call `client.create_issue(CreateIssueRequest { name: feature.title.clone(), state: plane_state_uuid, identifier: Some(feature.slug.clone()), parent: None })`.
+    - Insert row into `plane_sync_state`.
 4. If `plane_issue_id` exists:
-   - Call `client.update_issue(plane_issue_id, UpdateIssueRequest { name: Some(feature.title.clone()), state: Some(plane_state_uuid), link: None })`.
-   - Update `last_synced_at` in `plane_sync_state`.
+    - Call `client.update_issue(plane_issue_id, UpdateIssueRequest { name: Some(feature.title.clone()), state: Some(plane_state_uuid), link: None })`.
+    - Update `last_synced_at` in `plane_sync_state`.
 5. Return `Ok(())`.
 
 **Field mapping**:
 
-| AgilePlus field | Plane.so field |
-|-----------------|----------------|
-| `feature.title` | `issue.name` |
+| AgilePlus field                        | Plane.so field       |
+| -------------------------------------- | -------------------- |
+| `feature.title`                        | `issue.name`         |
 | `feature.state` (mapped via state_map) | `issue.state` (UUID) |
-| `feature.slug` | `issue.identifier` |
+| `feature.slug`                         | `issue.identifier`   |
 
 ---
 
@@ -305,21 +305,21 @@ CREATE TABLE IF NOT EXISTS plane_sync_state (
 2. Resolve the parent feature's `plane_issue_id` from `plane_sync_state` (entity_type='feature', entity_id=wp.feature_id). If missing, sync the parent feature first, then retry. Limit to one retry; return error if still missing.
 3. Map `wp.state` to a Plane.so state UUID.
 4. If no existing `plane_issue_id`:
-   - Call `client.create_issue(CreateIssueRequest { name: wp.title.clone(), state: plane_state_uuid, identifier: None, parent: Some(parent_plane_issue_id) })`.
-   - Insert into `plane_sync_state`.
+    - Call `client.create_issue(CreateIssueRequest { name: wp.title.clone(), state: plane_state_uuid, identifier: None, parent: Some(parent_plane_issue_id) })`.
+    - Insert into `plane_sync_state`.
 5. If `plane_issue_id` exists:
-   - Build `UpdateIssueRequest`: include `name`, `state`, and `link = wp.pr_url.clone()` if `wp.pr_url` is `Some`.
-   - Call `client.update_issue`.
-   - Update `last_synced_at`.
+    - Build `UpdateIssueRequest`: include `name`, `state`, and `link = wp.pr_url.clone()` if `wp.pr_url` is `Some`.
+    - Call `client.update_issue`.
+    - Update `last_synced_at`.
 
 **Field mapping**:
 
-| AgilePlus field | Plane.so field |
-|-----------------|----------------|
-| `wp.title` | `sub-issue.name` |
+| AgilePlus field                   | Plane.so field           |
+| --------------------------------- | ------------------------ |
+| `wp.title`                        | `sub-issue.name`         |
 | `wp.state` (mapped via state_map) | `sub-issue.state` (UUID) |
-| `wp.pr_url` | `sub-issue.link` |
-| `parent feature's plane_issue_id` | `sub-issue.parent` |
+| `wp.pr_url`                       | `sub-issue.link`         |
+| `parent feature's plane_issue_id` | `sub-issue.parent`       |
 
 ---
 
@@ -389,30 +389,30 @@ Add dev-dependencies: `wiremock`, `tokio` (features: `macros`, `rt-multi-thread`
 
 ## Validation Criteria
 
-| Criterion | Pass Condition |
-|-----------|----------------|
-| Compilation | `cargo build -p agileplus-plane` exits 0 |
-| Lint | `cargo clippy -p agileplus-plane -- -D warnings` exits 0 |
-| Unit tests | All inline `#[cfg(test)]` tests pass |
-| Integration tests | All 6 wiremock-based tests in `tests/integration.rs` pass |
-| Idempotency | Running `sync_feature` twice on the same feature results in exactly one row in `plane_sync_state` and one PATCH call (not two POSTs) |
-| Rate limiter | Token bucket never permits more than 50 requests/minute in load test |
-| Conflict safety | `detect_conflicts` never calls any Plane.so write endpoint |
-| API key security | No API key appears in log output at any log level |
+| Criterion         | Pass Condition                                                                                                                       |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Compilation       | `cargo build -p agileplus-plane` exits 0                                                                                             |
+| Lint              | `cargo clippy -p agileplus-plane -- -D warnings` exits 0                                                                             |
+| Unit tests        | All inline `#[cfg(test)]` tests pass                                                                                                 |
+| Integration tests | All 6 wiremock-based tests in `tests/integration.rs` pass                                                                            |
+| Idempotency       | Running `sync_feature` twice on the same feature results in exactly one row in `plane_sync_state` and one PATCH call (not two POSTs) |
+| Rate limiter      | Token bucket never permits more than 50 requests/minute in load test                                                                 |
+| Conflict safety   | `detect_conflicts` never calls any Plane.so write endpoint                                                                           |
+| API key security  | No API key appears in log output at any log level                                                                                    |
 
 ---
 
 ## Risks & Mitigations
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| Plane.so API schema changes (new required fields, renamed endpoints) | Medium | High | Pin API version in base URL (e.g., `/api/v1/`); add integration test that validates response deserialization; monitor Plane.so changelog |
-| API rate limit exceeded on bulk sync | Medium | Medium | Token bucket rate limiter capped at 50/min; bulk sync operations should be batched with `tokio::time::sleep` between batches |
-| State UUID mapping missing for new AgilePlus states | Medium | Medium | Return `PlaneError::NotFound` with descriptive message; document required `state_map` entries in `ProjectConfig` |
-| `plane_sync_state` table grows unboundedly | Low | Low | Add a `VACUUM` / prune step in a future WP; not blocking for WP18 |
-| Wiremock tests flaky due to port conflicts | Low | Low | Use `wiremock::MockServer::start().await` which binds to a random available port |
-| Credential store unavailable at test time | Low | High | Integration tests use a hardcoded test API key string, never the real credential store; unit tests mock `PlaneClientPort` |
-| reqwest TLS errors in CI environments | Low | Medium | Use `rustls-tls` feature instead of native TLS; document in `Cargo.toml` comment |
+| Risk                                                                 | Likelihood | Impact | Mitigation                                                                                                                               |
+| -------------------------------------------------------------------- | ---------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Plane.so API schema changes (new required fields, renamed endpoints) | Medium     | High   | Pin API version in base URL (e.g., `/api/v1/`); add integration test that validates response deserialization; monitor Plane.so changelog |
+| API rate limit exceeded on bulk sync                                 | Medium     | Medium | Token bucket rate limiter capped at 50/min; bulk sync operations should be batched with `tokio::time::sleep` between batches             |
+| State UUID mapping missing for new AgilePlus states                  | Medium     | Medium | Return `PlaneError::NotFound` with descriptive message; document required `state_map` entries in `ProjectConfig`                         |
+| `plane_sync_state` table grows unboundedly                           | Low        | Low    | Add a `VACUUM` / prune step in a future WP; not blocking for WP18                                                                        |
+| Wiremock tests flaky due to port conflicts                           | Low        | Low    | Use `wiremock::MockServer::start().await` which binds to a random available port                                                         |
+| Credential store unavailable at test time                            | Low        | High   | Integration tests use a hardcoded test API key string, never the real credential store; unit tests mock `PlaneClientPort`                |
+| reqwest TLS errors in CI environments                                | Low        | Medium | Use `rustls-tls` feature instead of native TLS; document in `Cargo.toml` comment                                                         |
 
 ---
 
@@ -435,12 +435,13 @@ The reviewer should:
 
 ```yaml
 history:
-- timestamp: '2026-02-27T00:00:00Z'
-  lane: planned
-  agent: system
-  shell_pid: ''
-  action: Prompt generated via /spec-kitty.tasks
+    - timestamp: "2026-02-27T00:00:00Z"
+      lane: planned
+      agent: system
+      shell_pid: ""
+      action: Prompt generated via /spec-kitty.tasks
 ```
+
 - 2026-02-28T13:25:19Z – claude-opus – shell_pid=40452 – lane=doing – Assigned agent via workflow command
 - 2026-02-28T13:31:05Z – claude-opus – shell_pid=40452 – lane=for_review – Plane sync crate: client, sync, conflict detection. 6 tests.
 - 2026-02-28T23:22:00Z – claude-opus – shell_pid=78530 – lane=doing – Started review via workflow command

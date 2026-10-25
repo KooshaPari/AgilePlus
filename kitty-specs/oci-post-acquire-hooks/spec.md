@@ -19,6 +19,7 @@ This spec backfills the design intent for the universal post-acquire hook chain 
 ## Problem Statement
 
 A newly acquired OCI host has no identity, no overlay-network membership, no baseline config, and no presence in operator-facing surfaces. Without an idempotent, observable post-acquire chain:
+
 - Manual onboarding diverges from machine to machine
 - Re-running steps risks duplicate DNS records, duplicate Tailscale enrollments, etc.
 - Failures mid-chain leave the host in an undefined partial state
@@ -42,32 +43,32 @@ A newly acquired OCI host has no identity, no overlay-network membership, no bas
 
 ## The 8-Step Chain
 
-| # | Step | Idempotency Strategy |
-|---|------|----------------------|
-| 1 | SSH wait | Poll until SSH responds; no state mutation |
-| 2 | Tailscale enroll | Skip if already in tailnet (check `tailscale status`) |
-| 3 | Ansible baseline | Ansible is idempotent by design |
-| 4 | Cloudflare DNS A record | Upsert (PUT) — same record name → same record |
-| 5 | mesh-state commit | Git commit only if diff present |
-| 6 | iMessage notify | Always send (notification, not state) |
-| 7 | Plug-in extension dir | Iterate `extensions/*.sh` — each plugin owns its own idempotency |
-| 8 | Followup-trigger | Fire downstream pipeline event |
+| #   | Step                    | Idempotency Strategy                                             |
+| --- | ----------------------- | ---------------------------------------------------------------- |
+| 1   | SSH wait                | Poll until SSH responds; no state mutation                       |
+| 2   | Tailscale enroll        | Skip if already in tailnet (check `tailscale status`)            |
+| 3   | Ansible baseline        | Ansible is idempotent by design                                  |
+| 4   | Cloudflare DNS A record | Upsert (PUT) — same record name → same record                    |
+| 5   | mesh-state commit       | Git commit only if diff present                                  |
+| 6   | iMessage notify         | Always send (notification, not state)                            |
+| 7   | Plug-in extension dir   | Iterate `extensions/*.sh` — each plugin owns its own idempotency |
+| 8   | Followup-trigger        | Fire downstream pipeline event                                   |
 
 Full Mermaid flowchart and idempotency table live in `docs/governance/oci-acquire-hook-chain.md` (added in PR #14).
 
 ## Functional Requirements
 
-| FR ID | Requirement |
-|-------|-------------|
-| FR-OCI-ACQ-001 | All 8 steps execute in declared order |
-| FR-OCI-ACQ-002 | Every step is idempotent and safe to re-run |
-| FR-OCI-ACQ-003 | SSH-wait blocks until host is reachable |
-| FR-OCI-ACQ-004 | Tailscale enrollment skipped if already enrolled |
-| FR-OCI-ACQ-005 | Cloudflare DNS A record upserted (no duplicates) |
-| FR-OCI-ACQ-006 | mesh-state commit only when diff is non-empty |
-| FR-OCI-ACQ-007 | Operator notified via iMessage on completion |
+| FR ID          | Requirement                                         |
+| -------------- | --------------------------------------------------- |
+| FR-OCI-ACQ-001 | All 8 steps execute in declared order               |
+| FR-OCI-ACQ-002 | Every step is idempotent and safe to re-run         |
+| FR-OCI-ACQ-003 | SSH-wait blocks until host is reachable             |
+| FR-OCI-ACQ-004 | Tailscale enrollment skipped if already enrolled    |
+| FR-OCI-ACQ-005 | Cloudflare DNS A record upserted (no duplicates)    |
+| FR-OCI-ACQ-006 | mesh-state commit only when diff is non-empty       |
+| FR-OCI-ACQ-007 | Operator notified via iMessage on completion        |
 | FR-OCI-ACQ-008 | Plug-in directory loaded and each extension invoked |
-| FR-OCI-ACQ-009 | Followup-trigger fires downstream event |
+| FR-OCI-ACQ-009 | Followup-trigger fires downstream event             |
 
 ## Implementation Status
 

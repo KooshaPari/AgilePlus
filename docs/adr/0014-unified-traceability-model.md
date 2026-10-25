@@ -20,18 +20,18 @@ conflicting links — especially after Tracera embeds AgilePlus (ADR-0011).
    ids (`REQ-XX`, `IC-##`, OpenSpec capability ids) map via harmonizer alias table stored
    in feature `meta.json`.
 2. **Intent source vs evidence projection:**
-   - **Source of intent:** `kitty-specs/` markdown + FR catalogs (ADR-0012).
-   - **IntentGraph:** validated DAG derivative (ADR-0008); node ids MUST match spine ids.
-   - **TraceLink graph:** runtime evidence mesh; Tracera builds and queries.
-   - **trace.json:** per-change CI evidence bundle consumed by trace-validator.
+    - **Source of intent:** `kitty-specs/` markdown + FR catalogs (ADR-0012).
+    - **IntentGraph:** validated DAG derivative (ADR-0008); node ids MUST match spine ids.
+    - **TraceLink graph:** runtime evidence mesh; Tracera builds and queries.
+    - **trace.json:** per-change CI evidence bundle consumed by trace-validator.
 3. **Edge semantics union:**
 
-   | Semantics | IntentGraph | TraceLink | trace.json |
-   |-----------|-------------|-----------|------------|
-   | implements | `Edge::Implements` | `IMPLEMENTS` | code anchor |
-   | verifies | `Edge::Verifies` | `VERIFIES` | test ref |
-   | derives | `Edge::Derives` | `DERIVES` | — |
-   | documents | `Edge::Documents` | `DOCUMENTS` | spec path |
+    | Semantics  | IntentGraph        | TraceLink    | trace.json  |
+    | ---------- | ------------------ | ------------ | ----------- |
+    | implements | `Edge::Implements` | `IMPLEMENTS` | code anchor |
+    | verifies   | `Edge::Verifies`   | `VERIFIES`   | test ref    |
+    | derives    | `Edge::Derives`    | `DERIVES`    | —           |
+    | documents  | `Edge::Documents`  | `DOCUMENTS`  | spec path   |
 
 4. **CoverageMatrix authority for acceptance:** `AcceptanceContract::is_satisfied(matrix)`
    (ADR-0010) remains the automation gate. Tracera derives matrix from TraceLinks; AgilePlus

@@ -5,16 +5,16 @@ lane: "done"
 dependencies: []
 base_branch: main
 base_commit: e441120abb2a1454a9ee3b6b49a38ea9eef9962f
-created_at: '2026-03-02T11:50:57.274484+00:00'
+created_at: "2026-03-02T11:50:57.274484+00:00"
 subtasks: [T028, T029, T030, T031, T032, T033]
 shell_pid: "52715"
 agent: "claude-opus"
 reviewed_by: "Koosha Paridehpour"
 review_status: "approved"
 history:
-- date: '2026-03-02'
-  action: created
-  by: spec-kitty
+    - date: "2026-03-02"
+      action: created
+      by: spec-kitty
 ---
 
 # Graph Layer (Neo4j) (WP05)
@@ -26,6 +26,7 @@ Create the `agileplus-graph` crate with Neo4j connectivity, node/relationship CR
 ## Objective
 
 Implement:
+
 - Neo4j connection management
 - Node types with uniqueness constraints
 - Relationship CRUD operations
@@ -36,6 +37,7 @@ Implement:
 ## Architecture
 
 The graph layer models:
+
 - **Features** as nodes with state and metadata
 - **WorkPackages** as nodes with ordinal sequencing
 - **Agents** as nodes representing users/systems
@@ -50,6 +52,7 @@ The graph layer models:
 Create a new crate at `crates/agileplus-graph/`.
 
 **Cargo.toml:**
+
 ```toml
 [package]
 name = "agileplus-graph"
@@ -70,6 +73,7 @@ tokio = { version = "1", features = ["full"] }
 ```
 
 **Directory structure:**
+
 ```
 crates/agileplus-graph/
 ├── Cargo.toml
@@ -84,6 +88,7 @@ crates/agileplus-graph/
 ```
 
 **lib.rs content:**
+
 ```rust
 pub mod config;
 pub mod health;

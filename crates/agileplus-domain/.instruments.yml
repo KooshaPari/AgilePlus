@@ -23,28 +23,28 @@
 # ──────────────────────────────────────────────────────────────────────────────
 
 templates:
-  - name: "Allocation Profiling"
-    description: >
-      Track heap allocations, retain counts, and allocation callstacks during
-      agileplus-domain memory-profiling tests.
-    instrument: Allocations
-    package: agileplus-domain
-    test: memory
-    # Options recognised by cargo-instruments >= 0.4:
-    #   binary:        path to a specific binary (auto-detected from package)
-    #   test:          run integration tests matching this prefix
-    #   env:           environment variables for the profiled process
-    #   timeout:       maximum run time before the profile is stopped
-    env:
-      RUST_LOG: "error"
-      CARGO_TERM_COLOR: "always"
-    timeout: 300  # seconds
+    - name: "Allocation Profiling"
+      description: >
+          Track heap allocations, retain counts, and allocation callstacks during
+          agileplus-domain memory-profiling tests.
+      instrument: Allocations
+      package: agileplus-domain
+      test: memory
+      # Options recognised by cargo-instruments >= 0.4:
+      #   binary:        path to a specific binary (auto-detected from package)
+      #   test:          run integration tests matching this prefix
+      #   env:           environment variables for the profiled process
+      #   timeout:       maximum run time before the profile is stopped
+      env:
+          RUST_LOG: "error"
+          CARGO_TERM_COLOR: "always"
+      timeout: 300 # seconds
 
-  - name: "Memory Graph"
-    description: >
-      Record a detailed memory graph showing allocation lifetimes and retain
-      cycles across domain operations.
-    instrument: "Allocations with VM Tracker"
-    package: agileplus-domain
-    test: memory
-    timeout: 300
+    - name: "Memory Graph"
+      description: >
+          Record a detailed memory graph showing allocation lifetimes and retain
+          cycles across domain operations.
+      instrument: "Allocations with VM Tracker"
+      package: agileplus-domain
+      test: memory
+      timeout: 300

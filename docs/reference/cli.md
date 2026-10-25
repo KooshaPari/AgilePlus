@@ -12,11 +12,11 @@ AgilePlus CLI is the main entry point for the spec-driven development workflow. 
 agileplus [GLOBAL_OPTIONS] COMMAND [COMMAND_OPTIONS]
 ```
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `-v, --verbose` | (none) | Increase verbosity: `-v` (debug), `-vv` (trace) |
-| `--db <PATH>` | `.agileplus/agileplus.db` | Path to SQLite database |
-| `--repo <PATH>` | (current dir) | Path to git repository root |
+| Flag            | Default                   | Description                                     |
+| --------------- | ------------------------- | ----------------------------------------------- |
+| `-v, --verbose` | (none)                    | Increase verbosity: `-v` (debug), `-vv` (trace) |
+| `--db <PATH>`   | `.agileplus/agileplus.db` | Path to SQLite database                         |
+| `--repo <PATH>` | (current dir)             | Path to git repository root                     |
 
 ## Core Workflow Commands
 
@@ -28,18 +28,18 @@ Create or revise a feature specification.
 agileplus specify [OPTIONS] <FEATURE_SLUG> [DESCRIPTION]
 ```
 
-| Argument | Description |
-|----------|-------------|
-| `FEATURE_SLUG` | Unique identifier (e.g., `001-user-login`) |
-| `DESCRIPTION` | Optional natural-language feature description |
+| Argument       | Description                                   |
+| -------------- | --------------------------------------------- |
+| `FEATURE_SLUG` | Unique identifier (e.g., `001-user-login`)    |
+| `DESCRIPTION`  | Optional natural-language feature description |
 
-| Option | Description |
-|--------|-------------|
-| `--interactive` | Interactive prompt mode (default if no description) |
-| `--agent <AGENT>` | Use specific agent to draft spec (claude, cursor) |
-| `--template <PATH>` | Use custom spec template |
-| `--no-git` | Don't create git branch |
-| `-v, --verbose` | Increase logging verbosity |
+| Option              | Description                                         |
+| ------------------- | --------------------------------------------------- |
+| `--interactive`     | Interactive prompt mode (default if no description) |
+| `--agent <AGENT>`   | Use specific agent to draft spec (claude, cursor)   |
+| `--template <PATH>` | Use custom spec template                            |
+| `--no-git`          | Don't create git branch                             |
+| `-v, --verbose`     | Increase logging verbosity                          |
 
 Examples:
 
@@ -65,12 +65,12 @@ Research feasibility or gather context for a feature.
 agileplus research [OPTIONS] <FEATURE_SLUG>
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--pre-specify` | Scan codebase before spec created (discovery mode) |
-| `--post-specify` | Analyze feasibility after spec (validation mode) |
-| `--scope <PATHS>` | Comma-separated files/dirs to scan |
-| `--output <FORMAT>` | `markdown` (default), `json`, or `yaml` |
+| Option              | Description                                        |
+| ------------------- | -------------------------------------------------- |
+| `--pre-specify`     | Scan codebase before spec created (discovery mode) |
+| `--post-specify`    | Analyze feasibility after spec (validation mode)   |
+| `--scope <PATHS>`   | Comma-separated files/dirs to scan                 |
+| `--output <FORMAT>` | `markdown` (default), `json`, or `yaml`            |
 
 Examples:
 
@@ -93,12 +93,12 @@ Generate a work breakdown structure (work packages) for a feature.
 agileplus plan [OPTIONS] <FEATURE_SLUG>
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--parallelizable` | Allow independent work packages (default: sequential) |
-| `--max-packages <N>` | Maximum work packages to generate (default: 8) |
-| `--file-scope` | Include file-level scope in each WP |
-| `--agent <AGENT>` | Use specific agent for planning |
+| Option               | Description                                           |
+| -------------------- | ----------------------------------------------------- |
+| `--parallelizable`   | Allow independent work packages (default: sequential) |
+| `--max-packages <N>` | Maximum work packages to generate (default: 8)        |
+| `--file-scope`       | Include file-level scope in each WP                   |
+| `--agent <AGENT>`    | Use specific agent for planning                       |
 
 Examples:
 
@@ -121,14 +121,14 @@ Dispatch agents to implement work packages.
 agileplus implement [OPTIONS] <FEATURE_SLUG> [WP_FILTERS]
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--wp <ID>` | Implement specific work package (e.g., `WP01`, `WP02`) |
-| `--agent <AGENT>` | Agent to dispatch (claude-code, codex) |
-| `--timeout <SECS>` | Agent session timeout (default: 1800s = 30m) |
-| `--skip-review` | Skip PR review cycle (dangerous) |
-| `--max-review-cycles <N>` | Max review/fix iterations (default: 5) |
-| `--parallel <N>` | Dispatch N agents in parallel (1–3, default: 1) |
+| Option                    | Description                                            |
+| ------------------------- | ------------------------------------------------------ |
+| `--wp <ID>`               | Implement specific work package (e.g., `WP01`, `WP02`) |
+| `--agent <AGENT>`         | Agent to dispatch (claude-code, codex)                 |
+| `--timeout <SECS>`        | Agent session timeout (default: 1800s = 30m)           |
+| `--skip-review`           | Skip PR review cycle (dangerous)                       |
+| `--max-review-cycles <N>` | Max review/fix iterations (default: 5)                 |
+| `--parallel <N>`          | Dispatch N agents in parallel (1–3, default: 1)        |
 
 Examples:
 
@@ -154,11 +154,11 @@ Check governance compliance before merging.
 agileplus validate [OPTIONS] <FEATURE_SLUG>
 ```
 
-| Option | Description |
-|--------|-------------|
+| Option          | Description                                                      |
+| --------------- | ---------------------------------------------------------------- |
 | `--gate <NAME>` | Validate specific gate (specify, plan, implement, review, merge) |
-| `--strict` | Fail on warnings (not just errors) |
-| `--verbose` | Show detailed violation list |
+| `--strict`      | Fail on warnings (not just errors)                               |
+| `--verbose`     | Show detailed violation list                                     |
 
 Examples:
 
@@ -181,12 +181,12 @@ Merge all completed work packages to main.
 agileplus ship [OPTIONS] <FEATURE_SLUG>
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--auto-resolve` | Automatically resolve simple merge conflicts |
-| `--no-verify` | Skip pre-merge hooks |
-| `--dry-run` | Show what would be merged without doing it |
-| `--target <BRANCH>` | Target branch (default: main) |
+| Option              | Description                                  |
+| ------------------- | -------------------------------------------- |
+| `--auto-resolve`    | Automatically resolve simple merge conflicts |
+| `--no-verify`       | Skip pre-merge hooks                         |
+| `--dry-run`         | Show what would be merged without doing it   |
+| `--target <BRANCH>` | Target branch (default: main)                |
 
 Examples:
 
@@ -209,11 +209,11 @@ Generate a post-ship report.
 agileplus retrospective [OPTIONS] <FEATURE_SLUG>
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--output <PATH>` | Save report to file (default: stdout) |
-| `--format <FORMAT>` | `markdown` (default), `html`, `json` |
-| `--include-metrics` | Include performance/coverage metrics |
+| Option              | Description                           |
+| ------------------- | ------------------------------------- |
+| `--output <PATH>`   | Save report to file (default: stdout) |
+| `--format <FORMAT>` | `markdown` (default), `html`, `json`  |
+| `--include-metrics` | Include performance/coverage metrics  |
 
 Examples:
 
@@ -238,16 +238,16 @@ Classify incoming issues/requests.
 agileplus triage [OPTIONS] <TEXT>
 ```
 
-| Argument | Description |
-|----------|-------------|
-| `TEXT` | Issue description (quoted string or stdin) |
+| Argument | Description                                |
+| -------- | ------------------------------------------ |
+| `TEXT`   | Issue description (quoted string or stdin) |
 
-| Option | Description |
-|--------|-------------|
-| `--type <TYPE>` | Override auto-classification (bug, feature, idea, task) |
-| `--dry-run` | Classify without adding to backlog |
-| `--output <FORMAT>` | `table` (default), `json`, `yaml` |
-| `--priority <P>` | Set priority: `critical`, `high`, `medium`, `low` |
+| Option              | Description                                             |
+| ------------------- | ------------------------------------------------------- |
+| `--type <TYPE>`     | Override auto-classification (bug, feature, idea, task) |
+| `--dry-run`         | Classify without adding to backlog                      |
+| `--output <FORMAT>` | `table` (default), `json`, `yaml`                       |
+| `--priority <P>`    | Set priority: `critical`, `high`, `medium`, `low`       |
 
 Examples:
 
@@ -273,11 +273,11 @@ Add item to backlog queue.
 agileplus queue add [OPTIONS] <TEXT>
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--type <TYPE>` | Item type (bug, feature, idea, task) |
+| Option           | Description                           |
+| ---------------- | ------------------------------------- |
+| `--type <TYPE>`  | Item type (bug, feature, idea, task)  |
 | `--priority <P>` | Priority: critical, high, medium, low |
-| `--tags <TAGS>` | Comma-separated labels |
+| `--tags <TAGS>`  | Comma-separated labels                |
 
 Examples:
 
@@ -295,12 +295,12 @@ List all backlog items.
 agileplus queue list [OPTIONS]
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--filter <TYPE>` | Filter by type (bug, feature, idea, task) |
-| `--priority <P>` | Filter by priority |
-| `--output <FORMAT>` | `table` (default), `json`, `yaml` |
-| `--limit <N>` | Show top N items (default: 20) |
+| Option              | Description                               |
+| ------------------- | ----------------------------------------- |
+| `--filter <TYPE>`   | Filter by type (bug, feature, idea, task) |
+| `--priority <P>`    | Filter by priority                        |
+| `--output <FORMAT>` | `table` (default), `json`, `yaml`         |
+| `--limit <N>`       | Show top N items (default: 20)            |
 
 Examples:
 
@@ -331,8 +331,8 @@ Remove and return highest-priority item.
 agileplus queue pop [OPTIONS]
 ```
 
-| Option | Description |
-|--------|-------------|
+| Option        | Description              |
+| ------------- | ------------------------ |
 | `--count <N>` | Pop N items (default: 1) |
 
 Examples:
@@ -370,14 +370,14 @@ Most commands support:
 
 ## Exit Codes
 
-| Code | Meaning |
-|------|---------|
-| `0` | Success |
-| `1` | General error |
-| `2` | Invalid arguments |
-| `3` | Governance violation (can't proceed) |
-| `4` | VCS error (git operation failed) |
-| `5` | Agent dispatch error |
+| Code | Meaning                              |
+| ---- | ------------------------------------ |
+| `0`  | Success                              |
+| `1`  | General error                        |
+| `2`  | Invalid arguments                    |
+| `3`  | Governance violation (can't proceed) |
+| `4`  | VCS error (git operation failed)     |
+| `5`  | Agent dispatch error                 |
 
 ## Environment Variables
 

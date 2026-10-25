@@ -28,79 +28,84 @@ Elasticsearch is needed for Temporal's visibility and history features. Use sing
 
 ```yaml
 services:
-  temporal-db:
-    image: postgres:16-alpine
-    container_name: temporal-db
-    environment:
-      POSTGRES_DB: temporal
-      POSTGRES_USER: temporal
-      POSTGRES_PASSWORD: ${TEMPORAL_DB_PASSWORD}
-    volumes:
-      - temporal_pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U temporal"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    temporal-db:
+        image: postgres:16-alpine
+        container_name: temporal-db
+        environment:
+            POSTGRES_DB: temporal
+            POSTGRES_USER: temporal
+            POSTGRES_PASSWORD: ${TEMPORAL_DB_PASSWORD}
+        volumes:
+            - temporal_pgdata:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U temporal"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
-  temporal-es:
-    image: elasticsearch:8.14.0
-    container_name: temporal-es
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms1g -Xmx1g
-      - cluster.name=temporal
-    volumes:
-      - temporal_esdata:/usr/share/elasticsearch/data
-    healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q 'status'"]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-    mem_limit: 2g
+    temporal-es:
+        image: elasticsearch:8.14.0
+        container_name: temporal-es
+        environment:
+            - discovery.type=single-node
+            - xpack.security.enabled=false
+            - ES_JAVA_OPTS=-Xms1g -Xmx1g
+            - cluster.name=temporal
+        volumes:
+            - temporal_esdata:/usr/share/elasticsearch/data
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "curl -s http://localhost:9200/_cluster/health | grep -q 'status'",
+                ]
+            interval: 15s
+            timeout: 10s
+            retries: 5
+        mem_limit: 2g
 
-  temporal:
-    image: temporalio/auto-setup:1.26.0
-    container_name: temporal
-    depends_on:
-      temporal-db:
-        condition: service_healthy
-      temporal-es:
-        condition: service_healthy
-    environment:
-      - DB=postgresql
-      - DB_PORT=5432
-      - POSTGRES_USER=temporal
-      - POSTGRES_PWD=${TEMPORAL_DB_PASSWORD}
-      - POSTGRES_SEEDS=temporal-db
-      - ELASTICSEARCH_URL=http://temporal-es:9200
-      - ENABLE_EXPRESSIONS=true
-      - DYNAMIC_CONFIG_FILE=/etc/temporal/dynamicconfig/dynamicconfig.yaml
-    ports:
-      - "7233:7233"   # gRPC
-      - "8233:8233"   # Frontend Web UI
-    volumes:
-      - ./dynamicconfig:/etc/temporal/dynamicconfig
-    healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:8233/health || exit 1"]
-      interval: 20s
-      timeout: 10s
-      retries: 5
+    temporal:
+        image: temporalio/auto-setup:1.26.0
+        container_name: temporal
+        depends_on:
+            temporal-db:
+                condition: service_healthy
+            temporal-es:
+                condition: service_healthy
+        environment:
+            - DB=postgresql
+            - DB_PORT=5432
+            - POSTGRES_USER=temporal
+            - POSTGRES_PWD=${TEMPORAL_DB_PASSWORD}
+            - POSTGRES_SEEDS=temporal-db
+            - ELASTICSEARCH_URL=http://temporal-es:9200
+            - ENABLE_EXPRESSIONS=true
+            - DYNAMIC_CONFIG_FILE=/etc/temporal/dynamicconfig/dynamicconfig.yaml
+        ports:
+            - "7233:7233" # gRPC
+            - "8233:8233" # Frontend Web UI
+        volumes:
+            - ./dynamicconfig:/etc/temporal/dynamicconfig
+        healthcheck:
+            test:
+                ["CMD-SHELL", "curl -s http://localhost:8233/health || exit 1"]
+            interval: 20s
+            timeout: 10s
+            retries: 5
 
-  temporal-admin-tools:
-    image: temporalio/admin-tools:1.26.0
-    container_name: temporal-admin-tools
-    depends_on:
-      - temporal
-    environment:
-      - TEMPORAL_ADDRESS=temporal:7233
-    stdin_open: true
-    tty: true
+    temporal-admin-tools:
+        image: temporalio/admin-tools:1.26.0
+        container_name: temporal-admin-tools
+        depends_on:
+            - temporal
+        environment:
+            - TEMPORAL_ADDRESS=temporal:7233
+        stdin_open: true
+        tty: true
 
 volumes:
-  temporal_pgdata:
-  temporal_esdata:
+    temporal_pgdata:
+    temporal_esdata:
 ```
 
 ### File: `infra/temporal/dynamicconfig/dynamicconfig.yaml`
@@ -108,8 +113,8 @@ volumes:
 ```yaml
 # Enable search attribute for workflow type filtering
 system.forceSearchAttributesCacheRefresh:
-  - value: true
-    constraints: {}
+    - value: true
+      constraints: {}
 ```
 
 ### File: `infra/temporal/.env.example`
@@ -124,9 +129,9 @@ Add a new entry:
 
 ```yaml
 temporal:
-  command: docker compose -f infra/temporal/docker-compose.yml up -d
-  depends_on:
-    - postgresql  # ensure existing Postgres is running
+    command: docker compose -f infra/temporal/docker-compose.yml up -d
+    depends_on:
+        - postgresql # ensure existing Postgres is running
 ```
 
 ### Caddy Configuration

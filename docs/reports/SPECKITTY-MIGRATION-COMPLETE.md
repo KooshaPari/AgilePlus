@@ -1,17 +1,17 @@
 # SpecKitty → AgilePlus Migration — Completion Report
 
-| Field            | Value                                                       |
-| ---------------- | ----------------------------------------------------------- |
-| Status           | ✅ **CLOSED — 2026-07-05**                                  |
-| Scope            | SpecKitty cursor commands + scoring engine + cockpit handoff |
-| Owner            | <REDACTED> / AgilePlus (Rust workspace)                     |
-| Successor        | `ap` (agileplus-cli) — `crates/agileplus-cli/`              |
-| Supersedes       | `.cursor/commands/spec-kitty.*.md` (14 commands)            |
+| Field            | Value                                                                  |
+| ---------------- | ---------------------------------------------------------------------- |
+| Status           | ✅ **CLOSED — 2026-07-05**                                             |
+| Scope            | SpecKitty cursor commands + scoring engine + cockpit handoff           |
+| Owner            | <REDACTED> / AgilePlus (Rust workspace)                                |
+| Successor        | `ap` (agileplus-cli) — `crates/agileplus-cli/`                         |
+| Supersedes       | `.cursor/commands/spec-kitty.*.md` (14 commands)                       |
 | Supersedes-doc   | `docs/design/SPECKITTY-MIGRATION.md` §8 still tracks Provenance Tier 1 |
-| Cross-references | `crates/agileplus-governance/src/scoring_engine.rs:6`       |
-| Created          | 2026-07-05 (this report)                                   |
-| Provenance       | Tier 1 — agent-authored, hand-edited                       |
-| Audit            | `ap rubric score --repo <path>` (v2 probes on merge)       |
+| Cross-references | `crates/agileplus-governance/src/scoring_engine.rs:6`                  |
+| Created          | 2026-07-05 (this report)                                               |
+| Provenance       | Tier 1 — agent-authored, hand-edited                                   |
+| Audit            | `ap rubric score --repo <path>` (v2 probes on merge)                   |
 
 > **Read first.** [`docs/design/SPECKITTY-MIGRATION.md`](../design/SPECKITTY-MIGRATION.md)
 > is the canonical concept-mapping design doc. This completion report
@@ -25,11 +25,11 @@
 The migration lands as **three stacked PRs**, in order. Each is
 independently revertable and locally verifiable.
 
-| PR    | Title                                                          | Branch                  | Commit   | Tests added |
-| ----- | -------------------------------------------------------------- | ----------------------- | -------- | ----------- |
-| #901  | SpecKitty → AgilePlus: scoring engine + ap rubric + 14 shims   | `feat/speckitty-migration`  | `eef51a8` | +135 (workspace indexmap + trait-sig drift + list_tests.rs) |
-| #902  | rubric v2 — content-probe rule registry + --probes CLI flag    | `feat/rubric-v2-probes`     | `3fcad6b` | +12 (probes + integration)                                    |
-| #903  | ap cockpit publish — NDJSON rubric scorecards                  | `feat/cockpit-publish`      | `b55ad98` | +9 (5 unit + 4 integration)                                   |
+| PR   | Title                                                        | Branch                     | Commit    | Tests added                                                 |
+| ---- | ------------------------------------------------------------ | -------------------------- | --------- | ----------------------------------------------------------- |
+| #901 | SpecKitty → AgilePlus: scoring engine + ap rubric + 14 shims | `feat/speckitty-migration` | `eef51a8` | +135 (workspace indexmap + trait-sig drift + list_tests.rs) |
+| #902 | rubric v2 — content-probe rule registry + --probes CLI flag  | `feat/rubric-v2-probes`    | `3fcad6b` | +12 (probes + integration)                                  |
+| #903 | ap cockpit publish — NDJSON rubric scorecards                | `feat/cockpit-publish`     | `b55ad98` | +9 (5 unit + 4 integration)                                 |
 
 ### 1.1 PR #901 — scoring engine + ap rubric
 
@@ -49,9 +49,17 @@ independently revertable and locally verifiable.
 
 - **`ap cockpit {publish, path}`**: new CLI subcommand group. `publish --repo <path> --output <PATH>` (default `~/.agileplus/cockpit.ndjson`) scores a repo and appends one NDJSON record per cluster to the log. `path` prints the resolved default log path.
 - **NDJSON schema** (line-delimited JSON, one record per cluster):
-  ```json
-  {"ts":"epoch:1783295080","repo":"agileplus-cli","cluster":"C03","score":2,"max":3,"grade":"C","probes":1}
-  ```
+    ```json
+    {
+        "ts": "epoch:1783295080",
+        "repo": "agileplus-cli",
+        "cluster": "C03",
+        "score": 2,
+        "max": 3,
+        "grade": "C",
+        "probes": 1
+    }
+    ```
 - **`evaluate_with_probes` integration**: TODO(`rubric-v2`) marker inside `publish()` calls out the one-line switch from `evaluate` → `evaluate_with_probes` once PR #902 lands on `main`. Until then, every record reports `probes: 0`.
 - **+9 tests**: NDJSON round-trip, parent-dir auto-create, grade cutoffs (`A/B/C/D/F`), probe hit-count extraction, append-on-second-invocation, help text.
 
@@ -79,14 +87,14 @@ were physically reduced from full prompts to redirect stubs. They are
 still present (so the IDE doesn't crash on a missing command) but
 no longer contain runnable agent guidance:
 
-| SpecKitty command     | Cursor shim file                     | Canonical successor                       |
-| --------------------- | ------------------------------------ | ----------------------------------------- |
-| `spec-kitty.research` | `.cursor/commands/spec-kitty.research.md` | `ap rubric score --repo <path> --clusters C00` |
-| `spec-kitty.review`   | `.cursor/commands/spec-kitty.review.md`   | `ap rubric score --repo <path> --clusters C03` |
-| `spec-kitty.specify`  | `.cursor/commands/spec-kitty.specify.md`  | `ap rubric score --repo <path>` + `ap cockpit publish` |
+| SpecKitty command     | Cursor shim file                          | Canonical successor                                                     |
+| --------------------- | ----------------------------------------- | ----------------------------------------------------------------------- |
+| `spec-kitty.research` | `.cursor/commands/spec-kitty.research.md` | `ap rubric score --repo <path> --clusters C00`                          |
+| `spec-kitty.review`   | `.cursor/commands/spec-kitty.review.md`   | `ap rubric score --repo <path> --clusters C03`                          |
+| `spec-kitty.specify`  | `.cursor/commands/spec-kitty.specify.md`  | `ap rubric score --repo <path>` + `ap cockpit publish`                  |
 | `spec-kitty.status`   | `.cursor/commands/spec-kitty.status.md`   | `ap cockpit publish` (NDJSON tail → `ap cockpit reader` once #41 lands) |
-| `spec-kitty.tasks`    | `.cursor/commands/spec-kitty.tasks.md`    | `ap rubric fix-list --repo <path>` (post #22) |
-| ... 9 more           | see PR #901 diff                    | see PR #901 diff                           |
+| `spec-kitty.tasks`    | `.cursor/commands/spec-kitty.tasks.md`    | `ap rubric fix-list --repo <path>` (post #22)                           |
+| ... 9 more            | see PR #901 diff                          | see PR #901 diff                                                        |
 
 **Action required of operators**: replace `spec-kitty.<cmd>` invocations
 in agent prompts with `ap <cmd>`. The shims will be deleted in a
@@ -99,23 +107,23 @@ Quick pass of `ap rubric score` against the new `AgilePlus` repo
 post-#901 (intentionally small subset; full C00-C11 sweep is task #19,
 deferred until rubric v2 lands):
 
-| Cluster | Pillars  | Score | Grade | Probe-evidence | Notes |
-| ------- | -------- | ----- | ----- | --------------- | ----- |
-| C01     | L10-L19  | 1/3   | F (33%) | (none) | CI/DX baseline: README, no full denoised CI workflow under workspace root |
-| C02     | L0-L9    | (deferred) | – | – | full sweep pending PR #902 |
-| C03     | L20-L29  | (deferred) | – | – | FR/NFR + llms.txt path-presence |
-| C04     | L31-L40  | 0/3   | F (0%) | (none) | gitleaks/trufflehog missing from this re-audit's surface |
+| Cluster | Pillars | Score      | Grade   | Probe-evidence | Notes                                                                     |
+| ------- | ------- | ---------- | ------- | -------------- | ------------------------------------------------------------------------- |
+| C01     | L10-L19 | 1/3        | F (33%) | (none)         | CI/DX baseline: README, no full denoised CI workflow under workspace root |
+| C02     | L0-L9   | (deferred) | –       | –              | full sweep pending PR #902                                                |
+| C03     | L20-L29 | (deferred) | –       | –              | FR/NFR + llms.txt path-presence                                           |
+| C04     | L31-L40 | 0/3        | F (0%)  | (none)         | gitleaks/trufflehog missing from this re-audit's surface                  |
 
 Full v38 re-audit to be filed in `audit/.lane-c00-c02/` post #902.
 
 ## 5. Cross-domain handoffs
 
-| Teammate | Lane | What they need from me | Where |
-| --- | --- | --- | --- |
-| cockpit-mesh | `ap cockpit reader` (task #41) | NDJSON schema = `{ts, repo, cluster, score, max, grade, probes}` (locked by PR #903) | `docs/reports/SPECKITTY-MIGRATION-COMPLETE.md` §1.3 |
-| sharecli / substrate | not affected | – | – |
-| vision-pillar | `feat/agileplus-splash` | out-of-scope per team domain split | (their branch) |
-| phenofleet | `FLEET_DAG_v3.db` | the `cockpit.ndjson` shape above slots into the fleet scorecard reader unchanged | `~/.agileplus/cockpit.ndjson` |
+| Teammate             | Lane                           | What they need from me                                                               | Where                                               |
+| -------------------- | ------------------------------ | ------------------------------------------------------------------------------------ | --------------------------------------------------- |
+| cockpit-mesh         | `ap cockpit reader` (task #41) | NDJSON schema = `{ts, repo, cluster, score, max, grade, probes}` (locked by PR #903) | `docs/reports/SPECKITTY-MIGRATION-COMPLETE.md` §1.3 |
+| sharecli / substrate | not affected                   | –                                                                                    | –                                                   |
+| vision-pillar        | `feat/agileplus-splash`        | out-of-scope per team domain split                                                   | (their branch)                                      |
+| phenofleet           | `FLEET_DAG_v3.db`              | the `cockpit.ndjson` shape above slots into the fleet scorecard reader unchanged     | `~/.agileplus/cockpit.ndjson`                       |
 
 ## 6. Deferred / Follow-on
 

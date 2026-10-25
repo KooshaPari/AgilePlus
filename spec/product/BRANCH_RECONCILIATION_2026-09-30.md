@@ -15,6 +15,7 @@ The branches diverged.
 ## Spec-side content
 
 The spec side contributes 13 paths not present on current main:
+
 - docs/product/PRODUCT_MODEL.md
 - docs/product/STAGES.md
 - generated/contract-validation.md

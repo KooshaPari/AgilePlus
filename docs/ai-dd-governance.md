@@ -33,16 +33,16 @@ If any hook fails, commit is blocked. No bypass. No `--no-verify`.
 
 ```yaml
 quality-gate:
-  desc: Full AI-DD quality gate
-  cmds:
-    - task: lint
-    - task: type-check
-    - task: test
-    - task: audit-secrets
-    - task: drift-check
-    - task: anti-pattern-scan
-    - task: libification-scan
-    - task: traceability-verify  # FR/NFR IDs link to tests → code → JSONs
+    desc: Full AI-DD quality gate
+    cmds:
+        - task: lint
+        - task: type-check
+        - task: test
+        - task: audit-secrets
+        - task: drift-check
+        - task: anti-pattern-scan
+        - task: libification-scan
+        - task: traceability-verify # FR/NFR IDs link to tests → code → JSONs
 ```
 
 All must pass. Any failure blocks merge.
@@ -53,16 +53,16 @@ All must pass. Any failure blocks merge.
 
 Runs as a CI job after every push to a feature branch. Compares current commit to parent (`HEAD^`):
 
-| Check | Tool | Blocks Merge |
-|-------|------|-------------|
-| Mutated action refs | custom scanner | YES |
-| Unpinned runners | custom scanner | YES |
-| New `unwrap()` in lib code | custom scanner | YES |
-| New `panic!()` in lib code | custom scanner | YES |
-| Test count decreased | `cargo test --no-run` | YES |
-| Coverage decreased | `cargo tarpaulin` | YES |
-| Dependency version bump (Cargo.lock) | `cargo update` | warn |
-| Added `unsafe` block | `grep unsafe` | YES |
+| Check                                | Tool                  | Blocks Merge |
+| ------------------------------------ | --------------------- | ------------ |
+| Mutated action refs                  | custom scanner        | YES          |
+| Unpinned runners                     | custom scanner        | YES          |
+| New `unwrap()` in lib code           | custom scanner        | YES          |
+| New `panic!()` in lib code           | custom scanner        | YES          |
+| Test count decreased                 | `cargo test --no-run` | YES          |
+| Coverage decreased                   | `cargo tarpaulin`     | YES          |
+| Dependency version bump (Cargo.lock) | `cargo update`        | warn         |
+| Added `unsafe` block                 | `grep unsafe`         | YES          |
 
 Report as a CI comment on the PR. Use `gh pr comment`.
 
@@ -72,18 +72,18 @@ Report as a CI comment on the PR. Use `gh pr comment`.
 
 Runs as part of the quality-gate.
 
-| Pattern | Severity | Auto-Fix |
-|---------|----------|----------|
-| `.unwrap()` in lib code | HIGH | suggest `?` or `expect()` with message |
-| `panic!()` in lib code | HIGH | suggest `Result` return |
-| `unwrap_or_else` with no context | MEDIUM | flag for review |
-| `expect()` without message | MEDIUM | require message |
-| Dead code (`cargo-dead-links` or `cargo-deplint`) | HIGH | delete |
-| `TODO` without issue ref | LOW | add `TODO(issue-n)` |
-| `unsafe` without safety comment | HIGH | require safety doc |
-| Clone of `Arc::clone` pattern | MEDIUM | suggest `Arc::clone` |
-| Stringly-typed enums | MEDIUM | suggest `newtype` |
-| Broad `serde Deserialize` without validation | MEDIUM | require schema check |
+| Pattern                                           | Severity | Auto-Fix                               |
+| ------------------------------------------------- | -------- | -------------------------------------- |
+| `.unwrap()` in lib code                           | HIGH     | suggest `?` or `expect()` with message |
+| `panic!()` in lib code                            | HIGH     | suggest `Result` return                |
+| `unwrap_or_else` with no context                  | MEDIUM   | flag for review                        |
+| `expect()` without message                        | MEDIUM   | require message                        |
+| Dead code (`cargo-dead-links` or `cargo-deplint`) | HIGH     | delete                                 |
+| `TODO` without issue ref                          | LOW      | add `TODO(issue-n)`                    |
+| `unsafe` without safety comment                   | HIGH     | require safety doc                     |
+| Clone of `Arc::clone` pattern                     | MEDIUM   | suggest `Arc::clone`                   |
+| Stringly-typed enums                              | MEDIUM   | suggest `newtype`                      |
+| Broad `serde Deserialize` without validation      | MEDIUM   | require schema check                   |
 
 Implement as: `cargo deny check` + custom grep/RIPgrep pass + `cargo-geiger` for unsafe surface area.
 
@@ -93,17 +93,17 @@ Implement as: `cargo deny check` + custom grep/RIPgrep pass + `cargo-geiger` for
 
 Finds code that re-implements something available in a well-maintained crate.
 
-| Pattern | Alternative |
-|---------|------------|
-| Manual `RwLock`/`Mutex` with 3 lines | `parking_lot` |
-| Custom LRU cache | `lru` |
-| Custom JSON validation | `jsonschema` or `pydantic` |
-| Custom HTTP client retries | `reqwest` retry middleware |
-| Custom time parsing | `chrono` / `time` |
-| Custom UUID generation | `uuid` |
-| Custom base64 | `base64` |
-| Custom hex encoding | `hex` |
-| Custom async sleep loop | `tokio::time::interval` |
+| Pattern                              | Alternative                |
+| ------------------------------------ | -------------------------- |
+| Manual `RwLock`/`Mutex` with 3 lines | `parking_lot`              |
+| Custom LRU cache                     | `lru`                      |
+| Custom JSON validation               | `jsonschema` or `pydantic` |
+| Custom HTTP client retries           | `reqwest` retry middleware |
+| Custom time parsing                  | `chrono` / `time`          |
+| Custom UUID generation               | `uuid`                     |
+| Custom base64                        | `base64`                   |
+| Custom hex encoding                  | `hex`                      |
+| Custom async sleep loop              | `tokio::time::interval`    |
 
 Run with: `cargo-deplint` or custom `grep` pass against std / known-crate API surface.
 
@@ -142,12 +142,12 @@ For every fork that has an upstream (e.g. `agisync-mcp`, `dispatch-mcp`, `McpKit
 
 ```yaml
 upstream-drift:
-  schedule: "0 2 * * *"  # nightly at 02:00
-  steps:
-    - git fetch upstream
-    - git log upstream/main..HEAD --oneline
-    - git diff upstream/main --stat
-    - gh issue create --label "upstream-drift" if diff > threshold
+    schedule: "0 2 * * *" # nightly at 02:00
+    steps:
+        - git fetch upstream
+        - git log upstream/main..HEAD --oneline
+        - git diff upstream/main --stat
+        - gh issue create --label "upstream-drift" if diff > threshold
 ```
 
 ---

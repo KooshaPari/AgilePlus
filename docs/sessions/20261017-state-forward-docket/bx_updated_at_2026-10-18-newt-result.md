@@ -8,23 +8,23 @@
 
 ## Source candidate(s) found
 
-| Candidate | Format produced | Verdict |
-|-----------|----------------|---------|
-| `crates/agileplus-sqlite/src/repository/modules/crud.rs:75-78` | `now = chrono::Utc::now().to_rfc3339()` → `2026-08-07T10:43:15.123+00:00` | RFC3339 OK — not culprit |
-| `crates/agileplus-sqlite/src/repository/users.rs:101` & `:116` | `now = chrono::Utc::now().to_rfc3339()` | RFC3339 OK — not culprit |
-| `crates/agileplus-sqlite/src/repository/epics.rs:133-136` | `now = chrono::Utc::now().to_rfc3339()` | RFC3339 OK — not culprit |
-| `crates/agileplus-sqlite/src/repository/backlog.rs:229`,`:243` | `now.to_rfc3339()` (via `params!`) | RFC3339 OK — not culprit |
-| `crates/agileplus-sqlite/src/repository/stories.rs:146` | `now.to_rfc3339()` | RFC3339 OK — not culprit |
-| `crates/agileplus-sqlite/src/repository/cycles/mod.rs:64` | `now.to_rfc3339()` | RFC3339 OK — not culprit |
-| `crates/agileplus-sqlite/src/repository/features.rs:158` | `now.to_rfc3339()` | RFC3339 OK — not culprit |
-| `crates/agileplus-sqlite/src/repository/work_packages.rs:188-191` | `now = chrono::Utc::now().to_rfc3339()` | RFC3339 OK — not culprit |
-| `crates/agileplus-sqlite/src/repository/acceptance/mod.rs:170` & `:191` | `now.to_rfc3339()` | RFC3339 OK — not culprit |
-| `crates/agileplus-sqlite/src/repository/promotion.rs:187` | `now.to_rfc3339()` | RFC3339 OK — not culprit |
-| `desktop/src-tauri/src/work_packages.rs:96`, `:106`, `:112` | `now = chrono::Utc::now().to_rfc3339()` | RFC3339 OK — not culprit |
-| `crates/agileplus-sqlite/src/repository/cycles/mod.rs:33-34` | `strftime('%Y-%m-%dT%H:%M:%SZ', 'now')` | RFC3339 OK — not culprit |
-| `crates/agileplus-dashboard/src/routes/dashboard.rs:54` etc. | `Utc::now().format("%Y-%m-%d %H:%M:%S UTC")` → **non-RFC3339** | **Template/display only**, not bound to `updated_at` column |
-| `crates/agileplus-sqlite/src/rebuild.rs:155-158` | `meta.updated_at.parse::<chrono::DateTime<chrono::Utc>>()` | Robust — would reject `YYYY-MM-DD HH:MM:SS` format |
-| Negative test markers (`mappers.rs:253`, `cycles/mod.rs:575`) | literal `'not-a-timestamp'` | Tests — not source |
+| Candidate                                                               | Format produced                                                           | Verdict                                                     |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `crates/agileplus-sqlite/src/repository/modules/crud.rs:75-78`          | `now = chrono::Utc::now().to_rfc3339()` → `2026-08-07T10:43:15.123+00:00` | RFC3339 OK — not culprit                                    |
+| `crates/agileplus-sqlite/src/repository/users.rs:101` & `:116`          | `now = chrono::Utc::now().to_rfc3339()`                                   | RFC3339 OK — not culprit                                    |
+| `crates/agileplus-sqlite/src/repository/epics.rs:133-136`               | `now = chrono::Utc::now().to_rfc3339()`                                   | RFC3339 OK — not culprit                                    |
+| `crates/agileplus-sqlite/src/repository/backlog.rs:229`,`:243`          | `now.to_rfc3339()` (via `params!`)                                        | RFC3339 OK — not culprit                                    |
+| `crates/agileplus-sqlite/src/repository/stories.rs:146`                 | `now.to_rfc3339()`                                                        | RFC3339 OK — not culprit                                    |
+| `crates/agileplus-sqlite/src/repository/cycles/mod.rs:64`               | `now.to_rfc3339()`                                                        | RFC3339 OK — not culprit                                    |
+| `crates/agileplus-sqlite/src/repository/features.rs:158`                | `now.to_rfc3339()`                                                        | RFC3339 OK — not culprit                                    |
+| `crates/agileplus-sqlite/src/repository/work_packages.rs:188-191`       | `now = chrono::Utc::now().to_rfc3339()`                                   | RFC3339 OK — not culprit                                    |
+| `crates/agileplus-sqlite/src/repository/acceptance/mod.rs:170` & `:191` | `now.to_rfc3339()`                                                        | RFC3339 OK — not culprit                                    |
+| `crates/agileplus-sqlite/src/repository/promotion.rs:187`               | `now.to_rfc3339()`                                                        | RFC3339 OK — not culprit                                    |
+| `desktop/src-tauri/src/work_packages.rs:96`, `:106`, `:112`             | `now = chrono::Utc::now().to_rfc3339()`                                   | RFC3339 OK — not culprit                                    |
+| `crates/agileplus-sqlite/src/repository/cycles/mod.rs:33-34`            | `strftime('%Y-%m-%dT%H:%M:%SZ', 'now')`                                   | RFC3339 OK — not culprit                                    |
+| `crates/agileplus-dashboard/src/routes/dashboard.rs:54` etc.            | `Utc::now().format("%Y-%m-%d %H:%M:%S UTC")` → **non-RFC3339**            | **Template/display only**, not bound to `updated_at` column |
+| `crates/agileplus-sqlite/src/rebuild.rs:155-158`                        | `meta.updated_at.parse::<chrono::DateTime<chrono::Utc>>()`                | Robust — would reject `YYYY-MM-DD HH:MM:SS` format          |
+| Negative test markers (`mappers.rs:253`, `cycles/mod.rs:575`)           | literal `'not-a-timestamp'`                                               | Tests — not source                                          |
 
 ## Most likely culprit: **binary file replacement in commit `ea5a517a`**
 
@@ -52,9 +52,9 @@ The local working copy of the DB was last written by whatever `agileplus` CLI / 
 
 - The actual binding code is already correct (`to_rfc3339()` everywhere in `crates/agileplus-sqlite/src/repository/*` and `desktop/src-tauri/src/work_packages.rs`).
 - The carry-forward hazard is the **committed `.agileplus/agileplus.db`** itself. Recommend:
-  - Add `.agileplus/*.db` to `.gitignore` (currently committed — bad).
-  - Or: regenerate from migrations via `cargo run -p agileplus-sqlite --bin seed_db` and never commit a populated db.
-  - Or: if db commits are needed for review, run a hook that `cargo run -p agileplus-sqlite --bin validate_timestamps -- .agileplus/agileplus.db` and rejects the commit if any non-RFC3339 row is found.
+    - Add `.agileplus/*.db` to `.gitignore` (currently committed — bad).
+    - Or: regenerate from migrations via `cargo run -p agileplus-sqlite --bin seed_db` and never commit a populated db.
+    - Or: if db commits are needed for review, run a hook that `cargo run -p agileplus-sqlite --bin validate_timestamps -- .agileplus/agileplus.db` and rejects the commit if any non-RFC3339 row is found.
 
 ## Recommended fix (do not apply, just describe)
 

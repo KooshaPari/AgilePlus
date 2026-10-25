@@ -13,13 +13,14 @@
 The task framed the audit as three repos — **AgilePlus, Tracera, Tracely**.
 After investigation, all three resolve to the **same git repository**:
 
-| Logical name | Workspace path | Git remote | Status |
-|--------------|---------------|------------|--------|
-| AgilePlus    | `C:/Users/koosh/Dev/AgilePlus` | `https://github.com/KooshaPari/AgilePlus.git` | **canonical** working tree |
-| Tracera      | `Tracera/`, `Tracera-wtrees/` | same remote (shared `.git`) | **stub** at root + feature worktrees |
-| Tracely      | `Tracely/`, `Tracely-wtrees/` | same remote (shared `.git`) | **stub** at root + feature worktrees |
+| Logical name | Workspace path                 | Git remote                                    | Status                               |
+| ------------ | ------------------------------ | --------------------------------------------- | ------------------------------------ |
+| AgilePlus    | `C:/Users/koosh/Dev/AgilePlus` | `https://github.com/KooshaPari/AgilePlus.git` | **canonical** working tree           |
+| Tracera      | `Tracera/`, `Tracera-wtrees/`  | same remote (shared `.git`)                   | **stub** at root + feature worktrees |
+| Tracely      | `Tracely/`, `Tracely-wtrees/`  | same remote (shared `.git`)                   | **stub** at root + feature worktrees |
 
 Evidence:
+
 - `Tracera/`, `Tracely/`, `AgilePlus/` at workspace root are empty directories (only `.claude/`, `apps/`, `README.md`, `evidence_ledger.jsonl`).
 - `Tracera-wtrees/lockfile-regen-2026-04-27/`, `Tracely-wtrees/journey-impl/`, `Tracely-wtrees/release-cut-adopt/` are empty checkout directories — Tracera and Tracely are tracked as feature branches in the AgilePlus monorepo, not as separate repositories.
 - `git rev-parse --show-toplevel` from any of the three subdirs returns `C:/Users/koosh/Dev/AgilePlus`.
@@ -31,34 +32,39 @@ Evidence:
 
 ## 2. Per-repo baseline audit
 
-| Repo | `.gitleaks.toml` | `deny.toml` | `CODEOWNERS` | Verdict |
-|------|:----------------:|:-----------:|:------------:|---------|
-| AgilePlus | ❌ MISSING (this PR adds it) | ✅ PRESENT (35 lines) | ✅ PRESENT (19 lines) | **1 gap closed** |
-| Tracera  | n/a (shares AgilePlus) | n/a | n/a | **covered by AgilePlus baseline** |
-| Tracely  | n/a (shares AgilePlus) | n/a | n/a | **covered by AgilePlus baseline** |
+| Repo      |       `.gitleaks.toml`       |      `deny.toml`      |     `CODEOWNERS`      | Verdict                           |
+| --------- | :--------------------------: | :-------------------: | :-------------------: | --------------------------------- |
+| AgilePlus | ❌ MISSING (this PR adds it) | ✅ PRESENT (35 lines) | ✅ PRESENT (19 lines) | **1 gap closed**                  |
+| Tracera   |    n/a (shares AgilePlus)    |          n/a          |          n/a          | **covered by AgilePlus baseline** |
+| Tracely   |    n/a (shares AgilePlus)    |          n/a          |          n/a          | **covered by AgilePlus baseline** |
 
 ### AgilePlus — `deny.toml` (✅)
+
 Path: `deny.toml` (657 bytes, 35 lines)
+
 - `[advisories]`: `db-path = "$CARGO_HOME/advisory-db"`
-- `[licenses] v2`: 18 allowlisted SPDX identifiers (Apache-2.0, MIT, BSD-*, MPL-2.0, Unicode-*, Zlib, etc.)
+- `[licenses] v2`: 18 allowlisted SPDX identifiers (Apache-2.0, MIT, BSD-_, MPL-2.0, Unicode-_, Zlib, etc.)
 - `[bans]`: `multiple-versions = "warn"`, `wildcards = "deny"`
 - `[sources]`: `unknown-git = "deny"`, `unknown-registry = "warn"`, `allow-registry = crates.io`
 - **No changes needed** — this is the canonical Phenotype baseline.
 
 ### AgilePlus — `CODEOWNERS` (✅)
+
 Path: `CODEOWNERS` (558 bytes, 19 lines)
+
 - Single owner `@<REDACTED>` across `/crates/`, `/apps/`, `/tools/`, all `*.md`, `*.yml`, `*.yaml`, default `*`.
 - **No changes needed** — scoped ownership baseline is in place.
 
 ### AgilePlus — `.gitleaks.toml` (❌ → ✅ fixed in this PR)
+
 - **Before:** absent. Secret-scanning was relying on `.trufflehog.yml` (workflow-scoped) and the `dispatch-mcp` TruffleHog CI workflow (`ci(dispatch-mcp): add TruffleHog secret scanning workflow`, #786).
 - **After (this PR):** adds `.gitleaks.toml` with:
-  - Default ruleset (`[extend] useDefault = true`)
-  - Allowlist mirroring `.trufflehog.yml` (paths: `target/`, `node_modules/`, `dist/`, `.venv/`, `vendor/`, `.archive/`, `.substrate/`, etc.)
-  - Stopwords list to suppress common false positives
-  - Regex safety nets for SHA-256 hashes, git SHAs, Cargo version pins
-  - Four AgilePlus-specific rules: `agileplus-bearer-token`, `agileplus-env-file`, `aws-access-token`, `github-pat`, `private-key-block`
-  - `commit_limit = 0` for fast pre-commit cadence; CI workflows should pass `--log-opts=--all` for history-wide scans.
+    - Default ruleset (`[extend] useDefault = true`)
+    - Allowlist mirroring `.trufflehog.yml` (paths: `target/`, `node_modules/`, `dist/`, `.venv/`, `vendor/`, `.archive/`, `.substrate/`, etc.)
+    - Stopwords list to suppress common false positives
+    - Regex safety nets for SHA-256 hashes, git SHAs, Cargo version pins
+    - Four AgilePlus-specific rules: `agileplus-bearer-token`, `agileplus-env-file`, `aws-access-token`, `github-pat`, `private-key-block`
+    - `commit_limit = 0` for fast pre-commit cadence; CI workflows should pass `--log-opts=--all` for history-wide scans.
 
 ---
 
@@ -66,21 +72,22 @@ Path: `CODEOWNERS` (558 bytes, 19 lines)
 
 The following configs already exist alongside the baseline trio and were **not** modified:
 
-| File | Purpose | Lines |
-|------|---------|-------|
-| `.trufflehog.yml` | TruffleHog (deep historical secret scan) | 14 |
-| `.semgrep.yml` | SAST rule aggregator | 34 |
-| `.pre-commit-config.yaml` | Pre-commit hook chain | (large) |
-| `.commitlintrc.json` / `.commitlintrc.yml` | Commit message linting | small |
-| `.cliff.toml` | Changelog generation (git-cliff) | medium |
-| `.coderabbit.yaml` | AI code review config | medium |
-| `.gitattributes` | Line-ending / diff attributes | small |
-| `.editorconfig` | Editor formatting | small |
-| `.dockerignore` | Docker build excludes | small |
-| `deny.toml` | Cargo supply-chain gate | 35 |
-| `CODEOWNERS` | PR review assignments | 19 |
+| File                                       | Purpose                                  | Lines   |
+| ------------------------------------------ | ---------------------------------------- | ------- |
+| `.trufflehog.yml`                          | TruffleHog (deep historical secret scan) | 14      |
+| `.semgrep.yml`                             | SAST rule aggregator                     | 34      |
+| `.pre-commit-config.yaml`                  | Pre-commit hook chain                    | (large) |
+| `.commitlintrc.json` / `.commitlintrc.yml` | Commit message linting                   | small   |
+| `.cliff.toml`                              | Changelog generation (git-cliff)         | medium  |
+| `.coderabbit.yaml`                         | AI code review config                    | medium  |
+| `.gitattributes`                           | Line-ending / diff attributes            | small   |
+| `.editorconfig`                            | Editor formatting                        | small   |
+| `.dockerignore`                            | Docker build excludes                    | small   |
+| `deny.toml`                                | Cargo supply-chain gate                  | 35      |
+| `CODEOWNERS`                               | PR review assignments                    | 19      |
 
 This means the secret-scanning surface is **two-layered** after this PR:
+
 1. **Gitleaks** (this PR) — fast pre-commit / push baseline with AgilePlus-tuned rules.
 2. **TruffleHog** — deep history-wide scan, runs in CI (`dispatch-mcp` workflow).
 
@@ -88,11 +95,11 @@ This means the secret-scanning surface is **two-layered** after this PR:
 
 ## 4. CI integration plan
 
-| Workflow file | Should call | Notes |
-|---------------|-------------|-------|
-| `.github/workflows/ci.yml` (or equivalent) | `gitleaks/gitleaks-action@v2` | Use config from `.gitleaks.toml` |
-| Existing `.github/workflows/dispatch-mcp.yml` | TruffleHog (already wired per #786) | No change |
-| `.pre-commit-config.yaml` | `gitleaks/gitleaks` pre-commit hook | Optional; hook ID available upstream |
+| Workflow file                                 | Should call                         | Notes                                |
+| --------------------------------------------- | ----------------------------------- | ------------------------------------ |
+| `.github/workflows/ci.yml` (or equivalent)    | `gitleaks/gitleaks-action@v2`       | Use config from `.gitleaks.toml`     |
+| Existing `.github/workflows/dispatch-mcp.yml` | TruffleHog (already wired per #786) | No change                            |
+| `.pre-commit-config.yaml`                     | `gitleaks/gitleaks` pre-commit hook | Optional; hook ID available upstream |
 
 When wiring Gitleaks into CI, the action will inherit the `commit_limit = 0` baseline here. For history-wide scans (recommended weekly + on release branches), override via the action's `args:` to pass `--log-opts="--all"`.
 
@@ -126,4 +133,4 @@ When wiring Gitleaks into CI, the action will inherit the `commit_limit = 0` bas
 
 ---
 
-*Generated by Forge agent on 2026-06-23 as part of Phase 3 Lane 4 batch-2 governance audit.*
+_Generated by Forge agent on 2026-06-23 as part of Phase 3 Lane 4 batch-2 governance audit._

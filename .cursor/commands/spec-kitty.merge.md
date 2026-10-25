@@ -7,8 +7,8 @@ description: DEPRECATED — use `ap pr-builder merge` instead. See docs/design/S
 
 ## Migration
 
-| SpecKitty | AgilePlus (`ap`) |
-|-----------|-------------------|
+| SpecKitty           | AgilePlus (`ap`)                   |
+| ------------------- | ---------------------------------- |
 | `/spec-kitty.merge` | `ap pr-builder merge <feature-id>` |
 
 ```bash

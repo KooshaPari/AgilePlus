@@ -7,8 +7,8 @@ description: DEPRECATED — use `ap implement` instead. See docs/design/SPECKITT
 
 ## Migration
 
-| SpecKitty | AgilePlus (`ap`) |
-|-----------|-------------------|
+| SpecKitty               | AgilePlus (`ap`)            |
+| ----------------------- | --------------------------- |
 | `/spec-kitty.implement` | `ap implement <feature-id>` |
 
 ```bash

@@ -17,13 +17,13 @@ Identified performance optimization opportunities based on research and code ana
 
 ### Optimization Candidates
 
-| Area | Current | Target | Priority |
-|------|---------|--------|----------|
-| SQLite queries | Basic indexes | Optimized indexes | P2 |
-| Cache hit rate | Unknown | 80%+ | P2 |
-| Event replay | Full replay | Incremental snapshots | P1 |
-| Agent dispatch | Sequential | Parallel worktrees | P1 |
-| Graph queries | Cypher only | Hybrid with SQLite | P2 |
+| Area           | Current       | Target                | Priority |
+| -------------- | ------------- | --------------------- | -------- |
+| SQLite queries | Basic indexes | Optimized indexes     | P2       |
+| Cache hit rate | Unknown       | 80%+                  | P2       |
+| Event replay   | Full replay   | Incremental snapshots | P1       |
+| Agent dispatch | Sequential    | Parallel worktrees    | P1       |
+| Graph queries  | Cypher only   | Hybrid with SQLite    | P2       |
 
 ### Tasks Identified
 
@@ -52,27 +52,27 @@ Analyzed performance research from KushDocs. Key findings for Phenotype ecosyste
 
 ### High-Value Optimizations
 
-| Technique | Application | Effort |
-|-----------|-------------|--------|
+| Technique               | Application                       | Effort |
+| ----------------------- | --------------------------------- | ------ |
 | Zero-copy architectures | Agent inter-process communication | Medium |
-| tmpfs/shared memory | Hot path data | Low |
-| SGLang vs vLLM | LLM inference | High |
-| Speculative decoding | Agent responses | Medium |
+| tmpfs/shared memory     | Hot path data                     | Low    |
+| SGLang vs vLLM          | LLM inference                     | High   |
+| Speculative decoding    | Agent responses                   | Medium |
 
 ### Recommendations
 
 1. **Evaluate SGLang** for LLM inference layer
-   - Better batching than vLLM
-   - Speculative decoding support
-   - FlashAttention integration
+    - Better batching than vLLM
+    - Speculative decoding support
+    - FlashAttention integration
 
 2. **Consider zero-copy** for agent communication
-   - Shared memory for large payloads
-   - IPC optimization
+    - Shared memory for large payloads
+    - IPC optimization
 
 3. **Monitor tmpfs usage**
-   - Hot data in memory
-   - Reduce disk I/O
+    - Hot data in memory
+    - Reduce disk I/O
 
 ### Related
 
@@ -94,13 +94,13 @@ Plan for establishing performance baselines and benchmarks.
 
 ### Metrics to Track
 
-| Metric | Current | Target | Measurement |
-|--------|---------|--------|-------------|
-| CLI cold start | Unknown | <200ms | `time agileplus` |
-| Feature CRUD | Unknown | <50ms | API benchmarks |
-| Agent dispatch | Unknown | <1s | Include spawn time |
-| Graph queries | Unknown | <100ms | Cypher benchmarks |
-| Cache hit rate | Unknown | >80% | Prometheus metrics |
+| Metric         | Current | Target | Measurement        |
+| -------------- | ------- | ------ | ------------------ |
+| CLI cold start | Unknown | <200ms | `time agileplus`   |
+| Feature CRUD   | Unknown | <50ms  | API benchmarks     |
+| Agent dispatch | Unknown | <1s    | Include spawn time |
+| Graph queries  | Unknown | <100ms | Cypher benchmarks  |
+| Cache hit rate | Unknown | >80%   | Prometheus metrics |
 
 ### Benchmark Suite
 
@@ -148,12 +148,12 @@ Research into LLM inference optimization for agent workloads.
 
 ### Technology Comparison
 
-| Technology | Latency | Throughput | Memory | Best For |
-|------------|---------|------------|--------|----------|
-| SGLang | Low | High | Medium | Batched inference |
-| vLLM | Medium | High | High | High throughput |
-| Ollama | High | Low | Low | Local development |
-| Anthropic API | Low | High | N/A | Production |
+| Technology    | Latency | Throughput | Memory | Best For          |
+| ------------- | ------- | ---------- | ------ | ----------------- |
+| SGLang        | Low     | High       | Medium | Batched inference |
+| vLLM          | Medium  | High       | High   | High throughput   |
+| Ollama        | High    | Low        | Low    | Local development |
+| Anthropic API | Low     | High       | N/A    | Production        |
 
 ### Recommendations
 

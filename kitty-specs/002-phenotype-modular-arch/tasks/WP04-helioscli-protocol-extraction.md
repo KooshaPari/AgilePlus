@@ -1,13 +1,13 @@
 ---
 work_package_id: WP04
-title: 'heliosCLI: Protocol Extraction to Shared Repo'
+title: "heliosCLI: Protocol Extraction to Shared Repo"
 lane: planned
 dependencies: []
 subtasks: [T011]
 history:
-- date: '2026-03-03'
-  event: created
-  by: spec-kitty.tasks
+    - date: "2026-03-03"
+      event: created
+      by: spec-kitty.tasks
 ---
 
 # WP04: heliosCLI — Protocol Extraction to Shared Repo
@@ -30,29 +30,32 @@ Extract the `protocol` crate types from the heliosCLI Cargo workspace to the `ph
 ### T011: Extract protocol crate to phenotype-rs-protocol
 
 **Steps**:
+
 1. Identify the protocol crate in the merged workspace (likely `codex-rs/core/` or a dedicated `protocol` crate)
 2. Copy relevant types to `phenotype-rs-protocol/src/`:
-   - `lib.rs` — re-exports
-   - `model.rs` — ModelConfig, model-related types
-   - `tool.rs` — ToolSpec, DynamicToolSpec
-   - `message.rs` — MessageHistory, conversation types
-   - `policy.rs` — ApprovalPolicy, approval-related types
+    - `lib.rs` — re-exports
+    - `model.rs` — ModelConfig, model-related types
+    - `tool.rs` — ToolSpec, DynamicToolSpec
+    - `message.rs` — MessageHistory, conversation types
+    - `policy.rs` — ApprovalPolicy, approval-related types
 3. Add dependencies to `phenotype-rs-protocol/Cargo.toml` (serde, prost if proto-generated)
 4. In heliosCLI, replace local protocol types with `phenotype-rs-protocol` dependency:
-   ```toml
-   [dependencies]
-   phenotype-rs-protocol = { git = "https://github.com/KooshaPari/phenotype-rs-protocol", branch = "main" }
-   ```
+    ```toml
+    [dependencies]
+    phenotype-rs-protocol = { git = "https://github.com/KooshaPari/phenotype-rs-protocol", branch = "main" }
+    ```
 5. Update all `use protocol::*` imports across heliosCLI crates
 6. Remove the local protocol crate from heliosCLI workspace
 
 **Files**:
+
 - `phenotype-rs-protocol/src/*.rs` (new, ~8K LOC total)
 - `phenotype-rs-protocol/Cargo.toml` (updated deps)
 - heliosCLI `Cargo.toml` (workspace members, add git dep)
 - All heliosCLI files importing protocol types (import path updates)
 
 **Validation**:
+
 - `cargo build` in phenotype-rs-protocol succeeds
 - `cargo build --workspace` in heliosCLI succeeds with external dep
 - `cargo test --workspace` passes

@@ -12,24 +12,24 @@
 
 ### Session Summary
 
-| Field | Value |
-|-------|-------|
-| Duration | 48 minutes (33 research + 15 framework) |
-| Scope | 1,599 files across 27 Rust crates |
-| LOC Identified | 1,800 lines of duplication |
-| Savings Potential | 1,200 lines through consolidation |
+| Field             | Value                                   |
+| ----------------- | --------------------------------------- |
+| Duration          | 48 minutes (33 research + 15 framework) |
+| Scope             | 1,599 files across 27 Rust crates       |
+| LOC Identified    | 1,800 lines of duplication              |
+| Savings Potential | 1,200 lines through consolidation       |
 
 ### Key Findings
 
 #### 🔴 CRITICAL: Error Types — 8 Independent Definitions (~600 LOC)
 
-| Crate | Error Type | Lines |
-|-------|------------|-------|
-| `agileplus-api/src/error.rs` | ApiError | 67 |
-| `agileplus-p2p/src/error.rs` | SyncError, PeerDiscoveryError | 78 |
-| `agileplus-domain/src/error.rs` | DomainError | 50 |
-| `agileplus-graph/src/store.rs` | GraphError | 326 |
-| `agileplus-cache/src/store.rs` | CacheError | 129 |
+| Crate                           | Error Type                    | Lines |
+| ------------------------------- | ----------------------------- | ----- |
+| `agileplus-api/src/error.rs`    | ApiError                      | 67    |
+| `agileplus-p2p/src/error.rs`    | SyncError, PeerDiscoveryError | 78    |
+| `agileplus-domain/src/error.rs` | DomainError                   | 50    |
+| `agileplus-graph/src/store.rs`  | GraphError                    | 326   |
+| `agileplus-cache/src/store.rs`  | CacheError                    | 129   |
 
 **Action**: Create `libs/agileplus-error/` for consolidation
 
@@ -37,11 +37,11 @@
 
 All `libs/` use `edition = "2021"` while workspace uses `edition = "2024"`.
 
-| Library | Value | Recommendation |
-|---------|-------|---------------|
-| `hexagonal-rs` | HIGH - has exact Repository patterns | Migrate edition |
-| `config-core` | HIGH - config loading ready | Migrate edition |
-| `phenotype-state-machine` | LOW | DELETE (dead code) |
+| Library                   | Value                                | Recommendation     |
+| ------------------------- | ------------------------------------ | ------------------ |
+| `hexagonal-rs`            | HIGH - has exact Repository patterns | Migrate edition    |
+| `config-core`             | HIGH - config loading ready          | Migrate edition    |
+| `phenotype-state-machine` | LOW                                  | DELETE (dead code) |
 
 #### 🟠 MEDIUM: 5+ Async Repository Traits
 
@@ -73,31 +73,31 @@ See `docs/research/consolidation-audit-2026-03-29.md` for master findings.
 
 ### ECO Work Package Status
 
-| ID | Work Package | Status |
-|----|-------------|--------|
-| ECO-001 | Worktree Remediation | ✅ COMPLETE |
-| ECO-002 | Branch Consolidation | ✅ COMPLETE |
+| ID      | Work Package                   | Status                     |
+| ------- | ------------------------------ | -------------------------- |
+| ECO-001 | Worktree Remediation           | ✅ COMPLETE                |
+| ECO-002 | Branch Consolidation           | ✅ COMPLETE                |
 | ECO-003 | Circular Dependency Resolution | ✅ SHIPPED (CI CONFIGURED) |
-| ECO-004 | Hexagonal Migration | ✅ NO WORK NEEDED |
-| ECO-006 | Final Merge Stabilization | ✅ COMPLETE |
+| ECO-004 | Hexagonal Migration            | ✅ NO WORK NEEDED          |
+| ECO-006 | Final Merge Stabilization      | ✅ COMPLETE                |
 
 ### Merge Stabilization Complete
 
-| Repo | PRs Merged | Status |
-|------|------------|--------|
-| thegent | pr-679, pr-680, pr-681, pr-682, pr-833 | ✅ |
-| AgilePlus | pr-208 | ✅ |
-| portage | phase2-decompose branches | ✅ |
-| template-commons | governance, policy, hardening | ✅ |
+| Repo             | PRs Merged                             | Status |
+| ---------------- | -------------------------------------- | ------ |
+| thegent          | pr-679, pr-680, pr-681, pr-682, pr-833 | ✅     |
+| AgilePlus        | pr-208                                 | ✅     |
+| portage          | phase2-decompose branches              | ✅     |
+| template-commons | governance, policy, hardening          | ✅     |
 
 ### Quality Gate Results
 
-| Metric | Result |
-|--------|--------|
-| Python syntax errors | 0 (1 fixed) |
-| Ruff lint errors | 0 (21 fixed) |
-| Tests passed | 83/83 |
-| Non-canonical folders | Cleaned |
+| Metric                | Result       |
+| --------------------- | ------------ |
+| Python syntax errors  | 0 (1 fixed)  |
+| Ruff lint errors      | 0 (21 fixed) |
+| Tests passed          | 83/83        |
+| Non-canonical folders | Cleaned      |
 
 ---
 
@@ -108,22 +108,22 @@ See `docs/research/consolidation-audit-2026-03-29.md` for master findings.
 
 ### Final Status
 
-| Repository | Branch | Status | Tests |
-|------------|--------|--------|-------|
-| thegent | main | ✅ CLEAN | 6/6 pass |
-| cliproxyapi-plusplus | main | ✅ CLEAN | 44 packages pass |
-| AgilePlus | main | ✅ CLEAN | CI fixed |
+| Repository           | Branch | Status   | Tests            |
+| -------------------- | ------ | -------- | ---------------- |
+| thegent              | main   | ✅ CLEAN | 6/6 pass         |
+| cliproxyapi-plusplus | main   | ✅ CLEAN | 44 packages pass |
+| AgilePlus            | main   | ✅ CLEAN | CI fixed         |
 
 ### ECO Packages: ALL SHIPPED
 
-| ID | Package | Status |
-|----|---------|--------|
+| ID      | Package              | Status     |
+| ------- | -------------------- | ---------- |
 | ECO-001 | Worktree Remediation | ✅ SHIPPED |
 | ECO-002 | Branch Consolidation | ✅ SHIPPED |
-| ECO-003 | Circular Dependency | ✅ SHIPPED |
-| ECO-004 | Hexagonal Migration | ✅ SHIPPED |
-| ECO-005 | XDD Quality | ✅ SHIPPED |
-| ECO-006 | Governance Sync | ✅ SHIPPED |
+| ECO-003 | Circular Dependency  | ✅ SHIPPED |
+| ECO-004 | Hexagonal Migration  | ✅ SHIPPED |
+| ECO-005 | XDD Quality          | ✅ SHIPPED |
+| ECO-006 | Governance Sync      | ✅ SHIPPED |
 
 ---
 
@@ -131,9 +131,9 @@ See `docs/research/consolidation-audit-2026-03-29.md` for master findings.
 
 **Status:** completed
 
-| Item | Status | Notes |
-|------|--------|-------|
-| Sync Canary fix (#215) | ✅ Fixed | `branch:sync` → `branch sync` |
+| Item                       | Status   | Notes                              |
+| -------------------------- | -------- | ---------------------------------- |
+| Sync Canary fix (#215)     | ✅ Fixed | `branch:sync` → `branch sync`      |
 | VitePress Pages fix (#216) | ✅ Fixed | `upload-pages-artifact@v3` → `@v4` |
 
 ---
@@ -142,11 +142,11 @@ See `docs/research/consolidation-audit-2026-03-29.md` for master findings.
 
 **Status:** completed
 
-| Metric | Before | After |
-|--------|--------|-------|
-| Test collection errors | 795+ | 0 |
-| Tests collected | 3,924 | 0 |
-| Test directories archived | 0 | 54 |
+| Metric                    | Before | After |
+| ------------------------- | ------ | ----- |
+| Test collection errors    | 795+   | 0     |
+| Tests collected           | 3,924  | 0     |
+| Test directories archived | 0      | 54    |
 
 ### Actions Taken
 
@@ -161,12 +161,14 @@ See `docs/research/consolidation-audit-2026-03-29.md` for master findings.
 **Status:** completed
 
 ### Git State
+
 - Branch: main (clean, pushed)
 - feat/rescued-detached-head-work: merged
 - fix/cache-test-pyright: merged
 - PR #865: merged
 
 ### Testing
+
 - test_audit_log.py: 12 passed
 - test_batch_ops.py: 5 passed
 - test_board_artifact_integrator.py: 37 passed

@@ -5,10 +5,11 @@
 ## WP-01: Close/merge 10 open PRs in phenotype-infrakit
 
 **File Scope:**
+
 - Read: [`phenotype-infrakit/` repository metadata, `phenotype-infrakit/.github/pull_request_template.md`, `phenotype-infrakit/docs/`, `phenotype-infrakit/src/`, `phenotype-infrakit/tests/`]
 - Write: [`phenotype-infrakit/` repository metadata, `phenotype-infrakit/.github/pull_request_template.md`, `phenotype-infrakit/docs/`, `phenotype-infrakit/src/`, `phenotype-infrakit/tests/`]
-**Depends on:** none
-**Effort:** M
+  **Depends on:** none
+  **Effort:** M
 
 <!-- Reconciled 2026-04-28: PRs #544-#563 verified earlier as 13 MERGED + 3 CLOSED + 3 not-found.
      All items effectively done; ticked. See spec-stale-checkbox-pattern.md. -->
@@ -34,10 +35,11 @@
 ## WP-02: Delete 8 obvious test/typo repos
 
 **File Scope:**
+
 - Read: [GitHub repositories `agentapi-deprec`, `tehgent`, `BytePort-TestPortfolio`, `Byteport-TestZip`, `P2`, `Tokn`, `argisexec`, `acp`; local clones under `/Users/<REDACTED>/CodeProjects/Phenotype/repos/`]
 - Write: [GitHub repositories `agentapi-deprec`, `tehgent`, `BytePort-TestPortfolio`, `Byteport-TestZip`, `P2`, `Tokn`, `argisexec`, `acp`; local clones under `/Users/<REDACTED>/CodeProjects/Phenotype/repos/`]
-**Depends on:** WP-01
-**Effort:** M
+  **Depends on:** WP-01
+  **Effort:** M
 
 ### Acceptance Criteria
 
@@ -58,10 +60,11 @@
 ## WP-03: Clean 22 GB build artifacts locally
 
 **File Scope:**
+
 - Read: [`heliosCLI/bazel-*`, `*/node_modules`, `*/.venv`, workspace `target/`, shelf-root `*.log`]
 - Write: [`heliosCLI/bazel-*`, `*/node_modules`, `*/.venv`, workspace `target/`, shelf-root `*.log`]
-**Depends on:** WP-02
-**Effort:** S
+  **Depends on:** WP-02
+  **Effort:** S
 
 ### Acceptance Criteria
 
@@ -79,10 +82,11 @@
 ## WP-04: Enforce .gitignore across 9 cloned repos
 
 **File Scope:**
+
 - Read: [`phenotype-infrakit/.gitignore`, `AgilePlus/.gitignore`, `thegent/.gitignore`, `heliosCLI/.gitignore`, `heliosApp/.gitignore`, `agentapi-plusplus/.gitignore`, `cliproxyapi-plusplus/.gitignore`, `cloud/.gitignore`, `agent-wave/.gitignore`]
 - Write: [`phenotype-infrakit/.gitignore`, `AgilePlus/.gitignore`, `thegent/.gitignore`, `heliosCLI/.gitignore`, `heliosApp/.gitignore`, `agentapi-plusplus/.gitignore`, `cliproxyapi-plusplus/.gitignore`, `cloud/.gitignore`, `agent-wave/.gitignore`]
-**Depends on:** WP-03
-**Effort:** M
+  **Depends on:** WP-03
+  **Effort:** M
 
 ### Acceptance Criteria
 
@@ -91,10 +95,10 @@
 
 ### Tasks
 
-- [ ] T024 — phenotype-infrakit: Add target/, *.log to .gitignore — `phenotype-infrakit/.gitignore`
-- [ ] T025 — AgilePlus: Add target/, .venv/, __pycache__/ to .gitignore — `AgilePlus/.gitignore`
+- [ ] T024 — phenotype-infrakit: Add target/, \*.log to .gitignore — `phenotype-infrakit/.gitignore`
+- [ ] T025 — AgilePlus: Add target/, .venv/, **pycache**/ to .gitignore — `AgilePlus/.gitignore`
 - [ ] T026 — thegent: Add node_modules/, .venv/, target/ to .gitignore — `thegent/.gitignore`
-- [ ] T027 — heliosCLI: Add bazel-*, target/ to .gitignore — `heliosCLI/.gitignore`
+- [ ] T027 — heliosCLI: Add bazel-\*, target/ to .gitignore — `heliosCLI/.gitignore`
 - [ ] T028 — heliosApp: Add node_modules/, dist/ to .gitignore — `heliosApp/.gitignore`
 - [ ] T029 — agentapi-plusplus: Add node_modules/, dist/ to .gitignore — `agentapi-plusplus/.gitignore`
 - [ ] T030 — cliproxyapi-plusplus: Verify .gitignore completeness — `cliproxyapi-plusplus/.gitignore`
@@ -104,10 +108,11 @@
 ## WP-05: Set up org-level .github repo with reusable workflows
 
 **File Scope:**
+
 - Read: [`github.com/KooshaPari/.github`, `.github/workflows/`, active repo workflow files under `.github/workflows/*.yml`]
 - Write: [`github.com/KooshaPari/.github`, `.github/workflows/`, active repo workflow files under `.github/workflows/*.yml`]
-**Depends on:** WP-04
-**Effort:** L
+  **Depends on:** WP-04
+  **Effort:** L
 
 ### Acceptance Criteria
 
@@ -131,10 +136,11 @@
 ## WP-06: Audit and enrich 35 AgilePlus specs
 
 **File Scope:**
+
 - Read: [`kitty-specs/*/spec.md`, `kitty-specs/*/plan.md`, `kitty-specs/*/tasks.md`, `kitty-specs/*/research.md`, `worklog.md`]
 - Write: [`kitty-specs/*/spec.md`, `kitty-specs/*/plan.md`, `kitty-specs/*/tasks.md`, `kitty-specs/*/research.md`, `worklog.md`]
-**Depends on:** WP-05
-**Effort:** L
+  **Depends on:** WP-05
+  **Effort:** L
 
 ### Acceptance Criteria
 
@@ -155,10 +161,11 @@
 ## WP-07: Establish worktree discipline
 
 **File Scope:**
+
 - Read: [`WORKTREES.md`, worktree directories `docs/`, `infrastructure/`, `phenotype-errors/`, `cache-adapter-impl`, `phenotype-crypto-complete`]
 - Write: [`WORKTREES.md`, worktree directories `docs/`, `infrastructure/`, `phenotype-errors/`, `cache-adapter-impl`, `phenotype-crypto-complete`]
-**Depends on:** WP-06
-**Effort:** M
+  **Depends on:** WP-06
+  **Effort:** M
 
 ### Acceptance Criteria
 
@@ -176,10 +183,11 @@
 ## WP-08: Run cargo fmt && cargo clippy on phenotype-infrakit
 
 **File Scope:**
+
 - Read: [`phenotype-infrakit/Cargo.toml`, `phenotype-infrakit/Cargo.lock`, `phenotype-infrakit/crates/**`, `phenotype-infrakit/tests/**`]
 - Write: [`phenotype-infrakit/Cargo.toml`, `phenotype-infrakit/Cargo.lock`, `phenotype-infrakit/crates/**`, `phenotype-infrakit/tests/**`]
-**Depends on:** WP-01, WP-04
-**Effort:** M
+  **Depends on:** WP-01, WP-04
+  **Effort:** M
 
 ### Acceptance Criteria
 
@@ -196,10 +204,11 @@
 ## WP-09: Commit all dirty files across 9 repos
 
 **File Scope:**
+
 - Read: [dirty files in `phenotype-infrakit`, `AgilePlus`, `thegent`, `heliosCLI`, `heliosApp`, `agentapi-plusplus`, `cliproxyapi-plusplus`, and `cloud`]
 - Write: [dirty files in `phenotype-infrakit`, `AgilePlus`, `thegent`, `heliosCLI`, `heliosApp`, `agentapi-plusplus`, `cliproxyapi-plusplus`, and `cloud`]
-**Depends on:** WP-04, WP-08
-**Effort:** M
+  **Depends on:** WP-04, WP-08
+  **Effort:** M
 
 ### Acceptance Criteria
 
@@ -220,10 +229,11 @@
 ## WP-10: Return canonical repos to main
 
 **File Scope:**
+
 - Read: [`thegent`, `heliosApp`, `heliosCLI` git branch state]
 - Write: [`thegent`, `heliosApp`, `heliosCLI` git branch state]
-**Depends on:** WP-09
-**Effort:** M
+  **Depends on:** WP-09
+  **Effort:** M
 
 ### Acceptance Criteria
 
@@ -240,10 +250,11 @@
 ## WP-10b: Batch ecosystem audits (automatable probes)
 
 **File Scope:**
+
 - Read: [`*/.git`, `*/Cargo.toml`, `*/deny.toml`, `*/target/`, `*/README.md`]
 - Write: [`kitty-specs/021-polyrepo-ecosystem-stabilization/tasks.md`]
-**Depends on:** none
-**Effort:** S
+  **Depends on:** none
+  **Effort:** S
 
 ### Acceptance Criteria
 
@@ -264,10 +275,11 @@
 ## WP-11: Merge 15 duplicate repos into 8 targets
 
 **File Scope:**
+
 - Read: [duplicate GitHub repositories and target repositories `phenotype-contracts`, `phenotype-error-core`, `thegent/apps/plugin-host`, `forgecode`, `hexagon-rs`, `AgilePlus/packages/agents`, `AgilePlus/packages/mcp`, `phenotype-hub/docs/`, `fixit`, `phenotype-config-core`, `bifrost`, `vibeproxy-monitoring-unified`]
 - Write: [duplicate GitHub repositories and target repositories `phenotype-contracts`, `phenotype-error-core`, `thegent/apps/plugin-host`, `forgecode`, `hexagon-rs`, `AgilePlus/packages/agents`, `AgilePlus/packages/mcp`, `phenotype-hub/docs/`, `fixit`, `phenotype-config-core`, `bifrost`, `vibeproxy-monitoring-unified`]
-**Depends on:** WP-10
-**Effort:** XL
+  **Depends on:** WP-10
+  **Effort:** XL
 
 <!-- Reconciled 2026-04-28: 14/15 source repos already 404 (deleted) or archived.
      Only vibeproxy-monitoring-unified remains active (despite spec note);
@@ -296,13 +308,14 @@
 - [x] T086 — bifrost-routing + bifrost-routing-backup → bifrost (both 404 — deleted) — `bifrost/`
 - [ ] T087 — vibeproxy-monitoring-unified (NOT archived despite spec note — active 2026-04-27, needs review) — `vibeproxy-monitoring-unified/`
 
-## WP-12: Archive 4 odin-* course repos
+## WP-12: Archive 4 odin-\* course repos
 
 **File Scope:**
+
 - Read: [GitHub repositories `odin-dash`, `odin-TTT`, `odin-library`, `odin-recipes`]
 - Write: [GitHub repositories `odin-dash`, `odin-TTT`, `odin-library`, `odin-recipes`]
-**Depends on:** WP-11
-**Effort:** S
+  **Depends on:** WP-11
+  **Effort:** S
 
 <!-- Reconciled 2026-04-28: all 4 verified archived via gh api. -->
 
@@ -321,10 +334,11 @@
 ## WP-13: Move personal repos to separate org
 
 **File Scope:**
+
 - Read: [GitHub organization/account settings, `koosha-portfolio`, `dotfiles`, `vibeproxy`, local shelf entries, CI/CD configuration, AgilePlus tracking records]
 - Write: [GitHub organization/account settings, `koosha-portfolio`, `dotfiles`, `vibeproxy`, local shelf entries, CI/CD configuration, AgilePlus tracking records]
-**Depends on:** WP-12
-**Effort:** L
+  **Depends on:** WP-12
+  **Effort:** L
 
 ### Acceptance Criteria
 
@@ -340,13 +354,14 @@
 - [ ] T096 — Remove from local shelf — `/Users/<REDACTED>/CodeProjects/Phenotype/repos/`
 - [ ] T097 — Exclude from CI/CD and AgilePlus tracking — `.github/workflows/`, `kitty-specs/`
 
-## WP-14: Set up GitHub Packages for @phenotype/*
+## WP-14: Set up GitHub Packages for @phenotype/\*
 
 **File Scope:**
+
 - Read: [`package.json`, `.npmrc`, `.github/workflows/publish*.yml`, `@phenotype/*` packages]
 - Write: [`package.json`, `.npmrc`, `.github/workflows/publish*.yml`, `@phenotype/*` packages]
-**Depends on:** WP-05
-**Effort:** M
+  **Depends on:** WP-05
+  **Effort:** M
 
 ### Acceptance Criteria
 
@@ -355,18 +370,19 @@
 
 ### Tasks
 
-- [ ] T098 — Configure npm scope @phenotype/* — `.npmrc`
+- [ ] T098 — Configure npm scope @phenotype/\* — `.npmrc`
 - [ ] T099 — Set up publishing workflow — `.github/workflows/publish.yml`
 - [ ] T100 — Publish first package — `package.json`
 - [ ] T101 — Verify installation from GitHub Packages — `package.json`
 
-## WP-15: Set up PyPI publishing for phenotype-*
+## WP-15: Set up PyPI publishing for phenotype-\*
 
 **File Scope:**
+
 - Read: [`pyproject.toml`, `.github/workflows/publish*.yml`, Python package directories matching `phenotype-*`]
 - Write: [`pyproject.toml`, `.github/workflows/publish*.yml`, Python package directories matching `phenotype-*`]
-**Depends on:** WP-05
-**Effort:** M
+  **Depends on:** WP-05
+  **Effort:** M
 
 ### Acceptance Criteria
 
@@ -383,10 +399,11 @@
 ## WP-16: Complete phenotype-infrakit Phase 3 (performance)
 
 **File Scope:**
+
 - Read: [`phenotype-infrakit/benches/`, `phenotype-infrakit/crates/**`, `phenotype-infrakit/docs/**`]
 - Write: [`phenotype-infrakit/benches/`, `phenotype-infrakit/crates/**`, `phenotype-infrakit/docs/**`]
-**Depends on:** WP-08
-**Effort:** L
+  **Depends on:** WP-08
+  **Effort:** L
 
 ### Acceptance Criteria
 
@@ -402,10 +419,11 @@
 ## WP-17: Complete AgilePlus Phase 3 (governance)
 
 **File Scope:**
+
 - Read: [`AgilePlus/`, `AgilePlus/docs/`, `AgilePlus/kitty-specs/`, policy and evidence evaluation modules]
 - Write: [`AgilePlus/`, `AgilePlus/docs/`, `AgilePlus/kitty-specs/`, policy and evidence evaluation modules]
-**Depends on:** WP-06
-**Effort:** L
+  **Depends on:** WP-06
+  **Effort:** L
 
 ### Acceptance Criteria
 
@@ -421,10 +439,11 @@
 ## WP-18: Distribute base templates to all active repos
 
 **File Scope:**
+
 - Read: [base `AGENTS.md`, `CLAUDE.md`, `README.md` templates and all active repository roots]
 - Write: [base `AGENTS.md`, `CLAUDE.md`, `README.md` templates and all active repository roots]
-**Depends on:** WP-13
-**Effort:** XL
+  **Depends on:** WP-13
+  **Effort:** XL
 
 ### Acceptance Criteria
 
@@ -446,10 +465,11 @@
 ## WP-19: Create SDK monorepo (phenotype-sdk)
 
 **File Scope:**
+
 - Read: [`phenotype-sdk/`, `packages/pheno-*`, `python/pheno-*`, workspace configuration, package publishing configuration]
 - Write: [`phenotype-sdk/`, `packages/pheno-*`, `python/pheno-*`, workspace configuration, package publishing configuration]
-**Depends on:** WP-14, WP-15
-**Effort:** XL
+  **Depends on:** WP-14, WP-15
+  **Effort:** XL
 
 ### Acceptance Criteria
 
@@ -459,18 +479,19 @@
 ### Tasks
 
 - [ ] T117 — Create phenotype-sdk repo structure — `phenotype-sdk/`
-- [ ] T118 — Move packages/pheno-* into phenotype-sdk/packages/ — `phenotype-sdk/packages/`
-- [ ] T119 — Move python/pheno-* into phenotype-sdk/python/ — `phenotype-sdk/python/`
+- [ ] T118 — Move packages/pheno-\* into phenotype-sdk/packages/ — `phenotype-sdk/packages/`
+- [ ] T119 — Move python/pheno-\* into phenotype-sdk/python/ — `phenotype-sdk/python/`
 - [ ] T120 — Set up workspace configuration — `phenotype-sdk/`
 - [ ] T121 — Configure publishing for all packages — `phenotype-sdk/.github/workflows/`
 
 ## WP-20: Set up docs federation (VitePress hub)
 
 **File Scope:**
+
 - Read: [`phenodocs/`, `thegent/docs/`, `AgilePlus/docs/`, `heliosCLI/docs/`, `phenotype-infrakit/docs/`, deployment configuration for `docs.phenotype.dev`]
 - Write: [`phenodocs/`, `thegent/docs/`, `AgilePlus/docs/`, `heliosCLI/docs/`, `phenotype-infrakit/docs/`, deployment configuration for `docs.phenotype.dev`]
-**Depends on:** WP-18
-**Effort:** L
+  **Depends on:** WP-18
+  **Effort:** L
 
 ### Acceptance Criteria
 
@@ -489,10 +510,11 @@
 ## WP-21: Implement health check pattern
 
 **File Scope:**
+
 - Read: [service routes/controllers across active services, health monitoring configuration, `/health` endpoint documentation]
 - Write: [service routes/controllers across active services, health monitoring configuration, `/health` endpoint documentation]
-**Depends on:** WP-18
-**Effort:** L
+  **Depends on:** WP-18
+  **Effort:** L
 
 ### Acceptance Criteria
 
@@ -508,10 +530,11 @@
 ## WP-22: Set up Sentry for all production services
 
 **File Scope:**
+
 - Read: [Sentry project settings, service dependency manifests, service runtime configuration, alerting rules]
 - Write: [Sentry project settings, service dependency manifests, service runtime configuration, alerting rules]
-**Depends on:** WP-21
-**Effort:** L
+  **Depends on:** WP-21
+  **Effort:** L
 
 ### Acceptance Criteria
 
@@ -527,10 +550,11 @@
 ## WP-23: Complete thegent Phase 3 (memory)
 
 **File Scope:**
+
 - Read: [`thegent/` memory layer, cross-platform integration code, tests, documentation]
 - Write: [`thegent/` memory layer, cross-platform integration code, tests, documentation]
-**Depends on:** WP-10
-**Effort:** L
+  **Depends on:** WP-10
+  **Effort:** L
 
 ### Acceptance Criteria
 
@@ -546,10 +570,11 @@
 ## WP-24: Complete heliosCLI Phase 2 (sandboxing)
 
 **File Scope:**
+
 - Read: [`heliosCLI/` sandboxing implementation, security review notes, tests, documentation]
 - Write: [`heliosCLI/` sandboxing implementation, security review notes, tests, documentation]
-**Depends on:** WP-10
-**Effort:** L
+  **Depends on:** WP-10
+  **Effort:** L
 
 ### Acceptance Criteria
 
@@ -565,10 +590,11 @@
 ## WP-25: Archive 11 low-signal personal projects
 
 **File Scope:**
+
 - Read: [GitHub repositories `heliosBench`, `QuadSGM`, `Kogito`, `Tossy`, `Frostify`, `AppGen`, `TripleM`, `Project-Spyn`, `ssToCal-front`, `BytePortfolio`, `agentapi`]
 - Write: [GitHub repositories `heliosBench`, `QuadSGM`, `Kogito`, `Tossy`, `Frostify`, `AppGen`, `TripleM`, `Project-Spyn`, `ssToCal-front`, `BytePortfolio`, `agentapi`]
-**Depends on:** WP-13
-**Effort:** M
+  **Depends on:** WP-13
+  **Effort:** M
 
 ### Acceptance Criteria
 
@@ -592,10 +618,11 @@
 ## WP-26: Split phenotype-infrakit into 3 workspaces (optional)
 
 **File Scope:**
+
 - Read: [`phenotype-infrakit/`, core workspace, runtime workspace, tools workspace, downstream consumer manifests]
 - Write: [`phenotype-infrakit/`, core workspace, runtime workspace, tools workspace, downstream consumer manifests]
-**Depends on:** WP-16
-**Effort:** XL
+  **Depends on:** WP-16
+  **Effort:** XL
 
 ### Acceptance Criteria
 
@@ -616,10 +643,11 @@
 ## WP-27: Complete thegent Phase 4 (cross-platform)
 
 **File Scope:**
+
 - Read: [`thegent/` cross-platform integration code, platform test configuration, documentation]
 - Write: [`thegent/` cross-platform integration code, platform test configuration, documentation]
-**Depends on:** WP-23
-**Effort:** L
+  **Depends on:** WP-23
+  **Effort:** L
 
 ### Acceptance Criteria
 
@@ -635,10 +663,11 @@
 ## WP-28: Complete phenotype-infrakit Phase 4 (enterprise)
 
 **File Scope:**
+
 - Read: [`phenotype-infrakit/` enterprise features, performance optimization code, documentation]
 - Write: [`phenotype-infrakit/` enterprise features, performance optimization code, documentation]
-**Depends on:** WP-16
-**Effort:** L
+  **Depends on:** WP-16
+  **Effort:** L
 
 ### Acceptance Criteria
 
@@ -654,10 +683,11 @@
 ## WP-29: Set up artifact storage and retention policies
 
 **File Scope:**
+
 - Read: [`.github/workflows/`, GitHub Actions cache settings, GitHub Releases, GHCR, S3/GitHub Pages benchmark storage]
 - Write: [`.github/workflows/`, GitHub Actions cache settings, GitHub Releases, GHCR, S3/GitHub Pages benchmark storage]
-**Depends on:** WP-05
-**Effort:** L
+  **Depends on:** WP-05
+  **Effort:** L
 
 ### Acceptance Criteria
 
@@ -674,10 +704,11 @@
 ## WP-30: Implement template versioning and distribution
 
 **File Scope:**
+
 - Read: [template versioning documentation, template registry, scaffolding CLI, template testing CI]
 - Write: [template versioning documentation, template registry, scaffolding CLI, template testing CI]
-**Depends on:** WP-18
-**Effort:** L
+  **Depends on:** WP-18
+  **Effort:** L
 
 ### Acceptance Criteria
 
@@ -694,10 +725,11 @@
 ## WP-31: Clone and onboard remaining ~200 repos
 
 **File Scope:**
+
 - Read: [all GitHub repositories not yet cloned locally, repository root `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/sessions/`, git health metadata]
 - Write: [all GitHub repositories not yet cloned locally, repository root `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/sessions/`, git health metadata]
-**Depends on:** WP-18
-**Effort:** XL
+  **Depends on:** WP-18
+  **Effort:** XL
 
 ### Acceptance Criteria
 
@@ -714,10 +746,11 @@
 ## WP-32: Full CI/CD coverage across all active repos
 
 **File Scope:**
+
 - Read: [active repo `.github/workflows/`, branch protection rules, required status checks]
 - Write: [active repo `.github/workflows/`, branch protection rules, required status checks]
-**Depends on:** WP-05, WP-31
-**Effort:** XL
+  **Depends on:** WP-05, WP-31
+  **Effort:** XL
 
 ### Acceptance Criteria
 
@@ -734,10 +767,11 @@
 ## WP-33: Governance audit — verify compliance
 
 **File Scope:**
+
 - Read: [active repository roots, `AGENTS.md`, `CLAUDE.md`, `docs/sessions/`, CI/CD status, git working trees, compliance report output]
 - Write: [active repository roots, `AGENTS.md`, `CLAUDE.md`, `docs/sessions/`, CI/CD status, git working trees, compliance report output]
-**Depends on:** WP-32
-**Effort:** XL
+  **Depends on:** WP-32
+  **Effort:** XL
 
 ### Acceptance Criteria
 
@@ -756,10 +790,11 @@
 ## WP-34: Performance benchmarks and optimization report
 
 **File Scope:**
+
 - Read: [benchmark suites across crates, performance documentation, optimization roadmap]
 - Write: [benchmark suites across crates, performance documentation, optimization roadmap]
-**Depends on:** WP-16, WP-28
-**Effort:** L
+  **Depends on:** WP-16, WP-28
+  **Effort:** L
 
 ### Acceptance Criteria
 

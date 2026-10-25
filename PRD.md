@@ -24,10 +24,12 @@ AgilePlus is built as a Rust workspace monorepo (22 crates) following hexagonal 
 ## Epics
 
 ### E1: Feature Lifecycle Management
+
 **Priority**: P0
 **Description**: The core domain model. A Feature progresses through an ordered state machine: Created -> Specified -> Researched -> Planned -> Implementing -> Validated -> Shipped -> Retrospected. Each transition is governed by rules, logged in an immutable audit chain, and synced to external systems. Features have slugs, spec hashes, target branches, labels, module ownership, and project association.
 
 #### Stories
+
 - E1.1: Feature CRUD -- Create features with slug, friendly name, spec hash, and target branch; retrieve by ID or slug; list by state or list all
 - E1.2: State machine transitions -- Enforce valid transitions (e.g., Planned->Implementing is allowed, Created->Shipped is not); record skipped intermediate states; reject invalid transitions with clear errors
 - E1.3: Work package decomposition -- Each feature decomposes into sequenced work packages (WP) with their own state machine (Planned->Doing->Review->Done, with Blocked), file scope, acceptance criteria, agent assignment, PR tracking, worktree path, and base/head commit SHAs
@@ -38,10 +40,12 @@ AgilePlus is built as a Rust workspace monorepo (22 crates) following hexagonal 
 ---
 
 ### E2: Governance and Evidence
+
 **Priority**: P0
 **Description**: Governance contracts bind to features and define rules that must be satisfied before state transitions are allowed. Rules require specific types of evidence (test results, CI output, review approvals, security scans, lint results, manual attestations) with optional thresholds. Evidence is collected during work package execution and linked to functional requirement IDs. Policy rules define domain-scoped enforcement (security, quality, compliance) with severity levels and auto-enforcement flags.
 
 #### Stories
+
 - E2.1: Governance contract binding -- Create versioned governance contracts for features; each contract contains rules mapping transitions to required evidence types and policy references
 - E2.2: Evidence collection -- Record evidence artifacts (test results, CI output, security scans) linked to work packages and FR IDs; store artifact paths and metadata
 - E2.3: Policy rules -- Define policy rules with domain, severity (info/warning/error/critical), descriptions, and auto-enforcement flags; evaluate policies on state transitions
@@ -50,10 +54,12 @@ AgilePlus is built as a Rust workspace monorepo (22 crates) following hexagonal 
 ---
 
 ### E3: Immutable Audit Trail and Event Sourcing
+
 **Priority**: P0
 **Description**: Every state mutation produces both a domain event and an audit entry, both forming hash chains (SHA-256) for tamper detection. Events are append-only, partitioned by entity type and ID, with sequence numbers. Snapshots materialize current state periodically for fast reads without full event replay. Audit entries link to evidence references and can be archived to object storage (MinIO).
 
 #### Stories
+
 - E3.1: Hash-chained audit log -- Every state change produces an AuditEntry with actor, timestamp, transition description, evidence references, and SHA-256 chain linking to the previous entry
 - E3.2: Event sourcing -- Append-only Event stream per entity with hash chain, sequence numbers, typed payloads, and actor attribution
 - E3.3: Snapshot materialization -- Periodic snapshots of entity state at known event sequences for fast reconstruction
@@ -63,10 +69,12 @@ AgilePlus is built as a Rust workspace monorepo (22 crates) following hexagonal 
 ---
 
 ### E4: CLI Interface
+
 **Priority**: P0
 **Description**: The `agileplus` CLI is the primary user interface, built with clap. It exposes the full feature lifecycle as subcommands that map to the domain model. Commands operate against local SQLite storage and Git worktrees.
 
 #### Stories
+
 - E4.1: `specify` -- Create or update a feature specification; generates kitty-specs directory structure with spec.md and plan.md; computes spec hash
 - E4.2: `research` -- Run research phase for a feature (agent-assisted codebase analysis)
 - E4.3: `plan` -- Generate phased WBS with DAG dependencies from a specification; parse plan artifacts into work packages
@@ -89,10 +97,12 @@ AgilePlus is built as a Rust workspace monorepo (22 crates) following hexagonal 
 ---
 
 ### E5: REST API Server
+
 **Priority**: P1
 **Description**: An Axum-based HTTP API server exposing the domain model as RESTful endpoints. Includes API key authentication middleware, OpenTelemetry instrumentation middleware, and SSE event streaming. Routes cover features, work packages, cycles, modules, audit, governance, events, backlog, branches, worktrees, and import.
 
 #### Stories
+
 - E5.1: Feature and work package CRUD routes -- Full REST endpoints for features and work packages with JSON request/response
 - E5.2: Cycle and module routes -- CRUD and relationship management for cycles and modules
 - E5.3: Audit and governance routes -- Query audit trails, governance contracts, and evidence
@@ -104,10 +114,12 @@ AgilePlus is built as a Rust workspace monorepo (22 crates) following hexagonal 
 ---
 
 ### E6: AI Agent Dispatch and Review
+
 **Priority**: P1
 **Description**: Agent orchestration for dispatching AI coding agents (Claude Code, Codex) to work packages. Each agent receives a task with prompt, worktree path, and context files. The system manages agent lifecycle (running, completed, failed, timed out), collects results (PR URLs, commits, stdout/stderr, exit codes), and orchestrates review loops with severity-classified comments.
 
 #### Stories
+
 - E6.1: Agent dispatch -- Spawn agents with configurable backend (ClaudeCode/Codex), max review cycles, timeout, and extra arguments; assign agents to work packages in isolated worktrees
 - E6.2: Agent lifecycle monitoring -- Track agent status (running, completed, failed, timed out); collect results including PR URLs, commit SHAs, and output
 - E6.3: Review loop orchestration -- Iterative review cycles: agent submits code, reviewer provides severity-classified comments (critical/major/minor/informational), agent addresses actionable feedback; loop until approved, rejected, or max cycles reached
@@ -116,10 +128,12 @@ AgilePlus is built as a Rust workspace monorepo (22 crates) following hexagonal 
 ---
 
 ### E7: External Integrations
+
 **Priority**: P1
 **Description**: Bidirectional sync with external systems. Plane.so integration maps features to issues and work packages to sub-issues with content-hash-based change detection, conflict counting, and configurable sync direction (push/pull/bidirectional). GitHub integration links features to PRs and issues. NATS messaging provides inter-service event transport.
 
 #### Stories
+
 - E7.1: Plane.so sync -- Bidirectional sync of features and work packages with Plane.so issues; track sync mappings with content hashes, last-synced timestamps, sync direction, and conflict counts
 - E7.2: GitHub integration -- Link features and work packages to GitHub PRs and issues; sync PR state (open, review, changes requested, approved, merged)
 - E7.3: NATS event bus -- Publish domain events to NATS subjects for inter-service communication; subscribe to external events for inbound sync
@@ -128,10 +142,12 @@ AgilePlus is built as a Rust workspace monorepo (22 crates) following hexagonal 
 ---
 
 ### E8: MCP Server (Model Context Protocol)
+
 **Priority**: P1
 **Description**: A Python MCP server (`agileplus-mcp`) that exposes AgilePlus capabilities as tools, resources, and prompts consumable by AI agents via the Model Context Protocol. Communicates with the Rust backend via gRPC. Provides feature management tools, governance tools, and status reporting tools.
 
 #### Stories
+
 - E8.1: Feature tools -- MCP tools for creating, listing, updating, and querying features
 - E8.2: Governance tools -- MCP tools for checking governance status, evidence requirements, and policy compliance
 - E8.3: Status tools -- MCP tools for querying project status, cycle progress, and agent activity
@@ -142,10 +158,12 @@ AgilePlus is built as a Rust workspace monorepo (22 crates) following hexagonal 
 ---
 
 ### E9: Storage and Persistence
+
 **Priority**: P0
 **Description**: SQLite-based local-first storage implementing the StoragePort trait. Stores all domain entities (features, work packages, cycles, modules, audit entries, events, snapshots, governance contracts, evidence, policy rules, sync mappings, metrics, backlog items). Includes caching layer for frequently accessed data. Plugin-based storage architecture allows alternative backends.
 
 #### Stories
+
 - E9.1: SQLite adapter -- Full StoragePort implementation with SQLite; schema migrations; all entity CRUD operations
 - E9.2: Cache layer -- In-process LRU cache for hot-path reads (feature lookups, WP state queries)
 - E9.3: Plugin registry -- Runtime discovery and registration of storage and VCS plugins via trait objects; domain-level plugin registry wrapping core plugin crate
@@ -154,10 +172,12 @@ AgilePlus is built as a Rust workspace monorepo (22 crates) following hexagonal 
 ---
 
 ### E10: Graph Storage and Dependency Queries
+
 **Priority**: P1
 **Description**: Neo4j-backed graph layer (`agileplus-graph`) that represents features, work packages, modules, cycles, and their relationships as graph nodes and edges. Enables complex dependency queries (e.g., all WPs blocking a feature, all features in a module's subtree) that are impractical in SQLite. Health checks verify Neo4j connectivity.
 
 #### Stories
+
 - E10.1: Graph node types -- Node definitions for Feature, WorkPackage, Module, Cycle, and DeviceNode; each node maps from its corresponding domain entity
 - E10.2: Graph relationship types -- Edge definitions for DEPENDS_ON, BELONGS_TO, ASSIGNED_TO, PART_OF, and SYNCS_WITH; bidirectional traversal
 - E10.3: Graph store implementation -- Neo4j-backed GraphStore implementing the graph port; Cypher queries for node CRUD and relationship management
@@ -167,10 +187,12 @@ AgilePlus is built as a Rust workspace monorepo (22 crates) following hexagonal 
 ---
 
 ### E11: P2P Replication
+
 **Priority**: P2
 **Description**: Peer-to-peer state replication (`agileplus-p2p`) for multi-device sync without a central server. Uses vector clocks for concurrent edit detection and mDNS for device discovery. Enables eventually-consistent replication of features, work packages, and audit trails across devices.
 
 #### Stories
+
 - E11.1: Device discovery -- mDNS-based or static-config device discovery; device registry with unique device IDs and network addresses
 - E11.2: Vector clock conflict detection -- Assign vector clock entries to all mutable state; detect concurrent edits; merge or flag conflicts per entity type
 - E11.3: State export and import -- Portable serialization format for exporting/importing full or partial domain state; support partial sync by entity filter
@@ -180,10 +202,12 @@ AgilePlus is built as a Rust workspace monorepo (22 crates) following hexagonal 
 ---
 
 ### E12: Observability and Telemetry
+
 **Priority**: P2
 **Description**: OpenTelemetry-based observability with traces, metrics, and structured logging. Metrics capture command execution telemetry (duration, agent runs, review cycles per feature). OTLP export to external collectors. Service health monitoring for all adapters.
 
 #### Stories
+
 - E12.1: Command metrics -- Record per-command execution metrics (duration_ms, agent_runs, review_cycles) with optional feature association
 - E12.2: OpenTelemetry integration -- Trace propagation, span creation, and metric export via OTLP
 - E12.3: Service health checks -- Health status reporting for storage, VCS, graph, and external service adapters

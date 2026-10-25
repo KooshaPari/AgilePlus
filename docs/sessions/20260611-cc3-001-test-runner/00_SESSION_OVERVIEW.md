@@ -3,10 +3,10 @@
 - Session: `CC3-001`
 - Goal: add workspace-wide Just targets for `test`, `test-unit`, and `test-integration`.
 - Success criteria:
-  - `Justfile` exposes all three targets.
-  - `test-unit` runs workspace Rust tests.
-  - `test-integration` runs the dedicated integration crate with its gated feature and ignored tests enabled.
-  - Contributor docs point to the real targets.
+    - `Justfile` exposes all three targets.
+    - `test-unit` runs workspace Rust tests.
+    - `test-integration` runs the dedicated integration crate with its gated feature and ignored tests enabled.
+    - Contributor docs point to the real targets.
 
 # Key Decisions
 

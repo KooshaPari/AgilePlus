@@ -20,11 +20,11 @@
 
 ## Work Packages
 
-| WP | Description | Status |
-|----|-------------|--------|
-| G037-WP1 | Fork Plane repo into org GitHub | pending |
-| G037-WP2 | Define AgilePlus → Plane API boundary adapter | pending |
-| G037-WP3 | Migrate or quarantine duplicate AgilePlus PM dashboard code | pending |
+| WP       | Description                                                   | Status  |
+| -------- | ------------------------------------------------------------- | ------- |
+| G037-WP1 | Fork Plane repo into org GitHub                               | pending |
+| G037-WP2 | Define AgilePlus → Plane API boundary adapter                 | pending |
+| G037-WP3 | Migrate or quarantine duplicate AgilePlus PM dashboard code   | pending |
 | G037-WP4 | Wire existing controls (health, restart, settings) into Plane | pending |
-| G037-WP5 | Validate co-existence with Plane and existing services | pending |
-| G037-WP6 | Archive TracerTM and TheGent from PM surface | pending |
+| G037-WP5 | Validate co-existence with Plane and existing services        | pending |
+| G037-WP6 | Archive TracerTM and TheGent from PM surface                  | pending |

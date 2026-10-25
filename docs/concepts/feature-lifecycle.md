@@ -70,6 +70,7 @@ Output:
 ```
 
 At this point:
+
 - Feature exists in the domain model (Feature struct, state = `Created`)
 - An audit entry is created with actor, timestamp, initial metadata
 - The hash chain begins (prev_hash = 0x0...)
@@ -117,6 +118,7 @@ created_at: 2025-03-01T10:00:00Z
 ## Scope Boundaries
 
 NOT included:
+
 - OAuth / social login (future feature)
 - Multi-factor authentication (WP004)
 - User profile editing (separate feature)
@@ -138,6 +140,7 @@ spec_hash = sha256("# User Authentication\n...")
 This hash is immutable and tracks the feature through its lifecycle.
 
 Transition to **Specified**:
+
 ```
 agileplus transition user-authentication created->specified \
   --spec-path features/user-authentication/spec.md
@@ -167,32 +170,39 @@ The research phase answers: **Can we build this? What patterns exist?**
 ## Codebase Scan Results
 
 ### Existing Authentication
+
 - `src/auth/mod.rs` — old password hashing (MD5, deprecated)
 - `src/session.rs` — stateful session management
 - `tests/auth_test.rs` — 15 existing auth tests
 
 ### Dependency Audit
+
 - `tokio` v1.35 — available
 - `jsonwebtoken` v9.1 — available
 - `bcrypt` v0.15 — available (but not yet in Cargo.toml)
 
 ### Architecture Decision
+
 We will:
+
 1. Replace MD5 hashing with bcrypt
 2. Migrate from stateful to stateless JWT
 3. Keep existing `User` struct, extend with `password_hash` field
 4. Create new `Session` struct for JWT payload
 
 ### Risk Assessment
+
 - **Breaking change**: Old sessions won't work (MITIGATED: migration script in WP003)
 - **Performance**: JWT verification is faster than DB lookup (POSITIVE)
 - **Security**: Bcrypt is industry standard (POSITIVE)
 
 ### Recommendation
+
 **PROCEED**. Build plan with 3 work packages.
 ```
 
 Transition to **Researched**:
+
 ```
 agileplus transition user-authentication specified->researched \
   --research-path features/user-authentication/research.md
@@ -220,33 +230,37 @@ The plan **decomposes** the feature into independent work packages with clear bo
 # Implementation Plan
 
 ## Architecture Overview
-
 ```
+
 User -> bcrypt -> password_hash (DB)
-              -> compare on login
+-> compare on login
 
 Login flow:
-  1. User submits email + password
-  2. Query user by email
-  3. bcrypt.verify(password, user.password_hash)
-  4. If OK, issue JWT token (signed with RS256)
-  5. Token stored in httpOnly cookie
-  6. Future requests validate token signature
+
+1. User submits email + password
+2. Query user by email
+3. bcrypt.verify(password, user.password_hash)
+4. If OK, issue JWT token (signed with RS256)
+5. Token stored in httpOnly cookie
+6. Future requests validate token signature
+
 ```
 
 ## File Structure
 
 ```
+
 src/
-  ├── auth/
-  │   ├── mod.rs (new)
-  │   ├── models.rs (User, Session)
-  │   ├── login.rs (login endpoint)
-  │   └── register.rs (register endpoint)
-  ├── middleware/
-  │   └── auth.rs (JWT validation middleware)
+├── auth/
+│ ├── mod.rs (new)
+│ ├── models.rs (User, Session)
+│ ├── login.rs (login endpoint)
+│ └── register.rs (register endpoint)
+├── middleware/
+│ └── auth.rs (JWT validation middleware)
 tests/
-  ├── auth_integration.rs (new)
+├── auth_integration.rs (new)
+
 ```
 
 ## Work Packages
@@ -287,14 +301,16 @@ tests/
 ## Dependency Graph
 
 ```
+
 WP01 (Models)
-  ├→ WP02 (API)
-  └→ WP03 (Middleware)
+├→ WP02 (API)
+└→ WP03 (Middleware)
 
 Execution order:
-  Layer 1: WP01 (no dependencies)
-  Layer 2: WP02 (depends on WP01)
-  Layer 3: WP03 (depends on WP01, WP02)
+Layer 1: WP01 (no dependencies)
+Layer 2: WP02 (depends on WP01)
+Layer 3: WP03 (depends on WP01, WP02)
+
 ```
 
 ## Build Sequence
@@ -317,6 +333,7 @@ Execution order:
 ```
 
 Transition to **Planned**:
+
 ```
 agileplus transition user-authentication researched->planned \
   --plan-path features/user-authentication/plan.md
@@ -345,37 +362,41 @@ Created work packages:
 For each WP, an agent or developer:
 
 1. Creates a worktree and branch:
-   ```
-   git worktree add .worktrees/user-authentication/WP01 \
-     -b feature/user-authentication/WP01 main
-   ```
+
+    ```
+    git worktree add .worktrees/user-authentication/WP01 \
+      -b feature/user-authentication/WP01 main
+    ```
 
 2. Receives a **structured prompt** containing:
-   - WP definition (scope, criteria)
-   - Code examples from existing patterns
-   - Acceptance tests to satisfy
+    - WP definition (scope, criteria)
+    - Code examples from existing patterns
+    - Acceptance tests to satisfy
 
 3. Implements in isolation:
-   ```
-   $ cd .worktrees/user-authentication/WP01
-   $ cargo add bcrypt
-   $ # Implement src/auth/models.rs
-   $ cargo test
-   $ git commit -m "WP01: Implement User and Session models"
-   ```
+
+    ```
+    $ cd .worktrees/user-authentication/WP01
+    $ cargo add bcrypt
+    $ # Implement src/auth/models.rs
+    $ cargo test
+    $ git commit -m "WP01: Implement User and Session models"
+    ```
 
 4. Pushes for review (agent workflow):
-   ```
-   $ agileplus wp complete WP01
-   Validating WP01 acceptance criteria...
-   ✓ All tests pass
-   ✓ File scope respected
-   ✓ PR created: #123
 
-   WP01 moved to Review state.
-   ```
+    ```
+    $ agileplus wp complete WP01
+    Validating WP01 acceptance criteria...
+    ✓ All tests pass
+    ✓ File scope respected
+    ✓ PR created: #123
+
+    WP01 moved to Review state.
+    ```
 
 WP state transitions:
+
 - `Planned → Doing` — agent starts work
 - `Doing → Review` — code ready for review
 - `Review → Done` — approved and merged
@@ -475,6 +496,7 @@ After the feature has been live for a period, the team gathers to reflect:
 ```
 
 Transition to **Retrospected**:
+
 ```
 agileplus transition user-authentication shipped->retrospected \
   --retrospective-path features/user-authentication/retrospective.md
@@ -553,6 +575,7 @@ WP01 runs first (no deps). WP02 and WP03 both depend on WP01 but not each other,
 ## NATS Events Throughout Lifecycle
 
 Every phase transition publishes to NATS JetStream. This drives:
+
 - Real-time SSE updates to the dashboard
 - Dragonfly cache invalidation
 - External sync hooks (Plane.so, GitHub)
@@ -585,15 +608,15 @@ nats sub "agileplus.feature.*.state.changed"
 
 Evidence accumulates as the feature progresses. By the time it reaches `Validated`, multiple evidence types are on file:
 
-| Phase | Evidence Type | Example |
-|-------|--------------|---------|
-| Specified | `ArtifactPresent` | SHA-256 of spec.md |
-| Researched | `ManualAttestation` | Research doc hash |
-| Planned | `CiOutput` | Plan validation output |
-| Implementing → Validated | `TestResult` | 456 tests, 0 failed |
-| Implementing → Validated | `LintResult` | 0 clippy warnings |
-| Implementing → Validated | `SecurityScan` | 0 CVEs |
-| Validated → Shipped | `ReviewApproval` | PR #42 approved |
+| Phase                    | Evidence Type       | Example                |
+| ------------------------ | ------------------- | ---------------------- |
+| Specified                | `ArtifactPresent`   | SHA-256 of spec.md     |
+| Researched               | `ManualAttestation` | Research doc hash      |
+| Planned                  | `CiOutput`          | Plan validation output |
+| Implementing → Validated | `TestResult`        | 456 tests, 0 failed    |
+| Implementing → Validated | `LintResult`        | 0 clippy warnings      |
+| Implementing → Validated | `SecurityScan`      | 0 CVEs                 |
+| Validated → Shipped      | `ReviewApproval`    | PR #42 approved        |
 
 The `GovernanceContract` bound at `Planned` state defines exactly which evidence types are required for the `implementing → validated` and `validated → shipped` transitions.
 
@@ -626,11 +649,11 @@ developer_hours: 4
 
 ## Action Items
 
-| Item | Owner | Due Date |
-|------|-------|----------|
-| Split large WPs at 4h max | Architect | Next feature |
-| Add security scan to WP-level CI | DevOps | Sprint 12 |
-| Document JWT edge cases in spec template | PM | This week |
+| Item                                     | Owner     | Due Date     |
+| ---------------------------------------- | --------- | ------------ |
+| Split large WPs at 4h max                | Architect | Next feature |
+| Add security scan to WP-level CI         | DevOps    | Sprint 12    |
+| Document JWT edge cases in spec template | PM        | This week    |
 
 ## Metrics
 
@@ -638,7 +661,7 @@ developer_hours: 4
 - Agent hours: 10h (WP01, WP02)
 - Developer hours: 4h (WP03, review)
 - Review cycles: 1 (approved on first pass)
-- Lines added: 1,247  |  Lines removed: 84
+- Lines added: 1,247 | Lines removed: 84
 - Test coverage: 94%
 ```
 

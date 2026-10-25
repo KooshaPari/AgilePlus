@@ -14,6 +14,7 @@
 Run durable SpecRevision→Assignment→Attempt→Candidate→Evaluation path, including restart.
 
 Then worker replacement:
+
 - Attempt A expires/fails;
 - Attempt B receives new claim;
 - A remains durable;

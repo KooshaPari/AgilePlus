@@ -15,13 +15,13 @@ broke traceability validators.
 
 Consolidate into one canonical `docs/` layout:
 
-| Artifact type | Canonical path |
-|---|---|
-| Eco / feature specs | `docs/specs/eco/<slug>/` |
+| Artifact type        | Canonical path                   |
+| -------------------- | -------------------------------- |
+| Eco / feature specs  | `docs/specs/eco/<slug>/`         |
 | Crate FR specs + BDD | `docs/specs/crates/<id>-<name>/` |
-| ADRs | `docs/adr/` |
-| User journeys | `docs/journeys/` |
-| FR/NFR requirements | `docs/requirements/` |
+| ADRs                 | `docs/adr/`                      |
+| User journeys        | `docs/journeys/`                 |
+| FR/NFR requirements  | `docs/requirements/`             |
 
 Legacy top-level folders (`kitty-specs/`, `specs/`, `traces/`) retain README
 redirect stubs only. Content is **moved**, not deleted; archives live under

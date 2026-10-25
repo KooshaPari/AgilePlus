@@ -19,6 +19,7 @@ Remove all JetStream workflow/queue consumers and durable stream configurations 
 ## Context
 
 Before this WP, NATS is still running JetStream consumers that handle:
+
 - `agent.dispatch` queue group
 - `ci.pipeline.trigger` durable consumer
 - `data.sync.run` durable consumer
@@ -42,13 +43,13 @@ nats consumer list
 
 Document in `docs/NATS_Streams_Audit.md`:
 
-| Subject | Type | Purpose | Migrated To | Remove? |
-|---------|------|---------|-------------|---------|
-| `agent.dispatch` | JetStream Consumer | Agent task dispatch | Temporal | YES |
-| `ci.pipeline.trigger` | Durable Consumer | CI pipeline triggers | Hatchet | YES |
-| `data.sync.run` | Durable Stream | Data sync triggers | Hatchet cron | YES |
-| `events.*` | Pub/Sub | General events | (keep as-is) | NO |
-| `agent.result.*` | Pub/Sub | Result notifications | (keep as-is) | NO |
+| Subject               | Type               | Purpose              | Migrated To  | Remove? |
+| --------------------- | ------------------ | -------------------- | ------------ | ------- |
+| `agent.dispatch`      | JetStream Consumer | Agent task dispatch  | Temporal     | YES     |
+| `ci.pipeline.trigger` | Durable Consumer   | CI pipeline triggers | Hatchet      | YES     |
+| `data.sync.run`       | Durable Stream     | Data sync triggers   | Hatchet cron | YES     |
+| `events.*`            | Pub/Sub            | General events       | (keep as-is) | NO      |
+| `agent.result.*`      | Pub/Sub            | Result notifications | (keep as-is) | NO      |
 
 ### 2. Remove JetStream Workflow Streams
 
@@ -101,10 +102,10 @@ Stop and remove NATS-based worker services from process-compose:
 
 # KEEP these:
 nats:
-  command: docker compose -f infra/nats/docker-compose.yml up -d
-  depends_on:
-    - temporal
-    - hatchet
+    command: docker compose -f infra/nats/docker-compose.yml up -d
+    depends_on:
+        - temporal
+        - hatchet
 ```
 
 ### 5. Update Docker Compose for NATS-Only Services
@@ -112,28 +113,32 @@ nats:
 ```yaml
 # infra/nats/docker-compose.yml — simplify
 services:
-  nats:
-    image: nats:2.10-alpine
-    container_name: nats
-    command:
-      - "--config"
-      - "/etc/nats/nats-server.conf"
-      - "--trace"  # trace pub/sub for debugging
-    volumes:
-      - ./nats-server.conf:/etc/nats/nats-server.conf
-      - nats_data:/data
-    ports:
-      - "4222:4222"   # Client connections
-      - "8222:8222"   # Monitoring
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8222/healthz || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    mem_limit: 512m
+    nats:
+        image: nats:2.10-alpine
+        container_name: nats
+        command:
+            - "--config"
+            - "/etc/nats/nats-server.conf"
+            - "--trace" # trace pub/sub for debugging
+        volumes:
+            - ./nats-server.conf:/etc/nats/nats-server.conf
+            - nats_data:/data
+        ports:
+            - "4222:4222" # Client connections
+            - "8222:8222" # Monitoring
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "wget --no-verbose --tries=1 --spider http://localhost:8222/healthz || exit 1",
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+        mem_limit: 512m
 
 volumes:
-  nats_data:
+    nats_data:
 ```
 
 ### 6. Verify Pure Pub/Sub Behavior
@@ -164,16 +169,17 @@ NATS is configured as a **pure pub/sub event bus** for non-critical, at-most-onc
 
 ### Retained Subjects
 
-| Subject | Purpose | Consumers |
-|---------|---------|-----------|
-| `events.*` | Application events | Any service interested |
-| `agent.result.*` | Agent completion results | Dashboard, logging |
-| `ci.status.*` | CI pipeline status updates | Dashboard, Slack |
-| `notifications.*` | User notifications | Notification service |
+| Subject           | Purpose                    | Consumers              |
+| ----------------- | -------------------------- | ---------------------- |
+| `events.*`        | Application events         | Any service interested |
+| `agent.result.*`  | Agent completion results   | Dashboard, logging     |
+| `ci.status.*`     | CI pipeline status updates | Dashboard, Slack       |
+| `notifications.*` | User notifications         | Notification service   |
 
 ### Removed Subjects (WP09)
 
 All JetStream-based workflow subjects have been migrated to Temporal/Hatchet:
+
 - `agent.dispatch` → Temporal workflow
 - `ci.pipeline.trigger` → Hatchet workflow
 - `data.sync.run` → Hatchet cron

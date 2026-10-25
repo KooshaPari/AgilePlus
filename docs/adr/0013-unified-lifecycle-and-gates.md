@@ -21,16 +21,16 @@ across tools.
 2. **Canonical FSM:** AgilePlus `FeatureState` is the sole authority for feature-level
    stage. Mapping:
 
-   | Unified stage | FeatureState (indicative) |
-   |---------------|---------------------------|
-   | Charter | `Draft` |
-   | Specify | `Specified` |
-   | Plan | `Planned` |
-   | Decompose | `Ready` |
-   | Execute | `InProgress` |
-   | Verify | `InReview` |
-   | Evidence | `Approved` |
-   | Archive | `Done` / `Shipped` |
+    | Unified stage | FeatureState (indicative) |
+    | ------------- | ------------------------- |
+    | Charter       | `Draft`                   |
+    | Specify       | `Specified`               |
+    | Plan          | `Planned`                 |
+    | Decompose     | `Ready`                   |
+    | Execute       | `InProgress`              |
+    | Verify        | `InReview`                |
+    | Evidence      | `Approved`                |
+    | Archive       | `Done` / `Shipped`        |
 
 3. **WP sub-lifecycle** within Execute–Verify: Spec Kitty lanes
    (`planned` → `claimed` → `in_progress` → `for_review` → `done`).

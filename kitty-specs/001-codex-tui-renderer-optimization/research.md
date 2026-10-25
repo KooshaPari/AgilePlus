@@ -1,6 +1,7 @@
 # Research: Codex TUI Renderer Optimization
 
 ## Objective
+
 Create an evidence-backed architecture baseline for the Codex TUI renderer and backend flow, then recommend phased optimizations and layered PR slicing.
 
 ## Current-State Architecture
@@ -84,6 +85,7 @@ for external clients and automation.
 ```
 
 ## Key Findings
+
 1. Frame scheduling is already centralized and coalesced, which is a strong base for dirty-region and adaptive-rate improvements.
 2. Render cost is dominated by state-to-view transformation and high-frequency redraw triggers, not just terminal flush.
 3. Backend event throughput can outpace UI consumption under heavy streaming unless queue bounds and batching policies are explicit.
@@ -92,6 +94,7 @@ for external clients and automation.
 ## External Optimization Evidence (Rust TUI)
 
 ### Reviewed article: octorus 300K-line diff rendering
+
 - Multi-layer caches to separate session data, diff precompute, and active view caches.
 - Background precompute to reduce first-open latency.
 - Viewport-restricted rendering to avoid whole-document work.
@@ -99,6 +102,7 @@ for external clients and automation.
 - Deferred/lazy composition for secondary decorations (for example, comments/markers).
 
 ### Additional references and implications
+
 - ratatui uses double buffers and writes only changed cells, so avoid forcing full redraw semantics.
 - crossterm polling/event APIs can be used to control event loop wake behavior.
 - Tokio bounded channels provide explicit backpressure and should be preferred in high-rate producer paths.
@@ -107,62 +111,75 @@ for external clients and automation.
 ## Recommended Optimization Layers
 
 ### Layer 1: Observability and Baseline (low risk)
+
 - Add renderer timing spans by stage (event ingest, state mutation, compose, draw).
 - Add queue-depth and event-lag metrics for UI-facing channels.
 - Produce reproducible benchmark fixtures for large transcript and high-stream turns.
 
 ### Layer 2: Render Work Reduction (medium risk)
+
 - Introduce viewport/dirty-range constrained state-to-view transformation.
 - Cache expensive layout/text shaping outputs keyed by stable state signatures.
 - Batch low-priority cosmetic updates behind frame budget checks.
 
 ### Layer 3: Event Pressure Control (medium risk)
+
 - Enforce bounded channels on high-volume paths.
 - Add coalescing policies for bursty protocol deltas.
 - De-prioritize non-critical event classes during sustained load.
 
 ### Layer 4: Data-Structure Efficiency (higher risk)
+
 - Evaluate rope/interner-backed buffers for large scrollback and diff-like payloads.
 - Minimize transient allocations in render preparation paths.
 - Add zero-copy borrowing contracts where lifetimes are already naturally scoped.
 
 ### Layer 5: UX-Protective Progressive Rendering (higher risk)
+
 - Progressive display modes for large payloads (fast plain path, enriched path when ready).
 - Deferred decoration composition for non-blocking first paint.
 
 ## Layered PR Strategy Draft
 
 ### PR-A: Instrumentation and Benchmarks
+
 - Scope: metrics, traces, baseline harness, no behavior change.
 - Exit: stable measurements for frame times and event lag.
 
 ### PR-B: Render Pipeline Caching + Viewport Constraint
+
 - Scope: reduce compose work and unnecessary redraw preparation.
 - Exit: measurable reduction in p95 frame time under heavy transcript scenarios.
 
 ### PR-C: Event Backpressure + Coalescing
+
 - Scope: bounded channel policies and burst handling.
 - Exit: no runaway queue growth under sustained streaming.
 
 ### PR-D: Large-Text Data Structure Enhancements
+
 - Scope: targeted interning/rope introduction where evidence shows clear benefit.
 - Exit: lower memory growth and allocation churn for large-content sessions.
 
 ### PR-E: Progressive Enrichment UX
+
 - Scope: plain-first fast path, deferred enrichments.
 - Exit: improved first-meaningful-display latency on large payloads.
 
 ## Open Questions
+
 - Which user workflows should define canonical performance SLOs (chat streaming, diff-like browsing, or both)?
 - Which event classes can be safely coalesced without degrading perceived responsiveness?
 - What benchmark dataset should become the long-term regression gate?
 
 ## Risks
+
 - Premature optimization without benchmark baselines may introduce complexity with weak impact.
 - Backpressure tuning may affect perceived responsiveness if thresholds are set too aggressively.
 - Data-structure migrations can expand code complexity and require careful rollback boundaries.
 
 ## Sources
+
 - DEV article: https://dev.to/ushironoko/how-octorus-renders-300k-lines-of-diff-at-high-speed-h4p
 - ratatui rendering concepts: https://ratatui.rs/concepts/rendering/
 - ratatui Terminal buffering: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html

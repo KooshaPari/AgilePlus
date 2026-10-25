@@ -9,6 +9,7 @@ End-to-end example of dispatching an AI agent to implement a work package. Shows
 ## Scenario
 
 You have a feature `003-auth-system` with three work packages:
+
 - WP01: User & Session models (DONE)
 - WP02: Login endpoint (PLANNED, ready to implement)
 - WP03: Session middleware (BLOCKED until WP02 completes)
@@ -19,22 +20,22 @@ Before dispatching, configure the agent connection in `.kittify/config.yaml`:
 
 ```yaml
 agent:
-  harness: claude-code
-  timeout_seconds: 3600
-  retries: 2
-  environment:
-    RUST_LOG: debug
-    DATABASE_URL: postgresql://localhost/testdb
-  constraints:
-    max_file_size: 1000000  # 1MB per file
-    allowed_paths:
-      - "src/"
-      - "tests/"
-      - "Cargo.toml"
-    forbidden_paths:
-      - ".kittify/"
-      - "env_secrets/"
-      - "package-lock.json"  # use Cargo.lock
+    harness: claude-code
+    timeout_seconds: 3600
+    retries: 2
+    environment:
+        RUST_LOG: debug
+        DATABASE_URL: postgresql://localhost/testdb
+    constraints:
+        max_file_size: 1000000 # 1MB per file
+        allowed_paths:
+            - "src/"
+            - "tests/"
+            - "Cargo.toml"
+        forbidden_paths:
+            - ".kittify/"
+            - "env_secrets/"
+            - "package-lock.json" # use Cargo.lock
 ```
 
 Check agent availability:
@@ -98,6 +99,7 @@ agileplus implement 003 --wp WP02 --agent claude-code
 ```
 
 Behind the scenes, AgilePlus:
+
 1. Creates a worktree at `.worktrees/003-auth-system-WP02`
 2. Checks out a new branch `feat/003-auth-system-WP02` from main
 3. Packages the prompt with spec, plan, and governance constraints
@@ -491,11 +493,11 @@ Agent ready. WP03 in progress.
 
 ```yaml
 agent:
-  environment:
-    RUST_LOG: info
-    DATABASE_URL: postgresql://localhost/testdb
-    REDIS_URL: redis://localhost:6379
-    JWT_SECRET: ${{ secrets.JWT_SECRET }}  # Injected at runtime
+    environment:
+        RUST_LOG: info
+        DATABASE_URL: postgresql://localhost/testdb
+        REDIS_URL: redis://localhost:6379
+        JWT_SECRET: ${{ secrets.JWT_SECRET }} # Injected at runtime
 ```
 
 ### What Agents CAN Do
@@ -620,16 +622,16 @@ The audit entry for the timeout:
 
 ```json
 {
-  "id": 8,
-  "transition": "WP02:doing->blocked",
-  "actor": "system:timeout",
-  "evidence_refs": [],
-  "metadata": {
-    "reason": "agent_timeout",
-    "timeout_secs": 1800,
-    "job_id": "sess_w7k2j3l9m",
-    "partial_commits": 2
-  }
+    "id": 8,
+    "transition": "WP02:doing->blocked",
+    "actor": "system:timeout",
+    "evidence_refs": [],
+    "metadata": {
+        "reason": "agent_timeout",
+        "timeout_secs": 1800,
+        "job_id": "sess_w7k2j3l9m",
+        "partial_commits": 2
+    }
 }
 ```
 

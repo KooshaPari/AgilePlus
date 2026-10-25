@@ -16,31 +16,31 @@ This work package delivers **3 comprehensive planning documents** that govern th
 ### 📋 Deliverables
 
 1. **PHASE2_PLAN.md** (Section 1 of this package)
-   - Complete Phase 2 implementation roadmap
-   - Component inventory with 14 components
-   - Module Federation integration strategy
-   - Zero-downtime cutover approach
-   - 5 work packages with detailed subtasks
-   - Success metrics & risk mitigation
-   - **Length**: 3,200+ lines, 28KB
+    - Complete Phase 2 implementation roadmap
+    - Component inventory with 14 components
+    - Module Federation integration strategy
+    - Zero-downtime cutover approach
+    - 5 work packages with detailed subtasks
+    - Success metrics & risk mitigation
+    - **Length**: 3,200+ lines, 28KB
 
 2. **COMPONENT_INVENTORY.md** (Section 2 of this package)
-   - Complete API reference for all 14 components
-   - TypeScript prop interfaces with full documentation
-   - Implementation examples and code snippets
-   - Storybook configurations
-   - Unit test templates
-   - E2E test templates
-   - WCAG 2.1 AA accessibility matrix
-   - Design tokens & system specifications
-   - **Length**: 2,800+ lines, 35KB
+    - Complete API reference for all 14 components
+    - TypeScript prop interfaces with full documentation
+    - Implementation examples and code snippets
+    - Storybook configurations
+    - Unit test templates
+    - E2E test templates
+    - WCAG 2.1 AA accessibility matrix
+    - Design tokens & system specifications
+    - **Length**: 2,800+ lines, 35KB
 
 3. **MIGRATION_ROADMAP_SUMMARY.md** (This document)
-   - Executive overview
-   - Key decisions & rationale
-   - Timeline visualization
-   - Resource requirements
-   - Success criteria
+    - Executive overview
+    - Key decisions & rationale
+    - Timeline visualization
+    - Resource requirements
+    - Success criteria
 
 ---
 
@@ -51,12 +51,14 @@ This work package delivers **3 comprehensive planning documents** that govern th
 **Decision**: Keep frontend and backend in single repository structure with Askama serving as production host during migration.
 
 **Rationale**:
+
 - Reduces operational complexity (one codebase, one CI/CD pipeline)
 - Easier to manage dependencies and versioning
 - Simpler rollback if issues arise
 - Aligns with current AgilePlus architecture
 
 **Implementation**:
+
 - Askama routes remain in production (port 3000)
 - React MFE containers deployed to separate ports (5173+)
 - Feature flag switches between Askama + React templates
@@ -67,6 +69,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 **Decision**: Use Vite's native Module Federation plugin for component/page distribution.
 
 **Rationale**:
+
 - No breaking changes during transition
 - Gradual page-by-page replacement (1 week per page)
 - Rollback via feature flag (seconds, not minutes)
@@ -74,6 +77,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 - Share dependencies (React 19.2.4, Zustand) across MFEs
 
 **Phases**:
+
 - **Phase 2.1**: Foundation components + DataTable (Week 1-2)
 - **Phase 2.2**: Dashboard + Settings pages (Week 2-3)
 - **Phase 2.3**: Evidence Gallery + cleanup (Week 3-4)
@@ -83,6 +87,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 **Decision**: Use shadcn/ui for 8-10 base components, build 5 custom components.
 
 **Rationale**:
+
 - Radix UI primitives (accessible by default)
 - Tailwind CSS for styling (consistent with existing stack)
 - Popular + well-maintained
@@ -90,6 +95,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 - shadcn/ui CLI for automated component installation
 
 **Coverage**:
+
 - ✅ Fully covered: Button, Input, Select, Checkbox, Radio, Dialog, Card, Badge
 - ⚠️ Partial: Toast (queue management), Toggle (icon support), Tabs (custom styling)
 - ❌ Custom: DataTable (300 LOC), FormBuilder (250 LOC), Timeline (200 LOC), Pill (50 LOC), EvidenceGallery (200 LOC)
@@ -99,6 +105,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 **Decision**: Lightweight, TypeScript-first state management.
 
 **Rationale**:
+
 - Minimal boilerplate (vs. Redux, Context API)
 - Excellent TypeScript support
 - Small bundle size (~2KB gzipped)
@@ -106,6 +113,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 - Works well with Module Federation
 
 **Store Structure**:
+
 - `useAgilePlusStore`: Main work packages + filters
 - `useUIStore`: Modal/toast/alert states
 - Custom hooks: `useWorkPackages()`, `useSettings()`, `useEvidenceGallery()`
@@ -117,12 +125,14 @@ This work package delivers **3 comprehensive planning documents** that govern th
 ### Phase 2.1: Foundation (Week 1-2, 16 hours)
 
 **Deliverables**:
+
 - 6 foundation components (Button, Input, Select, Checkbox, Radio, Toggle)
 - 3 layout components (Card, Badge, Pill)
 - Storybook setup + stories
 - Unit tests (80%+ coverage)
 
 **Milestones**:
+
 - MON: Button, Input, Select implemented
 - TUE: Checkbox, Radio, Toggle, Card, Badge implemented
 - WED: Pill component, all Storybook stories created
@@ -130,6 +140,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 - FRI: Code review, merge to `feature/react-foundation`
 
 **Success Criteria**:
+
 - [ ] 9 components render without errors
 - [ ] Keyboard navigation works (Tab, Enter, Escape, Arrow keys)
 - [ ] Focus visible on all interactive elements
@@ -140,6 +151,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 ### Phase 2.2: Complex Components (Week 2, 16 hours)
 
 **Deliverables**:
+
 - DataTable (300 LOC) with sorting, filtering, pagination
 - FormBuilder (250 LOC) with schema-driven generation
 - Timeline (200 LOC) with event interaction + git links
@@ -147,6 +159,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 - Integration tests
 
 **Milestones**:
+
 - MON: DataTable core + sorting implemented
 - TUE: DataTable pagination + filtering, FormBuilder schema parser
 - WED: FormBuilder field rendering + validation, Timeline component
@@ -154,6 +167,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 - FRI: Integration tests, performance audit
 
 **Success Criteria**:
+
 - [ ] DataTable sorts, filters, paginates correctly
 - [ ] FormBuilder generates all field types, validates on submit
 - [ ] Timeline displays events chronologically, clickable
@@ -164,6 +178,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 ### Phase 2.3: Pages & MFE Setup (Week 3, 8 hours)
 
 **Deliverables**:
+
 - Dashboard page (180 LOC) - grid layout + widgets
 - Settings page (150 LOC) - config form
 - Evidence Gallery (200 LOC) - lightbox + masonry
@@ -171,6 +186,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 - Feature flag router
 
 **Milestones**:
+
 - MON: Dashboard page layout, widgets data fetching
 - TUE: Settings page form, API integration
 - WED: Evidence Gallery lightbox, image filtering
@@ -178,6 +194,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 - FRI: Pages load from MFE containers
 
 **Success Criteria**:
+
 - [ ] Dashboard renders data, no console errors
 - [ ] Settings form saves updates via API
 - [ ] Gallery displays images, lightbox opens on click
@@ -187,18 +204,21 @@ This work package delivers **3 comprehensive planning documents** that govern th
 ### Phase 2.4: Testing & Integration (Week 3-4, 12 hours)
 
 **Deliverables**:
+
 - E2E tests (Playwright) for all pages
 - Integration tests for store + API
 - Performance audit (Lighthouse, bundle analysis)
 - Accessibility audit (axe-core + manual testing)
 
 **Milestones**:
+
 - MON-TUE: E2E tests for Dashboard, Settings, Gallery
 - WED: Integration tests (store state, API mocking)
 - THU: Performance audit, Lighthouse optimization
 - FRI: Final accessibility audit, sign-off
 
 **Success Criteria**:
+
 - [ ] E2E tests pass on Chrome, Firefox, Safari
 - [ ] All critical user flows covered
 - [ ] Lighthouse score ≥ 80 on all pages
@@ -210,6 +230,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 ## Resource Requirements
 
 ### Skills Required
+
 - **Frontend Engineer** (3): React, TypeScript, Tailwind CSS, Vite
 - **QA Engineer** (1): Playwright, Jest, accessibility testing (axe-core)
 - **Designer** (1, review only): Design token approval, A11y review
@@ -217,29 +238,31 @@ This work package delivers **3 comprehensive planning documents** that govern th
 
 ### Estimated Effort
 
-| Phase | Duration | Resources | Notes |
-|-------|----------|-----------|-------|
-| WP3.1 | 16h | 2 FE + 1 QA | Foundation components + Storybook |
-| WP3.2 | 16h | 2 FE + 1 QA | Complex components + integration |
-| WP3.3 | 8h | 1 FE + 1 QA | Page layouts + MFE config |
-| WP3.4 | 8h | 1 DevOps + 1 FE | Docker setup, deployment |
-| WP3.5 | 12h | 1 QA + 1 FE | E2E + performance testing |
-| **Total** | **52h** | **3-4 FTE** | **3-4 weeks wall-clock** |
+| Phase     | Duration | Resources       | Notes                             |
+| --------- | -------- | --------------- | --------------------------------- |
+| WP3.1     | 16h      | 2 FE + 1 QA     | Foundation components + Storybook |
+| WP3.2     | 16h      | 2 FE + 1 QA     | Complex components + integration  |
+| WP3.3     | 8h       | 1 FE + 1 QA     | Page layouts + MFE config         |
+| WP3.4     | 8h       | 1 DevOps + 1 FE | Docker setup, deployment          |
+| WP3.5     | 12h      | 1 QA + 1 FE     | E2E + performance testing         |
+| **Total** | **52h**  | **3-4 FTE**     | **3-4 weeks wall-clock**          |
 
 ### Technology Stack
 
 **Frontend**:
+
 - React 19.2.4 (latest, full features)
 - TypeScript 5.9.3 (strict mode)
 - Tailwind CSS 4.2.2 (latest with PostCSS)
 - Vite 8.0.1 (module federation)
 - Zustand 5.0.12 (state management)
-- @radix-ui/* (headless components)
+- @radix-ui/\* (headless components)
 - @shadcn/ui 0.0.4 (styled primitives)
 - lucide-react 1.7.0 (icons)
 - axios 1.14.1 (HTTP client)
 
 **Testing**:
+
 - Vitest (unit tests, replaces Jest)
 - @testing-library/react (component testing)
 - Playwright (E2E testing)
@@ -247,6 +270,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 - msw (mock service worker)
 
 **Development**:
+
 - Storybook 8+ (component docs)
 - ESLint 9+ (code quality)
 - Prettier (code formatting)
@@ -301,6 +325,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 ```
 
 **Acceptance Criteria**:
+
 - [ ] 9 components in src/components/ui/
 - [ ] TypeScript interfaces defined
 - [ ] Storybook running on localhost:6006
@@ -336,6 +361,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 ```
 
 **Acceptance Criteria**:
+
 - [ ] DataTable sorts, filters, paginates
 - [ ] FormBuilder generates forms from schema
 - [ ] Timeline shows events with git/agent links
@@ -367,6 +393,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Pages render without data
 - [ ] API data loads on mount
 - [ ] Forms submit successfully
@@ -402,6 +429,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 ```
 
 **Acceptance Criteria**:
+
 - [ ] MFE containers build successfully
 - [ ] Components load from ports 5173+
 - [ ] Shared dependencies tree-shake
@@ -435,6 +463,7 @@ This work package delivers **3 comprehensive planning documents** that govern th
 ```
 
 **Acceptance Criteria**:
+
 - [ ] E2E tests pass (Chrome, Firefox, Safari)
 - [ ] 90%+ critical path coverage
 - [ ] Lighthouse ≥ 80 all pages
@@ -448,56 +477,56 @@ This work package delivers **3 comprehensive planning documents** that govern th
 
 ### Component Quality
 
-| Metric | Target | Method |
-|--------|--------|--------|
-| **Type Coverage** | 100% | `tsc --noImplicitAny` |
-| **Test Coverage** | 80%+ | `vitest --coverage` |
-| **A11y Score** | 0 violations | `axe-core` on Storybook |
-| **Lint Errors** | 0 | `eslint .` |
-| **Unused Imports** | 0 | ESLint rule |
+| Metric             | Target       | Method                  |
+| ------------------ | ------------ | ----------------------- |
+| **Type Coverage**  | 100%         | `tsc --noImplicitAny`   |
+| **Test Coverage**  | 80%+         | `vitest --coverage`     |
+| **A11y Score**     | 0 violations | `axe-core` on Storybook |
+| **Lint Errors**    | 0            | `eslint .`              |
+| **Unused Imports** | 0            | ESLint rule             |
 
 ### Performance
 
-| Metric | Target | Method |
-|--------|--------|--------|
-| **Bundle Size** | <500KB gzipped | `esbuild --metafile` |
-| **Lighthouse** | ≥80 | PageSpeed Insights |
-| **LCP (Largest Contentful Paint)** | <2.5s | Web Vitals |
-| **FID (First Input Delay)** | <100ms | Web Vitals |
-| **CLS (Cumulative Layout Shift)** | <0.1 | Web Vitals |
+| Metric                             | Target         | Method               |
+| ---------------------------------- | -------------- | -------------------- |
+| **Bundle Size**                    | <500KB gzipped | `esbuild --metafile` |
+| **Lighthouse**                     | ≥80            | PageSpeed Insights   |
+| **LCP (Largest Contentful Paint)** | <2.5s          | Web Vitals           |
+| **FID (First Input Delay)**        | <100ms         | Web Vitals           |
+| **CLS (Cumulative Layout Shift)**  | <0.1           | Web Vitals           |
 
 ### Accessibility
 
-| Metric | Target | Method |
-|--------|--------|--------|
-| **WCAG Level** | AA | axe-core + WAVE |
-| **Keyboard Nav** | 100% components | Manual testing |
-| **Color Contrast** | 4.5:1 min | Contrast checker |
-| **Focus Visible** | All interactive | Visual inspection |
-| **Touch Targets** | ≥44×44px | Visual inspection |
+| Metric             | Target          | Method            |
+| ------------------ | --------------- | ----------------- |
+| **WCAG Level**     | AA              | axe-core + WAVE   |
+| **Keyboard Nav**   | 100% components | Manual testing    |
+| **Color Contrast** | 4.5:1 min       | Contrast checker  |
+| **Focus Visible**  | All interactive | Visual inspection |
+| **Touch Targets**  | ≥44×44px        | Visual inspection |
 
 ### Testing
 
-| Metric | Target | Method |
-|--------|--------|--------|
-| **Unit Test Coverage** | 80%+ | Jest/Vitest |
-| **E2E Coverage** | 90%+ critical paths | Playwright |
-| **Browser Coverage** | Chrome, Firefox, Safari | Browserstack |
-| **Mobile Coverage** | iOS 12+, Android 8+ | BrowserStack |
+| Metric                 | Target                  | Method       |
+| ---------------------- | ----------------------- | ------------ |
+| **Unit Test Coverage** | 80%+                    | Jest/Vitest  |
+| **E2E Coverage**       | 90%+ critical paths     | Playwright   |
+| **Browser Coverage**   | Chrome, Firefox, Safari | Browserstack |
+| **Mobile Coverage**    | iOS 12+, Android 8+     | BrowserStack |
 
 ---
 
 ## Risk Mitigation
 
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|-----------|
-| React version incompatibility | Low | High | Pin deps, test exact versions |
-| Module Federation complexity | Medium | High | Use Vite official plugin, poc locally |
-| Askama template regression | Low | High | Keep routes in parallel, gradual cutover |
-| Performance regression | Medium | Medium | Bundle analysis per PR, Lighthouse gates |
-| A11y regression | Low | High | axe-core in CI, keyboard testing |
-| API contract mismatch | Low | Medium | Mock API with MSW, test against current |
-| Deployment failure | Low | High | Feature flag rollback, staged rollout |
+| Risk                          | Probability | Impact | Mitigation                               |
+| ----------------------------- | ----------- | ------ | ---------------------------------------- |
+| React version incompatibility | Low         | High   | Pin deps, test exact versions            |
+| Module Federation complexity  | Medium      | High   | Use Vite official plugin, poc locally    |
+| Askama template regression    | Low         | High   | Keep routes in parallel, gradual cutover |
+| Performance regression        | Medium      | Medium | Bundle analysis per PR, Lighthouse gates |
+| A11y regression               | Low         | High   | axe-core in CI, keyboard testing         |
+| API contract mismatch         | Low         | Medium | Mock API with MSW, test against current  |
+| Deployment failure            | Low         | High   | Feature flag rollback, staged rollout    |
 
 ---
 
@@ -527,13 +556,13 @@ Rollback: Set USE_REACT_DASHBOARD=false (instant)
 
 ## Approval & Sign-Off
 
-| Role | Name | Status | Date |
-|------|------|--------|------|
-| Product Manager | TBD | ⏳ Pending | — |
-| Backend Lead | TBD | ⏳ Pending | — |
-| QA Lead | TBD | ⏳ Pending | — |
-| DevOps | TBD | ⏳ Pending | — |
-| Security | TBD | ⏳ Pending | — |
+| Role            | Name | Status     | Date |
+| --------------- | ---- | ---------- | ---- |
+| Product Manager | TBD  | ⏳ Pending | —    |
+| Backend Lead    | TBD  | ⏳ Pending | —    |
+| QA Lead         | TBD  | ⏳ Pending | —    |
+| DevOps          | TBD  | ⏳ Pending | —    |
+| Security        | TBD  | ⏳ Pending | —    |
 
 **Approval Deadline**: 2026-04-01 (Start of Phase 2.1)
 
@@ -544,30 +573,30 @@ Rollback: Set USE_REACT_DASHBOARD=false (instant)
 This roadmap is supported by **3 comprehensive documents**:
 
 1. **PHASE2_PLAN.md**
-   - Complete implementation plan
-   - Work package details
-   - Component inventory summary
-   - Module Federation strategy
-   - Testing strategy
+    - Complete implementation plan
+    - Work package details
+    - Component inventory summary
+    - Module Federation strategy
+    - Testing strategy
 
 2. **COMPONENT_INVENTORY.md**
-   - Full API reference for all 14 components
-   - TypeScript prop interfaces
-   - Implementation examples
-   - Unit test templates
-   - E2E test templates
-   - Accessibility checklist (WCAG 2.1 AA)
-   - Design tokens
-   - Storybook configurations
+    - Full API reference for all 14 components
+    - TypeScript prop interfaces
+    - Implementation examples
+    - Unit test templates
+    - E2E test templates
+    - Accessibility checklist (WCAG 2.1 AA)
+    - Design tokens
+    - Storybook configurations
 
 3. **MIGRATION_ROADMAP_SUMMARY.md** (this document)
-   - Executive overview
-   - Key decisions & rationale
-   - Timeline visualization
-   - Resource requirements
-   - Success metrics
-   - Risk mitigation
-   - Approval checklist
+    - Executive overview
+    - Key decisions & rationale
+    - Timeline visualization
+    - Resource requirements
+    - Success metrics
+    - Risk mitigation
+    - Approval checklist
 
 ---
 
@@ -607,17 +636,18 @@ This roadmap is supported by **3 comprehensive documents**:
 
 ## Document References
 
-| Document | Location | Purpose |
-|----------|----------|---------|
-| PHASE2_PLAN.md | `/web/PHASE2_PLAN.md` | Implementation roadmap |
-| COMPONENT_INVENTORY.md | `/web/COMPONENT_INVENTORY.md` | API reference + examples |
-| MIGRATION_ROADMAP_SUMMARY.md | `/web/MIGRATION_ROADMAP_SUMMARY.md` | This document |
+| Document                     | Location                            | Purpose                  |
+| ---------------------------- | ----------------------------------- | ------------------------ |
+| PHASE2_PLAN.md               | `/web/PHASE2_PLAN.md`               | Implementation roadmap   |
+| COMPONENT_INVENTORY.md       | `/web/COMPONENT_INVENTORY.md`       | API reference + examples |
+| MIGRATION_ROADMAP_SUMMARY.md | `/web/MIGRATION_ROADMAP_SUMMARY.md` | This document            |
 
 ---
 
 ## Contact & Support
 
 For questions about this roadmap:
+
 - **Technical**: Frontend team lead
 - **Timeline**: Product manager
 - **Design**: Design system lead
@@ -627,7 +657,7 @@ For questions about this roadmap:
 
 **End of Summary Document**
 
-*All documents are synchronized and maintained as a single system. Changes to one document must be reflected in others.*
+_All documents are synchronized and maintained as a single system. Changes to one document must be reflected in others._
 
-*Last Updated: 2026-03-31*
-*Review Date: 2026-04-21*
+_Last Updated: 2026-03-31_
+_Review Date: 2026-04-21_

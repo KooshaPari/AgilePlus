@@ -13,6 +13,7 @@
 ### Task 1: Prove and remove the unused JWT facade
 
 **Files:**
+
 - Delete: `crates/agileplus-github/src/octo.rs`
 - Modify: `crates/agileplus-github/src/lib.rs:1-14`
 - Modify: `crates/agileplus-github/Cargo.toml:22`
@@ -55,6 +56,7 @@ Expected: one focused commit with no Cargo-deny suppression.
 ### Task 2: Verify the complete recovery boundary
 
 **Files:**
+
 - Verify only: workspace manifests and source
 
 - [ ] **Step 1: Run the local full suite**

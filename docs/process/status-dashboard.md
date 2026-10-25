@@ -428,11 +428,11 @@ Customize dashboard appearance in `.kittify/config.yaml`:
 
 ```yaml
 dashboard:
-  port: 9090
-  refresh_interval_seconds: 5
-  show_completed_features: false
-  metrics_retention_days: 90
-  archive_threshold_days: 365
+    port: 9090
+    refresh_interval_seconds: 5
+    show_completed_features: false
+    metrics_retention_days: 90
+    archive_threshold_days: 365
 ```
 
 ## Tips

@@ -3,31 +3,31 @@ work_package_id: WP17
 title: Triage & Backlog Service
 lane: "done"
 dependencies:
-- WP00
+    - WP00
 base_branch: 001-spec-driven-development-engine-WP13
 base_commit: 3fc4a17c8bbced1dcddd3780def30ba7e544b1ef
-created_at: '2026-02-28T13:20:43.722928+00:00'
+created_at: "2026-02-28T13:20:43.722928+00:00"
 subtasks:
-- T098
-- T098b
-- T099
-- T100
-- T101
-- T102
-- T102b
-- T103
+    - T098
+    - T098b
+    - T099
+    - T100
+    - T101
+    - T102
+    - T102b
+    - T103
 phase: Phase 5 - Triage, Sync & Sub-Commands
-assignee: ''
+assignee: ""
 agent: "claude-opus"
 shell_pid: "78007"
 review_status: "approved"
 reviewed_by: "Koosha Paridehpour"
 history:
-- timestamp: '2026-02-27T00:00:00Z'
-  lane: planned
-  agent: system
-  shell_pid: ''
-  action: Prompt generated via /spec-kitty.tasks
+    - timestamp: "2026-02-27T00:00:00Z"
+      lane: planned
+      agent: system
+      shell_pid: ""
+      action: Prompt generated via /spec-kitty.tasks
 ---
 
 # WP17 — Triage & Backlog Service
@@ -111,18 +111,18 @@ This crate is consumed by the CLI (`crates/agileplus-cli`) in Phase 6. The publi
 **Steps**:
 
 1. Create the repository root with a `Cargo.toml` workspace manifest that declares four members:
-   - `crates/agileplus-plane`
-   - `crates/agileplus-github`
-   - `crates/agileplus-triage`
-   - `crates/agileplus-integrations-service`
+    - `crates/agileplus-plane`
+    - `crates/agileplus-github`
+    - `crates/agileplus-triage`
+    - `crates/agileplus-integrations-service`
 
 2. Add the shared protobuf definitions as a git submodule at `proto/` pointing to the same proto repository used by the core mono-repo (established in WP00).
 
 3. Add a `Makefile` with at minimum the following targets:
-   - `proto`: run `protoc` (or `tonic-build` via a build script) to regenerate Rust stubs from `proto/integrations.proto`
-   - `build`: `cargo build --workspace`
-   - `test`: `cargo test --workspace`
-   - `lint`: `cargo clippy --workspace -- -D warnings`
+    - `proto`: run `protoc` (or `tonic-build` via a build script) to regenerate Rust stubs from `proto/integrations.proto`
+    - `build`: `cargo build --workspace`
+    - `test`: `cargo test --workspace`
+    - `lint`: `cargo clippy --workspace -- -D warnings`
 
 4. Scaffold each crate with a minimal `Cargo.toml` and `src/lib.rs` (or `src/main.rs` for the service) so `cargo build --workspace` succeeds before any business logic is written.
 
@@ -144,16 +144,16 @@ This crate is consumed by the CLI (`crates/agileplus-cli`) in Phase 6. The publi
 
 2. Define `TriageAdapter`:
 
-   ```rust
-   pub struct TriageAdapter {
-       classifier: Classifier,
-   }
+    ```rust
+    pub struct TriageAdapter {
+        classifier: Classifier,
+    }
 
-   impl TriageAdapter {
-       pub fn new(config: ClassifierConfig) -> Self { ... }
-       pub fn classify(&self, input: &str) -> IntentKind { ... }
-   }
-   ```
+    impl TriageAdapter {
+        pub fn new(config: ClassifierConfig) -> Self { ... }
+        pub fn classify(&self, input: &str) -> IntentKind { ... }
+    }
+    ```
 
 3. `classify()` delegates entirely to `Classifier::classify()` (defined in T100). `TriageAdapter` is the stable public facade; the `Classifier` is an internal implementation detail.
 
@@ -239,17 +239,17 @@ impl BacklogAdapter {
 - All SQL queries are prepared statements; no string interpolation of user data.
 - Define `TriageError` in `lib.rs` using `thiserror`:
 
-  ```rust
-  #[derive(Debug, thiserror::Error)]
-  pub enum TriageError {
-      #[error("storage error: {0}")]
-      Storage(#[from] agileplus_storage::StorageError),
-      #[error("item not found: {0}")]
-      NotFound(String),
-      #[error("io error: {0}")]
-      Io(#[from] std::io::Error),
-  }
-  ```
+    ```rust
+    #[derive(Debug, thiserror::Error)]
+    pub enum TriageError {
+        #[error("storage error: {0}")]
+        Storage(#[from] agileplus_storage::StorageError),
+        #[error("item not found: {0}")]
+        NotFound(String),
+        #[error("io error: {0}")]
+        Io(#[from] std::io::Error),
+    }
+    ```
 
 ---
 
@@ -337,6 +337,7 @@ impl Classify for Classifier {
 ```
 
 The `classify` method:
+
 1. Lowercase and trim the input.
 2. Apply pattern rules (regex). Return immediately on match.
 3. Count keyword hits per category.
@@ -398,7 +399,9 @@ When you receive a new input from the user, classify it and route as follows:
 If the input is clearly a small self-contained change (rename, single-line fix, config tweak), you may use:
 
 ```
+
 agileplus escape quick-fix "<description>"
+
 ```
 
 This bypasses the triage flow and creates a minimal WP directly in the active feature.
@@ -424,7 +427,7 @@ Write to `{output_dir}/CLAUDE.md`. Return the written path. If the file already 
 
 **`write_agents_md` template**:
 
-```
+````
 # {project_name} — Agent Behavioral Rules
 
 ## Sub-Command Vocabulary
@@ -471,8 +474,9 @@ Each significant agent action should be logged to the WP prompt file's `history`
   agent: <agent_id>
   shell_pid: '<pid>'
   action: <description>
-```
-```
+````
+
+````
 
 Write to `{output_dir}/AGENTS.md`. Return the written path. Overwrite if exists.
 
@@ -572,11 +576,12 @@ mod tests {
     #[test]
     fn classifies_migrate() { assert_eq!(classifier().classify("migrate from diesel to sqlx"), IntentKind::Task); }
 }
-```
+````
 
 **BacklogItem CRUD tests** (inline in `backlog.rs`):
 
 Test `create`, `get`, `list_by_type`, `list_by_feature`, `promote_to_feature`, and `close` using an in-memory SQLite database (`:memory:` connection). Verify:
+
 - Created item has correct `kind`, `state = Open`, non-empty `id`.
 - `list_by_type` returns only items of the specified kind.
 - `list_by_feature` returns only items with the given slug.
@@ -586,12 +591,14 @@ Test `create`, `get`, `list_by_type`, `list_by_feature`, `promote_to_feature`, a
 **Router output validation** (inline in `router.rs`):
 
 Use `tempfile::TempDir` to write to a temp directory. Assert:
+
 - `CLAUDE.md` exists and contains the project name, slug, and all routing-rule table rows.
 - `AGENTS.md` exists and contains all seven command rows and all five behavioral rules.
 
 Add `tempfile` as a dev-dependency.
 
 ---
+
 - 2026-02-28T13:20:44Z – claude-opus – shell_pid=3392 – lane=doing – Assigned agent via workflow command
 - 2026-02-28T13:25:04Z – claude-opus – shell_pid=3392 – lane=for_review – Triage crate complete: classifier, backlog, router. 17 tests pass.
 - 2026-02-28T23:21:19Z – claude-opus – shell_pid=78007 – lane=doing – Started review via workflow command
@@ -599,29 +606,29 @@ Add `tempfile` as a dev-dependency.
 
 ## Validation Criteria
 
-| Criterion | Pass Condition |
-|-----------|----------------|
-| Workspace init | `cargo build --workspace` in `agileplus-integrations` exits 0 after `git submodule update --init` (T098) |
-| Compilation | `cargo build -p agileplus-triage` exits 0 |
-| Lint | `cargo clippy --workspace -- -D warnings` exits 0 |
-| Unit tests | `cargo test -p agileplus-triage` all pass; 20 classification tests, 6 CRUD tests, 2 router tests |
-| Classification accuracy | Each of the 4 categories has at least 5 tests, all passing |
-| Schema | `backlog_items` table created by `ensure_schema()` on fresh DB |
-| Router files | `write_claude_md` and `write_agents_md` produce non-empty files containing required keywords |
-| Public API stability | No breaking changes to the 7 public function signatures listed in Context |
-| gRPC service health | `grpc.health.v1.Health/Check` against `agileplus-integrations-service` returns `SERVING` (T102b) |
+| Criterion               | Pass Condition                                                                                           |
+| ----------------------- | -------------------------------------------------------------------------------------------------------- |
+| Workspace init          | `cargo build --workspace` in `agileplus-integrations` exits 0 after `git submodule update --init` (T098) |
+| Compilation             | `cargo build -p agileplus-triage` exits 0                                                                |
+| Lint                    | `cargo clippy --workspace -- -D warnings` exits 0                                                        |
+| Unit tests              | `cargo test -p agileplus-triage` all pass; 20 classification tests, 6 CRUD tests, 2 router tests         |
+| Classification accuracy | Each of the 4 categories has at least 5 tests, all passing                                               |
+| Schema                  | `backlog_items` table created by `ensure_schema()` on fresh DB                                           |
+| Router files            | `write_claude_md` and `write_agents_md` produce non-empty files containing required keywords             |
+| Public API stability    | No breaking changes to the 7 public function signatures listed in Context                                |
+| gRPC service health     | `grpc.health.v1.Health/Check` against `agileplus-integrations-service` returns `SERVING` (T102b)         |
 
 ---
 
 ## Risks & Mitigations
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| Classifier accuracy degrades on ambiguous input (e.g., "fix the feature") | Medium | Low | Priority order (Bug > Feature > Task > Idea) handles most ambiguity; unit tests document expected behavior; LLM fallback planned for Phase 6 |
-| `StoragePort` trait changes in WP05 patch break CRUD | Low | High | Pin to WP05's committed trait version; use integration tests against actual trait, not mocks |
-| Router-generated `CLAUDE.md` conflicts with manually maintained project `CLAUDE.md` | Medium | Medium | Generator always overwrites; communicate this clearly in `AGENTS.md` behavioral rules; consider backup-before-write strategy |
-| `uuid` crate v4 feature flag missing from `Cargo.toml` | Low | High | Validate `Cargo.toml` in T098 before writing any other code |
-| Regex compilation overhead in hot path | Low | Low | Use `once_cell::sync::Lazy<Regex>` for all compiled patterns |
+| Risk                                                                                | Likelihood | Impact | Mitigation                                                                                                                                   |
+| ----------------------------------------------------------------------------------- | ---------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Classifier accuracy degrades on ambiguous input (e.g., "fix the feature")           | Medium     | Low    | Priority order (Bug > Feature > Task > Idea) handles most ambiguity; unit tests document expected behavior; LLM fallback planned for Phase 6 |
+| `StoragePort` trait changes in WP05 patch break CRUD                                | Low        | High   | Pin to WP05's committed trait version; use integration tests against actual trait, not mocks                                                 |
+| Router-generated `CLAUDE.md` conflicts with manually maintained project `CLAUDE.md` | Medium     | Medium | Generator always overwrites; communicate this clearly in `AGENTS.md` behavioral rules; consider backup-before-write strategy                 |
+| `uuid` crate v4 feature flag missing from `Cargo.toml`                              | Low        | High   | Validate `Cargo.toml` in T098 before writing any other code                                                                                  |
+| Regex compilation overhead in hot path                                              | Low        | Low    | Use `once_cell::sync::Lazy<Regex>` for all compiled patterns                                                                                 |
 
 ---
 
@@ -645,9 +652,9 @@ The reviewer should:
 
 ```yaml
 history:
-- timestamp: '2026-02-27T00:00:00Z'
-  lane: planned
-  agent: system
-  shell_pid: ''
-  action: Prompt generated via /spec-kitty.tasks
+    - timestamp: "2026-02-27T00:00:00Z"
+      lane: planned
+      agent: system
+      shell_pid: ""
+      action: Prompt generated via /spec-kitty.tasks
 ```

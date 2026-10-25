@@ -5,7 +5,7 @@
 **Status**: Draft
 **Input**: End-to-end completion of AgilePlus as a production-ready, local-first spec-driven development platform with bidirectional Plane.so sync, platform service infrastructure, event-sourced persistence, web dashboard, and multi-device sync.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 — Bidirectional Plane.so Sync (Priority: P1)
 
@@ -130,7 +130,7 @@ A developer works on AgilePlus on their laptop, commits and pushes. On their des
 - Q: Observability stack for platform services? → A: OpenTelemetry (extending existing agileplus-telemetry crate) for traces and metrics, plus structured JSON logs. No separate Prometheus/Grafana/Loki infrastructure required.
 - Q: NATS deployment mode? → A: Standalone NATS server with JetStream for persistent messaging, managed by Process Compose. Decouples messaging from Rust binary; JetStream adds durable queuing for event replay and audit.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -209,17 +209,20 @@ A developer works on AgilePlus on their laptop, commits and pushes. On their des
 This project implements:
 
 ### Hexagonal Architecture (Ports & Adapters)
+
 - **Domain**: Core business logic (entities, value objects, services, events, ports)
 - **Application**: Use cases (commands, queries, handlers)
 - **Adapters**: Primary (REST, CLI) and Secondary (persistence, cache, messaging)
 
 ### Clean Architecture Layers
+
 - **Enterprise Rules**: Domain entities, services, value objects
 - **Application**: Use cases, interactors, DTOs
 - **Interface Adapters**: Controllers, presenters, gateways
 - **Frameworks & Drivers**: Database, web, external interfaces
 
 ### xDD Methodologies
+
 - **TDD**: Test-Driven Development - red/green/refactor cycle
 - **BDD**: Behavior-Driven Development - Gherkin scenarios
 - **SDD**: Specification-Driven Development - executable specs
@@ -229,7 +232,7 @@ This project implements:
 - **Event Sourcing**: Complete audit trail via events
 - **Specification by Example**: Living documentation from examples
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

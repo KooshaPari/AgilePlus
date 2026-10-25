@@ -10,29 +10,29 @@
 
 `agileplus-dashboard/src/routes.rs` still contains full copies of functions that were extracted into smaller route modules, but the originals were never deleted. The duplicated helpers + handlers now live in four files:
 
-| Function | Dead copy in `routes.rs` | Live copy |
-|----------|--------------------------|-----------|
-| `is_htmx` | `routes.rs:222` | `routes/helpers.rs:27` |
-| `html_escape` | `routes.rs:231` | — (only in routes.rs) |
-| `render<T: Template>` | `routes.rs:270` | `routes/helpers.rs:35` / `module_cycle.rs:68` |
-| `load_projects` | `routes.rs:282` | `routes/helpers.rs:46` |
-| `build_project_summaries` | `routes.rs:304` | `routes/helpers.rs:66` |
-| `env_or_none` | `routes.rs:329` | `routes/helpers.rs:88` |
-| `parse_bool_env` | `routes.rs:336` | `routes/helpers.rs:95` |
-| `plane_api_key_hint` | `routes.rs:348` | `routes/pages.rs:20` |
-| `plane_health_endpoints` | `routes.rs:358` | `routes/pages.rs:30` |
-| `build_feature_events` | `routes.rs:377` | `routes/dashboard.rs:23` |
-| `build_feature_evidence_bundles` | `routes.rs:486` | `routes/dashboard.rs:63` |
-| `build_feature_media_assets` | `routes.rs:561` | `routes/dashboard.rs:126` |
-| `build_feature_reports` | `routes.rs:592` | `routes/dashboard.rs:157` |
-| `plane_sync_mode` | `routes.rs:612` | `routes/pages.rs:49` |
-| `plane_connection_checks` | `routes.rs:620` | `routes/pages.rs:57` |
-| `percentage_coverage` | `routes.rs:642` | `routes/pages.rs:79` |
-| `dashboard_filter_from_query` | `routes.rs:658` | `routes/helpers.rs:107` |
-| `feature_matches_filter` | `routes.rs:667` | `routes/helpers.rs:116` |
-| `build_kanban_cards` | `routes.rs:692` | `routes/helpers.rs:143` |
-| `sample_events` | `routes.rs:713` | `routes/helpers.rs:163` |
-| `calculate_uptime` | `routes.rs:1010` | `routes/dashboard.rs` (implicit) |
+| Function                         | Dead copy in `routes.rs` | Live copy                                     |
+| -------------------------------- | ------------------------ | --------------------------------------------- |
+| `is_htmx`                        | `routes.rs:222`          | `routes/helpers.rs:27`                        |
+| `html_escape`                    | `routes.rs:231`          | — (only in routes.rs)                         |
+| `render<T: Template>`            | `routes.rs:270`          | `routes/helpers.rs:35` / `module_cycle.rs:68` |
+| `load_projects`                  | `routes.rs:282`          | `routes/helpers.rs:46`                        |
+| `build_project_summaries`        | `routes.rs:304`          | `routes/helpers.rs:66`                        |
+| `env_or_none`                    | `routes.rs:329`          | `routes/helpers.rs:88`                        |
+| `parse_bool_env`                 | `routes.rs:336`          | `routes/helpers.rs:95`                        |
+| `plane_api_key_hint`             | `routes.rs:348`          | `routes/pages.rs:20`                          |
+| `plane_health_endpoints`         | `routes.rs:358`          | `routes/pages.rs:30`                          |
+| `build_feature_events`           | `routes.rs:377`          | `routes/dashboard.rs:23`                      |
+| `build_feature_evidence_bundles` | `routes.rs:486`          | `routes/dashboard.rs:63`                      |
+| `build_feature_media_assets`     | `routes.rs:561`          | `routes/dashboard.rs:126`                     |
+| `build_feature_reports`          | `routes.rs:592`          | `routes/dashboard.rs:157`                     |
+| `plane_sync_mode`                | `routes.rs:612`          | `routes/pages.rs:49`                          |
+| `plane_connection_checks`        | `routes.rs:620`          | `routes/pages.rs:57`                          |
+| `percentage_coverage`            | `routes.rs:642`          | `routes/pages.rs:79`                          |
+| `dashboard_filter_from_query`    | `routes.rs:658`          | `routes/helpers.rs:107`                       |
+| `feature_matches_filter`         | `routes.rs:667`          | `routes/helpers.rs:116`                       |
+| `build_kanban_cards`             | `routes.rs:692`          | `routes/helpers.rs:143`                       |
+| `sample_events`                  | `routes.rs:713`          | `routes/helpers.rs:163`                       |
+| `calculate_uptime`               | `routes.rs:1010`         | `routes/dashboard.rs` (implicit)              |
 
 **DRY recommendation:** Delete the dead copies in `routes.rs` (lines ~220–720). The canonical implementations are already in `routes/helpers.rs`, `routes/dashboard.rs`, `routes/pages.rs`, and `module_cycle.rs`. Extract `html_escape` and `DEFAULT_PLANE_*` constants into `routes/helpers.rs` as well.
 
@@ -111,6 +111,7 @@ Five application-layer use cases in `agileplus-application/src/use_cases/` share
 - `transition_story.rs:18`
 
 All are:
+
 ```rust
 pub fn new(repo: Arc<dyn X>, publisher: Arc<dyn DomainEventPublisher>) -> Self {
     Self { repo, publisher }
@@ -130,6 +131,7 @@ Across `agileplus-api/src/routes/*.rs` there are 20 `ApiError::NotFound(format!(
 ```
 
 Occurrences:
+
 - `routes/audit.rs:62`, `routes/audit.rs:92`
 - `routes/backlog.rs:211`, `routes/backlog.rs:243`
 - `routes/cycle.rs:116`, `routes/cycle.rs:191`
@@ -140,6 +142,7 @@ Occurrences:
 - `routes/work_packages.rs:83`, `routes/work_packages.rs:103`, `routes/work_packages.rs:139`, `routes/work_packages.rs:196`, `routes/work_packages.rs:239`
 
 **DRY recommendation:** Add a helper trait or extension method on `Option<T>` in `agileplus-api/src/error.rs`:
+
 ```rust
 impl<T> ApiResultExt for Option<T> {
     fn ok_or_not_found(self, msg: impl Display) -> Result<T, ApiError>;
@@ -190,6 +193,7 @@ Four route handlers in `agileplus-dashboard/src/routes.rs` spell out the full de
 - `routes.rs:1912`
 
 Each is:
+
 ```rust
 let config = Config::load().unwrap_or(Config {
     plane: None,
@@ -205,13 +209,13 @@ let config = Config::load().unwrap_or(Config {
 
 ## Honorable Mentions
 
-| Pattern | Count | Locations |
-|---------|-------|-----------|
-| `Config(String)` error variant | 3 | `agileplus-cache/src/lib.rs:26`, `agileplus-governance/src/error.rs:13`, `agileplus-graph/src/lib.rs:12` |
-| `Database(String)` error variant | 2 | `agileplus-governance/src/error.rs:17`, `agileplus-p2p/src/error.rs:71` |
-| `Internal(String)` error variant | 2 | `agileplus-api/src/error.rs:27`, `agileplus-governance/src/error.rs:53` |
-| `NotFound(String)` error variant | 11 | `agileplus-api`, `agileplus-application`, `agileplus-domain` (5 variants), `agileplus-events`, `agileplus-governance`, `agileplus-graph`, `agileplus-domain/src/ports.rs` |
-| `MigrationRunner::new(&conn)` | 4 | `agileplus-cli/src/commands/trace.rs:344`, `agileplus-sqlite/src/bin/seed_db.rs:31`, `agileplus-sqlite/src/lib/adapter.rs:39`, `agileplus-sqlite/src/lib.rs:83` |
+| Pattern                          | Count | Locations                                                                                                                                                                 |
+| -------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Config(String)` error variant   | 3     | `agileplus-cache/src/lib.rs:26`, `agileplus-governance/src/error.rs:13`, `agileplus-graph/src/lib.rs:12`                                                                  |
+| `Database(String)` error variant | 2     | `agileplus-governance/src/error.rs:17`, `agileplus-p2p/src/error.rs:71`                                                                                                   |
+| `Internal(String)` error variant | 2     | `agileplus-api/src/error.rs:27`, `agileplus-governance/src/error.rs:53`                                                                                                   |
+| `NotFound(String)` error variant | 11    | `agileplus-api`, `agileplus-application`, `agileplus-domain` (5 variants), `agileplus-events`, `agileplus-governance`, `agileplus-graph`, `agileplus-domain/src/ports.rs` |
+| `MigrationRunner::new(&conn)`    | 4     | `agileplus-cli/src/commands/trace.rs:344`, `agileplus-sqlite/src/bin/seed_db.rs:31`, `agileplus-sqlite/src/lib/adapter.rs:39`, `agileplus-sqlite/src/lib.rs:83`           |
 
 ---
 

@@ -1,13 +1,13 @@
 ---
 work_package_id: WP24
-title: 'KISS Simplification Pass (Cross-Repo)'
+title: "KISS Simplification Pass (Cross-Repo)"
 lane: planned
 dependencies: []
 subtasks: [T072, T073, T074]
 history:
-- date: '2026-03-03'
-  event: created
-  by: spec-kitty.tasks
+    - date: "2026-03-03"
+      event: created
+      by: spec-kitty.tasks
 ---
 
 # WP24: KISS Simplification Pass (Cross-Repo)
@@ -32,18 +32,20 @@ Address KISS (Keep It Simple, Stupid) violations across the ecosystem: god modul
 ### T072: heliosCLI KISS simplification
 
 **Steps**:
+
 1. Decompose `helios-rs/cli/src/main.rs` (1,485L) into submodules:
-   - `cli/dispatch.rs` — command dispatch and argument parsing
-   - `cli/desktop.rs` — desktop detection and WSL handling
-   - `cli/mcp.rs` — MCP server configuration
-   - `cli/cloud.rs` — cloud feature toggles
-   - `cli/completions.rs` — shell completion generation
-   - `cli/auth.rs` — login and authentication flow
-   - `main.rs` — thin entry point composing the above
+    - `cli/dispatch.rs` — command dispatch and argument parsing
+    - `cli/desktop.rs` — desktop detection and WSL handling
+    - `cli/mcp.rs` — MCP server configuration
+    - `cli/cloud.rs` — cloud feature toggles
+    - `cli/completions.rs` — shell completion generation
+    - `cli/auth.rs` — login and authentication flow
+    - `main.rs` — thin entry point composing the above
 2. Move `perf-results/` to `.archive/perf-results/` or add to `.gitignore` — benchmark artifacts should not be in source tree
 3. Deduplicate multi-model connector interfaces (overlaps with T055 ModelConnector trait — coordinate or defer if T055 handles this)
 
 **Validation**:
+
 - `main.rs` is <200 LOC
 - Each submodule is <400 LOC
 - `perf-results/` is no longer tracked in git (either archived or gitignored)
@@ -52,6 +54,7 @@ Address KISS (Keep It Simple, Stupid) violations across the ecosystem: god modul
 ### T073: cliproxy++ and thegent KISS simplification
 
 **Steps**:
+
 1. cliproxy++: Delete one of the dual executor directories (`internal/runtime/executor/` or `pkg/llmproxy/executor/`) — keep the canonical one, update all imports
 2. cliproxy++: Split `sdk/cliproxy/service.go` (1,724L) into focused service files by responsibility
 3. thegent: Consolidate `cliproxy_*.py` (6 files) into existing `cliproxy/` subdirectory
@@ -61,6 +64,7 @@ Address KISS (Keep It Simple, Stupid) violations across the ecosystem: god modul
 7. thegent: Organize top-level `src/thegent/` — group 150+ flat entries into logical subdirectories
 
 **Validation**:
+
 - Only one executor directory exists in cliproxy++
 - `service.go` split into files each <500 LOC
 - `src/thegent/` top-level has <30 direct entries (rest in subdirectories)
@@ -70,6 +74,7 @@ Address KISS (Keep It Simple, Stupid) violations across the ecosystem: god modul
 ### T074: trace + portage + heliosApp KISS simplification
 
 **Steps**:
+
 1. trace: Consolidate 4 NATS debug binaries into a single `cmd/nats-debug/` tool or move to `tests/tooling/`
 2. trace: Remove root-level lint artifacts from source control (add to .gitignore)
 3. trace: Identify and split the worst offenders among 43 Go files >500 LOC (target top 10)
@@ -77,6 +82,7 @@ Address KISS (Keep It Simple, Stupid) violations across the ecosystem: god modul
 5. heliosApp: Document desktop/renderer/runtime ownership boundaries in a `docs/architecture/` file listing which modules belong to which layer and the allowed dependency directions
 
 **Validation**:
+
 - trace: single NATS debug entry point or moved to tests/
 - trace: no lint artifacts in root
 - trace: top 10 largest files each reduced below 500 LOC
