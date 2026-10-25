@@ -84,8 +84,8 @@ or broken workflow logic.
 - Each PR in a stack must be independently reviewable.
 - Base branches may target another layer branch instead of `main`.
 - `fix/*` or `feat/*` PRs targeting `main` directly require either:
-  - no stack is needed, or
-  - the `layered-pr-exception` label with rationale in the PR body.
+    - no stack is needed, or
+    - the `layered-pr-exception` label with rationale in the PR body.
 
 ## PR Body Requirements
 

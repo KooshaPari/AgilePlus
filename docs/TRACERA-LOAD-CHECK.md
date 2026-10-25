@@ -40,11 +40,11 @@ item for that class is a false negative).
 The campaign brief assumed `spec/product/mature-contract.v1.json` is at
 schema 2.1.0 source-backed. The repo has **two contract states**:
 
-| Ref | Branch | schema_version | status | reqs | file size |
-|-----|--------|----------------|--------|------|-----------|
-| `git show main:spec/product/mature-contract.v1.json` | `main` (`2701f24e`) | **1.1.0** | `invalidated_requires_source_backed_replacement` | 0 | 1,670 B |
-| Same on `refactor/release-lifecycle-v2-r1-r10` (`ba8b313c`) | current branch | **1.1.0** | `invalidated_requires_source_backed_replacement` | 0 | 1,670 B |
-| `git show origin/spec/mature-product-contract-v2:spec/product/mature-contract.v1.json` | `origin/spec/mature-product-contract-v2` (`4e9f454b`) | **2.1.0** | `accepted_mature_semantic_contract_runtime_evidence_pending` | 0 (but `canonical_spine.derived_requirement_count = 67`) | larger envelope |
+| Ref                                                                                    | Branch                                                | schema_version | status                                                       | reqs                                                     | file size       |
+| -------------------------------------------------------------------------------------- | ----------------------------------------------------- | -------------- | ------------------------------------------------------------ | -------------------------------------------------------- | --------------- |
+| `git show main:spec/product/mature-contract.v1.json`                                   | `main` (`2701f24e`)                                   | **1.1.0**      | `invalidated_requires_source_backed_replacement`             | 0                                                        | 1,670 B         |
+| Same on `refactor/release-lifecycle-v2-r1-r10` (`ba8b313c`)                            | current branch                                        | **1.1.0**      | `invalidated_requires_source_backed_replacement`             | 0                                                        | 1,670 B         |
+| `git show origin/spec/mature-product-contract-v2:spec/product/mature-contract.v1.json` | `origin/spec/mature-product-contract-v2` (`4e9f454b`) | **2.1.0**      | `accepted_mature_semantic_contract_runtime_evidence_pending` | 0 (but `canonical_spine.derived_requirement_count = 67`) | larger envelope |
 
 **Implication for Tracera.** If Tracera was last synced against `main`, its
 contract item points at the invalidated 1.1.0 envelope. If synced against the
@@ -53,6 +53,7 @@ The snail memo says the A'' spec-chain merge is "in flight" (`8ce7a446`,
 PR #1114 landed); until that merge lands, the two views disagree.
 
 The spec branch's `canonical_spine` references:
+
 - `spec/product/requirements.semantic.v1.json` (67 mature requirements)
 - `verification/semantic-verification-cases.v1.json` (92 cases, `status: specified_not_executed`)
 - `spec/product/journeys.v1.json` (12 journeys, status `accepted_mature_semantic_journeys`)
@@ -64,10 +65,10 @@ The task brief located the oracles at
 the spec branch**, not on `main` or the current working branch. On the current
 branch `verification/` contains only `AUTOGRADER_CONTRACT.md`.
 
-| File | Current branch | `main` | Spec branch |
-|------|----------------|--------|-------------|
-| `verification/semantic-verification-cases.v1.json` | **missing** | **missing** | present (92 cases, schema 0.4.0) |
-| `verification/AUTOGRADER_CONTRACT.md` | present | present | present |
+| File                                               | Current branch | `main`      | Spec branch                      |
+| -------------------------------------------------- | -------------- | ----------- | -------------------------------- |
+| `verification/semantic-verification-cases.v1.json` | **missing**    | **missing** | present (92 cases, schema 0.4.0) |
+| `verification/AUTOGRADER_CONTRACT.md`              | present        | present     | present                          |
 
 **Possible Tracera false-negative candidate:** if Tracera contains any item
 that references `verification/semantic-verification-cases.v1.json` as a target
@@ -76,11 +77,11 @@ until the A'' merge lands.
 
 ### 3.3 The 12 journeys exist in two places
 
-| Where | Count | Format |
-|-------|-------|--------|
-| `docs/journeys/FR-024-*.md` (per-journey narrative pages) | **8** files (`FR-024-1.md`..`FR-024-8.md`) | markdown pages anchored to FR/NFR rows |
-| `spec/product/journeys.v1.json` (machine-readable) on spec branch | **12** (`AP-J-01`..`AP-J-12`) | JSON records with `id`, `actor`, `preconditions`, `outcome`, `activities`, `failure_recovery` |
-| `docs/journeys/` extras | 2 special pages (`dashboard-health-check.md`, `domain-models.md`) + `manifests/` + `assets/` | supplemental |
+| Where                                                             | Count                                                                                        | Format                                                                                        |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `docs/journeys/FR-024-*.md` (per-journey narrative pages)         | **8** files (`FR-024-1.md`..`FR-024-8.md`)                                                   | markdown pages anchored to FR/NFR rows                                                        |
+| `spec/product/journeys.v1.json` (machine-readable) on spec branch | **12** (`AP-J-01`..`AP-J-12`)                                                                | JSON records with `id`, `actor`, `preconditions`, `outcome`, `activities`, `failure_recovery` |
+| `docs/journeys/` extras                                           | 2 special pages (`dashboard-health-check.md`, `domain-models.md`) + `manifests/` + `assets/` | supplemental                                                                                  |
 
 **Implication.** The journey narrative (`docs/journey.md`) count (8) and the
 journey data count (12) diverge. If Tracera links against the `.md` files,
@@ -98,12 +99,12 @@ draft crates on other branches or pre-squash inventory.
 
 ### 3.5 STABLE.md, traceability-core, release workflows -- all present
 
-| Repo asset | Path | Present? |
-|------------|------|----------|
-| Tier definition doc | `STABLE.md` | yes (S0/S1/S2 with criteria) |
-| Tracera embed interface | `crates/traceability-core/` | yes (`artifact.rs`, `contract.rs`, `governance.rs`, `ids.rs`, `impact.rs`, `intent_graph.rs`, `lifecycle.rs`, `matrix.rs`, `requirement.rs`) |
-| Release workflows | `.github/workflows/*.yml` | yes (9 files: `release.yml`, `agileplus-release.yml`, `release-crates.yml`, `release-plz.yml`, `release-attestation.yml`, `release-desktop.yml`, `release-drafter.yml`, `publish.yml`, `promote.yml`) |
-| Spec layer | `spec/product/*.md` + `*.json` | yes (15+ files; the two `.v1.json` envelopes + 8+ ADRs/specs) |
+| Repo asset              | Path                           | Present?                                                                                                                                                                                              |
+| ----------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tier definition doc     | `STABLE.md`                    | yes (S0/S1/S2 with criteria)                                                                                                                                                                          |
+| Tracera embed interface | `crates/traceability-core/`    | yes (`artifact.rs`, `contract.rs`, `governance.rs`, `ids.rs`, `impact.rs`, `intent_graph.rs`, `lifecycle.rs`, `matrix.rs`, `requirement.rs`)                                                          |
+| Release workflows       | `.github/workflows/*.yml`      | yes (9 files: `release.yml`, `agileplus-release.yml`, `release-crates.yml`, `release-plz.yml`, `release-attestation.yml`, `release-desktop.yml`, `release-drafter.yml`, `publish.yml`, `promote.yml`) |
+| Spec layer              | `spec/product/*.md` + `*.json` | yes (15+ files; the two `.v1.json` envelopes + 8+ ADRs/specs)                                                                                                                                         |
 
 The lifecycle audit (2026-10-12) found `promote.yml` references a missing
 `gate-check.yml`. If Tracera has an item pointing at
@@ -113,6 +114,7 @@ The lifecycle audit (2026-10-12) found `promote.yml` references a missing
 ### 3.6 Campaign state relevant to Tracera freshness
 
 From `docs/sessions/20261012-snail-unified-execution-memo.md`:
+
 - main HEAD (memo time): `8ce7a446` (PR #1114 landed)
 - Spec branch: `origin/spec/mature-product-contract-v2 @ 4e9f454b`
 - Spec branch is **267 commits ahead** of main, source-backed (2.1.0), with
@@ -131,17 +133,17 @@ source-backed).
 ADR-0017 lists Tracera contents as Requirements + TraceLinks + Oracles +
 Journeys. With current repo data:
 
-| Item class | Expected count |
-|------------|----------------|
-| Requirements (`AP-R-*`) | 67 |
-| Journeys (`AP-J-*`) | 12 |
-| Oracle cases (`AP-VC-*`) | 92 |
-| TraceLinks (req<->oracle, req<->journey, etc.) | ~1,710 (every req linked to multiple oracles + journey) |
-| Subtotal | ~1,881 |
-| Other (crates, workflows, ADRs, audit-hash envelopes) | ~609 |
-| **Plausible total** | **~2,490** |
+| Item class                                            | Expected count                                          |
+| ----------------------------------------------------- | ------------------------------------------------------- |
+| Requirements (`AP-R-*`)                               | 67                                                      |
+| Journeys (`AP-J-*`)                                   | 12                                                      |
+| Oracle cases (`AP-VC-*`)                              | 92                                                      |
+| TraceLinks (req<->oracle, req<->journey, etc.)        | ~1,710 (every req linked to multiple oracles + journey) |
+| Subtotal                                              | ~1,881                                                  |
+| Other (crates, workflows, ADRs, audit-hash envelopes) | ~609                                                    |
+| **Plausible total**                                   | **~2,490**                                              |
 
-This breakdown is a *plausibility estimate*, not a measurement. If Tracera
+This breakdown is a _plausibility estimate_, not a measurement. If Tracera
 holds more or fewer TraceLinks per requirement the count will shift.
 
 ## 4. Auth/access notes
@@ -152,12 +154,12 @@ holds more or fewer TraceLinks per requirement the count will shift.
 - **Access state observed:** `auth_status: NONE`, `service_token_status: false`,
   `is_warp: false`, `is_gateway: false`, `cert_issuer_dn: ""`.
 - **Probed endpoints (all return Cloudflare Access login HTML, HTTP 200, ~48 KB):**
-  - `/`, `/robots.txt`, `/sitemap.xml` -- login page
-  - `/api`, `/api/v1`, `/api/v1/health`, `/api/v1/auth`, `/api/v1/login` -- login page
-  - `/api/v1/projects`, `/api/v1/projects/agileplus`, `/api/v1/projects/AGILEPLUS`,
-    `/api/v1/agileplus`, `/api/v1/items`, `/api/v1/requirements`, `/api/v1/oracles`,
-    `/api/v1/journeys`, `/api/v1/export` -- login page
-  - `/api/v1/openapi.json`, `/api/v1/swagger.json`, `/openapi.json` -- login page
+    - `/`, `/robots.txt`, `/sitemap.xml` -- login page
+    - `/api`, `/api/v1`, `/api/v1/health`, `/api/v1/auth`, `/api/v1/login` -- login page
+    - `/api/v1/projects`, `/api/v1/projects/agileplus`, `/api/v1/projects/AGILEPLUS`,
+      `/api/v1/agileplus`, `/api/v1/items`, `/api/v1/requirements`, `/api/v1/oracles`,
+      `/api/v1/journeys`, `/api/v1/export` -- login page
+    - `/api/v1/openapi.json`, `/api/v1/swagger.json`, `/openapi.json` -- login page
 - **No public read path** -- the API requires a Cloudflare Access service
   token or interactive IdP login to even reach the application layer.
 - **Stop condition hit** ("Tracera requires auth you don't have").
@@ -193,21 +195,21 @@ holds more or fewer TraceLinks per requirement the count will shift.
 
 For each Tracera item that references an AgilePlus asset, verify:
 
-| Reference type | Repo source of truth |
-|----------------|----------------------|
-| `spec/product/mature-contract.v1.json` schema 2.1.0 | exists on `origin/spec/mature-product-contract-v2` only |
-| `spec/product/requirements.semantic.v1.json` (67 reqs) | exists on spec branch; `git show origin/spec/mature-product-contract-v2:...` |
-| `verification/semantic-verification-cases.v1.json` (92 cases) | exists on spec branch; schema_version `0.4.0`; status `specified_not_executed` |
-| `spec/product/journeys.v1.json` (12 journeys) | exists on spec branch; IDs `AP-J-01`..`AP-J-12` |
-| `STABLE.md` | exists at repo root |
-| `docs/adr/0017-tracera-embedding-migration-path.md` | exists (note: superseded by ADR-0018 per its own status header) |
-| `docs/adr/0018-tracera-agileplus-sibling-runtimes.md` | not present in repo root scan; may be only in session folder |
-| `crates/traceability-core/` | present (9 source files: artifact, contract, governance, ids, impact, intent_graph, lifecycle, matrix, requirement) |
-| `crates/*` (30 workspace members) | present (see Cargo.toml) |
-| `.github/workflows/*.yml` (9 files) | present; `promote.yml` refs missing `gate-check.yml` |
-| `docs/journeys/FR-024-*.md` (8 files) | present on main; 12 journeys live in spec-branch JSON |
-| `kitty-specs/eco-035-spec-oracle/{meta.json,plan.md,spec.md,tasks.md}` | present |
-| `verification/AUTOGRADER_CONTRACT.md` | present |
+| Reference type                                                         | Repo source of truth                                                                                                |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `spec/product/mature-contract.v1.json` schema 2.1.0                    | exists on `origin/spec/mature-product-contract-v2` only                                                             |
+| `spec/product/requirements.semantic.v1.json` (67 reqs)                 | exists on spec branch; `git show origin/spec/mature-product-contract-v2:...`                                        |
+| `verification/semantic-verification-cases.v1.json` (92 cases)          | exists on spec branch; schema_version `0.4.0`; status `specified_not_executed`                                      |
+| `spec/product/journeys.v1.json` (12 journeys)                          | exists on spec branch; IDs `AP-J-01`..`AP-J-12`                                                                     |
+| `STABLE.md`                                                            | exists at repo root                                                                                                 |
+| `docs/adr/0017-tracera-embedding-migration-path.md`                    | exists (note: superseded by ADR-0018 per its own status header)                                                     |
+| `docs/adr/0018-tracera-agileplus-sibling-runtimes.md`                  | not present in repo root scan; may be only in session folder                                                        |
+| `crates/traceability-core/`                                            | present (9 source files: artifact, contract, governance, ids, impact, intent_graph, lifecycle, matrix, requirement) |
+| `crates/*` (30 workspace members)                                      | present (see Cargo.toml)                                                                                            |
+| `.github/workflows/*.yml` (9 files)                                    | present; `promote.yml` refs missing `gate-check.yml`                                                                |
+| `docs/journeys/FR-024-*.md` (8 files)                                  | present on main; 12 journeys live in spec-branch JSON                                                               |
+| `kitty-specs/eco-035-spec-oracle/{meta.json,plan.md,spec.md,tasks.md}` | present                                                                                                             |
+| `verification/AUTOGRADER_CONTRACT.md`                                  | present                                                                                                             |
 
 For each Tracera item that should exist (per ADR-0017 model), verify a Tracera
 entry covers it.
@@ -271,6 +273,7 @@ Tracera item".
 ---
 
 _Ledger: tx-agent: jcode, tx-validated: manual, tx-task: tracera-load-check-20261012, tx-scope: docs/TRACERA-LOAD-CHECK.md, tx-intent: Read-only Tracera load check vs AgilePlus repo -- auth-blocked, repo-side baseline established_
+
 ## 9. v2 cross-reference results (local dump, 2026-10-12 23:06Z)
 
 **Source dataset:** `/tmp/v2_AgilePlus.json` (898,795 bytes, exported from Tracera project AGILEPLUS).
@@ -278,25 +281,25 @@ _Ledger: tx-agent: jcode, tx-validated: manual, tx-task: tracera-load-check-2026
 
 ### 9.1 Dataset structure
 
-| Field | Value |
-|-------|-------|
-| Top-level keys | `project`, `items`, `links` |
-| Items | 2,490 (verified) |
-| Links | 1,509 (verified) |
-| Item types | adr (26), component (43), epic (49), feature (2), requirement (862), task (1,077), test (399), user_story (32) |
-| Link types | governs (1), implements (273), part_of (663), tests (397), verifies (175) |
-| Distinct Source: paths | 648 |
-| Items with Source: field | 2,490 (100%) |
+| Field                    | Value                                                                                                          |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Top-level keys           | `project`, `items`, `links`                                                                                    |
+| Items                    | 2,490 (verified)                                                                                               |
+| Links                    | 1,509 (verified)                                                                                               |
+| Item types               | adr (26), component (43), epic (49), feature (2), requirement (862), task (1,077), test (399), user_story (32) |
+| Link types               | governs (1), implements (273), part_of (663), tests (397), verifies (175)                                      |
+| Distinct Source: paths   | 648                                                                                                            |
+| Items with Source: field | 2,490 (100%)                                                                                                   |
 
 ### 9.2 False positives (Tracera item → does the referenced path exist?)
 
-| Category | Count | Notes |
-|----------|-------|-------|
-| **Hard false positive** (MISSING on main AND MISSING on spec branch) | **0** | Every Source: path resolves somewhere. |
-| **Spec-branch-only false positive** (MISSING on main, EXISTS on spec branch) | **0** | All Tracera items are aligned to the current main codebase. |
-| **Main-only false positive** (EXISTS on main, MISSING on spec branch) | **13** | All 13 are `crates/agileplus-cli/tests/*` test files (and their `support/` modules) that the spec branch has removed or refactored. |
-| **Content-drift false positive** (path exists, content doesn't match the Tracera item) | **1** | `spec/product/mature-contract.v1.json` — Tracera items reference the contract but main has `schema_version: "1.1.0"` (`invalidated_requires_source_backed_replacement`) while spec branch has `schema_version: "2.1.0"` (`accepted_mature_semantic_contract_runtime_evidence_pending`). Same path, different truth. |
-| **Total false positives** | **14** | 0 + 0 + 13 + 1 |
+| Category                                                                               | Count  | Notes                                                                                                                                                                                                                                                                                                               |
+| -------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Hard false positive** (MISSING on main AND MISSING on spec branch)                   | **0**  | Every Source: path resolves somewhere.                                                                                                                                                                                                                                                                              |
+| **Spec-branch-only false positive** (MISSING on main, EXISTS on spec branch)           | **0**  | All Tracera items are aligned to the current main codebase.                                                                                                                                                                                                                                                         |
+| **Main-only false positive** (EXISTS on main, MISSING on spec branch)                  | **13** | All 13 are `crates/agileplus-cli/tests/*` test files (and their `support/` modules) that the spec branch has removed or refactored.                                                                                                                                                                                 |
+| **Content-drift false positive** (path exists, content doesn't match the Tracera item) | **1**  | `spec/product/mature-contract.v1.json` — Tracera items reference the contract but main has `schema_version: "1.1.0"` (`invalidated_requires_source_backed_replacement`) while spec branch has `schema_version: "2.1.0"` (`accepted_mature_semantic_contract_runtime_evidence_pending`). Same path, different truth. |
+| **Total false positives**                                                              | **14** | 0 + 0 + 13 + 1                                                                                                                                                                                                                                                                                                      |
 
 The 13 main-only paths are listed below; all are CLI test plumbing the spec branch dropped during its 267-commit evolution:
 
@@ -320,21 +323,21 @@ crates/agileplus-cli/tests/support/worklog.rs
 
 **A. Spec-branch canonical_spine missing from Tracera** (semantic contract spine is invisible to Tracera):
 
-| Item class | Spec-branch count | In Tracera? | False negatives |
-|------------|-------------------|-------------|-----------------|
-| Semantic requirements (`AP-R-*`) | 67 | 0 | **67** |
-| Oracles / verification cases (`AP-VC-*`) | 92 | 0 | **92** |
-| Journeys (`AP-J-01..12`) | 12 | 0 | **12** |
-| **Subtotal (semantic spine)** | **171** | **0** | **171** |
+| Item class                               | Spec-branch count | In Tracera? | False negatives |
+| ---------------------------------------- | ----------------- | ----------- | --------------- |
+| Semantic requirements (`AP-R-*`)         | 67                | 0           | **67**          |
+| Oracles / verification cases (`AP-VC-*`) | 92                | 0           | **92**          |
+| Journeys (`AP-J-01..12`)                 | 12                | 0           | **12**          |
+| **Subtotal (semantic spine)**            | **171**           | **0**       | **171**         |
 
 **B. Repo coverage gaps** (specific on-disk artifacts Tracera doesn't reference):
 
-| Item class | Repo count | In Tracera | False negatives |
-|------------|------------|------------|-----------------|
-| `STABLE.md` tier items (S0, S1, S2) | 3 | 0 | **3** |
-| Journey narrative pages (`docs/journeys/FR-024-*.md`) | 8 | 1 (only `FR-024-1.md`) | **7** |
-| Release workflows (`.github/workflows/*.yml`) | 9 (`release.yml`, `agileplus-release.yml`, `release-crates.yml`, `release-attestation.yml`, `release-desktop.yml`, `release-drafter.yml`, `gate-check.yml`, `post-publish-verify.yml`, `publish.yml`) | 0 | **9** |
-| **Subtotal (repo coverage)** | **20** | **1** | **19** |
+| Item class                                            | Repo count                                                                                                                                                                                            | In Tracera             | False negatives |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | --------------- |
+| `STABLE.md` tier items (S0, S1, S2)                   | 3                                                                                                                                                                                                     | 0                      | **3**           |
+| Journey narrative pages (`docs/journeys/FR-024-*.md`) | 8                                                                                                                                                                                                     | 1 (only `FR-024-1.md`) | **7**           |
+| Release workflows (`.github/workflows/*.yml`)         | 9 (`release.yml`, `agileplus-release.yml`, `release-crates.yml`, `release-attestation.yml`, `release-desktop.yml`, `release-drafter.yml`, `gate-check.yml`, `post-publish-verify.yml`, `publish.yml`) | 0                      | **9**           |
+| **Subtotal (repo coverage)**                          | **20**                                                                                                                                                                                                | **1**                  | **19**          |
 
 **C. Coverage complete (no false negatives):**
 
@@ -361,4 +364,3 @@ The Cloudflare Access blocker from v1 stands for any future **write-back** to Tr
 **IS NOT:** a guarantee of Tracera's freshness in production. The dataset file may be older than its 2026-10-12 export timestamp implies; Tracera's UI may have been edited since the export. Re-export and re-run if more than 7 days elapse before merge.
 
 ---
-

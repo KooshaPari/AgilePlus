@@ -72,6 +72,7 @@ A complete constitution for an auth service:
 ## Code Quality Standards
 
 ### Rust Toolchain
+
 - Minimum Rust version: 1.75 (specified in `rust-toolchain.toml`)
 - Formatter: `cargo fmt --check` (enforced in CI)
 - Linter: `cargo clippy -- -D warnings` (no warnings allowed)
@@ -80,6 +81,7 @@ A complete constitution for an auth service:
   → Panics only allowed in tests and binary entry points
 
 ### Test Coverage
+
 - Minimum coverage per crate: 85%
 - Coverage measured by `cargo tarpaulin`
 - All public API must have at least one test
@@ -87,12 +89,14 @@ A complete constitution for an auth service:
 - Integration tests for cross-crate flows
 
 ### Code Organization
+
 - Maximum function length: 50 lines (soft guideline, can exceed for complex logic)
 - Maximum module file length: 400 lines (refactor if larger)
 - No circular dependencies between crates
 - Private modules use leading underscore: `mod _internal;`
 
 ### Documentation
+
 - All public items must have rustdoc comments
 - Examples in docs for non-trivial functions
 - CHANGELOG.md updated for all user-facing changes
@@ -100,31 +104,34 @@ A complete constitution for an auth service:
 ## Architectural Principles
 
 ### Port-Based Design
+
 - All external I/O (database, network, file) goes through port traits
 - Domain logic in core crate has zero external dependencies
 - Ports live in separate crates: `*-ports`, `*-adapters`
 
 ### Crate Boundaries
 ```
-agileplus-core/       # Domain model, entities, value objects
-  ├── models/         # User, Feature, Spec, Plan
-  ├── entities/       # WorkPackage, Requirement
-  └── error.rs        # Error types
 
-agileplus-engine/     # Business logic, orchestration
-  ├── spec/           # Spec parsing, validation
-  ├── plan/           # Planning algorithm
-  └── dispatch/       # Agent dispatch logic
+agileplus-core/ # Domain model, entities, value objects
+├── models/ # User, Feature, Spec, Plan
+├── entities/ # WorkPackage, Requirement
+└── error.rs # Error types
 
-agileplus-ports/      # Trait definitions
-  ├── storage.rs      # StoragePort trait
-  ├── vcs.rs          # VcsPort trait
-  └── agent.rs        # AgentPort trait
+agileplus-engine/ # Business logic, orchestration
+├── spec/ # Spec parsing, validation
+├── plan/ # Planning algorithm
+└── dispatch/ # Agent dispatch logic
 
-agileplus-adapters/   # Implementations
-  ├── file_storage/   # FileStoragePort
-  ├── git_vcs/        # GitVcsPort
-  └── claude_agent/   # ClaudeAgentPort
+agileplus-ports/ # Trait definitions
+├── storage.rs # StoragePort trait
+├── vcs.rs # VcsPort trait
+└── agent.rs # AgentPort trait
+
+agileplus-adapters/ # Implementations
+├── file_storage/ # FileStoragePort
+├── git_vcs/ # GitVcsPort
+└── claude_agent/ # ClaudeAgentPort
+
 ```
 
 ### Dependency Rules
@@ -146,13 +153,15 @@ agileplus-adapters/   # Implementations
 Format: `type(scope): description`
 
 ```
+
 feat(spec): add validation for required fields
 fix(plan): handle circular work package dependencies
 docs(guide): add getting-started section
 refactor(engine): extract planning logic to separate module
 test(integration): add end-to-end workflow tests
 chore(deps): bump serde to 1.0.200
-```
+
+````
 
 Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
 
@@ -205,19 +214,21 @@ agent:
     - "constitution.md"
   max_file_size: 1000000  # 1 MB
   max_commit_size: 5000000  # 5 MB
-```
+````
 
 ## Naming Conventions
 
 ### Branches
+
 - Feature: `feat/{feature-id}-{short-slug}`
-  - Example: `feat/001-oauth-auth`, `feat/WP02-login-endpoint`
+    - Example: `feat/001-oauth-auth`, `feat/WP02-login-endpoint`
 - Fix: `fix/{issue-id}-{short-slug}`
-  - Example: `fix/147-login-500-error`
+    - Example: `fix/147-login-500-error`
 - Docs: `docs/{topic}`
-  - Example: `docs/getting-started`
+    - Example: `docs/getting-started`
 
 ### Commits
+
 - Format: `type(scope): description`
 - Scope is optional but recommended
 - Capitalize description (Implement, not implement)
@@ -225,6 +236,7 @@ agent:
 - Use imperative mood (Add, not Added)
 
 ### Files & Modules
+
 - Rust files: `snake_case.rs`
 - Modules: `pub mod snake_case;`
 - Constants: `SCREAMING_SNAKE_CASE`
@@ -233,6 +245,7 @@ agent:
 - Test functions: `test_descriptive_name()`
 
 ### IDs
+
 - Features: `{NNN}-{slug}` (e.g., `001-oauth-auth`)
 - Work packages: `WP{NN}` within a feature (e.g., `WP01`, `WP02`)
 - ADRs: `ADR-{NNN}` (e.g., `ADR-001`)
@@ -241,16 +254,19 @@ agent:
 ## Performance Targets
 
 ### Response Times
+
 - CLI commands: < 2 seconds for most operations
 - Spec parsing: < 500ms for <5KB specs
 - Plan generation: < 2 seconds for <20 work packages
 
 ### Test Execution
+
 - Unit tests: < 30 seconds for full suite
 - Integration tests: < 60 seconds
 - Full test suite (unit + integration): < 90 seconds
 
 ### Database
+
 - Spec queries: < 100ms (p99)
 - Sync operations: < 5 seconds per issue tracker
 
@@ -304,3 +320,4 @@ Governance
   ✓ Release process followed
 
 Overall Compliance: 94% (3 minor violations)
+```

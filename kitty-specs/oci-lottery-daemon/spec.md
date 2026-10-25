@@ -19,6 +19,7 @@ This spec backfills the design intent for the Rust daemon shipped in PR #15, whi
 ## Problem Statement
 
 OCI A1.Flex Always-Free capacity is scarce and stochastic. Manual `oci compute instance launch` invocations miss most availability windows, and shell-loop polling lacks:
+
 - Multi-region fan-out
 - Persistent state across SIGTERM / reboot / launchd respawn
 - Clean shutdown semantics
@@ -64,15 +65,15 @@ iac/oci-lottery/
 
 ## Functional Requirements
 
-| FR ID | Requirement |
-|-------|-------------|
+| FR ID          | Requirement                                              |
+| -------------- | -------------------------------------------------------- |
 | FR-OCI-LOT-001 | Poll all 5 OCI regions concurrently for A1.Flex capacity |
-| FR-OCI-LOT-002 | Target shape: A1.Flex with 4 OCPU and 24 GB memory |
-| FR-OCI-LOT-003 | Persist state to disk across restarts |
-| FR-OCI-LOT-004 | Handle SIGTERM cleanly (no orphaned launches) |
-| FR-OCI-LOT-005 | Trigger failsoft success hook chain on acquisition |
-| FR-OCI-LOT-006 | Run under launchd as a managed daemon |
-| FR-OCI-LOT-007 | Structured logging suitable for long-lived process |
+| FR-OCI-LOT-002 | Target shape: A1.Flex with 4 OCPU and 24 GB memory       |
+| FR-OCI-LOT-003 | Persist state to disk across restarts                    |
+| FR-OCI-LOT-004 | Handle SIGTERM cleanly (no orphaned launches)            |
+| FR-OCI-LOT-005 | Trigger failsoft success hook chain on acquisition       |
+| FR-OCI-LOT-006 | Run under launchd as a managed daemon                    |
+| FR-OCI-LOT-007 | Structured logging suitable for long-lived process       |
 
 ## Implementation Status
 

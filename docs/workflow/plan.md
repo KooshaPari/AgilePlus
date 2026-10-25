@@ -49,22 +49,26 @@ Plan creates a detailed `plan.md` with these sections:
 ## Architecture Decisions
 
 ### Decision 1: Async Email Queue
+
 **Choice**: Queue emails in database, process async
 **Rationale**: Decouples email sending from request handling
 **Trade-off**: More complex (queue + worker) vs simpler (sync send)
 **Alternative**: Sync SendGrid API calls (simpler but blocks requests)
 
 ### Decision 2: Event-Driven Dispatch
+
 **Choice**: Event system triggers email handlers
 **Rationale**: Reuses existing event architecture
 **Trade-off**: More flexible but requires event schema changes
 
 ### Decision 3: Template Storage
+
 **Choice**: Email templates in database
 **Rationale**: Allows non-code template updates
 **Trade-off**: Database query per template vs hardcoded strings
 
 ### Decision 4: Retry Strategy
+
 **Choice**: Exponential backoff, 5 retries over 72 hours
 **Rationale**: Tolerates temporary SendGrid downtime
 **Trade-off**: More resilient but adds complexity
@@ -77,22 +81,23 @@ Comprehensive list of all files touched:
 ```markdown
 ## File Changes
 
-| File | Action | Size | Purpose |
-|------|--------|------|---------|
-| src/models/email.rs | CREATE | ~200L | Email data model |
-| src/models/email_preference.rs | CREATE | ~150L | User subscription prefs |
-| src/db/migrations/001_email_tables.sql | CREATE | ~50L | Schema for email tables |
-| src/email/mod.rs | CREATE | ~100L | Email module root |
-| src/email/sendgrid.rs | CREATE | ~300L | SendGrid API integration |
-| src/email/templates.rs | CREATE | ~200L | Template rendering |
-| src/email/queue.rs | CREATE | ~250L | Email queue worker |
-| src/events/handlers/email.rs | CREATE | ~150L | Event handlers for email |
-| src/handlers/account.rs | MODIFY | +80L | Add email preference endpoint |
-| src/models/user.rs | MODIFY | +2L | Add email_preference field |
-| tests/email_integration_tests.rs | CREATE | ~400L | Integration tests |
-| docs/email-feature.md | CREATE | ~100L | Feature documentation |
+| File                                   | Action | Size  | Purpose                       |
+| -------------------------------------- | ------ | ----- | ----------------------------- |
+| src/models/email.rs                    | CREATE | ~200L | Email data model              |
+| src/models/email_preference.rs         | CREATE | ~150L | User subscription prefs       |
+| src/db/migrations/001_email_tables.sql | CREATE | ~50L  | Schema for email tables       |
+| src/email/mod.rs                       | CREATE | ~100L | Email module root             |
+| src/email/sendgrid.rs                  | CREATE | ~300L | SendGrid API integration      |
+| src/email/templates.rs                 | CREATE | ~200L | Template rendering            |
+| src/email/queue.rs                     | CREATE | ~250L | Email queue worker            |
+| src/events/handlers/email.rs           | CREATE | ~150L | Event handlers for email      |
+| src/handlers/account.rs                | MODIFY | +80L  | Add email preference endpoint |
+| src/models/user.rs                     | MODIFY | +2L   | Add email_preference field    |
+| tests/email_integration_tests.rs       | CREATE | ~400L | Integration tests             |
+| docs/email-feature.md                  | CREATE | ~100L | Feature documentation         |
 
 **Summary**:
+
 - Files created: 11
 - Files modified: 2
 - Total new lines: ~2,000
@@ -163,7 +168,7 @@ Step-by-step order to minimize blockers:
 2. User model updates (add email_preference field)
 3. Email and EmailPreference models
 
-*Why first*: Everything else depends on the database schema
+_Why first_: Everything else depends on the database schema
 
 **Phase 2: Core (Days 2-3)**
 
@@ -171,7 +176,7 @@ Step-by-step order to minimize blockers:
 5. Email queue worker (async processing)
 6. Template rendering (Handlebars setup)
 
-*Why next*: Implements sending mechanism
+_Why next_: Implements sending mechanism
 
 **Phase 3: Integration (Days 3-4)**
 
@@ -179,7 +184,7 @@ Step-by-step order to minimize blockers:
 8. Account settings endpoint (preference management)
 9. Email preferences model
 
-*Why next*: Connects to rest of system
+_Why next_: Connects to rest of system
 
 **Phase 4: Quality (Days 4-5)**
 
@@ -187,9 +192,10 @@ Step-by-step order to minimize blockers:
 11. Error handling refinements
 12. Documentation
 
-*Why last*: All pieces in place to test thoroughly
+_Why last_: All pieces in place to test thoroughly
 
 **Parallelizable Steps:**
+
 - Steps 4-8 can run in parallel (no dependencies between them)
 - Only constraint: All of Phase 1 must complete before Phase 2
 
@@ -222,18 +228,21 @@ Third-party crates and tools required:
 ## External Dependencies
 
 ### New Dependencies
+
 - sendgrid: ^0.20
 - handlebars: ^4.0
 - serde_json: ^1.0 (upgrade if needed)
 - tokio-util: ^0.7 (for retry logic)
 
 ### Existing Dependencies (Already Used)
+
 - tokio: ^1.35 (async runtime)
 - sqlx: ^0.7 (database)
 - serde: ^1.0 (serialization)
 - log: ^0.4 (logging)
 
 ### Total New Dependencies
+
 1 major (sendgrid), 1 moderate (handlebars), rest minor
 
 **No dependency conflicts identified**
@@ -246,14 +255,14 @@ Potential issues and mitigations:
 ```markdown
 ## Risks & Mitigations
 
-| Risk | Severity | Mitigation |
-|------|----------|-----------|
-| SendGrid API rate limits | Medium | Implement queue + backoff |
-| Email deliverability | Medium | Monitor bounce rates, test with Mailtrap |
-| Performance under load | Low | Async queue, batch processing |
-| Database migration issues | Low | Test migration up/down |
-| Spam filter classification | Medium | Use SendGrid templates, proper headers |
-| User unsubscribe abuse | Low | Rate limit unsubscribe requests |
+| Risk                       | Severity | Mitigation                               |
+| -------------------------- | -------- | ---------------------------------------- |
+| SendGrid API rate limits   | Medium   | Implement queue + backoff                |
+| Email deliverability       | Medium   | Monitor bounce rates, test with Mailtrap |
+| Performance under load     | Low      | Async queue, batch processing            |
+| Database migration issues  | Low      | Test migration up/down                   |
+| Spam filter classification | Medium   | Use SendGrid templates, proper headers   |
+| User unsubscribe abuse     | Low      | Rate limit unsubscribe requests          |
 ```
 
 ## Full Example Plan Document
@@ -282,24 +291,28 @@ user preference management and reliability guarantees.
 ## Architecture Decisions
 
 ### 1. Async Queue for Email Sending
+
 - **Choice**: Store emails in database, process async with tokio background task
 - **Rationale**: Non-blocking, survives restarts, audit trail
 - **Alternative**: Sync API calls (simpler, but blocks requests)
 - **Trade-off**: +300 LOC for queue, -request latency impact
 
 ### 2. Event-Driven Dispatch
+
 - **Choice**: Listen to domain events (UserCreated, CommentAdded, etc.)
 - **Rationale**: Reuses existing event system, decoupled
 - **Alternative**: Direct function calls (simpler, tightly coupled)
 - **Trade-off**: +150 LOC for handlers, better architecture
 
 ### 3. Database-Stored Templates
+
 - **Choice**: Store email templates in database
 - **Rationale**: Non-developers can update templates without code
 - **Alternative**: Hardcoded or file-based templates
 - **Trade-off**: More queries, but more flexible
 
 ### 4. Handlebars for Template Rendering
+
 - **Choice**: Handlebars templating engine
 - **Rationale**: Lightweight, no unsafe code, good for email
 - **Alternative**: Tera or Minijinja (overkill for our needs)
@@ -307,36 +320,39 @@ user preference management and reliability guarantees.
 
 ## File Changes
 
-| File | Action | Lines | Purpose |
-|------|--------|-------|---------|
-| src/models/email.rs | CREATE | 180 | Email data model |
-| src/models/email_preference.rs | CREATE | 120 | Preference model |
-| src/models/email_template.rs | CREATE | 80 | Template model |
-| src/db/migrations/001_email_schema.sql | CREATE | 45 | Database schema |
-| src/email/mod.rs | CREATE | 50 | Module root + exports |
-| src/email/sendgrid.rs | CREATE | 300 | SendGrid API client |
-| src/email/queue.rs | CREATE | 250 | Queue processor |
-| src/email/templates.rs | CREATE | 150 | Template rendering |
-| src/events/handlers/email.rs | CREATE | 180 | Event handlers |
-| src/handlers/account.rs | MODIFY | +90 | Email pref endpoint |
-| src/models/user.rs | MODIFY | +2 | email_preferences field |
-| src/models/mod.rs | MODIFY | +3 | Export new models |
-| tests/email_test.rs | CREATE | 400 | Unit + integration tests |
+| File                                   | Action | Lines | Purpose                  |
+| -------------------------------------- | ------ | ----- | ------------------------ |
+| src/models/email.rs                    | CREATE | 180   | Email data model         |
+| src/models/email_preference.rs         | CREATE | 120   | Preference model         |
+| src/models/email_template.rs           | CREATE | 80    | Template model           |
+| src/db/migrations/001_email_schema.sql | CREATE | 45    | Database schema          |
+| src/email/mod.rs                       | CREATE | 50    | Module root + exports    |
+| src/email/sendgrid.rs                  | CREATE | 300   | SendGrid API client      |
+| src/email/queue.rs                     | CREATE | 250   | Queue processor          |
+| src/email/templates.rs                 | CREATE | 150   | Template rendering       |
+| src/events/handlers/email.rs           | CREATE | 180   | Event handlers           |
+| src/handlers/account.rs                | MODIFY | +90   | Email pref endpoint      |
+| src/models/user.rs                     | MODIFY | +2    | email_preferences field  |
+| src/models/mod.rs                      | MODIFY | +3    | Export new models        |
+| tests/email_test.rs                    | CREATE | 400   | Unit + integration tests |
 
 **Summary**: 11 files created, 2 modified, ~1,700 new lines
 
 ## Data Models
 
 ### Email
+
 - id, user_id, event_type, recipient, subject, body
 - status (pending, sent, failed, bounced)
 - attempts (retry count), created_at, sent_at
 
 ### EmailPreference
+
 - user_id, category (marketing/transactional/account)
 - enabled (boolean), unsubscribe_token
 
 ### EmailTemplate
+
 - id, event_type, subject, body_template
 - created_at, updated_at
 
@@ -356,10 +372,12 @@ user preference management and reliability guarantees.
 ## External Dependencies
 
 ### New
+
 - `sendgrid`: ^0.20 (for API)
 - `handlebars`: ^4.0 (for templates)
 
 ### Existing (No changes)
+
 - `tokio`: ^1.35 (async)
 - `sqlx`: ^0.7 (database)
 
@@ -367,12 +385,12 @@ user preference management and reliability guarantees.
 
 ## Risks
 
-| Risk | Mitigation |
-|------|-----------|
-| SendGrid API failures | Implement exponential backoff retry, 5 attempts over 72 hours |
-| Email bounces | Monitor bounce rate, disable emails for bounced addresses after 3 bounces |
-| Performance impact | Use async queue, don't block requests |
-| Template injection | Use Handlebars sandboxed render, validate input |
+| Risk                  | Mitigation                                                                |
+| --------------------- | ------------------------------------------------------------------------- |
+| SendGrid API failures | Implement exponential backoff retry, 5 attempts over 72 hours             |
+| Email bounces         | Monitor bounce rate, disable emails for bounced addresses after 3 bounces |
+| Performance impact    | Use async queue, don't block requests                                     |
+| Template injection    | Use Handlebars sandboxed render, validate input                           |
 
 ## Next Steps
 
@@ -424,9 +442,11 @@ A good plan includes:
 
 ```markdown
 # ✗ Vague
+
 - Create email service
 
 # ✓ Specific
+
 - Create SendGrid HTTP client with exponential backoff retry
 - Create database queue table with status tracking
 ```
@@ -435,6 +455,7 @@ A good plan includes:
 
 ```markdown
 # ✓ Shows thinking
+
 **Choice**: Async queue
 **Trade-off**: +300 LOC complexity vs -request latency impact
 ```
@@ -443,6 +464,7 @@ A good plan includes:
 
 ```markdown
 # ✓ Helps with scheduling
+
 - Steps 1-2 must complete first (foundation)
 - Steps 3-6 can run in parallel (no dependencies)
 - Steps 7-9 require steps 1-6 complete
@@ -452,6 +474,7 @@ A good plan includes:
 
 ```markdown
 # ✓ Traceability
+
 REQ-1 (Welcome email) → implemented in WP03-sendgrid, WP05-handlers
 REQ-2 (Mention email) → implemented in WP05-handlers
 ```

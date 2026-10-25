@@ -7,8 +7,8 @@ description: DEPRECATED — use `ap specify --clarify` instead. See docs/design/
 
 ## Migration
 
-| SpecKitty | AgilePlus (`ap`) |
-|-----------|-------------------|
+| SpecKitty             | AgilePlus (`ap`)                    |
+| --------------------- | ----------------------------------- |
 | `/spec-kitty.clarify` | `ap specify --clarify <feature-id>` |
 
 ```bash

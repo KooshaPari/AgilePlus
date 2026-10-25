@@ -21,6 +21,8 @@ env:
 jobs:
     coverage-python:
         name: python-coverage (uv)
+        # TODO(#1141): re-enable as a hard gate once the coverage-data branch/artifact infra exists
+        continue-on-error: true
         runs-on: ubuntu-24.04
         permissions:
             contents: read

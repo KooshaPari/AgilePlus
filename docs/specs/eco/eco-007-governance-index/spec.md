@@ -13,10 +13,13 @@ superseded_by: null
 title: Governance Index
 type: operational
 ---
+
 # Specification: Governance Index
+
 **Slug**: governance-index | **Date**: 2026-06-05 | **State**: pending
 
 ## Problem Statement
+
 The `eco-006-compliance-20260605.md` worklog flagged FR1 ("live governance
 index of active kitty-specs") as missing. There is no single artifact in
 the canonical `AgilePlus` repository that enumerates every active kitty-spec,
@@ -29,12 +32,14 @@ workflow that regenerates it on every push, so the index is always live
 and provably current.
 
 ## Target Users
+
 - Fleet hygiene agents (Phenotype governance sweep)
 - Repo stewards auditing spec coverage
 - Phenotype governance auditors and downstream operators
 - Humans skimming the canonical repo for "what specs are live"
 
 ## Functional Requirements
+
 - [ ] Generate a live index of all active kitty-specs under
       `AgilePlus/kitty-specs/`.
 - [ ] Render each entry with a clickable link to the spec directory and
@@ -51,6 +56,7 @@ and provably current.
       `superseded_by` link where present.
 
 ## Non-Functional Requirements
+
 - `INDEX.md` is UTF-8 with no BOM.
 - `INDEX.md` is regenerated on every push; no manual edits.
 - Generation is deterministic (stable sort by `spec_id`).
@@ -60,6 +66,7 @@ and provably current.
   Windows billed runners, per the org billing policy).
 
 ## Acceptance Criteria
+
 - [ ] `AgilePlus/kitty-specs/INDEX.md` exists and lists every kitty-spec
       directory under `AgilePlus/kitty-specs/`.
 - [ ] Each row exposes `slug`, `status`, `created`, `reactivated`,
@@ -73,6 +80,7 @@ and provably current.
       ships.
 
 ## Constraints & Dependencies
+
 - Scope: governance artifacts only. No product code or runtime changes.
 - Standard Linux GitHub Actions runner (no billing-bearing runners).
 - Existing `AgilePlus/kitty-specs/*/meta.json` schema (no migration of

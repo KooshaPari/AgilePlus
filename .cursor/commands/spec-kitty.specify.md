@@ -7,8 +7,8 @@ description: DEPRECATED — use `ap specify` instead. See docs/design/SPECKITTY-
 
 ## Migration
 
-| SpecKitty | AgilePlus (`ap`) |
-|-----------|-------------------|
+| SpecKitty             | AgilePlus (`ap`)                     |
+| --------------------- | ------------------------------------ |
 | `/spec-kitty.specify` | `ap specify "<feature description>"` |
 
 ```bash

@@ -4,8 +4,8 @@
 
 Only one Plane fork exists in the <REDACTED> portfolio:
 
-| Repo | Status | Description |
-|------|--------|-------------|
+| Repo                                                        | Status | Description                                                                                                                                                  |
+| ----------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [<REDACTED>/Planify](https://github.com/KooshaPari/Planify) | Active | Canonical Plane fork — consolidated from `main` + `master` branches. React Router v7 + Vite, full Plane monorepo (apps/web, admin, api, live, space, proxy). |
 
 **Canonical pick:** `<REDACTED>/Planify` (only fork; already consolidates upstream Plane branches).
@@ -37,13 +37,13 @@ UI renders: Plane logo splash screen loads immediately; React hydrates and rende
 
 Planify `apps/web` expects a **Plane-compatible REST API** at `VITE_API_BASE_URL` (default `localhost:8000`). AgilePlus exposes a **different domain model**:
 
-| Plane expects | AgilePlus has | Gap |
-|--------------|---------------|-----|
-| `/api/v1/users/me/` | No user/auth endpoint | Auth layer missing entirely |
-| `/api/v1/workspaces/` | No workspace concept | Domain mismatch |
-| `/api/v1/projects/` | Epics + Work Packages | Partial conceptual overlap |
-| `/api/v1/issues/` | Work Packages | Closest equivalent |
-| CSRF + session auth | JWT / API key auth | Auth mechanism mismatch |
+| Plane expects         | AgilePlus has         | Gap                         |
+| --------------------- | --------------------- | --------------------------- |
+| `/api/v1/users/me/`   | No user/auth endpoint | Auth layer missing entirely |
+| `/api/v1/workspaces/` | No workspace concept  | Domain mismatch             |
+| `/api/v1/projects/`   | Epics + Work Packages | Partial conceptual overlap  |
+| `/api/v1/issues/`     | Work Packages         | Closest equivalent          |
+| CSRF + session auth   | JWT / API key auth    | Auth mechanism mismatch     |
 
 **Assessment:** Planify cannot be drop-in wired to AgilePlus. The gap is architectural: Plane assumes workspaces/projects/issues; AgilePlus has epics/stories/work-packages with a Rust gRPC/REST backend (routes: `features`, `work_packages`, `cycle`, `module`, `backlog`). A shim/adapter layer is required.
 

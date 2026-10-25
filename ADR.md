@@ -5,6 +5,7 @@
 ---
 
 ## ADR-001: Rust Workspace Monorepo with 22 Crates
+
 **Date**: 2026-03-25
 **Status**: Accepted
 **Context**: AgilePlus requires a spec-driven development engine with distinct subsystems (domain logic, CLI, API, gRPC, storage, git, telemetry, events, caching, graph, p2p, sync, dashboard, and more). Each subsystem has different dependency requirements, compilation profiles, and test isolation needs. A single-crate approach would create circular dependencies and prevent independent crate versioning. A polyrepo approach would fragment the tightly coupled domain model.
@@ -15,6 +16,7 @@
 ---
 
 ## ADR-002: Hexagonal Architecture with Port/Adapter Pattern
+
 **Date**: 2026-03-25
 **Status**: Accepted
 **Context**: AgilePlus must support swappable backends for storage (SQLite today, potentially Postgres tomorrow), VCS (git), agent dispatch (Claude Code, Codex), review, observability, and content storage. Business rules in the domain must remain independent of any specific I/O technology.
@@ -25,6 +27,7 @@
 ---
 
 ## ADR-003: SQLite as Local-First Storage with Optional External Sync
+
 **Date**: 2026-03-25
 **Status**: Accepted
 **Context**: AgilePlus targets solo developers and AI agents running in isolated worktrees. Requiring a running Postgres or MySQL instance would create friction for local setups, CI environments, and offline operation. At the same time, teams need optional bidirectional sync with external project management systems (Plane.so, GitHub).
@@ -35,6 +38,7 @@
 ---
 
 ## ADR-004: SHA-256 Hash-Chained Immutable Audit Log and Event Store
+
 **Date**: 2026-03-25
 **Status**: Accepted
 **Context**: AgilePlus enforces governance contracts that require verifiable proof that evidence was collected, transitions were approved, and no records were tampered with after the fact. Without cryptographic integrity, audit trails are unreliable as governance artifacts.
@@ -45,6 +49,7 @@
 ---
 
 ## ADR-005: gRPC Service Layer with Tonic + Protobuf for MCP and Inter-Service Communication
+
 **Date**: 2026-03-25
 **Status**: Accepted
 **Context**: The Python MCP server (`agileplus-mcp`) needs a stable, typed contract to call into the Rust backend. HTTP REST is an option but requires manual serialization and lacks bidirectional streaming. The system also needs inter-service communication between the API server and background workers.
@@ -55,6 +60,7 @@
 ---
 
 ## ADR-006: NATS JetStream as the Event Bus
+
 **Date**: 2026-03-25
 **Status**: Accepted
 **Context**: Domain events need to be delivered to multiple consumers (API SSE streams, sync workers, telemetry collectors) without tight coupling between producers and consumers. The event bus must support persistent delivery and replay for consumers that fall behind.
@@ -65,6 +71,7 @@
 ---
 
 ## ADR-007: Plugin Architecture via External Git-Sourced Crates
+
 **Date**: 2026-03-25
 **Status**: Accepted
 **Context**: Storage backends and VCS adapters need to be extensible without modifying the core workspace. Third parties or future platform engineers should be able to ship a plugin crate that satisfies a port trait and be registered at runtime without a full recompile of the monorepo.
@@ -75,6 +82,7 @@
 ---
 
 ## ADR-008: Python MCP Server for AI Agent Integration
+
 **Date**: 2026-03-25
 **Status**: Accepted
 **Context**: AI coding agents (Claude Code, Codex) consume capabilities via the Model Context Protocol (MCP). The Rust backend does not expose an MCP-native interface. A Python MCP server bridges the protocol boundary, exposing AgilePlus tools, resources, and prompts as first-class MCP constructs.
@@ -85,6 +93,7 @@
 ---
 
 ## ADR-009: OpenTelemetry for Observability with OTLP Export
+
 **Date**: 2026-03-25
 **Status**: Accepted
 **Context**: AgilePlus dispatches AI agents across multiple worktrees and processes. Debugging failures, measuring command latency, and understanding agent lifecycle events requires distributed tracing and metrics. Vendor-specific SDKs would lock the platform to a single observability backend.
@@ -95,6 +104,7 @@
 ---
 
 ## ADR-010: process-compose for Local Dev Orchestration (OrbStack + Native Services)
+
 **Date**: 2026-03-25
 **Status**: Accepted
 **Context**: AgilePlus requires multiple services to run concurrently for local development: NATS, Neo4j, MinIO, PostgreSQL (via OrbStack container), DragonflyDB (Redis-compatible, via OrbStack container), and the Rust API/gRPC servers. Docker Compose adds container overhead for services that can run natively. A TUI-friendly process supervisor improves developer experience.
@@ -105,6 +115,7 @@
 ---
 
 ## ADR-011: Credentials Management via OS Keychain with File-Based Fallback
+
 **Date**: 2026-03-25
 **Status**: Accepted
 **Context**: AgilePlus stores credentials for external services (Plane.so API keys, GitHub tokens, MinIO secrets). These must not be stored in plaintext on disk or committed to git. Different deployment environments (macOS developer machine, Linux CI container) have different secure storage capabilities.
@@ -115,6 +126,7 @@
 ---
 
 ## ADR-012: P2P Replication with Vector Clocks for Multi-Device Sync
+
 **Date**: 2026-03-25
 **Status**: Accepted
 **Context**: Solo developers who work across multiple machines (laptop, desktop, CI runner) need their AgilePlus state (features, work packages, audit trails) synchronized without a central server. A client-server sync architecture would require always-on infrastructure and break the local-first principle.
@@ -125,6 +137,7 @@
 ---
 
 ## ADR-013: Neo4j for Graph-Based Dependency and Relationship Queries
+
 **Date**: 2026-03-27
 **Status**: Accepted
 **Context**: Work package dependency relationships form a DAG that must be queried for topological ordering, cycle detection, blocked WP identification, and critical path analysis. SQLite can store edge records, but expressing recursive graph queries (e.g., all transitive dependencies of a WP) requires CTEs that are complex, slow, and hard to maintain. The system also needs to represent richer relationships (Module ownership trees, Cycle membership, feature-to-device replication topology).
@@ -135,6 +148,7 @@
 ---
 
 ## ADR-014: Import Subsystem with Manifest-Driven, Idempotent Ingestion
+
 **Date**: 2026-03-27
 **Status**: Accepted
 **Context**: Users and agents need to bring existing work items (from Plane.so exports, GitHub issue lists, or JSON files) into AgilePlus without writing code. The import operation must be safe to re-run, must not silently drop errors, and must produce a machine-readable report for downstream automation.

@@ -11,9 +11,11 @@ superseded_by: null
 title: Traceability Matrix
 type: operational
 ---
+
 # Specification: Traceability Matrix
 
 ## Problem Statement
+
 The ecosystem tracks FRs in `FUNCTIONAL_REQUIREMENTS.md`, specs under
 `AgilePlus/kitty-specs/`, tests in repo `tests/` trees, and journey stubs
 under `docs/operations/journey-traceability.md`. There is no single document
@@ -23,6 +25,7 @@ covered?" and the answer drifts as files move. The result is silent coverage
 gaps: FRs without tests, tests without journeys, journeys without code.
 
 ## Target Users
+
 - **Auditors / governance agents** who must prove an FR is implemented,
   tested, documented, and journey-traced in one hop.
 - **Implementers** who need to know the existing coverage before adding a
@@ -34,6 +37,7 @@ gaps: FRs without tests, tests without journeys, journeys without code.
   modules, and journey stubs for every FR.
 
 ## Functional Requirements
+
 - **FR-1**: Every FR in `FUNCTIONAL_REQUIREMENTS.md` MUST have a sibling
   `trace.json` file at `AgilePlus/traces/<fr_id>.json` describing its
   coverage across all five layers.
@@ -60,6 +64,7 @@ gaps: FRs without tests, tests without journeys, journeys without code.
   `AgilePlus/traces/SCHEMA.md` so future changes are explicit.
 
 ## Acceptance Criteria
+
 - The autograder confirms no FR in `FUNCTIONAL_REQUIREMENTS.md` lacks a
   complete `trace.json` (FR-1, FR-2).
 - The autograder runs `trace-validator` and confirms exit 0 on a
@@ -74,6 +79,7 @@ gaps: FRs without tests, tests without journeys, journeys without code.
 - `SCHEMA.md` exists and matches the JSON shape in FR-2 (FR-8).
 
 ## Constraints & Dependencies
+
 - Rust preferred for `trace-validator` per the Phenotype scripting
   language hierarchy; Python wrapper allowed only for glue.
 - Disk is full during the writing window: write files only, no git,

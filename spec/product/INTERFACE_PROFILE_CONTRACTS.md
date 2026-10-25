@@ -8,6 +8,7 @@
 CLI, HTTP, MCP, optional gRPC and human UI are projections over the same application semantics. No transport owns an alternate lifecycle, evaluator, identity model or acceptance rule.
 
 Every mutating operation must expose or internally bind:
+
 - Development/WorkPackage/Assignment identity as applicable;
 - accepted SpecRevision;
 - actor/authority;
@@ -21,6 +22,7 @@ Every read of evaluation/acceptance state must expose enough canonical identity 
 CLI is a first-class local human/agent interface.
 
 Mature operation groups:
+
 - inspect/recover;
 - intent/spec revision;
 - research/clarify;
@@ -41,6 +43,7 @@ Machine-readable output must be available for automation-critical operations. Hu
 ## HTTP profile
 
 If HTTP is mounted:
+
 - versioned resource/action contracts;
 - authenticated/authorized mutation;
 - stable machine-readable errors;
@@ -52,6 +55,7 @@ If HTTP is mounted:
 ## MCP profile
 
 MCP tools/resources/prompts:
+
 - tools are bounded application operations, not arbitrary authority;
 - resources expose canonical revision-bound state;
 - prompts are convenience/context artifacts and cannot grant mutation/acceptance authority;
@@ -69,6 +73,7 @@ Human UI may inspect, author proposals/specs, dispatch work and review evidence 
 ## Git/GitHub execution profile
 
 For software work:
+
 - base candidate is explicit;
 - worktree/branch is Attempt resource;
 - dirty/base drift is detected before candidate/evaluation/promotion;
@@ -79,6 +84,7 @@ For software work:
 ## Triage/intake profile
 
 Incoming bugs/features/ideas/tasks may be classified/routed/prioritized automatically, but:
+
 - source/provenance retained;
 - classification confidence/method retained where model-derived;
 - human/authorized override supported;
@@ -87,6 +93,7 @@ Incoming bugs/features/ideas/tasks may be classified/routed/prioritized automati
 ## Scheduling/concurrency profile
 
 Ready work selection respects:
+
 - dependency closure;
 - claim/resource availability;
 - configured priority/fairness;
@@ -106,6 +113,7 @@ Escalation triggers include unresolved high-severity findings, repeated evaluato
 Promotion profiles may distinguish canary/nightly/pre-stable/stable/LTS or other release classes.
 
 The semantic invariant is:
+
 - exact accepted candidate;
 - profile-specific governance;
 - explicit release identity/receipt;

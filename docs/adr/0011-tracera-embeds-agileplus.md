@@ -44,10 +44,10 @@ in isolation.
    Tracera for process control, spec authoring, and CI gates. Tracera is an optional
    **evidence and graph projection layer** on top of AgilePlus — not the reverse.
 4. **Ownership split:**
-   - **AgilePlus owns:** FSM, governance authoring, claim evaluation side effects,
-     WP execution, audit/event store, harmonizer ingress.
-   - **Tracera owns (embedded):** TraceLink graph storage/query, CoverageMatrix
-     derivation, impact analysis UI/API, compliance RTM export — all fed by AgilePlus events.
+    - **AgilePlus owns:** FSM, governance authoring, claim evaluation side effects,
+      WP execution, audit/event store, harmonizer ingress.
+    - **Tracera owns (embedded):** TraceLink graph storage/query, CoverageMatrix
+      derivation, impact analysis UI/API, compliance RTM export — all fed by AgilePlus events.
 5. **Spine crate role:** `traceability-core` / `pm-core` holds shared **types and pure
    predicates**; AgilePlus owns **mutation and enforcement**. Tracera MUST NOT fork
    enforcement logic.
@@ -75,12 +75,12 @@ in isolation.
 
 ## Alternatives Considered
 
-| Alternative | Rejected because |
-|-------------|------------------|
-| Status quo: shared types, separate runtimes | Checklist governance drifts from FSM; dual ops burden |
-| AgilePlus embeds Tracera | Process machine is authoritative; evidence is derivative |
-| Merge repos into one binary | Loses Go graph stack; unnecessary big-bang |
-| Tracera re-implements FSM in Go | Third copy of transition rules; guaranteed drift |
+| Alternative                                 | Rejected because                                         |
+| ------------------------------------------- | -------------------------------------------------------- |
+| Status quo: shared types, separate runtimes | Checklist governance drifts from FSM; dual ops burden    |
+| AgilePlus embeds Tracera                    | Process machine is authoritative; evidence is derivative |
+| Merge repos into one binary                 | Loses Go graph stack; unnecessary big-bang               |
+| Tracera re-implements FSM in Go             | Third copy of transition rules; guaranteed drift         |
 
 ## References
 

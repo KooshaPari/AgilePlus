@@ -1,13 +1,13 @@
 ---
 work_package_id: WP27
-title: 'Fork Hardening + Upstream Sync Tooling (heliosCLI)'
+title: "Fork Hardening + Upstream Sync Tooling (heliosCLI)"
 lane: planned
 dependencies: [WP03, WP17]
 subtasks: [T081, T082]
 history:
-- date: '2026-03-03'
-  event: created
-  by: spec-kitty.tasks
+    - date: "2026-03-03"
+      event: created
+      by: spec-kitty.tasks
 ---
 
 # WP27: Fork Hardening + Upstream Sync Tooling (heliosCLI)
@@ -29,19 +29,21 @@ Harden heliosCLI's fork maintenance by adding CI-enforced alias map validation, 
 ### T081: Alias map CI + upstream diff tooling
 
 **Steps**:
+
 1. Create `scripts/check-alias-map.sh` that:
-   - Parses all `Cargo.toml` files for `package = "..."` alias declarations
-   - Verifies each aliased crate name exists in the upstream Codex repo's Cargo workspace
-   - Fails CI if any alias references a crate name that does not exist upstream
+    - Parses all `Cargo.toml` files for `package = "..."` alias declarations
+    - Verifies each aliased crate name exists in the upstream Codex repo's Cargo workspace
+    - Fails CI if any alias references a crate name that does not exist upstream
 2. Create `scripts/upstream-diff.sh` that:
-   - Clones or fetches upstream codex HEAD (configurable remote)
-   - Diffs heliosCLI source tree against upstream, filtering out known Phenotype-only paths
-   - Outputs drift metrics: files changed, lines added/removed, new upstream files not in fork, fork files not in upstream
-   - Generates a summary report suitable for PR comments
+    - Clones or fetches upstream codex HEAD (configurable remote)
+    - Diffs heliosCLI source tree against upstream, filtering out known Phenotype-only paths
+    - Outputs drift metrics: files changed, lines added/removed, new upstream files not in fork, fork files not in upstream
+    - Generates a summary report suitable for PR comments
 3. Add both scripts to CI workflow (run on PRs targeting main)
 4. Add upstream remote configuration to repo (`.upstream-sync.yml` or similar)
 
 **Validation**:
+
 - `scripts/check-alias-map.sh` runs successfully on current codebase
 - `scripts/upstream-diff.sh` produces a readable drift report
 - Both scripts are invoked in CI and produce visible output on PRs
@@ -50,17 +52,19 @@ Harden heliosCLI's fork maintenance by adding CI-enforced alias map validation, 
 ### T082: Tauri 2.0 ADR
 
 **Steps**:
+
 1. Create `ADR-XXX-tauri-2-evaluation.md` in the appropriate ADR location documenting:
-   - Context: heliosApp currently uses Electron (150MB binary, high memory usage)
-   - Decision: Evaluate Tauri 2.0 as long-term replacement
-   - Pros: 600KB binary, lower memory, Rust backend, better security sandbox
-   - Cons: Migration complexity, WebView compatibility variations, ecosystem maturity
-   - Migration complexity assessment: affected modules, estimated effort, breaking changes
-   - Timeline: recommended phases for incremental migration
-   - Status: Proposed (pending team confirmation)
+    - Context: heliosApp currently uses Electron (150MB binary, high memory usage)
+    - Decision: Evaluate Tauri 2.0 as long-term replacement
+    - Pros: 600KB binary, lower memory, Rust backend, better security sandbox
+    - Cons: Migration complexity, WebView compatibility variations, ecosystem maturity
+    - Migration complexity assessment: affected modules, estimated effort, breaking changes
+    - Timeline: recommended phases for incremental migration
+    - Status: Proposed (pending team confirmation)
 2. Reference the prior session's research findings in the ADR
 
 **Validation**:
+
 - ADR exists with complete context, decision, alternatives, and consequences sections
 - Migration complexity assessment includes specific heliosApp modules affected
 - Timeline includes phased migration approach with concrete milestones

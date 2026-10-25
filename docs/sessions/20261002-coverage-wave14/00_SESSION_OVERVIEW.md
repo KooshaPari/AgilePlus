@@ -73,10 +73,10 @@ persisted WP does not match the generated plan.
 
 1. **A successful plan is never re-plannable, so reconcile only ever sees a
    partial run.** `run_plan` transitions `Researched -> Planned`, and the guard
-   at `plan.rs:66-72` then rejects any second run with *"already in 'Planned'
-   state"* before reconciliation is reached. The comment at `plan.rs:126-128`
+   at `plan.rs:66-72` then rejects any second run with _"already in 'Planned'
+   state"_ before reconciliation is reached. The comment at `plan.rs:126-128`
    describes planning as "retry-safe", but that path is reachable only when the
-   first run created work packages and then failed *before* the state
+   first run created work packages and then failed _before_ the state
    transition, or when the feature sits in a state that neither transitions nor
    blocks (e.g. `Created`). The retry test therefore deliberately seeds
    `FeatureState::Created`; seeding `Researched` makes the second run impossible
@@ -100,12 +100,12 @@ Both were found by writing assertions that failed, not by reading the code.
 Four mutations, each applied to `src/commands/plan.rs`, run, and reverted; the
 file was byte-identical to `HEAD` (`git diff` empty) after every one.
 
-| # | Mutation | Caught by |
-|---|---|---|
-| 1 | Reconcile mismatch condition forced to `false` | `a_persisted_wp_..._requires_explicit_replan` |
-| 2 | `group_frs_into_wps` ignores `max_wps` (always 3) | `functional_requirements_are_grouped...` (`left: 3, right: 2`) |
-| 3 | `.filter(\|_\| false)` on the contract lookup (always rebuild) | `rerun_reuses_...` (second run: "persisting governance contract") |
-| 4 | State-transition condition forced to `false` | `planning_transitions_...` (`left: Researched, right: Planned`) |
+| #   | Mutation                                                       | Caught by                                                         |
+| --- | -------------------------------------------------------------- | ----------------------------------------------------------------- |
+| 1   | Reconcile mismatch condition forced to `false`                 | `a_persisted_wp_..._requires_explicit_replan`                     |
+| 2   | `group_frs_into_wps` ignores `max_wps` (always 3)              | `functional_requirements_are_grouped...` (`left: 3, right: 2`)    |
+| 3   | `.filter(\|_\| false)` on the contract lookup (always rebuild) | `rerun_reuses_...` (second run: "persisting governance contract") |
+| 4   | State-transition condition forced to `false`                   | `planning_transitions_...` (`left: Researched, right: Planned`)   |
 
 ## Measurement honesty
 

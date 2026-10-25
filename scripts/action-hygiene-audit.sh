@@ -30,12 +30,14 @@ fi
 #
 #   pinned   - third-party ref carrying an immutable 40-char SHA
 #   exempt   - first-party owner, or a well-formed repository-local reusable
-#              workflow path ("./.github/workflows/<file>.yml")
+#              workflow path ("./.github/workflows/<file>.yml") or a
+#              repository-local composite action ("./.github/actions/<dir>")
 #   unpinned - everything else, including malformed local paths
 #
 # A local ref is exempt only if it is exactly "./.github/workflows/" followed by
-# a plain workflow filename ending in .yml or .yaml. Anything else that starts
-# with "./" is malformed and is reported as unpinned rather than silently passed.
+# a plain workflow filename ending in .yml or .yaml, or exactly "./.github/actions/"
+# followed by a plain action directory name. Anything else that starts with "./"
+# is malformed and is reported as unpinned rather than silently passed.
 classify_action() {
     local ref="$1"
     local org_pattern='^KooshaPari/'
@@ -46,10 +48,14 @@ classify_action() {
         return
     fi
 
-    # Repository-local reusable workflow: GitHub requires the "./" form and
-    # resolves it from the checked-out commit, so a SHA ref is not applicable.
     if [[ "$ref" == ./* ]]; then
+        # Repository-local reusable workflow: GitHub requires the "./" form and
+        # resolves it from the checked-out commit, so a SHA ref is not applicable.
         if [[ "$ref" =~ ^\./\.github/workflows/[A-Za-z0-9._-]+\.ya?ml$ ]]; then
+            echo "exempt"
+        # Repository-local composite action: same reasoning — it is resolved
+        # from the checked-out commit and cannot carry a SHA ref.
+        elif [[ "$ref" =~ ^\./\.github/actions/[A-Za-z0-9._-]+$ ]]; then
             echo "exempt"
         else
             echo "unpinned"

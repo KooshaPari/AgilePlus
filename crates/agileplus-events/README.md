@@ -14,4 +14,3 @@ Event sourcing primitives: domain events, envelopes, hashing, snapshots, query, 
 ```bash
 cargo test -p agileplus-events
 ```
-

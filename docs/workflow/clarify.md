@@ -79,11 +79,13 @@ Detects unclear statements:
 
 ```markdown
 # ✗ Vague (detected as ambiguous)
+
 - The system should handle errors gracefully
 - Performance should be reasonable
 - Users should get good results
 
 # ✓ Clear (no ambiguity)
+
 - Failed emails retry 3 times over 24 hours
 - Search queries complete within 500ms
 - Search results show first 10 matches, sorted by relevance
@@ -95,9 +97,11 @@ Identifies incomplete scenarios:
 
 ```markdown
 # ✗ Missing details
+
 - Users can subscribe/unsubscribe from notifications
 
 # ✓ Complete
+
 - Users can subscribe/unsubscribe from notifications in Account Settings
 - Unsubscribe action takes effect immediately
 - Changes sync to all active sessions within 10 seconds
@@ -109,9 +113,11 @@ Finds gaps:
 
 ```markdown
 # ✗ Misses edge cases
+
 - Users can reset their password
 
 # ✓ Covers edge cases
+
 - Users can reset password via email
 - Reset link expires after 1 hour
 - Old reset links become invalid after new reset

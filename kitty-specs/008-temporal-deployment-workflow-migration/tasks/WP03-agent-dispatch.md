@@ -23,10 +23,10 @@ Before writing code, audit the existing NATS agent dispatch implementation:
 1. Find all NATS subjects used for agent dispatch: `grep -r "nats\|jetstream\|NatsClient" --include="*.rs" -l`
 2. Find queue consumers that handle agent dispatch: look for `subscribe`, `queue_subscribe`, `jetstream` in worker/consumer code
 3. Document the current flow:
-   - What triggers a dispatch? (API call, webhook, cron?)
-   - What does each step do?
-   - What happens on failure?
-   - How does the agent report back?
+    - What triggers a dispatch? (API call, webhook, cron?)
+    - What does each step do?
+    - What happens on failure?
+    - How does the agent report back?
 4. Preserve the git SHA of the NATS implementation before removing it (needed for WP08 rollback)
 
 ## What to Build

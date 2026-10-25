@@ -34,7 +34,7 @@ agileplus checklist 001 --type specification
 
 Creates `kitty-specs/001-checkout-upsell/checklists/specification.md`:
 
-```markdown
+````markdown
 # Specification Checklist — 001: Checkout Upsell
 
 Validates that the specification is clear, testable, and ready for planning.
@@ -112,9 +112,11 @@ Once all checks pass, spec is ready:
 ```bash
 agileplus checklist 001 --type specification --complete
 ```
+````
 
 Marks spec as validated and unlocks the `plan` command.
-```
+
+````
 
 ## Implementation Checklist
 
@@ -122,7 +124,7 @@ Validates each work package after implementation, before acceptance.
 
 ```bash
 agileplus checklist 001 --wp WP02 --type implementation
-```
+````
 
 Creates per-WP checklist:
 
@@ -136,19 +138,19 @@ Validates that the implementation meets its deliverables and the specification.
 All files specified in the plan must exist:
 
 - [ ] src/handlers/checkout_guest.rs
-  - [ ] GET /checkout/guest endpoint
-  - [ ] POST /checkout/guest endpoint
-  - [ ] Tests (>= 10 test cases)
+    - [ ] GET /checkout/guest endpoint
+    - [ ] POST /checkout/guest endpoint
+    - [ ] Tests (>= 10 test cases)
 
 - [ ] src/models/guest_order.rs
-  - [ ] GuestOrder model with fields
-  - [ ] Validation logic
-  - [ ] Tests
+    - [ ] GuestOrder model with fields
+    - [ ] Validation logic
+    - [ ] Tests
 
 - [ ] tests/integration/checkout_guest_flow.rs
-  - [ ] Happy path: guest can complete checkout
-  - [ ] Error cases: invalid input handling
-  - [ ] Integration: Stripe payment flow
+    - [ ] Happy path: guest can complete checkout
+    - [ ] Error cases: invalid input handling
+    - [ ] Integration: Stripe payment flow
 
 Result: All deliverables present? [x] YES
 
@@ -160,11 +162,11 @@ Result: All deliverables present? [x] YES
 - [x] No unwrap() in library code
 - [x] Functions are < 50 lines
 - [x] Test coverage >= 85%
-  - Actual: 91% for this WP
+    - Actual: 91% for this WP
 
 ## Scope Compliance
 
-- [x] No files modified outside expected dirs (src/handlers/*, tests/*)
+- [x] No files modified outside expected dirs (src/handlers/_, tests/_)
 - [x] No dependencies added to Cargo.toml
 - [x] No breaking changes to existing APIs
 - [x] Works in isolation (doesn't require other WPs)
@@ -180,12 +182,12 @@ Result: All deliverables present? [x] YES
 ## Commit Quality
 
 - [x] All commits reference WP02
-  - "feat(WP02): implement guest checkout handler"
-  - "test(WP02): add guest order tests"
+    - "feat(WP02): implement guest checkout handler"
+    - "test(WP02): add guest order tests"
 
 - [x] Commit messages explain WHY
-  - Good: "Rate limit guest checkout to prevent abuse"
-  - Bad: "Add checkout code"
+    - Good: "Rate limit guest checkout to prevent abuse"
+    - Bad: "Add checkout code"
 
 ## Documentation
 
@@ -216,20 +218,20 @@ Final gate before merging to main and shipping.
 ## Completeness
 
 - [x] All 4 WPs complete and merged
-  - WP01: Guest models ✓
-  - WP02: Guest checkout UI ✓
-  - WP03: Upsell widget ✓
-  - WP04: Integration tests ✓
+    - WP01: Guest models ✓
+    - WP02: Guest checkout UI ✓
+    - WP03: Upsell widget ✓
+    - WP04: Integration tests ✓
 
 - [x] All functional requirements have implementation
-  - FR-1 (guest checkout) → WP02 ✓
-  - FR-2 (upsell display) → WP03 ✓
-  - FR-3 (payment processing) → WP02 ✓
+    - FR-1 (guest checkout) → WP02 ✓
+    - FR-2 (upsell display) → WP03 ✓
+    - FR-3 (payment processing) → WP02 ✓
 
 - [x] All success criteria met and tested
-  - SC-1 (< 3s checkout) — E2E tests pass ✓
-  - SC-2 (upsell shown) — UI tests verify ✓
-  - SC-3 (error handling) — Error path tests pass ✓
+    - SC-1 (< 3s checkout) — E2E tests pass ✓
+    - SC-2 (upsell shown) — UI tests verify ✓
+    - SC-3 (error handling) — Error path tests pass ✓
 
 ## Quality
 
@@ -267,15 +269,15 @@ Add custom checklist items via the constitution. These apply to all features:
 # .kittify/memory/constitution.md
 
 custom_checklists:
-  implementation:
-    - "[ ] Accessibility audit (WCAG 2.1 AA) for UI changes"
-    - "[ ] Performance testing (load test >100 concurrent)"
-    - "[ ] Security review for auth/payment code"
+    implementation:
+        - "[ ] Accessibility audit (WCAG 2.1 AA) for UI changes"
+        - "[ ] Performance testing (load test >100 concurrent)"
+        - "[ ] Security review for auth/payment code"
 
-  acceptance:
-    - "[ ] Product review by PM"
-    - "[ ] Marketing messaging ready"
-    - "[ ] Customer support docs updated"
+    acceptance:
+        - "[ ] Product review by PM"
+        - "[ ] Marketing messaging ready"
+        - "[ ] Customer support docs updated"
 ```
 
 These items are automatically added to the generated checklists for each feature.

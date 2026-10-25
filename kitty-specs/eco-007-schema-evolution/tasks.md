@@ -17,6 +17,7 @@ AgilePlus is a 24-crate Rust workspace with event-sourced state, SQLite persiste
 - **Plugin drift**: Storage and VCS adapters compiled against old schemas fail at runtime
 
 This spec implements a layered versioning strategy:
+
 1. **SQLite layer**: Versioned migrations with rollback support
 2. **Proto/gRPC layer**: Versioned API packages with breaking-change detection
 3. **Event layer**: Schema version in every event header, enabling forward-compatible replay
@@ -52,6 +53,7 @@ WP01 (SQLite Schema Versioning)
 **Files touched**: `libs/plugin-sqlite/`, `migrations/`
 
 Subtasks:
+
 - [ ] T001: Create `migrations/` directory at repo root with `0001_initial_schema.sql` as the baseline
 - [ ] T002: Implement `schema_version` table: columns `version INTEGER PRIMARY KEY`, `applied_at TEXT`, `description TEXT`, `checksum TEXT`
 - [ ] T003: Implement `Migration` Rust struct with fields: version, description, up_sql, down_sql, checksum
@@ -70,6 +72,7 @@ Subtasks:
 **Files touched**: `proto/`, `.github/workflows/`
 
 Subtasks:
+
 - [ ] T006: Audit all proto files and add version suffix to package names (e.g., `agileplus.v1` → `agileplus.v2`)
 - [ ] T007: Configure `buf.yaml` with `version: v2` and breaking-change enforcement
 - [ ] T008: Create `.bufbreaking.json` config that allows additive-only changes (no field removal, no type changes)
@@ -87,6 +90,7 @@ Subtasks:
 **Files touched**: `libs/intent-registry/`, `libs/event-sourcing/` (or equivalent domain crate)
 
 Subtasks:
+
 - [ ] T010: Define `EventEnvelope` struct with fields: `event_id`, `schema_version`, `event_type`, `payload`, `timestamp`, `previous_hash`
 - [ ] T011: Update all existing event types to be wrapped in `EventEnvelope` with the current `SCHEMA_VERSION` constant
 - [ ] T012: Implement `SchemaVersionExtractor` — given a raw event bytes, extract schema_version without full deserialization
@@ -105,6 +109,7 @@ Subtasks:
 **Files touched**: `.github/workflows/`, `migrations/`
 
 Subtasks:
+
 - [ ] T015: Create `.github/workflows/schema-evolution.yml` with `buf breaking` gate on all PRs
 - [ ] T016: Add migration-file naming convention check (enforces `NNNN_description.sql` pattern)
 - [ ] T017: Add schema-version consistency check (verifies `schema_version` table exists and is queryable)
@@ -122,6 +127,7 @@ Subtasks:
 **Files touched**: `agileplus/` (Python MCP server), `libs/plugin-sqlite/`, `apps/`
 
 Subtasks:
+
 - [ ] T019: Implement `agileplus migrate status` — reports current schema version and list of pending migrations
 - [ ] T020: Implement `agileplus migrate apply [--dry-run]` — executes exactly one pending migration atomically
 - [ ] T021: Implement `agileplus migrate apply --all` — runs all pending migrations in order
@@ -139,6 +145,7 @@ Subtasks:
 **Files touched**: `libs/plugin-*/`, `libs/plugin-system/` (or equivalent)
 
 Subtasks:
+
 - [ ] T023: Define `PluginSchemaManifest` struct: `min_schema_version`, `max_schema_version`, `adapter_type`
 - [ ] T024: Update SQLite plugin to emit its manifest on startup; implement version check in core plugin loader
 - [ ] T025: Update Git plugin to declare compatible version range
@@ -156,6 +163,7 @@ Subtasks:
 **Files touched**: `migrations/`, `agileplus/`, `docs/reference/`
 
 Subtasks:
+
 - [ ] T027: Implement migration diff report generator (`agileplus migrate diff <version>`) — outputs SQL diff between two versions
 - [ ] T028: Enforce every migration file has a PR/issue reference comment at the top of its `up.sql`
 - [ ] T029: Write `docs/reference/schema-evolution-audit.md` documenting current schema version, migration history, and event schema registry
@@ -164,52 +172,52 @@ Subtasks:
 
 ## Subtask Index
 
-| ID | Description | WP | Parallel |
-|----|-------------|-----|----------|
-| T001 | Create `migrations/` directory and baseline SQL | WP01 | |
-| T002 | `schema_version` table definition | WP01 | |
-| T003 | `Migration` Rust struct | WP01 | |
-| T004 | `MigrationLoader` — file scanner | WP01 | |
-| T005 | `SchemaVersionManager` | WP01 | |
-| T006 | Proto version suffix audit and update | WP02 | |
-| T007 | `buf.yaml` v2 configuration | WP02 | |
-| T008 | `.bufbreaking.json` additive-only config | WP02 | |
-| T009 | Versioned stub generation in `buf.gen.yaml` | WP02 | |
-| T010 | `EventEnvelope` struct | WP03 | |
-| T011 | Wrap existing events in `EventEnvelope` | WP03 | |
-| T012 | `SchemaVersionExtractor` | WP03 | |
-| T013 | `UpcastHandler` for schema migration | WP03 | |
-| T014 | 2+ upcast functions for existing events | WP03 | |
-| T015 | Schema evolution CI workflow | WP04 | |
-| T016 | Migration-file naming convention check | WP04 | |
-| T017 | Schema-version consistency check | WP04 | |
-| T018 | Event-envelope check in `task quality` | WP04 | |
-| T019 | `agileplus migrate status` | WP05 | |
-| T020 | `agileplus migrate apply [--dry-run]` | WP05 | |
-| T021 | `agileplus migrate apply --all` | WP05 | |
-| T022 | `agileplus migrate rollback` | WP05 | |
-| T023 | `PluginSchemaManifest` struct | WP06 | |
-| T024 | SQLite plugin manifest emission | WP06 | |
-| T025 | Git plugin manifest | WP06 | |
-| T026 | `SchemaCompatibilityChecker` | WP06 | |
-| T027 | Migration diff report generator | WP07 | |
-| T028 | PR/issue reference enforcement in migration files | WP07 | |
-| T029 | `schema-evolution-audit.md` documentation | WP07 | |
+| ID   | Description                                       | WP   | Parallel |
+| ---- | ------------------------------------------------- | ---- | -------- |
+| T001 | Create `migrations/` directory and baseline SQL   | WP01 |          |
+| T002 | `schema_version` table definition                 | WP01 |          |
+| T003 | `Migration` Rust struct                           | WP01 |          |
+| T004 | `MigrationLoader` — file scanner                  | WP01 |          |
+| T005 | `SchemaVersionManager`                            | WP01 |          |
+| T006 | Proto version suffix audit and update             | WP02 |          |
+| T007 | `buf.yaml` v2 configuration                       | WP02 |          |
+| T008 | `.bufbreaking.json` additive-only config          | WP02 |          |
+| T009 | Versioned stub generation in `buf.gen.yaml`       | WP02 |          |
+| T010 | `EventEnvelope` struct                            | WP03 |          |
+| T011 | Wrap existing events in `EventEnvelope`           | WP03 |          |
+| T012 | `SchemaVersionExtractor`                          | WP03 |          |
+| T013 | `UpcastHandler` for schema migration              | WP03 |          |
+| T014 | 2+ upcast functions for existing events           | WP03 |          |
+| T015 | Schema evolution CI workflow                      | WP04 |          |
+| T016 | Migration-file naming convention check            | WP04 |          |
+| T017 | Schema-version consistency check                  | WP04 |          |
+| T018 | Event-envelope check in `task quality`            | WP04 |          |
+| T019 | `agileplus migrate status`                        | WP05 |          |
+| T020 | `agileplus migrate apply [--dry-run]`             | WP05 |          |
+| T021 | `agileplus migrate apply --all`                   | WP05 |          |
+| T022 | `agileplus migrate rollback`                      | WP05 |          |
+| T023 | `PluginSchemaManifest` struct                     | WP06 |          |
+| T024 | SQLite plugin manifest emission                   | WP06 |          |
+| T025 | Git plugin manifest                               | WP06 |          |
+| T026 | `SchemaCompatibilityChecker`                      | WP06 |          |
+| T027 | Migration diff report generator                   | WP07 |          |
+| T028 | PR/issue reference enforcement in migration files | WP07 |          |
+| T029 | `schema-evolution-audit.md` documentation         | WP07 |          |
 
 ---
 
 ## Acceptance Criteria
 
-| ID | Criterion | Verification |
-|----|----------|--------------|
-| AC01 | `schema_version` table exists in SQLite and is populated on first run | Manual: fresh DB, query `SELECT * FROM schema_version` |
+| ID   | Criterion                                                              | Verification                                                      |
+| ---- | ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| AC01 | `schema_version` table exists in SQLite and is populated on first run  | Manual: fresh DB, query `SELECT * FROM schema_version`            |
 | AC02 | `buf breaking` passes on additive-only changes; fails on field removal | Manual: add field, run `buf breaking` → pass; remove field → fail |
-| AC03 | Events serialized after this spec carry `schema_version` in header | Unit: serialize event, inspect envelope |
-| AC04 | `agileplus migrate status` reports current version and pending count | Manual: run command, verify output |
-| AC05 | `agileplus migrate apply` executes one migration atomically | Manual: add test migration, apply, verify schema_version updated |
-| AC06 | Plugin fails fast with incompatible schema version | Manual: load plugin with wrong version range, verify error |
-| AC07 | `agileplus migrate rollback` reverts exactly one migration | Manual: rollback v3, verify schema_version = 2 |
-| AC08 | CI workflow fails on breaking proto change | CI: push PR removing a proto field → workflow fails |
+| AC03 | Events serialized after this spec carry `schema_version` in header     | Unit: serialize event, inspect envelope                           |
+| AC04 | `agileplus migrate status` reports current version and pending count   | Manual: run command, verify output                                |
+| AC05 | `agileplus migrate apply` executes one migration atomically            | Manual: add test migration, apply, verify schema_version updated  |
+| AC06 | Plugin fails fast with incompatible schema version                     | Manual: load plugin with wrong version range, verify error        |
+| AC07 | `agileplus migrate rollback` reverts exactly one migration             | Manual: rollback v3, verify schema_version = 2                    |
+| AC08 | CI workflow fails on breaking proto change                             | CI: push PR removing a proto field → workflow fails               |
 
 ---
 

@@ -21,23 +21,23 @@ This document defines the **superset-merge** ideology: one reconciled artifact s
 
 ### 1.1 What is shared today
 
-| Concern | Shared via `traceability-core` | AgilePlus | Tracera |
-|---------|-------------------------------|-----------|---------|
-| Requirement IDs | `RequirementId`, FR/NFR namespace | Authors in kitty-specs + FR catalog | Ingests as `Requirement` nodes |
-| Intent graph types | `IntentGraph`, `Node`, `Edge` | Authors + validates at MCP ingest | Read-only projection |
-| Governance types | `GovernanceContract`, `GovernanceRule` | Authors, binds, enforces transitions | Reads; evaluates checklist |
-| Progression gates | `ProgressionGate`, `GatePredicate` | Enforces in CLI/API FSM | Evaluates read-only |
-| Coverage | `CoverageMatrix`, `AcceptanceContract` | Consumes matrix for ship gate | Builds matrix from TraceLinks |
+| Concern            | Shared via `traceability-core`         | AgilePlus                            | Tracera                        |
+| ------------------ | -------------------------------------- | ------------------------------------ | ------------------------------ |
+| Requirement IDs    | `RequirementId`, FR/NFR namespace      | Authors in kitty-specs + FR catalog  | Ingests as `Requirement` nodes |
+| Intent graph types | `IntentGraph`, `Node`, `Edge`          | Authors + validates at MCP ingest    | Read-only projection           |
+| Governance types   | `GovernanceContract`, `GovernanceRule` | Authors, binds, enforces transitions | Reads; evaluates checklist     |
+| Progression gates  | `ProgressionGate`, `GatePredicate`     | Enforces in CLI/API FSM              | Evaluates read-only            |
+| Coverage           | `CoverageMatrix`, `AcceptanceContract` | Consumes matrix for ship gate        | Builds matrix from TraceLinks  |
 
 ### 1.2 What is NOT shared (the harmonization target)
 
-| Gap | AgilePlus | Tracera today | Unified rule |
-|-----|-----------|---------------|--------------|
-| **Runtime coupling** | Standalone CLI + SQLite + FSM | Standalone Go API + Postgres | Tracera embeds AgilePlus process runtime |
-| **Governance semantics** | Process machine: transition blocked until contract satisfied | Checklist: predicates evaluated, no FSM ownership | Process machine owns; Tracera surfaces + verifies |
-| **Artifact authority** | `kitty-specs/`, worklogs, ADRs | Requirement/Artifact/TraceLink graph | Spec tree is intent source; graph is evidence projection |
-| **Work execution** | WP lanes, claim engine, worktrees | None | AgilePlus owns execution; Tracera links outcomes |
-| **Lifecycle FSM** | `FeatureState` transitions enforced | No feature lifecycle | Single FSM; Tracera observes state changes |
+| Gap                      | AgilePlus                                                    | Tracera today                                     | Unified rule                                             |
+| ------------------------ | ------------------------------------------------------------ | ------------------------------------------------- | -------------------------------------------------------- |
+| **Runtime coupling**     | Standalone CLI + SQLite + FSM                                | Standalone Go API + Postgres                      | Tracera embeds AgilePlus process runtime                 |
+| **Governance semantics** | Process machine: transition blocked until contract satisfied | Checklist: predicates evaluated, no FSM ownership | Process machine owns; Tracera surfaces + verifies        |
+| **Artifact authority**   | `kitty-specs/`, worklogs, ADRs                               | Requirement/Artifact/TraceLink graph              | Spec tree is intent source; graph is evidence projection |
+| **Work execution**       | WP lanes, claim engine, worktrees                            | None                                              | AgilePlus owns execution; Tracera links outcomes         |
+| **Lifecycle FSM**        | `FeatureState` transitions enforced                          | No feature lifecycle                              | Single FSM; Tracera observes state changes               |
 
 ### 1.3 Framework analysis synthesis
 
@@ -57,13 +57,13 @@ Every evaluated framework (OpenSpec deltas through Waterfall RTM) implements var
 
 Governance is not a post-hoc lint pass. `GovernanceContract` + `ProgressionGate` + Feature FSM **block** illegal transitions. Tracera's coverage matrix and TraceLink graph provide **evidence inputs** to the claim engine; they do not replace the FSM.
 
-*Source:* AgilePlus ADR-0007, ADR-0009; reverses Tracera's read-only checklist posture.
+_Source:_ AgilePlus ADR-0007, ADR-0009; reverses Tracera's read-only checklist posture.
 
 ### P2 — Single canonical artifact root
 
 One spec tree: `kitty-specs/<feature-id>/` with harmonized imports from OpenSpec (`proposal.md` / delta specs), Spec-Kit (`constitution.md`, `contracts/`), GSD (`.planning/STATE.md` linked, not duplicated), and BMAD shards (referenced by id). The `agileplus-spec-harmonizer` crate normalizes external formats to `WorkPackage` shape (ADR-0006).
 
-*Source:* FRAMEWORK_ANALYSIS §4.3 anti-pattern: triple spec roots.
+_Source:_ FRAMEWORK_ANALYSIS §4.3 anti-pattern: triple spec roots.
 
 ### P3 — Single ID namespace
 
@@ -75,13 +75,13 @@ One spec tree: `kitty-specs/<feature-id>/` with harmonized imports from OpenSpec
 
 ### P5 — Scale-adaptive ceremony
 
-| Change class | Primary pattern | Layers engaged |
-|--------------|-----------------|----------------|
-| Bug / chore | GSD quick mode or OpenSpec fluid apply | L0 evidence |
-| Single feature | Spec Kitty full lane | L1–L3 |
-| Brownfield refactor | OpenSpec explore + Tracera impact | L0–L2 |
-| Enterprise epic | BMAD PRD → epics → WPs | L2–L4 |
-| Portfolio initiative | OKRs + Shape Up pitch | L4 only |
+| Change class         | Primary pattern                        | Layers engaged |
+| -------------------- | -------------------------------------- | -------------- |
+| Bug / chore          | GSD quick mode or OpenSpec fluid apply | L0 evidence    |
+| Single feature       | Spec Kitty full lane                   | L1–L3          |
+| Brownfield refactor  | OpenSpec explore + Tracera impact      | L0–L2          |
+| Enterprise epic      | BMAD PRD → epics → WPs                 | L2–L4          |
+| Portfolio initiative | OKRs + Shape Up pitch                  | L4 only        |
 
 ### P6 — Repo-native, agent-native
 
@@ -93,23 +93,23 @@ All durable artifacts live in git (markdown, YAML, JSON derivatives). Agents rea
 
 One reconciled artifact catalog. Each artifact has an **owner layer**, **authoring tool**, and **downstream consumers**.
 
-| Artifact | Path / type | Owner | Author | Consumers |
-|----------|-------------|-------|--------|-----------|
-| **Charter** | OKR link, Shape Up pitch, or `proposal.md` | L4 Outcomes | Human / BMAD PM | FSM `Draft` gate |
-| **Constitution** | `.specify/memory/constitution.md` or repo `CONSTITUTION.md` | L3 Governance | Architect | All specs, ADRs |
-| **Feature spec** | `kitty-specs/<id>/spec.md` | L3 Governance | Spec Owner | Harmonizer, IntentGraph |
-| **FR/NFR catalog** | `docs/requirements/*-frnfr.md` | L3 Governance | Spec Owner | Tracera ingest, trace-validator |
-| **Plan** | `kitty-specs/<id>/plan.md` + IC-## map | L2 Delivery | Architect / GSD planner | WPs, TraceLink `implements` |
-| **Architecture** | `design.md` / `architecture.md` / ADRs | L3 Governance | Architect | Governance rules |
-| **Tasks / WPs** | `tasks.md`, `wps.yaml` | L2 Delivery | SM / agent | Claim engine, worktrees |
-| **Intent graph** | `traces/intent-*.json` (derivative) | L1 Execution | MCP intent tooling | Validation, impact analysis |
-| **Work log** | `.work-audit/worklog-*.json` | L0 Evidence | Agent Operator | Audit chain |
-| **Trace record** | `traces/*.json` (5-layer schema) | L0 Evidence | trace-validator | Tracera projection |
-| **Verification** | `VERIFICATION.md`, test results | L0 Evidence | Verifier | ProgressionGate |
-| **Coverage matrix** | Tracera `CoverageMatrix` (runtime) | L0 Evidence | Tracera (derived) | AcceptanceContract satisfaction |
-| **TraceLink graph** | Tracera Requirement/Artifact/TraceLink | L0 Evidence | Tracera + ingest | Impact analysis, compliance RTM |
-| **Governance contract** | `contracts/governance-v*.json` | L3 Governance | AgilePlus | FSM transition gate |
-| **Delta spec** | `openspec/changes/<id>/` (linked) | L1 Execution | Agent | Brownfield isolation |
+| Artifact                | Path / type                                                 | Owner         | Author                  | Consumers                       |
+| ----------------------- | ----------------------------------------------------------- | ------------- | ----------------------- | ------------------------------- |
+| **Charter**             | OKR link, Shape Up pitch, or `proposal.md`                  | L4 Outcomes   | Human / BMAD PM         | FSM `Draft` gate                |
+| **Constitution**        | `.specify/memory/constitution.md` or repo `CONSTITUTION.md` | L3 Governance | Architect               | All specs, ADRs                 |
+| **Feature spec**        | `kitty-specs/<id>/spec.md`                                  | L3 Governance | Spec Owner              | Harmonizer, IntentGraph         |
+| **FR/NFR catalog**      | `docs/requirements/*-frnfr.md`                              | L3 Governance | Spec Owner              | Tracera ingest, trace-validator |
+| **Plan**                | `kitty-specs/<id>/plan.md` + IC-## map                      | L2 Delivery   | Architect / GSD planner | WPs, TraceLink `implements`     |
+| **Architecture**        | `design.md` / `architecture.md` / ADRs                      | L3 Governance | Architect               | Governance rules                |
+| **Tasks / WPs**         | `tasks.md`, `wps.yaml`                                      | L2 Delivery   | SM / agent              | Claim engine, worktrees         |
+| **Intent graph**        | `traces/intent-*.json` (derivative)                         | L1 Execution  | MCP intent tooling      | Validation, impact analysis     |
+| **Work log**            | `.work-audit/worklog-*.json`                                | L0 Evidence   | Agent Operator          | Audit chain                     |
+| **Trace record**        | `traces/*.json` (5-layer schema)                            | L0 Evidence   | trace-validator         | Tracera projection              |
+| **Verification**        | `VERIFICATION.md`, test results                             | L0 Evidence   | Verifier                | ProgressionGate                 |
+| **Coverage matrix**     | Tracera `CoverageMatrix` (runtime)                          | L0 Evidence   | Tracera (derived)       | AcceptanceContract satisfaction |
+| **TraceLink graph**     | Tracera Requirement/Artifact/TraceLink                      | L0 Evidence   | Tracera + ingest        | Impact analysis, compliance RTM |
+| **Governance contract** | `contracts/governance-v*.json`                              | L3 Governance | AgilePlus               | FSM transition gate             |
+| **Delta spec**          | `openspec/changes/<id>/` (linked)                           | L1 Execution  | Agent                   | Brownfield isolation            |
 
 **Merge rule:** External framework artifacts are **imported or linked**, never forked into parallel roots. `agileplus-spec-harmonizer` is the single ingress for GSD, OpenSpec, BMAD, and Spec-Kitty shapes.
 
@@ -129,16 +129,16 @@ Eight stages map to one Feature FSM spine. Stages are **logical**; small changes
 └──────────┘   └──────────┘   └──────────┘   └────────────┘
 ```
 
-| Stage | Unified name | FeatureState (indicative) | Primary gate | Framework bias |
-|-------|--------------|----------------------------|--------------|----------------|
-| 1 | **Charter** | `Draft` | Problem + appetite approved | Shape Up / OpenSpec propose |
-| 2 | **Specify** | `Specified` | Spec accepted; FR IDs assigned | Spec Kitty / Spec-Kit |
-| 3 | **Plan** | `Planned` | Plan checker or architect sign-off | GSD / BMAD |
-| 4 | **Decompose** | `Ready` | WPs defined; lane capacity | Spec Kitty `wps.yaml` |
-| 5 | **Execute** | `InProgress` | Resource claim held; DoD per WP | Agent + worktree |
-| 6 | **Verify** | `InReview` | Tests green; trace-validator pass | AgilePlus CI + GSD verifier |
-| 7 | **Evidence** | `Approved` | Coverage ≥ threshold; governance satisfied | Tracera + claim engine |
-| 8 | **Archive** | `Done` / `Shipped` | Delta merged; lane closed | OpenSpec archive / retro |
+| Stage | Unified name  | FeatureState (indicative) | Primary gate                               | Framework bias              |
+| ----- | ------------- | ------------------------- | ------------------------------------------ | --------------------------- |
+| 1     | **Charter**   | `Draft`                   | Problem + appetite approved                | Shape Up / OpenSpec propose |
+| 2     | **Specify**   | `Specified`               | Spec accepted; FR IDs assigned             | Spec Kitty / Spec-Kit       |
+| 3     | **Plan**      | `Planned`                 | Plan checker or architect sign-off         | GSD / BMAD                  |
+| 4     | **Decompose** | `Ready`                   | WPs defined; lane capacity                 | Spec Kitty `wps.yaml`       |
+| 5     | **Execute**   | `InProgress`              | Resource claim held; DoD per WP            | Agent + worktree            |
+| 6     | **Verify**    | `InReview`                | Tests green; trace-validator pass          | AgilePlus CI + GSD verifier |
+| 7     | **Evidence**  | `Approved`                | Coverage ≥ threshold; governance satisfied | Tracera + claim engine      |
+| 8     | **Archive**   | `Done` / `Shipped`        | Delta merged; lane closed                  | OpenSpec archive / retro    |
 
 **FSM ownership:** AgilePlus `FeatureState` is canonical. Tracera receives state-change events and updates graph metadata; it does not advance the FSM independently.
 
@@ -164,13 +164,13 @@ Gates compose in strict order. Failure at any layer blocks the transition.
 └─────────────────────────────────────────────────────────────┘
 ```
 
-| Gate | Predicate examples | Enforced by | Tracera role |
-|------|-------------------|-------------|--------------|
-| Outcome | KR measurable; appetite set | Human / betting table | Read-only link to initiative |
-| Governance | Evidence types present per transition | AgilePlus FSM | Supplies evidence refs |
-| Progression | `missing_acceptance`, `missing_evidence`, `missing_test` | Claim engine (spine) | Builds CoverageMatrix input |
-| Resource | `ClaimKind::Worktree` held, not expired | agileplus-triage | None |
-| CI | clippy, tests, trace-validator, secrets scan | lefthook + CI | Ingest CI artifacts as TraceLinks |
+| Gate        | Predicate examples                                       | Enforced by           | Tracera role                      |
+| ----------- | -------------------------------------------------------- | --------------------- | --------------------------------- |
+| Outcome     | KR measurable; appetite set                              | Human / betting table | Read-only link to initiative      |
+| Governance  | Evidence types present per transition                    | AgilePlus FSM         | Supplies evidence refs            |
+| Progression | `missing_acceptance`, `missing_evidence`, `missing_test` | Claim engine (spine)  | Builds CoverageMatrix input       |
+| Resource    | `ClaimKind::Worktree` held, not expired                  | agileplus-triage      | None                              |
+| CI          | clippy, tests, trace-validator, secrets scan             | lefthook + CI         | Ingest CI artifacts as TraceLinks |
 
 **Fail closed:** No `--no-verify`, no silent downgrade, no Tracera-side override of FSM denial.
 
@@ -180,14 +180,14 @@ Gates compose in strict order. Failure at any layer blocks the transition.
 
 ### 6.1 Layer union (AgilePlus ∩ Tracera)
 
-| Layer | AgilePlus artifact | Tracera projection | Unified rule |
-|-------|-------------------|-------------------|--------------|
-| Requirement | FR-xxx, NFR-xxx in spec + catalog | `Requirement` node | Single canonical ID |
-| Spec | `kitty-specs/<id>/spec.md` | — (intent source) | Spec is authority |
-| Design | plan.md IC-## | TraceLink `implements` | IC-## ↔ WP ↔ module |
-| Code | anchor comments, paths | Artifact + confidence-scored link | Validator + graph |
-| Test | test name in trace.json | TraceLink `verifies` | Every new function: test or waiver |
-| Evidence | worklog JSON, PR | audit/event store | Hash-chained append-only |
+| Layer       | AgilePlus artifact                | Tracera projection                | Unified rule                       |
+| ----------- | --------------------------------- | --------------------------------- | ---------------------------------- |
+| Requirement | FR-xxx, NFR-xxx in spec + catalog | `Requirement` node                | Single canonical ID                |
+| Spec        | `kitty-specs/<id>/spec.md`        | — (intent source)                 | Spec is authority                  |
+| Design      | plan.md IC-##                     | TraceLink `implements`            | IC-## ↔ WP ↔ module              |
+| Code        | anchor comments, paths            | Artifact + confidence-scored link | Validator + graph                  |
+| Test        | test name in trace.json           | TraceLink `verifies`              | Every new function: test or waiver |
+| Evidence    | worklog JSON, PR                  | audit/event store                 | Hash-chained append-only           |
 
 ### 6.2 IntentGraph + TraceLink composition
 
@@ -209,14 +209,14 @@ When AgilePlus links to Tracera evidence, `TraceabilityPort` must receive confir
 
 Minimum viable roles for mixed human/agent teams:
 
-| Role | Responsibility | Framework source |
-|------|----------------|------------------|
-| **Outcome Owner** | OKR/KR alignment, betting approval | OKRs, Shape Up |
-| **Spec Owner** | spec.md acceptance, IC-## completeness | Spec Kitty PO analog |
-| **Architect** | constitution, plan.md, ADRs | Spec-Kit, BMAD |
-| **Agent Operator** | WP execution in worktree, atomic commits | GSD executor |
-| **Verifier** | trace-validator, CI, QA against spec | AgilePlus, XP |
-| **Trace Curator** | TraceLink graph health, impact analysis | Tracera (embedded) |
+| Role               | Responsibility                           | Framework source     |
+| ------------------ | ---------------------------------------- | -------------------- |
+| **Outcome Owner**  | OKR/KR alignment, betting approval       | OKRs, Shape Up       |
+| **Spec Owner**     | spec.md acceptance, IC-## completeness   | Spec Kitty PO analog |
+| **Architect**      | constitution, plan.md, ADRs              | Spec-Kit, BMAD       |
+| **Agent Operator** | WP execution in worktree, atomic commits | GSD executor         |
+| **Verifier**       | trace-validator, CI, QA against spec     | AgilePlus, XP        |
+| **Trace Curator**  | TraceLink graph health, impact analysis  | Tracera (embedded)   |
 
 BMAD personas map to these six at scale; small teams collapse roles.
 
@@ -240,42 +240,42 @@ BMAD personas map to these six at scale; small teams collapse roles.
 
 **Runtime mapping:**
 
-| Layer | AgilePlus component | Tracera component (embedded) |
-|-------|--------------------|-----------------------------|
-| L4 | Charter CLI hooks (future) | Initiative ↔ Requirement linking |
-| L3 | Domain FSM, GovernanceContract, ADR tooling | Contract read + evidence catalog |
-| L2 | WP lanes, harmonizer, triage | CoverageMatrix builder |
-| L1 | Worktrees, claim engine, MCP | Artifact ingest, impact queries |
-| L0 | trace-validator, audit chain | TraceLink store, graph API |
+| Layer | AgilePlus component                         | Tracera component (embedded)      |
+| ----- | ------------------------------------------- | --------------------------------- |
+| L4    | Charter CLI hooks (future)                  | Initiative ↔ Requirement linking |
+| L3    | Domain FSM, GovernanceContract, ADR tooling | Contract read + evidence catalog  |
+| L2    | WP lanes, harmonizer, triage                | CoverageMatrix builder            |
+| L1    | Worktrees, claim engine, MCP                | Artifact ingest, impact queries   |
+| L0    | trace-validator, audit chain                | TraceLink store, graph API        |
 
 ---
 
 ## 9. Anti-Patterns (merged)
 
-| Anti-pattern | Mitigation |
-|--------------|------------|
+| Anti-pattern                                               | Mitigation                                    |
+| ---------------------------------------------------------- | --------------------------------------------- |
 | Triple spec roots (`specs/`, `kitty-specs/`, `.planning/`) | Canonical `kitty-specs/` + harmonizer ingress |
-| Chat-only intent | Charter artifact before WP claim |
-| Tracera standalone without process FSM | ADR-0011 embed mandate |
-| Governance as checklist only | Process machine owns transitions (§2 P1) |
-| SAFe ceremony on 1-dev agent loops | SAFe vocabulary at L4 only |
-| Waterfall phase gates on every bugfix | GSD quick mode + OpenSpec fluid apply |
-| Evidence after merge | trace.json required before `for_review` |
-| Shadow FR catalogs | Single namespace via spine `RequirementId` |
+| Chat-only intent                                           | Charter artifact before WP claim              |
+| Tracera standalone without process FSM                     | ADR-0011 embed mandate                        |
+| Governance as checklist only                               | Process machine owns transitions (§2 P1)      |
+| SAFe ceremony on 1-dev agent loops                         | SAFe vocabulary at L4 only                    |
+| Waterfall phase gates on every bugfix                      | GSD quick mode + OpenSpec fluid apply         |
+| Evidence after merge                                       | trace.json required before `for_review`       |
+| Shadow FR catalogs                                         | Single namespace via spine `RequirementId`    |
 
 ---
 
 ## 10. ADR Index (this harmonization track)
 
-| ADR | Title |
-|-----|-------|
-| [0011](../adr/0011-tracera-embeds-agileplus.md) | Tracera embeds AgilePlus |
-| [0012](../adr/0012-unified-artifact-set.md) | Unified artifact set |
-| [0013](../adr/0013-unified-lifecycle-and-gates.md) | Unified lifecycle and gate stack |
-| [0014](../adr/0014-unified-traceability-model.md) | Unified traceability model |
+| ADR                                                              | Title                                     |
+| ---------------------------------------------------------------- | ----------------------------------------- |
+| [0011](../adr/0011-tracera-embeds-agileplus.md)                  | Tracera embeds AgilePlus                  |
+| [0012](../adr/0012-unified-artifact-set.md)                      | Unified artifact set                      |
+| [0013](../adr/0013-unified-lifecycle-and-gates.md)               | Unified lifecycle and gate stack          |
+| [0014](../adr/0014-unified-traceability-model.md)                | Unified traceability model                |
 | [0015](../adr/0015-process-machine-over-checklist-governance.md) | Process machine over checklist governance |
-| [0016](../adr/0016-unified-framework-layer-stack.md) | Unified framework layer stack |
-| [0017](../adr/0017-tracera-embedding-migration-path.md) | Tracera embedding migration path |
+| [0016](../adr/0016-unified-framework-layer-stack.md)             | Unified framework layer stack             |
+| [0017](../adr/0017-tracera-embedding-migration-path.md)          | Tracera embedding migration path          |
 
 **Prior spine ADRs (unchanged vocabulary, refined ownership):** 0005 traceability-core, 0007 governance contract, 0008 intent graph, 0009 claim engine, 0010 acceptance contract.
 
@@ -283,15 +283,15 @@ BMAD personas map to these six at scale; small teams collapse roles.
 
 ## References
 
-| Source | Location |
-|--------|----------|
-| Framework comparative matrix | [`FRAMEWORK_ANALYSIS.md`](FRAMEWORK_ANALYSIS.md) |
-| AI-DD quality gates | `docs/ai-dd-governance.md` |
-| Traceability NFRs | `docs/specs/NFR-AP-001-traceability-requirements.md` |
-| Tracera FR catalog | `docs/requirements/tracera-frnfr.md` |
-| Cross-repo DRY audit | `docs/audit/XREPO_DRY.md` |
-| Spec harmonizer | ADR-0006 |
+| Source                       | Location                                             |
+| ---------------------------- | ---------------------------------------------------- |
+| Framework comparative matrix | [`FRAMEWORK_ANALYSIS.md`](FRAMEWORK_ANALYSIS.md)     |
+| AI-DD quality gates          | `docs/ai-dd-governance.md`                           |
+| Traceability NFRs            | `docs/specs/NFR-AP-001-traceability-requirements.md` |
+| Tracera FR catalog           | `docs/requirements/tracera-frnfr.md`                 |
+| Cross-repo DRY audit         | `docs/audit/XREPO_DRY.md`                            |
+| Spec harmonizer              | ADR-0006                                             |
 
 ---
 
-*Document version: 1.0 — harmonize/unified-pm-model — 2026-06-26*
+_Document version: 1.0 — harmonize/unified-pm-model — 2026-06-26_

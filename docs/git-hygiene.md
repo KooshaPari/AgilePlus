@@ -1,7 +1,7 @@
 # Git Hygiene — AgilePlus
 
 This document defines the branch, commit, and worktree conventions for the
-AgilePlus repository.  It is the normative reference for
+AgilePlus repository. It is the normative reference for
 [eco-028-commit-hygiene](../kitty-specs/eco-028-commit-hygiene/spec.md).
 
 ## Branch naming
@@ -12,11 +12,11 @@ All branches MUST follow the pattern:
 <type>/<scope>-<repo>
 ```
 
-| Component | Valid values | Examples |
-|---|---|---|
-| `<type>` | `feat`, `fix`, `chore`, `ci`, `docs`, `refactor`, `perf`, `test`, `build` | `feat`, `fix` |
-| `<scope>` | Free-form, kebab-case, max 20 chars | `api-v2`, `worklog-seed` |
-| `<repo>` | Repository slug or `agileplus` for monorepo | `agileplus`, `phenoAI` |
+| Component | Valid values                                                              | Examples                 |
+| --------- | ------------------------------------------------------------------------- | ------------------------ |
+| `<type>`  | `feat`, `fix`, `chore`, `ci`, `docs`, `refactor`, `perf`, `test`, `build` | `feat`, `fix`            |
+| `<scope>` | Free-form, kebab-case, max 20 chars                                       | `api-v2`, `worklog-seed` |
+| `<repo>`  | Repository slug or `agileplus` for monorepo                               | `agileplus`, `phenoAI`   |
 
 ### Examples
 
@@ -50,9 +50,9 @@ with the exact format enforced by the `.githooks/commit-msg` hook.
 ### Rules
 
 1. **Type** is required and must be one of: `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `revert`, `style`, `test`.
-2. **Scope** is optional but recommended.  Use the crate or module name (e.g. `agileplus-api`, `telemetry`).
+2. **Scope** is optional but recommended. Use the crate or module name (e.g. `agileplus-api`, `telemetry`).
 3. **Subject** is required, lowercase, max 72 chars, no trailing period.
-4. **Body** is required for non-trivial changes.  Explain *what* and *why*, not *how*.
+4. **Body** is required for non-trivial changes. Explain _what_ and _why_, not _how_.
 5. **Footer** may contain `BREAKING CHANGE:`, `Closes #NNN`, or `Refs #NNN`.
 6. **No `WIP` or `TODO` alone** — the hook rejects commits whose body is exactly `WIP` or `TODO`.
 

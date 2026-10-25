@@ -2,28 +2,28 @@
 # host's existing Tailscale + ONE global Caddy, never by this project.
 # This is an optional containerized bootstrap; native supervision is preferred.
 services:
-  agileplus-api:
-    image: rust:1.99-bookworm
-    working_dir: /workspace
-    command: sh -lc "cargo run --locked --release -p agileplus-api"
-    environment:
-      API_HOST: 0.0.0.0
-      DATABASE_URL: sqlite:/data/agileplus.db
-      AGILEPLUS_API_KEY: ${AGILEPLUS_API_KEY:?AGILEPLUS_API_KEY is required}
-      AGILEPLUS_ALLOWED_ORIGINS: ${AGILEPLUS_ALLOWED_ORIGINS:-}
-      RUST_LOG: info
-    volumes:
-      - ../..:/workspace
-      - agileplus-data:/data
-      - agileplus-cargo-cache:/usr/local/cargo/registry
-      - agileplus-target-cache:/workspace/target
-    # Only the desktop can reach this port. Caddy runs at the host edge.
-    # Never expose this port to the LAN or public internet directly.
-    ports:
-      - "127.0.0.1:${AGILEPLUS_HOST_PORT:-3000}:3000"
-    restart: unless-stopped
+    agileplus-api:
+        image: rust:1.99-bookworm
+        working_dir: /workspace
+        command: sh -lc "cargo run --locked --release -p agileplus-api"
+        environment:
+            API_HOST: 0.0.0.0
+            DATABASE_URL: sqlite:/data/agileplus.db
+            AGILEPLUS_API_KEY: ${AGILEPLUS_API_KEY:?AGILEPLUS_API_KEY is required}
+            AGILEPLUS_ALLOWED_ORIGINS: ${AGILEPLUS_ALLOWED_ORIGINS:-}
+            RUST_LOG: info
+        volumes:
+            - ../..:/workspace
+            - agileplus-data:/data
+            - agileplus-cargo-cache:/usr/local/cargo/registry
+            - agileplus-target-cache:/workspace/target
+        # Only the desktop can reach this port. Caddy runs at the host edge.
+        # Never expose this port to the LAN or public internet directly.
+        ports:
+            - "127.0.0.1:${AGILEPLUS_HOST_PORT:-3000}:3000"
+        restart: unless-stopped
 
 volumes:
-  agileplus-data:
-  agileplus-cargo-cache:
-  agileplus-target-cache:
+    agileplus-data:
+    agileplus-cargo-cache:
+    agileplus-target-cache:

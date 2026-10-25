@@ -5,6 +5,8 @@ on:
     branches: [main, master, develop]
   pull_request:
     branches: [main, master, develop]
+  merge_group:
+    branches: [main, master, develop]
 
 permissions:
   contents: read

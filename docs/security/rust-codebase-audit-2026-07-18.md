@@ -2,28 +2,29 @@
 
 **Date:** 2026-07-18  
 **Scope:** Authentication & Authorization, SQL Injection, Path Traversal / File Operations  
-**Auditor:** Automated code review  
+**Auditor:** Automated code review
 
 ---
 
 ## Executive Summary
 
 The AgilePlus Rust codebase demonstrates generally sound security practices:
+
 - SQL queries use parameterized statements throughout (`rusqlite::params![]`)
 - Path traversal checks exist in the artifact and evidence subsystems
 - API key authentication uses constant-time comparison
 
 However, **7 findings** were identified, ranging from **CRITICAL** to **LOW** severity.
 
-| ID | Severity | Category | Location | Status |
-|----|----------|----------|----------|--------|
-| SEC-001 | **CRITICAL** | Auth | Dashboard routes — no authentication | Exploitable |
-| SEC-002 | **HIGH** | Command Injection | `restart_service` handler | Partially mitigated |
-| SEC-003 | **HIGH** | Auth | gRPC server — no authentication | Exploitable |
-| SEC-004 | **MEDIUM** | Auth | `CorsLayer::permissive()` | Exploitable |
-| SEC-005 | **MEDIUM** | Path Traversal | `evidence_preview` handler | Exploitable |
-| SEC-006 | **MEDIUM** | Command Injection | `feature_evidence_generate` handler | Partially mitigated |
-| SEC-007 | **LOW** | Auth | API key in query string | Informational |
+| ID      | Severity     | Category          | Location                             | Status              |
+| ------- | ------------ | ----------------- | ------------------------------------ | ------------------- |
+| SEC-001 | **CRITICAL** | Auth              | Dashboard routes — no authentication | Exploitable         |
+| SEC-002 | **HIGH**     | Command Injection | `restart_service` handler            | Partially mitigated |
+| SEC-003 | **HIGH**     | Auth              | gRPC server — no authentication      | Exploitable         |
+| SEC-004 | **MEDIUM**   | Auth              | `CorsLayer::permissive()`            | Exploitable         |
+| SEC-005 | **MEDIUM**   | Path Traversal    | `evidence_preview` handler           | Exploitable         |
+| SEC-006 | **MEDIUM**   | Command Injection | `feature_evidence_generate` handler  | Partially mitigated |
+| SEC-007 | **LOW**      | Auth              | API key in query string              | Informational       |
 
 ---
 
@@ -32,6 +33,7 @@ However, **7 findings** were identified, ranging from **CRITICAL** to **LOW** se
 ### SEC-001 — CRITICAL: Dashboard Routes Expose Sensitive Operations Without Authentication
 
 **Files:**
+
 - `crates/agileplus-api/src/router.rs` (lines 106-114)
 - `crates/agileplus-api/src/router/compose.rs` (lines 107-116)
 - `crates/agileplus-dashboard/src/routes/mod.rs` (lines 96-182)
@@ -54,21 +56,22 @@ Router::new()
 
 **Impact:** The entire dashboard router is merged into the top-level router **without** the API key authentication middleware. This exposes ~40 endpoints including:
 
-| Endpoint | Method | Risk |
-|----------|--------|------|
-| `POST /api/dashboard/services/{name}/restart` | POST | **Arbitrary service restart** (see SEC-002) |
-| `POST /api/dashboard/services/{name}/toggle` | POST | Disable services |
-| `PATCH /api/dashboard/services/{name}/config` | PATCH | Modify service configuration |
-| `POST /api/settings/plane` | POST | Overwrite Plane API credentials |
-| `POST /api/settings/agents` | POST | Modify agent pool configuration |
-| `POST /api/settings/services` | POST | Add/modify service endpoints |
-| `POST /api/features/{id}/transition` | POST | Change feature states |
-| `POST /api/features/{id}/evidence/generate` | POST | Execute shell scripts (see SEC-006) |
-| `GET /api/dashboard/health.json` | GET | Service health information disclosure |
+| Endpoint                                      | Method | Risk                                        |
+| --------------------------------------------- | ------ | ------------------------------------------- |
+| `POST /api/dashboard/services/{name}/restart` | POST   | **Arbitrary service restart** (see SEC-002) |
+| `POST /api/dashboard/services/{name}/toggle`  | POST   | Disable services                            |
+| `PATCH /api/dashboard/services/{name}/config` | PATCH  | Modify service configuration                |
+| `POST /api/settings/plane`                    | POST   | Overwrite Plane API credentials             |
+| `POST /api/settings/agents`                   | POST   | Modify agent pool configuration             |
+| `POST /api/settings/services`                 | POST   | Add/modify service endpoints                |
+| `POST /api/features/{id}/transition`          | POST   | Change feature states                       |
+| `POST /api/features/{id}/evidence/generate`   | POST   | Execute shell scripts (see SEC-006)         |
+| `GET /api/dashboard/health.json`              | GET    | Service health information disclosure       |
 
 **Exploitability:** Fully exploitable. Any network-reachable client can invoke these endpoints without any credentials.
 
 **Attack chain:**
+
 1. Attacker discovers the API is listening (e.g., port scan finds port 3000)
 2. `POST /api/dashboard/services/NATS/restart` triggers OS command execution
 3. `POST /api/settings/plane` overwrites API credentials with attacker-controlled values
@@ -80,6 +83,7 @@ Router::new()
 ### SEC-003 — HIGH: gRPC Server Has No Authentication Interceptor
 
 **Files:**
+
 - `crates/agileplus-grpc/src/server/mod.rs` (lines 515-544)
 - `crates/agileplus-grpc/src/server/bootstrap.rs` (lines 36-48)
 
@@ -119,6 +123,7 @@ async fn dispatch_command(
 ### SEC-004 — MEDIUM: Permissive CORS Allows Cross-Origin Attacks
 
 **Files:**
+
 - `crates/agileplus-api/src/router.rs` (line 120)
 - `crates/agileplus-api/src/router/compose.rs` (line 122)
 - `crates/agileplus-dashboard/src/main.rs` (line 22)
@@ -134,6 +139,7 @@ async fn dispatch_command(
 Used in at least 4 locations across the codebase.
 
 **Impact:** `CorsLayer::permissive()` sets `Access-Control-Allow-Origin: *` and allows all methods/headers. This means:
+
 - Any website visited by a user with access to the AgilePlus API can make authenticated cross-origin requests
 - Combined with SEC-001, any website can trigger dashboard actions (service restarts, config changes)
 - API key sent via query parameter (`?api_key=`) is visible in Referer headers sent to other origins
@@ -166,6 +172,7 @@ Used in at least 4 locations across the codebase.
 ```
 
 **Impact:** API keys passed via `?api_key=` query parameter are:
+
 - Logged in HTTP access logs / reverse proxy logs
 - Visible in browser history
 - Leaked via `Referer` headers (especially dangerous with `CorsLayer::permissive()`)
@@ -185,27 +192,27 @@ All SQL queries in `crates/agileplus-sqlite/` use parameterized statements consi
 
 **Properly parameterized queries confirmed in:**
 
-| File | # of `execute`/`query` calls | All parameterized? |
-|------|------|------|
-| `src/repository/features.rs` | 3 | Yes (`params![]`) |
-| `src/repository/work_packages.rs` | 6 | Yes (`params![]`) |
-| `src/repository/users.rs` | 4 | Yes (`params![]`) |
-| `src/repository/backlog.rs` | 3 | Yes (`params![]`) |
-| `src/repository/audit.rs` | 1 | Yes (`params![]`) |
-| `src/repository/governance.rs` | 2 | Yes (`params![]`) |
-| `src/repository/epics.rs` | 4 | Yes (`params![]`) |
-| `src/repository/stories.rs` | 4 | Yes (`params![]`) |
-| `src/repository/events.rs` | 4 | Yes (`params![]`) |
-| `src/repository/metrics.rs` | 1 | Yes (`params![]`) |
-| `src/repository/modules/crud.rs` | 3 | Yes (`params![]`) |
-| `src/repository/modules/tags.rs` | 2 | Yes (`params![]`) |
-| `src/repository/cycles/mod.rs` | 4 | Yes (`params![]`) |
-| `src/repository/projects.rs` | 2 | Yes (`params![]`) |
-| `src/repository/evidence.rs` | 1 | Yes (`params![]`) |
-| `src/repository/sync_mappings.rs` | 2 | Yes (`params![]`) |
-| `src/migrations/mod.rs` | 2 | Yes (`params![]`) |
-| `src/rebuild.rs` | 1 | Yes (`params![]`) |
-| `src/event_store.rs` | — | Yes |
+| File                              | # of `execute`/`query` calls | All parameterized? |
+| --------------------------------- | ---------------------------- | ------------------ |
+| `src/repository/features.rs`      | 3                            | Yes (`params![]`)  |
+| `src/repository/work_packages.rs` | 6                            | Yes (`params![]`)  |
+| `src/repository/users.rs`         | 4                            | Yes (`params![]`)  |
+| `src/repository/backlog.rs`       | 3                            | Yes (`params![]`)  |
+| `src/repository/audit.rs`         | 1                            | Yes (`params![]`)  |
+| `src/repository/governance.rs`    | 2                            | Yes (`params![]`)  |
+| `src/repository/epics.rs`         | 4                            | Yes (`params![]`)  |
+| `src/repository/stories.rs`       | 4                            | Yes (`params![]`)  |
+| `src/repository/events.rs`        | 4                            | Yes (`params![]`)  |
+| `src/repository/metrics.rs`       | 1                            | Yes (`params![]`)  |
+| `src/repository/modules/crud.rs`  | 3                            | Yes (`params![]`)  |
+| `src/repository/modules/tags.rs`  | 2                            | Yes (`params![]`)  |
+| `src/repository/cycles/mod.rs`    | 4                            | Yes (`params![]`)  |
+| `src/repository/projects.rs`      | 2                            | Yes (`params![]`)  |
+| `src/repository/evidence.rs`      | 1                            | Yes (`params![]`)  |
+| `src/repository/sync_mappings.rs` | 2                            | Yes (`params![]`)  |
+| `src/migrations/mod.rs`           | 2                            | Yes (`params![]`)  |
+| `src/rebuild.rs`                  | 1                            | Yes (`params![]`)  |
+| `src/event_store.rs`              | —                            | Yes                |
 
 **Note on `format!` usage:** `crates/agileplus-sqlite/src/repository/events.rs` (line 70) uses `format!` with SQL, but only to interpolate the constant `SELECT_COLS` (a compile-time `&str` containing column names)—no user input is interpolated:
 
@@ -281,6 +288,7 @@ GET /api/evidence/1/..%2F..%2F..%2F..%2Fetc%2Fpasswd/preview
 This reads arbitrary files relative to the process working directory, returning contents as HTML.
 
 **Attack chain:**
+
 1. No authentication required (SEC-001)
 2. Send `GET /api/evidence/1/../../../../etc/shadow/preview`
 3. Server reads and returns the file contents
@@ -333,6 +341,7 @@ fn validate_restart_command(cmd_line: &str) -> Result<(), String> {
 **Remaining vulnerability:** The `name` path parameter is interpolated into arguments passed to the allowed programs. With the default template `"systemctl restart {}"`, an attacker can supply a service name like `NATS; curl attacker.com` — but since `std::process::Command` is used (not shell execution), shell metacharacters are **not** interpreted.
 
 **However**, argument injection is still possible:
+
 - With `"docker restart {}"`: name = `--force somecontainer` injects extra flags
 - With `"systemctl restart {}"`: name = `--no-block attacker-service` could restart unintended services
 - No auth required (SEC-001)
@@ -340,6 +349,7 @@ fn validate_restart_command(cmd_line: &str) -> Result<(), String> {
 **Exploitability:** Partially exploitable. The allowlist prevents arbitrary program execution, but argument injection via the service name can manipulate the behavior of allowed programs.
 
 **Recommendation:**
+
 1. Validate the `name` parameter against a strict allowlist of known service names (alphanumeric + hyphens only)
 2. Add authentication to this endpoint (fix SEC-001)
 
@@ -374,6 +384,7 @@ Combined with SEC-001 (no auth), any client can trigger evidence generation with
 **Exploitability:** Depends on the `generate-evidence.sh` script implementation. The Rust side correctly avoids shell injection by using `Command::new("bash").arg(script).arg(fid)` rather than string concatenation with `sh -c`.
 
 **Recommendation:**
+
 1. Validate `feature_id` against expected format (e.g., numeric or alphanumeric slug)
 2. Add authentication to this endpoint (fix SEC-001)
 

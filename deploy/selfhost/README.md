@@ -214,7 +214,7 @@ automatic pruning. Configure scheduled execution and retention **separately**
 after testing restore and disk-space policy.
 
 For a restoration drill, stop the application writer, copy a verified snapshot
-to a *new* database path, start a test instance against that restored path,
+to a _new_ database path, start a test instance against that restored path,
 and verify Feature, WorkPackage, audit, event, and acceptance-receipt identity.
 Never overwrite the production file while the API still has it open. A
 Compose-managed named volume is not the same as a host-visible SQLite path;

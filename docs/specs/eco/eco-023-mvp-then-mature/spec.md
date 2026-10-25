@@ -9,6 +9,7 @@ superseded_by: null
 title: MVP-Then-Mature
 type: operational
 ---
+
 # MVP-Then-Mature
 
 ## Problem

@@ -11,12 +11,15 @@ created_at: 2026-03-29T00:00:00Z
 # Work Package: Initial Implementation
 
 ## Feature
+
 # phenoSDK: Remove atoms.tech Identifiers (`phenosdk-sanitize-atoms`)
 
 ## Acceptance Criteria
+
 - Implement the feature as specified.
 
 ## File Scope
+
 - `/`
 - `ATOMS_MCP_RISK_ASSESSMENT.md`
 - `atoms.tech`
@@ -25,6 +28,7 @@ created_at: 2026-03-29T00:00:00Z
 - `src/pheno/shared/mcp_entry_points.py`
 
 ## Instructions
+
 Implement this work package according to the acceptance criteria above.
 Refer to `kitty-specs/phenosdk-sanitize-atoms/spec.md` for the full specification and
 `kitty-specs/phenosdk-sanitize-atoms/plan.md` for the implementation plan.

@@ -20,7 +20,7 @@ Add first-class Module and Cycle entities to the AgilePlus domain model. Modules
 
 ## Constitution Check
 
-*GATE: Passed*
+_GATE: Passed_
 
 - Domain crate zero-dependency rule: ✓ Module and Cycle entities use only serde/chrono/sha2
 - No `unwrap()` in production: ✓ All Result-based error handling
@@ -77,9 +77,9 @@ directories captured above]
 
 ## Complexity Tracking
 
-*Fill ONLY if Constitution Check has violations that must be justified*
+_Fill ONLY if Constitution Check has violations that must be justified_
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+| Violation                  | Why Needed         | Simpler Alternative Rejected Because |
+| -------------------------- | ------------------ | ------------------------------------ |
+| [e.g., 4th project]        | [current need]     | [why 3 projects insufficient]        |
+| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient]  |

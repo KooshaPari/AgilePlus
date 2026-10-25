@@ -39,6 +39,18 @@ ignore = [
   { id = "RUSTSEC-2024-0370", reason = "proc-macro-error unmaintained: build-time only via glib-macros 0.18 (tauri stack); glib 0.18 pins it, no fix until tauri/tray-icon bump." },
   { id = "RUSTSEC-2024-0429", reason = "glib VariantStrIter: defensive tripwire; not currently surfaced by cargo-deny against this graph (lockfile glib 0.18.5, advisory-db criteria no longer match). Kept here so future advisory-db bumps re-surface it against glib 0.18.x and trigger a triage review before merge. Tauri PR #16170 lands the upstream fix." },
 ]
+# NOTE: the RUSTSEC-2026-0370/0371/0372 (zvariant/zbus_names/zvariant_derive)
+# and RUSTSEC-2026-0374 (basic-toml) ignore entries that origin/main carried
+# were REMOVED here, because the underlying crates are no longer in the
+# feature-selected dependency graph rather than being suppressed:
+#   - keyring was moved 4.2.0 -> 3.6.3 with the native persistent keyring
+#     backends, dropping the zbus/secret-service chain that pulled in the
+#     zvariant family. cargo deny check advisories reports no zvariant
+#     advisory against the resolved graph.
+#   - askama's `config` feature was dropped, which removes basic-toml
+#     (archived upstream) from the build entirely.
+#   - ctutils was bumped to 0.4.4 and tokio to 1.53.3 for
+#     RUSTSEC-2026-0385 and RUSTSEC-2026-0386.
 
 [licenses]
 version = 2
