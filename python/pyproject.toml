@@ -77,6 +77,11 @@ addopts = "-q --strict-markers --tb=short"
 source = ["src"]
 branch = true
 omit = ["src/agileplus_proto/gen/*"]
+# Record measured file paths relative to the project root instead of absolute
+# paths. The python-coverage-comment-action reads the data file from the
+# python/ directory and filters it by module, and it reports "No source for
+# code" for the measured files when they are recorded as absolute paths.
+relative_files = true
 
 [tool.coverage.report]
 fail_under = 80
