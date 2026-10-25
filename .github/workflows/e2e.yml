@@ -52,6 +52,15 @@ jobs:
                   version: "28.x"
                   repo-token: ${{ secrets.GITHUB_TOKEN }}
 
+            - name: Install libdbus development files
+              # keyring 3.6.3's sync-secret-service backend links against the
+              # system libdbus via libdbus-sys, which resolves it with
+              # pkg-config. Without this the build fails with
+              # "Package 'dbus-1', required by 'virtual:world', not found".
+              run: |
+                  sudo apt-get update -qq
+                  sudo apt-get install -y libdbus-1-dev pkg-config
+
             - name: Build release CLI
               run: cargo build --release --locked -p ${{ env.PACKAGE }}
 

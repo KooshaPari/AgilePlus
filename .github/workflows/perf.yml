@@ -29,7 +29,7 @@ jobs:
             - name: Install protoc
               run: |
                   sudo apt-get update -qq
-                  sudo apt-get install -y protobuf-compiler
+                  sudo apt-get install -y protobuf-compiler libdbus-1-dev pkg-config
                   protoc --version
             - name: Install Rust
               uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
