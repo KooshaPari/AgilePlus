@@ -63,13 +63,11 @@ def is_utc_rfc3339(s) -> bool:
     m = _STRUCT_RE.match(s)
     if not m:
         return False
-    if not _calendar_ok(int(m["year"]), int(m["month"]), int(m["day"])):
-        return False
     # Timezone is already constrained to Z or +00:00 by the regex;
     # no offset-arithmetic required. The zbus/glib emissions also produce
     # Z or +00:00 only; non-UTC offsets like +02:00 or -05:00 are rejected
     # at the regex level.
-    return True
+    return _calendar_ok(int(m["year"]), int(m["month"]), int(m["day"]))
 
 
 def main() -> int:
