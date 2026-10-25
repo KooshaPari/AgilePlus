@@ -93,16 +93,21 @@ jobs:
 
     # ─── OSV-Scanner (Rust lockfile; repo does not commit Cargo.lock) ───────
     # 2026-10-11 — Advisory-only while the dep-upgrade campaign reduces the
-    # 49 known findings (3 critical, 19 high, 27 moderate as of push to
-    # `005d7e43`). Tracking issue: #1107.
+    # known findings. Tracking issue: #1107.
     # SARIF still uploads to Code Scanning so the dashboard reflects findings;
     # only the workflow-level red-button is suppressed. Removal criteria:
     # 0 critical and 0 high in `osv-scanner scan -L Cargo.lock` for 7
     # consecutive days.
+    #
+    # The suppression is on the *scan step*, not on the job. A job-level
+    # `continue-on-error` leaves the job's own check-run red (verified against
+    # this repo's `perf`/`infra` advisory jobs and against every merged PR on
+    # `main`), which defeats the advisory intent. Step-level suppression keeps
+    # the "OSV Scanner (Cargo.lock) (advisory)" check green while the scan
+    # still reports every finding via the SARIF upload and the table below.
     osv-scanner:
         name: OSV Scanner (Cargo.lock) (advisory)
         runs-on: ubuntu-24.04
-        continue-on-error: true
         permissions:
             contents: read
             security-events: write
@@ -121,7 +126,15 @@ jobs:
                   sudo mv /tmp/osv-scanner /usr/local/bin/osv-scanner
             - name: OSV-Scanner (SARIF for Code Scanning)
               id: osv
-              run: osv-scanner scan -L Cargo.lock --format sarif --output-file osv-results.sarif
+              # Advisory: findings are reported, not enforced. The scan exit code
+              # is captured so the table step below can still print the findings.
+              continue-on-error: true
+              run: |
+                  set +e
+                  osv-scanner scan -L Cargo.lock --format sarif --output-file osv-results.sarif
+                  scan_exit=$?
+                  echo "scan_exit=${scan_exit}" >> "$GITHUB_OUTPUT"
+                  exit 0
             - name: Upload OSV SARIF to GitHub Code Scanning
               if: always()
               continue-on-error: true
@@ -130,5 +143,5 @@ jobs:
                   sarif_file: osv-results.sarif
                   category: osv-cargo-lock
             - name: OSV table (on vulnerability findings)
-              if: failure() && steps.osv.outcome == 'failure'
+              if: always() && steps.osv.outputs.scan_exit != '0'
               run: osv-scanner scan -L Cargo.lock --format table

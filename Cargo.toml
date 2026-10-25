@@ -83,6 +83,8 @@ targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-
 install-path = "CARGO_HOME"
 # Which actions to run on pull requests
 pr-run-mode = "plan"
+# Workflows are hand-maintained (persist-credentials hardening); skip dist plan freshness check
+allow-dirty = ["ci"]
 # Whether to install an updater program
 install-updater = false
 # Build only the required packages, and individually
