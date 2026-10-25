@@ -107,6 +107,15 @@ jobs:
               with:
                   tool: cargo-fuzz
 
+            - name: Install libdbus development files
+              # keyring 3.6.3's sync-secret-service backend links against the
+              # system libdbus via libdbus-sys, which resolves it with
+              # pkg-config. Without this the fuzz target build fails with
+              # "The file `dbus-1.pc` needs to be installed".
+              run: |
+                  sudo apt-get update -qq
+                  sudo apt-get install -y libdbus-1-dev pkg-config
+
             - name: Build fuzz targets (agileplus-domain)
               run: >-
                   cargo +nightly fuzz build --target "$(rustc +nightly -vV | sed -n 's/^host: //p')"

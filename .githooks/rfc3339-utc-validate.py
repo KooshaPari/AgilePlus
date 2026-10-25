@@ -28,6 +28,7 @@ implementation (which differs between Python 3.9 / 3.11+); calendar
 correctness is verified by an in-line leap-year and days-per-month
 table for portability.
 """
+
 import re
 import sys
 

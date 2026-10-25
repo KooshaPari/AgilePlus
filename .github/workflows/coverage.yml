@@ -51,12 +51,14 @@ jobs:
               # the job's working-directory is python/. We then emit the XML/JSON
               # reports at the repo-root .coverage/ directory so the artifact
               # uploader (./upload-artifact step below) and downstream gate can
-              # collect a single, repo-relative set of paths. Pass those two
-              # locations explicitly to the comment action — its default
-              # coverage_path is `.` (workspace root), which would otherwise
-              # raise `unable to open database file
-              # '/github/workspace/.coverage'` (the SQLite file is in
-              # python/.coverage, not at the workspace root).
+              # collect a single, repo-relative set of paths.
+              #
+              # The comment action reads the data file from its working
+              # directory, which is COVERAGE_PATH. Point it at python/, where
+              # the SQLite file actually is, so it finds the data instead of
+              # failing with "unable to open database file
+              # '/github/workspace/.coverage'" (observed on PR #1161 and on
+              # every other PR, since the file is never at the workspace root).
               run: |
                   set -euo pipefail
                   mkdir -p ../.coverage
@@ -93,17 +95,15 @@ jobs:
               with:
                   GITHUB_TOKEN: ${{ github.token }}
                   # The action runs `coverage json -o - path=$COVERAGE_PATH`
-                  # internally, so COVERAGE_PATH must be the Coverage.py data
-                  # file itself, not a directory. The SQLite file lives at
-                  # python/.coverage because the job's working-directory is
-                  # python/. The pre-generated XML/JSON reports under
-                  # .coverage/ (see the Coverage report step above) are written
-                  # for the artifact uploader and downstream consumers; the
-                  # action generates its own JSON from the SQLite data file.
-                  # Without this the action defaults to '.', looks for
-                  # /github/workspace/.coverage and raises
-                  # "unable to open database file" (observed on PR #1161).
-                  COVERAGE_PATH: python/.coverage
+                  # with cwd=$COVERAGE_PATH, so COVERAGE_PATH must be the
+                  # directory that holds the Coverage.py SQLite data file.
+                  # The data file lives at python/.coverage because the job's
+                  # working-directory is python/. The pre-generated XML/JSON
+                  # reports under .coverage/ (see the Coverage report step
+                  # above) are written for the artifact uploader and
+                  # downstream consumers; the action generates its own JSON
+                  # from the SQLite data file.
+                  COVERAGE_PATH: python
 
     coverage-rust:
         name: rust-coverage (cargo-llvm-cov)
