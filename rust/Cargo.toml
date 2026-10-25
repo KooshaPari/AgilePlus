@@ -1,10 +1,10 @@
 [package]
-name = "agileplus-proto"
+name = "agileplus-proto-legacy-scaffold"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
-description = "Generated gRPC stubs for AgilePlus"
+description = "Legacy scaffold of the generated gRPC stubs; superseded by crates/agileplus-proto"
 publish = false
 
 [dependencies]
