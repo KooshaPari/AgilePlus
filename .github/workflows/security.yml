@@ -143,5 +143,10 @@ jobs:
                   sarif_file: osv-results.sarif
                   category: osv-cargo-lock
             - name: OSV table (on vulnerability findings)
+              # Advisory: the table is the human-readable finding report. It
+              # runs `osv-scanner`, which exits non-zero when it finds
+              # vulnerabilities, so it must be advisory too — otherwise it
+              # becomes the failing step and the check stays red.
               if: always() && steps.osv.outputs.scan_exit != '0'
+              continue-on-error: true
               run: osv-scanner scan -L Cargo.lock --format table
