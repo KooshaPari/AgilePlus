@@ -16,106 +16,106 @@
 name: Release Attestation
 
 on:
-  release:
-    types: [published]
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Release tag to attest (defaults to latest)'
-        required: false
-        type: string
+    release:
+        types: [published]
+    workflow_dispatch:
+        inputs:
+            tag:
+                description: "Release tag to attest (defaults to latest)"
+                required: false
+                type: string
 
 permissions:
-  contents: read
-  id-token: write
-  attestations: write
+    contents: read
+    id-token: write
+    attestations: write
 
 jobs:
-  download-and-attest:
-    name: Download release artifacts and attest (SLSA Build L2)
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      id-token: write
-      attestations: write
-    env:
-      # Allow `gh release download` to read the release we just published.
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Resolve target tag
-        id: tag
-        run: |
-          if [ -n "${{ inputs.tag }}" ]; then
-            echo "value=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
-          else
-            tag="${{ github.event.release.tag_name }}"
-            echo "value=$tag" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Download release assets
+    download-and-attest:
+        name: Download release artifacts and attest (SLSA Build L2)
+        runs-on: ubuntu-24.04
+        permissions:
+            contents: read
+            id-token: write
+            attestations: write
         env:
-          TAG: ${{ steps.tag.outputs.value }}
-        run: |
-          set -euo pipefail
-          mkdir -p release-artifacts
-          gh release download "$TAG" \
-            --dir release-artifacts \
-            --pattern '*' \
-            --clobber
+            # Allow `gh release download` to read the release we just published.
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        steps:
+            - name: Resolve target tag
+              id: tag
+              run: |
+                  if [ -n "${{ inputs.tag }}" ]; then
+                    echo "value=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+                  else
+                    tag="${{ github.event.release.tag_name }}"
+                    echo "value=$tag" >> "$GITHUB_OUTPUT"
+                  fi
 
-          echo "=== Downloaded assets ==="
-          ls -la release-artifacts/
+            - name: Download release assets
+              env:
+                  TAG: ${{ steps.tag.outputs.value }}
+              run: |
+                  set -euo pipefail
+                  mkdir -p release-artifacts
+                  gh release download "$TAG" \
+                    --dir release-artifacts \
+                    --pattern '*' \
+                    --clobber
 
-          count=$(find release-artifacts -type f | wc -l)
-          if [ "$count" -eq 0 ]; then
-            echo "::error::No assets downloaded for release $TAG"
-            exit 1
-          fi
-          echo "Downloaded $count asset(s) for release $TAG"
+                  echo "=== Downloaded assets ==="
+                  ls -la release-artifacts/
 
-      - name: Build provenance manifest
-        run: |
-          set -euo pipefail
-          sha256sum release-artifacts/* > release-artifacts/SHA256SUMS
-          cat > release-artifacts/BUILD_MANIFEST.txt <<EOF
-          # Release Build Manifest
-          repository: ${{ github.repository }}
-          tag:        ${{ steps.tag.outputs.value }}
-          release_id: ${{ github.event.release.id }}
-          runner:     ${{ runner.os }}
-          attested_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-          artifacts: see SHA256SUMS in this directory
-          EOF
-          echo "=== Provenance manifest ==="
-          cat release-artifacts/BUILD_MANIFEST.txt
+                  count=$(find release-artifacts -type f | wc -l)
+                  if [ "$count" -eq 0 ]; then
+                    echo "::error::No assets downloaded for release $TAG"
+                    exit 1
+                  fi
+                  echo "Downloaded $count asset(s) for release $TAG"
 
-      - name: Upload artifacts for provenance
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: release-artifacts
-          path: release-artifacts/
-          if-no-files-found: error
-          retention-days: 90
+            - name: Build provenance manifest
+              run: |
+                  set -euo pipefail
+                  sha256sum release-artifacts/* > release-artifacts/SHA256SUMS
+                  cat > release-artifacts/BUILD_MANIFEST.txt <<EOF
+                  # Release Build Manifest
+                  repository: ${{ github.repository }}
+                  tag:        ${{ steps.tag.outputs.value }}
+                  release_id: ${{ github.event.release.id }}
+                  runner:     ${{ runner.os }}
+                  attested_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+                  artifacts: see SHA256SUMS in this directory
+                  EOF
+                  echo "=== Provenance manifest ==="
+                  cat release-artifacts/BUILD_MANIFEST.txt
 
-      # Provenance for the exact bytes users download.
-      #
-      # Was: slsa-framework/slsa-github-generator/attest-build-provenance@v1
-      # That ref cannot resolve — upstream has no `v1` tag or branch (ls-remote on
-      # refs/tags/v1, refs/tags/v1^{} and refs/heads/v1 returns empty across all 39
-      # tags), so the step could never have run. Its README also marks the project
-      # unmaintained and directs new users to GitHub artifact attestations.
-      #
-      # The generator's own docs additionally require reusable workflows to be
-      # referenced as @vX.Y.Z and warn that a shorter tag such as @vX breaks the
-      # build, so digest-pinning this particular action would conflict with
-      # slsa-verifier. GitHub's built-in attestation is the documented path and
-      # has no such constraint, so it is pinned by SHA like every other action.
-      #
-      # Behavior preserved: same subject (the downloaded release assets, which
-      # already include SHA256SUMS and BUILD_MANIFEST.txt), same permissions
-      # (id-token: write + attestations: write + contents: read, declared above).
-      # Verified with `gh attestation verify` rather than `slsa-verifier`.
-      - name: Attest build provenance (SLSA Build L2)
-        uses: actions/attest-build-provenance@62fc1d596301d0ab9914e1fec14dc5c8d93f65cd # v3.2.0
-        with:
-          subject-path: release-artifacts/*
+            - name: Upload artifacts for provenance
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+              with:
+                  name: release-artifacts
+                  path: release-artifacts/
+                  if-no-files-found: error
+                  retention-days: 90
+
+            # Provenance for the exact bytes users download.
+            #
+            # Was: slsa-framework/slsa-github-generator/attest-build-provenance@v1
+            # That ref cannot resolve — upstream has no `v1` tag or branch (ls-remote on
+            # refs/tags/v1, refs/tags/v1^{} and refs/heads/v1 returns empty across all 39
+            # tags), so the step could never have run. Its README also marks the project
+            # unmaintained and directs new users to GitHub artifact attestations.
+            #
+            # The generator's own docs additionally require reusable workflows to be
+            # referenced as @vX.Y.Z and warn that a shorter tag such as @vX breaks the
+            # build, so digest-pinning this particular action would conflict with
+            # slsa-verifier. GitHub's built-in attestation is the documented path and
+            # has no such constraint, so it is pinned by SHA like every other action.
+            #
+            # Behavior preserved: same subject (the downloaded release assets, which
+            # already include SHA256SUMS and BUILD_MANIFEST.txt), same permissions
+            # (id-token: write + attestations: write + contents: read, declared above).
+            # Verified with `gh attestation verify` rather than `slsa-verifier`.
+            - name: Attest build provenance (SLSA Build L2)
+              uses: actions/attest-build-provenance@62fc1d596301d0ab9914e1fec14dc5c8d93f65cd # v3.2.0
+              with:
+                  subject-path: release-artifacts/*
