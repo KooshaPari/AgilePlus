@@ -98,7 +98,7 @@
   "headline_counts": {
     "cells_pass_any": "50/256",
     "cells_pass_meaningful": "50/166",
-    "verification_cases_executed_target_level": "0/92 (current schema 0.4.0; pending 0.5.0 schema-bump)",
+    "verification_cases_schema_status_executed_with_witness": "0/92 (current schema 0.4.0; pending 0.5.0 schema-bump). This counts cases whose `status` is `executed_with_witness` in the locked schema file -- it does NOT count target-level test execution, which is recorded separately (9 test targets / 89 tests at target level, 2026-10-17).",
     "verification_cases_with_STRONG_witness": "5/92 (per CASE_BINDING_2026-10-17.md; AP-RVC-056 was downgraded from STRONG to ADJACENT after re-reading the case body)",
     "verification_cases_with_ADJACENT_witness": "5/92 (per CASE_BINDING_2026-10-17.md)",
     "requirements_runtime_verified": "0/67",

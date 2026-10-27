@@ -352,13 +352,15 @@ The contract's own `status` records that split: `accepted_mature_semantic_contra
 
 ## 12. What closes this docket
 
-A single 3-line statement, as the SFD v1.0 example requires:
+A single statement with all **five** closure conditions — the same five as the §0 "What closes this docket" field:
 
 1. `0 of 92` becomes `92 of 92` (or `92 - N` with N named and cited as `not_applicable`).
 2. `0 of 67` requirements at `runtime_verified` becomes `67 of 67` (or a smaller number with the same naming rule).
 3. The 10 NEXT_DEPLOYABLE_RELEASE items are green against an actual remote operator on a tailnet, not a CI witness at a prior commit.
+4. The production URL shows real data.
+5. The operator's `agileplus` binary can be invoked from outside the developer's shell against the real artifact.
 
-Until those three lines are observed, the docket remains open. The next docket in this lineage will inherit the snapshot identity `ap-sfd-2026-10-17T08-53Z@00397a59` and update it to the new HEAD's SHA. The SFD v1.0 contract forbids treating a forward path as closure.
+Until all five conditions are observed, the docket remains open. The next docket in this lineage will inherit the snapshot identity `ap-sfd-2026-10-17T08-53Z@00397a59` and update it to the new HEAD's SHA. The SFD v1.0 contract forbids treating a forward path as closure.
 
 ---
 
