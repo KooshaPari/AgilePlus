@@ -5,7 +5,7 @@
 **Snapshot identity:** `ap-sfd-2026-10-17T08-53Z@00397a59`
 **Repo HEAD at snapshot:** `00397a59 docs: reconcile product intent with canonical work authority [skip ci] (#1134)`
 **Active branch when docket was written:** `docs/state-forward-docket-20261017` (branched from main tip 00397a59)
-**Latest date-tagged release on the lineage that includes this HEAD:** `v2026.09.0` (not on the current branch ancestry; `git describe --tags --abbrev=0` reports `v0.2.4` because the current branch tip is at the legacy `v0.x` ancestry until a new tag is cut)
+**Latest date-tagged release on the lineage that includes this HEAD:** `v2026.09.0`, which **is** an ancestor of this branch (`git merge-base --is-ancestor v2026.09.0 HEAD` exits 0). `git describe --tags --abbrev=0` nonetheless reports `v0.2.4` because a legacy `v0.x` tag sits nearer to the tip; the `v2026.*` tags are reachable but not the closest.
 **Docket author:** parent orchestrator session (agileplus chat), with the integration-audit session as the only in-repo audit source consulted at write time (`docs/sessions/20261017-integration-audit/INTEGRATION.md`)
 
 ---
@@ -296,7 +296,12 @@ An MVP is the projection that "early operator" use is feasible. The MVP bar is l
 
 ### 9g. mature — what mature looks like in this contract
 
-`mature_complete: true` is the verdict in `mature-contract.v1.json`. It requires:
+`mature-contract.v1.json` (schema `2.1.0`) carries **two separate verdicts**, and they must not be conflated:
+
+- `mature_semantic_complete: true` — the semantics/product-method specification is accepted.
+- `mature_complete: false` — runtime evidence does not yet close it.
+
+The contract's own `status` records that split: `accepted_mature_semantic_contract_runtime_evidence_pending`. Attaining `mature_complete: true` requires:
 
 - All 67 requirements at `runtime_verified`.
 - All 92 cases at `executed_with_witness` (or `not_applicable` with citation).
