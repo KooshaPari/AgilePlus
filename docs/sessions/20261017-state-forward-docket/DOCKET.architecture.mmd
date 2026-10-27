@@ -1,0 +1,74 @@
+%% AgilePlus Architecture Diagram (verdict-labeled)
+%% State & Forward Docket v1.0 — 2026-10-17
+%% Snapshot: ap-sfd-2026-10-17T08-53Z@00397a59
+
+flowchart LR
+    subgraph OperatorZone["Operator zone (off-shell)"]
+        OPR[Operator's second device]
+    end
+
+    subgraph Tailnet["Tailscale tailnet (NOT_RUN)"]
+        TS[Tailscale service<br/>G13: NOT_RUN]
+    end
+
+    subgraph Cloud["Public cloud"]
+        VR[Vercel Hobby production URL<br/>G7: PARTIAL impl / FAIL usability]
+        PAPI[api.agileplus.pheno.studio<br/>target private/operator identity]
+    end
+
+    subgraph Desktop["Owner's desktop (kooshapari-desk)"]
+        CADDY[host Caddy]
+        API[agileplus-api<br/>G5: NOT_RUN]
+        CLI[agileplus CLI binary]
+        DB[(agileplus.db<br/>SQLite 671KB / 47 tables)]
+        GDB[(governance.db)]
+        NATSD[agileplus-nats<br/>G10: FAIL — in-memory only<br/>no async-nats dep]
+        PNATS[/nats-server:4222<br/>dormant/]
+        PMINIO[/minio:9000<br/>dormant/]
+        PREDIS[/redis:6379<br/>dormant/]
+    end
+
+    subgraph External["External services"]
+        PLANE[Plane.so API<br/>G8: PARTIAL impl / NOT_RUN]
+        GH[GitHub Issues API<br/>G9: FAIL — pull stubbed]
+        MINIO[MinIO / S3<br/>G11: FAIL — no client dep]
+    end
+
+    subgraph OtherInfra["Other local infra"]
+        NEO4J[Neo4j<br/>no gate row — behind 'neo4j' feature flag]
+        MCPSRV[MCP server :50051<br/>no gate row — stub, tools return not_implemented]
+    end
+
+    OPR -->|tailnet| TS
+    TS -.->|G13: NOT_RUN| CADDY
+    CADDY -->|G5: NOT_RUN prod| API
+    API --> DB
+    API --> GDB
+    API -.->|env-gated| PLANE
+    API -.->|unused| GH
+    API -.->|G11: no dep| MINIO
+    API -.->|feature flag off| NEO4J
+    API -.->|in-memory only| NATSD
+    NATSD -.->|not wired| PNATS
+    API -.->|unused| PREDIS
+    API -.->|stub| MCPSRV
+
+    VR -.->|old dashboard<br/>zero epics| OPR
+    PAPI -.->|planned| TS
+
+    CLI --> DB
+    CLI --> GDB
+    CLI -.->|fire-and-forget push| PLANE
+
+    classDef pass fill:#c8e6c9,stroke:#2e7d32,color:#1b5e20
+    classDef fail fill:#ffcdd2,stroke:#c62828,color:#b71c1c
+    classDef unknown fill:#fff9c4,stroke:#f57c00,color:#e65100
+    classDef notrun fill:#e0e0e0,stroke:#616161,color:#212121
+    classDef partial fill:#ffe0b2,stroke:#e65100,color:#bf360c
+
+    %% Legend: a node's colour follows its gate's operator-facing (Usability)
+    %% verdict, not its Implementation verdict. `notrun` = grey.
+    class DB,GDB pass
+    class GH,MINIO,NEO4J,MCPSRV,PNATS,PMINIO,PREDIS,VR fail
+    class NATSD,PLANE partial
+    class CADDY,API,TS notrun

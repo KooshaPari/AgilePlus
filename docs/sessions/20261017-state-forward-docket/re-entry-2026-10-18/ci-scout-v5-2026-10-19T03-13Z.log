@@ -1,0 +1,16 @@
+==== ci-scout v5 log start: 2026-10-19T03:14:22Z ====
+session: ci-scout v5 subagent (10-min cap, read-only)
+branch: docs/state-forward-docket-20261017 (DO NOT switch)
+[2026-10-19T03:22:44Z] main HEAD: c074506bfc (docs: link compete section in site nav #1168) @ 2026-10-19T02:39:51Z
+[2026-10-19T03:22:44Z] 2 new merges since v4: #1167 @ 02:10:32Z (docs: add compete section stub), #1168 @ 02:39:51Z (docs: link compete section in site nav)
+[2026-10-19T03:22:44Z] v4 baseline main: 4857b4095d (still 21h17m unchanged at v4 time @ 00:10Z)
+[2026-10-19T03:22:44Z] v5 source PR latest completedAt timestamps (max per PR):
+  #1156: 2026-10-18T13:46:07Z (Kilo Code Review); ci/test final: 08:02:06Z
+  #1157: 2026-10-18T14:31:09Z (Kilo); ci/test final: 08:03:45Z
+  #1161: 2026-10-19T00:09:56Z (cargo-mutants 14h run finishing, started 10-18T10:19)
+  #1162: 2026-10-19T00:09:56Z (cargo-mutants 14h run finishing)
+  #1163: 2026-10-18T23:07:19Z (cargo-mutants 13h run finishing)
+  #1164: 2026-10-19T01:14:38Z (cargo-mutants 15h run finishing)
+  #1165: 2026-10-18T20:21:46Z (fox's PR, unchanged)
+  #1166: 2026-10-19T00:13:17Z (cargo-mutants 14h run finishing)
+[2026-10-19T03:22:44Z] VERDICT: ACTED-OTHER (operator merged #1167+#1168 docs-only; cf-4 still not testable)
