@@ -168,7 +168,7 @@ askama = "0.16"
 # agileplus-plugin-sqlite = { git = "https://github.com/KooshaPari/agileplus-plugin-sqlite" }
 
 # Git
-gix = "0.88"
+gix = "0.90"
 git2 = "0.19"
 
 # CLI
