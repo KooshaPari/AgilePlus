@@ -358,17 +358,30 @@ fn sync_outcome_clone() {
 // ── LiveGhDataSource construction ─────────────────────────────────────────
 
 #[tokio::test]
-async fn live_source_returns_empty() {
+async fn live_source_rejects_unsupported_reads_and_sync_retries() {
     let source = LiveGhDataSource::new(
         "https://api.github.com",
         "token-placeholder".to_string(),
         "owner",
         "repo",
     );
-    let issues = source.list_issues().await.unwrap();
-    let prs = source.list_prs().await.unwrap();
-    assert!(issues.is_empty());
-    assert!(prs.is_empty());
+    assert_eq!(
+        source.list_issues().await.unwrap_err().to_string(),
+        "live GitHub issue listing is not implemented"
+    );
+    assert_eq!(
+        source.list_prs().await.unwrap_err().to_string(),
+        "live GitHub pull-request listing is not implemented"
+    );
+    for _ in 0..2 {
+        assert_eq!(
+            sync_repository(&source, 1, 1)
+                .await
+                .unwrap_err()
+                .to_string(),
+            "live GitHub issue listing is not implemented"
+        );
+    }
 }
 
 // ── format_bug_body (private, tested via sync_repository integration) ────
