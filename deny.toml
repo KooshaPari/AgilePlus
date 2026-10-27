@@ -44,11 +44,20 @@ db-path = "$CARGO_HOME/advisory-db"
 # removed the prior 2024-dated unmaintained entries but missed the 2026
 # refresh. Adding explicit ignores here so the next operator sees the
 # tauri-stack coupling in one place.
+#
+# RUSTSEC-2026-0374 (basic-toml) is a separate chain, not the tauri stack:
+# basic-toml is a transitive dependency of askama_macros 0.16, a
+# proc-macro, so it only participates at build time. The upstream crate
+# was archived and the advisory reports "No safe upgrade is available!";
+# askama 0.16.1 is the latest release and still depends on it. This
+# mirrors the entry main added in commit 5d670486 (PR #1175), keeping the
+# two policy files (deny.toml and .cargo/audit.toml) consistent.
 ignore = [
   { id = "RUSTSEC-2024-0370", reason = "proc-macro-error unmaintained: build-time only via glib-macros 0.18 (tauri stack); glib 0.18 pins it, no fix until tauri/tray-icon bump." },
   { id = "RUSTSEC-2026-0370", reason = "zvariant unmaintained: transitive via zbus 5.19.0 -> tauri tray-icon Linux path; no fix until tauri/tray-icon bump." },
   { id = "RUSTSEC-2026-0371", reason = "zbus_names unmaintained: transitive via zbus 5.19.0 -> tauri tray-icon Linux path; no fix until tauri/tray-icon bump." },
   { id = "RUSTSEC-2026-0372", reason = "zvariant_derive unmaintained: transitive via zbus 5.19.0 -> tauri tray-icon Linux path; no fix until tauri/tray-icon bump." },
+  { id = "RUSTSEC-2026-0374", reason = "basic-toml unmaintained (archived upstream): transitive via askama_macros proc-macro, build-time only; no safe upgrade exists." },
 ]
 
 [licenses]

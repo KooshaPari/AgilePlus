@@ -108,4 +108,8 @@ ignore = [
   # recorded in the old .cargo/audit.toml).
   "RUSTSEC-2025-0140",
   "RUSTSEC-2026-0049",
+  # basic-toml: unmaintained (archived upstream), no safe upgrade. Transitive
+  # via the askama_macros proc-macro, so it is build-time only. Mirrors the
+  # deny.toml entry; re-evaluate when askama drops it.
+  "RUSTSEC-2026-0374",
 ]
