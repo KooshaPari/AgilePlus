@@ -108,8 +108,12 @@ ignore = [
   # recorded in the old .cargo/audit.toml).
   "RUSTSEC-2025-0140",
   "RUSTSEC-2026-0049",
-  # basic-toml: unmaintained (archived upstream), no safe upgrade. Transitive
-  # via the askama_macros proc-macro, so it is build-time only. Mirrors the
-  # deny.toml entry; re-evaluate when askama drops it.
+  # zbus/zvariant family and basic-toml: unmaintained advisories with no safe
+  # upgrade (mirrors deny.toml). zvariant 0370, zbus_names 0371, zvariant_derive
+  # 0372 (transitive via zbus keyring path); basic-toml 0374 (archived, build-time).
+  # Re-evaluate when zbus or the owning crates drop them.
+  "RUSTSEC-2026-0370",
+  "RUSTSEC-2026-0371",
+  "RUSTSEC-2026-0372",
   "RUSTSEC-2026-0374",
 ]

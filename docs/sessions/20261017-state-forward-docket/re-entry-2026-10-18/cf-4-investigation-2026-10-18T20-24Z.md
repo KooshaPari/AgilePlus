@@ -11,8 +11,8 @@ The 3-sec `ci / lint` + 2-sec `ci / test` failures are a **symptom, not a root c
 
 ## 2. Root cause (workflow file:line)
 
-- `.github/workflows/ci.yml:172-214` — `lint:` job (named `ci / lint`). It is a bash loop iterating over dependent job results (`rust`, `cargo-deny`, `python`, `go`, `typescript`, `security`, `dep-review`) and exits 1 if any are `failure` or `cancelled`. The 3-second duration is normal — no setup, just bash.
-- `.github/workflows/ci.yml:217-230` — `test:` job (named `ci / test`). One-step gate: if `needs.lint.result != "success"`, exit 1. 2-second duration is normal.
+- `.github/workflows/ci.yml` — `lint:` job (name `ci / lint`; `lint:` began at line 218 when this was read on 2026-10-18, and at line 220 as of 2026-10-22 — the line numbers move as the workflow grows, so the job name is the stable handle). It is a bash loop iterating over dependent job results (`rust`, `cargo-deny`, `python`, `go`, `typescript`, `security`, `dep-review`) and exits 1 if any are `failure` or `cancelled`. The 3-second duration is normal — no setup, just bash.
+- `.github/workflows/ci.yml` — `test:` job (name `ci / test`; `test:` began at line 256 when this was read on 2026-10-18, and at line 258 as of 2026-10-22). One-step gate: if `needs.lint.result != "success"`, exit 1. 2-second duration is normal.
 - The 3s/2s signature is **not a misconfig** — both jobs run correctly and report the underlying failure fast.
 - What they are reporting: **cargo-deny** is failing on PRs #1156, #1157, #1161, #1162, #1163, #1164 with this primary error:
     ```
