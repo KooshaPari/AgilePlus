@@ -1,0 +1,64 @@
+2026-10-19T20:40Z ci-scout v6 fire
+cwd: /Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus
+v5 baseline reference time: 2026-10-19T03:13Z (17h 27m ago)
+v5-known main HEAD: c074506bfcae (merged 2026-10-19T02:39:51Z, PR #1168)
+v6 verdict: UNCHANGED
+
+Step 1: initial state probe
+  pwd=/Users/kooshapari
+  git rev-parse HEAD = c35a25772ffe990d9645b48f2c944006a1681dfc (LOCAL main, STALE - not from origin)
+  git rev-parse origin/main AFTER git fetch = c074506bfcae41e199a64c2f2e7dfdb63d2005f0
+  author date of c074506bfc HEAD = 2026-10-18T19:39:51-07:00 = 2026-10-19T02:39:51Z (v5-known, UNCHANGED)
+  recent origin/main log:
+    4857b409 ci: fail-closed quality gates (qe.yml) (#1138)             [2026-10-18T02:53:15Z]
+    4bd2971b ci(mergify): upgrade configuration to current format (#1152) [2026-10-17T22:43:17Z]
+    2a5c011e chore(ci): route merges through Mergify queue (#1150)        [2026-10-17T22:24:27Z]
+    00397a59 docs: reconcile product intent (#1134)                       [2026-10-16T23:31:39Z]
+    6ae6c9d0 ci(deps)(deps): bump the actions group (#1136)               [2026-10-16T23:29:57Z]
+
+Step 2: 8 cf-4 PRs gh pr view (parallel)
+  #1156 OPEN mergedAt=null updatedAt=2026-10-18T13:46:09Z
+  #1157 OPEN mergedAt=null updatedAt=2026-10-18T14:31:12Z
+  #1161 OPEN mergedAt=null updatedAt=2026-10-18T17:23:57Z
+  #1162 OPEN mergedAt=null updatedAt=2026-10-18T20:01:38Z
+  #1163 OPEN mergedAt=null updatedAt=2026-10-18T20:03:10Z
+  #1164 OPEN mergedAt=null updatedAt=2026-10-18T20:21:16Z
+  #1165 OPEN mergedAt=null updatedAt=2026-10-18T20:10:40Z
+  #1166 OPEN mergedAt=null updatedAt=2026-10-18T20:28:54Z
+  ALL updatedAt timestamps 24h+ ago. NO updates since v5 fire at 03:13Z.
+
+Step 3: 8 cf-4 PRs gh pr checks (parallel)
+  #1156: FAIL=12, PASS=30, skip=3. Failing: Cargo Deny, ci/lint, ci/test, python-coverage,
+        benchmark thresholds, cargo-mutants (5h32m15s timeout), OSV Scanner, semver-checks, etc.
+  #1157: FAIL=21, PASS=18, skip=6. Failing: ALL of #1156's failures + qe/lint + qe/test
+        (the new fail-closed gates from #1138), Vercel, Rust, Workspace Path Audit, etc.
+  #1161: FAIL=12, PASS=31, skip=4. Failing: Cargo Deny, ci/lint, ci/test, SonarCloud,
+        Lint & Format, python-coverage, cargo-mutants (4h49m24s timeout).
+  #1162: FAIL=13, PASS=31, skip=3. Failing: Cargo Deny, ci/lint, ci/test, SonarCloud,
+        Vercel (rate-limited), python-coverage, cargo-mutants (4h43m43s timeout).
+  #1163: FAIL=12, PASS=30, skip=3. Failing: Cargo Deny, ci/lint, ci/test, python-coverage,
+        cargo-mutants (3h38m21s timeout).
+  #1164: FAIL=13, PASS=32, skip=3. Failing: Cargo Deny, ci/lint, ci/test, SonarCloud,
+        semver-checks, Vercel (rate-limited), python-coverage, cargo-mutants (5h31m9s).
+  #1165 (fox): FAIL=4, PASS=28, skip=many. Failing: Dry run publish, OSV Scanner (advisory),
+        semver-checks, plan. AUDIT-RELEVANT: this PR's OWN Cargo Deny PASSES.
+  #1166 (badger): FAIL=9, PASS=30, skip=1. Failing: Cargo Deny, ci/lint, ci/test,
+        python-coverage, benchmark thresholds, cargo-mutants (4h11m9s timeout).
+
+  Action run IDs unchanged from v5 (no re-triggers observed).
+
+Step 4: gh pr list --state merged --limit 5
+  #1168 2026-10-19T02:39:51Z docs: link compete section in site nav (c074506bfc)
+  #1167 2026-10-19T02:10:32Z docs: add compete section stub (0efa5701)
+  #1152 2026-10-17T22:43:17Z ci(mergify): upgrade configuration (4bd2971b)
+  #1150 2026-10-17T22:24:27Z chore(ci): route merges through Mergify (2a5c011e)
+  #1138 2026-10-18T02:53:15Z ci: fail-closed quality gates (qe.yml) (4857b409)
+  No cf-4-relevant merges. #1167+#1168 are docs-only. #1138 is the fail-closed gate
+  that broke #1157 et al.; already in main before v5.
+
+Step 5: gh pr list --state open --limit 100 --jq length = 31 open PRs (prompt said 30).
+  Only PR with updatedAt newer than v5 fire (#1126, 2026-10-19T06:07:10Z) is NOT in cf-4 focus list.
+
+VERDICT: UNCHANGED. Snapshot: ap-sfd-2026-10-19T20-40Z@ci-scout-v6-unchanged
+No operator action needed; v7 recommended at 2026-10-20T20-40Z (24h cadence) unless
+operator signals imminent #1165 or #1166 merge.

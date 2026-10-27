@@ -3,7 +3,7 @@
 **Snapshot identity:** `ap-sfd-2026-10-17T22-14Z@d6b418a6`
 **Author:** parent orchestrator (this docket)
 **Authority:** `verification/ATOMIC_ACCEPTANCE_EXECUTION_2026-10-17.md` (9 targets / 89 tests PASS, parent-observed 2026-10-17T22:09Z)
-**Schema discipline:** `verification/semantic-verification-cases.v1.json` (schema_version 0.4.0) is schema-locked at 8 fields per case (`id, journey_id, title, status, preconditions, stimulus, expected, adversarial, evidence_contract`). This document is the **parallel binding** that the schema's "Manual mapping required" gap calls for (`DOCKET.md §F.3`). It does not modify the JSON file; it records the binding that transitions cases from `specified_not_executed` to a transitioned status in a follow-up change once the schema is extended.
+**Schema discipline:** `verification/semantic-verification-cases.v1.json` (schema_version 0.4.0) is schema-locked at 9 fields per case (`id, journey_id, title, status, preconditions, stimulus, expected, adversarial, evidence_contract`). This document is the **parallel binding** that the schema's "Manual mapping required" gap calls for (`DOCKET.md §F.3`). It does not modify the JSON file; it records the binding that transitions cases from `specified_not_executed` to a transitioned status in a follow-up change once the schema is extended.
 
 **Verdict rules used here (SFD v1.0):**
 
@@ -15,7 +15,7 @@
 
 ---
 
-## `crates/agileplus-sqlite/tests/atomic_acceptance.rs` (9 tests) → 9 case bindings
+## `crates/agileplus-sqlite/tests/atomic_acceptance.rs` (10 tests) → 8 case bindings
 
 | #   | Test name                                                           | Case(s) bound                                                                       | Strength     | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

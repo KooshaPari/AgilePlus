@@ -5,7 +5,7 @@
 **Snapshot identity:** `ap-sfd-2026-10-17T08-53Z@00397a59`
 **Repo HEAD at snapshot:** `00397a59 docs: reconcile product intent with canonical work authority [skip ci] (#1134)`
 **Active branch when docket was written:** `docs/state-forward-docket-20261017` (branched from main tip 00397a59)
-**Latest date-tagged release on the lineage that includes this HEAD:** `v2026.09.0` (not on the current branch ancestry; `git describe --tags --abbrev=0` reports `v0.2.4` because the current branch tip is at the legacy `v0.x` ancestry until a new tag is cut)
+**Latest date-tagged release on the lineage that includes this HEAD:** `v2026.09.0`, which **is** an ancestor of this branch (`git merge-base --is-ancestor v2026.09.0 HEAD` exits 0). `git describe --tags --abbrev=0` nonetheless reports `v0.2.4` because a legacy `v0.x` tag sits nearer to the tip; the `v2026.*` tags are reachable but not the closest.
 **Docket author:** parent orchestrator session (agileplus chat), with the integration-audit session as the only in-repo audit source consulted at write time (`docs/sessions/20261017-integration-audit/INTEGRATION.md`)
 
 ---
@@ -27,7 +27,7 @@
 
 `PASS` · `FAIL` · `NOT_RUN` · `UNKNOWN` · `STALE` · `BLOCKED` · `NOT_APPLICABLE` (per SFD v1.0)
 
-The three questions that **never** collapse:
+The four questions that **never** collapse:
 
 1. **Implementation** — is the code present in this branch? (cite path/line)
 2. **Usability** — can an operator reach it from outside the developer's shell? (cite URL/env/probe)
@@ -296,7 +296,12 @@ An MVP is the projection that "early operator" use is feasible. The MVP bar is l
 
 ### 9g. mature — what mature looks like in this contract
 
-`mature_complete: true` is the verdict in `mature-contract.v1.json`. It requires:
+`mature-contract.v1.json` (schema `2.1.0`) carries **two separate verdicts**, and they must not be conflated:
+
+- `mature_semantic_complete: true` — the semantics/product-method specification is accepted.
+- `mature_complete: false` — runtime evidence does not yet close it.
+
+The contract's own `status` records that split: `accepted_mature_semantic_contract_runtime_evidence_pending`. Attaining `mature_complete: true` requires:
 
 - All 67 requirements at `runtime_verified`.
 - All 92 cases at `executed_with_witness` (or `not_applicable` with citation).
@@ -341,19 +346,21 @@ An MVP is the projection that "early operator" use is feasible. The MVP bar is l
 - **Architecture diagram** lives in `DOCKET.architecture.mmd` in this folder. It shows: Plane.so, GitHub, NATS, MinIO, Neo4j, Cache/Redis, MCP, P2P/Tailscale, Vercel, the owner's desktop, the operator's device, with each link labeled by its F-row verdict.
 - **Delta tree** lives in `DOCKET.delta-tree.mmd` in this folder. It shows the 2026-10-08 recovery branch and the 2026-10-14 intent-reconciliation branch with the gap from each to today's HEAD `00397a59`.
 - **HTML render** lives in `DOCKET.html`.
-- **PDF** lives in `DOCKET.pdf`. Open in Safari via `open DOCKET.pdf` from the docket folder (Safari will refuse if the file is not present; the dossier will report `NOT_OPENED` in that case rather than claim success).
+- **PDF** lives in `DOCKET.pdf`. Open it from the docket folder with `open DOCKET.pdf` on macOS, `xdg-open DOCKET.pdf` on Linux, or `start DOCKET.pdf` on Windows. If the file is not present the viewer refuses to open it, and the dossier reports `NOT_OPENED` rather than claiming success.
 
 ---
 
 ## 12. What closes this docket
 
-A single 3-line statement, as the SFD v1.0 example requires:
+A single statement with all **five** closure conditions — the same five as the §0 "What closes this docket" field:
 
 1. `0 of 92` becomes `92 of 92` (or `92 - N` with N named and cited as `not_applicable`).
 2. `0 of 67` requirements at `runtime_verified` becomes `67 of 67` (or a smaller number with the same naming rule).
 3. The 10 NEXT_DEPLOYABLE_RELEASE items are green against an actual remote operator on a tailnet, not a CI witness at a prior commit.
+4. The production URL shows real data.
+5. The operator's `agileplus` binary can be invoked from outside the developer's shell against the real artifact.
 
-Until those three lines are observed, the docket remains open. The next docket in this lineage will inherit the snapshot identity `ap-sfd-2026-10-17T08-53Z@00397a59` and update it to the new HEAD's SHA. The SFD v1.0 contract forbids treating a forward path as closure.
+Until all five conditions are observed, the docket remains open. The next docket in this lineage will inherit the snapshot identity `ap-sfd-2026-10-17T08-53Z@00397a59` and update it to the new HEAD's SHA. The SFD v1.0 contract forbids treating a forward path as closure.
 
 ---
 

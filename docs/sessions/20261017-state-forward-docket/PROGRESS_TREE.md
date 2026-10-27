@@ -1,10 +1,12 @@
 # Progress Tree — AgilePlus per-intent × per-dimension state
 
-**Snapshot identity:** `ap-sfd-2026-10-18T07-25Z@ci-blockers-plus-coverage-attempted`
-**HEAD at capture:** `d6b418a6 docs(sfd): correct 9a package names after cargo metadata cross-check` (branch `docs/state-forward-docket-20261017`)
+**Snapshot identity:** `ap-sfd-2026-10-18T20-07Z@e2-p1-generic-investigation`
+**HEAD at capture:** `a43b8984 docs(sfd-v1.0): e2-p1-generic-investigation cohort (raven 4m 30s)` (branch `docs/state-forward-docket-20261017`)
+**Previous md identity:** `ap-sfd-2026-10-18T07-25Z@ci-blockers-plus-coverage-attempted` (md was 12h 42m stale; reconciled 2026-10-19T20:55Z)
 **Workspace members:** 38 (verified by `cargo metadata` at 22:12:26Z)
 **Mode:** evidence-cell tree; per-cell verdict + source. **No** percentage fabrication, **no** dimension collapse. Every non-`?` cell cites its source.
-**Raw evidence file:** `PROGRESS_TREE_RAW.md` (256 cells, harvested by `blossom` subagent 2026-10-17T22:16Z)
+**Raw evidence file:** `PROGRESS_TREE_RAW.md` (256 cells, harvested by `blossom` subagent 2026-10-17T22:16Z) — **restored into the tree 2026-10-19T22:31Z** from the orphaned git blob `c46a4eedea485937a5007fca95605902561f5e1f` (identity `ap-sfd-2026-10-17T22-14Z@d6b418a6`); it was cited by the JSON but had never been committed. Its **per-cell evidence** is authoritative; its own `§G.1`/`§G.2` summary arithmetic is **not** (see the Counts section). The **tree body below** is the source of truth for the counts; the JSON is rendered from it.
+**Machine-readable twin:** `PROGRESS_TREE.snapshot.json` (same identity; `dimension_breakdown` + `headline_counts` rendered from the tree body by `scripts/sfd_validate_counts.py`)
 
 ---
 
@@ -22,7 +24,7 @@
 A.1 Current state vs accepted intent       ✓ _ _ L   DOCKET.md §0; mature-contract.v1.json status=accepted_mature_semantic_contract_runtime_evidence_pending
 A.2 Verification case execution            ✓ ✗ … _   92 cases specified; 0 executed; ATOMIC_ACCEPTANCE_EXECUTION closes target-level only
 A.3 Forward path (operator alpha/MVP/mature)✓ _ … L   FORWARD_WBS, NEXT_DEPLOYABLE_RELEASE, CHARTER
-A.4 Quality gates (cov, e2e, perf, qe)     ~ S ✗ L   cargo test --workspace: 5515 pass / 1 fail (2026-10-18T01:42Z, owl subagent) — fail is `agileplus-cli::commands::mvp::tests::wp_transition_requires_its_contract_evidence_before_mutation` at mvp.rs:626 (panics on `/bin/true` ENOENT; macOS has `/usr/bin/true` only); cargo clippy --workspace --all-targets: clean (5m 05s, exit 0); .cargo-test-result.txt still 2026-09-01 Windows snapshot (stale)
+A.4 Quality gates (cov, e2e, perf, qe)     ~ S ✗ L   cargo test --workspace: 5515 pass / 1 fail (2026-10-18T01:42Z, owl subagent) — fail is `agileplus-cli::commands::mvp::tests::wp_transition_requires_its_contract_evidence_before_mutation` at mvp.rs:626 (panics on `/bin/true` ENOENT; macOS has `/usr/bin/true` only); cargo clippy --workspace --all-targets: clean (5m 05s, exit 0); .cargo-test-result.txt still 2026-09-01 Windows snapshot (stale). Coverage side: 93.99% line / 90.84% branch / 94.39% region on current HEAD (2026-10-18T09:17Z, sloth-v3/horse) — ≥85% floor met, 765/766 tests passed (1 skipped via --skip), cargo exit 0
 A.5 Operator/CLI affordances                ✓ ✓ … _   40+ test targets, target/debug/agileplus builds
 A.6 Acceptance UX                           ~ ✗ … _   cloud browser saw old dashboard, zero data
 A.7 Integration state (Plane/GH/NATS/MinIO/MCP)~ ✗ … L   INTEGRATION.md §3: 1/11 surfaces live
@@ -48,6 +50,15 @@ B.11 E11 Federation (Tracera)             ✓ … … _   p2p crate; Tailscale d
 B.12 E12 Operator/CLI                     ✓ ✓ … _   40+ test targets; CLI subcommands wired
 ```
 
+### Section B-std — storage-hygiene / usability overlay (2026-10-18T09:46Z, gecko)
+
+```
+B.3  E3 Attempt + Worker Lifecycle         ✓ ✓ … _   Usability NOT_RUN → PASS (gecko 09:42-09:46Z): `agileplus list` exit 0, `agileplus list --state validated` exit 0, `agileplus queue list` exit 0 (4 backlog items rendered)
+B.4  E4 Independent Evaluator             ✓ ✓ … _   Usability PARTIAL → PASS (ferret 09:35Z PARTIAL, gecko 09:42Z PASS): CLI invocation surface HEALTHY, 2/2 canonical smoke tests PASS (crates/agileplus-cli/tests/cli_integration.rs)
+B.6  E6 Audit Trail                       ✓ ? ✓ _   Storage Hygiene NOT_RUN → PASS (gecko): 5 corrupt rows in features+backlog_items had `updated_at` as SQLite TEXT 'YYYY-MM-DD HH:MM:SS' instead of RFC3339; root cause = row_to_feature (features.rs:36-87) + row_to_backlog_item (backlog.rs:71) `.parse::<chrono::DateTime<Utc>>()` failing; fixed via 2 UPDATE statements; sqlite3 PRAGMA integrity_check = ok
+B.7  E7 External Integrations             ~ ~/✗ … L  Storage Hygiene PASS (gecko); Integration.md §3 unchanged
+```
+
 ### Section C — 12 journeys AP-J-01..AP-J-12
 
 ```
@@ -70,7 +81,7 @@ C.12 AP-J-12 Audit who changed what/why   ✓ _ … _   AP-VC-080..087, 0 execut
 ```
 D.1  NDR-1 canonical atomic acceptance   ✓ _ ✓ H   atomic_acceptance 10/10 on 00397a59
 D.2  NDR-2 real-SQLite HTTP acceptance    ✓ _ ✓ H   atomic_acceptance_http 10/10 + atomic_acceptance_sqlite 3/3 on 00397a59
-D.3  NDR-3 desktop API stack restartable   ✓ ? … _   cargo build -p agileplus-desktop --release: exit 0, 15m 29s (2026-10-17T23:02Z)
+D.3  NDR-3 desktop API stack restartable   ✓ ? ✓ _   Implementation PASS (cargo build -p agileplus-desktop --release exit 0, 15m 29s, 2026-10-17T23:02Z); Validation NOT_RUN → PASS (2026-10-18T09:29Z, otter): 3 reopen tests PASS (crates/agileplus-sqlite/tests/atomic_acceptance.rs:184 file_reopen_preserves_atomic_receipt_and_replay + 2 more) + live binary restart smoke (pid1 9786 / pid2 9924, /health payload identical across kill+restart, SQLite persisted 4096 B on disk, both SIGTERM clean)
 D.4  NDR-4 tailnet service naming/routing ✗ ✗ … _   no Tailscale daemon
 D.5  NDR-5 browser creds no operator key  ? ? … _   no SaaS-style auth implemented
 D.6  NDR-6 production auth + same-origin  … … … _   no production deploy witnessed
@@ -101,7 +112,7 @@ E.15 G15 8 Git+SQLite recovery witnesses  ✓ … ~ M   promotion_recovery 8/8 i
 E.16 G16 14+10 CLI ship witnesses         ✓ … ~ M   target-level on 00397a59
 E.17 G17 Real Chromium browser journey    ~ ✗ ~ M   CI run on f959fad53; prod FAIL
 E.18 G18 agileplus ship survives boundary ✓ … ~ M   saga exists
-E.19 G19 Coverage ≥85% on current HEAD    ? _ … L   cargo llvm-cov --workspace --summary-only cold-run aborted >20m (2026-10-17T23:08Z); warm-cache rerun not executed in 35-min budget (2026-10-18T01:39Z, owl subagent task 2 SKIPPED); **fresh 06:43:43Z sloth run hit ENOSPC (disk /Users/kooshapari 100% full, 1.3 GB free)** — `cargo test --no-run --workspace` failed with `ld: write() failed, errno=28` and `os error 28: No space left on device` in 3 places (agileplus-telemetry logging_file_output_tests, agileplus-github sync_adapter_tests, agileplus-cli --test); verdict remains NOT_RUN; remediation: free disk space then re-dispatch sloth; cargo clippy --workspace --all-targets is the only fresh evidence (clean, exit 0)
+E.19 G19 Coverage ≥85% on current HEAD    ✓ _ ✓ L   **PASS** (2026-10-18T09:17Z, sloth-v3/horse): `timeout 1800 cargo +nightly llvm-cov --workspace --summary-only -- --skip wp_transition_requires_its_contract_evidence_before_mutation` exit 0, 765 passed / 1 skipped / 0 failed; line 93.99% (152319 total, 9161 missed), branch 90.84% (11990/1098), region 94.39% (94354/5291) — all ≥85% floor. Below-floor: agileplus-sqlite/src/bin/seed_db.rs (85.71%), seed_requirements.rs (92.50%). Out of scope: desktop/src-tauri/src/* (0-15%, Tauri tray binary not in workspace harness). Skipped test = the mvp.rs:626 PR #1156 fix (unmerged). Superseded earlier verdicts: NOT_RUN (2026-10-17T23:08Z cold-run aborted), NOT_RUN (2026-10-18T01:39Z warm-cache budget-cut), ENOSPC (2026-10-18T06:43:43Z disk 100% full)
 E.20 G20 cargo deny + OSV clean           ? _ ~ _   cargo deny: advisories PARTIAL (2026-10-18T06:48Z, parrot subagent) — 1 documented RUSTSEC-2024-0429 macOS-ignore intentional (Linux-only tauri PR #16170) + 3 newly-IGNORED RUSTSEC-2026-0370/0371/0372 (zvariant/zbus_names/zvariant_derive unmaintained-info via zbus→keyring→agileplus-domain); all 3 silenced via deny.toml ignore PR #1157 (commit 070babcd, open); bans/licenses/sources ok; PARTIAL (not PASS) because advisories still exist (only acceptance is declared); re-evaluate to PASS when zbus 6.0.0+ upstream migration lands
 ```
 
@@ -109,33 +120,52 @@ E.20 G20 cargo deny + OSV clean           ? _ ~ _   cargo deny: advisories PARTI
 
 ## Counts (no percentages)
 
-**Re-validated by parent orchestrator (this file).** Per-dimension totals across 256 cells (64 rows × 4 dimensions):
+**Re-validated by parent orchestrator (this file).** Per-dimension totals across 256 cells (64 rows × 4 dimensions). **Reconciled 2026-10-19T22:30Z** against `PROGRESS_TREE.snapshot.json` @ `ap-sfd-2026-10-18T20-07Z@e2-p1-generic-investigation` — the md had been 12h 42m stale; 6 cohorts (sloth-v3 coverage, otter restart, ferret+gecko storage/usability, dolphin dependabot, cf-1-cf-2, e2-p1-generic) landed in the JSON only.
 
-| Verdict               | Impl   | Usab   | Val    | Assur  | Total   |
-| --------------------- | ------ | ------ | ------ | ------ | ------- |
-| ✓ PASS                | 32     | 4      | 7      | 3      | **46**  |
-| ~ PARTIAL             | 6      | 4      | 5      | 0      | **15**  |
-| ✗ FAIL                | 4      | 12     | 4      | 0      | **20**  |
-| … NOT_RUN             | 11     | 14     | 37     | 0      | **62**  |
-| ? UNKNOWN             | 2      | 4      | 2      | 0      | **8**   |
-| S STALE               | 1      | 1      | 0      | 0      | **2**   |
-| N/A NOT_APPLICABLE    | 1      | 1      | 0      | 0      | **2**   |
-| \_ dim-not-meaningful | 7      | 24     | 9      | 61     | **101** |
-| **Column total**      | **64** | **64** | **64** | **64** | **256** |
+**Derivation (authoritative).** The per-cell tree body in §Tree is the only artefact with per-cell granularity, so it is the **source of truth**. The JSON `dimension_breakdown` and the table below are **rendered from it** by `scripts/sfd_validate_counts.py`, which is the single validator for all three artefacts (tree body, this table, JSON). Re-run it after any tree edit:
 
-> Caveat: the subagent's `PROGRESS_TREE_RAW.md §G.1` and `§G.2` show minor 28-row arithmetic drift (subagent counted 162 row-verdicts, parent counts 155; difference is the 7 `dim-not-meaningful` cells the subagent double-counted as n/a, vs the 7 it correctly classed as `_`). The evidence cells themselves are correct; the **per-cell verdict and source** stand.
+```bash
+python3 scripts/sfd_validate_counts.py           # report drift, exit 1 if inconsistent
+python3 scripts/sfd_validate_counts.py --write   # re-render JSON + this table
+```
+
+**Count semantics (fixed 2026-10-19T22:30Z).** Previously the JSON breakdown, the JSON headline and this table disagreed, and the disagreement was inherited from the subagent's `PROGRESS_TREE_RAW.md §G.1/§G.2` tally rather than from the per-cell evidence. Four defects were corrected:
+
+1. **Breakdown drift.** The JSON `dimension_breakdown` never matched the per-cell tree body at any of the 4 commits that touched `PROGRESS_TREE.md` (`8179b549d3`, `61d921f726`, `17a40a8665`, `89473b6d03`). It was re-derived from the tree body.
+2. **One-cell hole.** The JSON per-dimension sums were 64/63/64/64 = **255**, not 256, while the JSON `total` field claimed 256. The missing cell was in **Usability** (introduced in `f5ffb09d`).
+3. **Headline off-by-one.** `cells_pass_any` said 49 while the breakdown held 50 PASS cells. The breakdown was right; the headline was stale.
+4. **Wrong denominator.** `cells_pass_meaningful` used **150**, which is `256 − 104 − 2` — the raw file's `§G.1` arithmetic, where `nm = 104` is itself wrong (a literal per-cell scan finds **87** `dim_not_meaningful` cells, not 104) and where `NOT_APPLICABLE = 2` undercounts the true **3**. The denominator is now `256 − 87 − 3 = 166`, using the rule stated in this section: _meaningful = every cell that is neither `dim_not_meaningful` nor `NOT_APPLICABLE`_.
+
+| Verdict            | Impl   | Usab   | Val    | Assur  | Total   |
+| ------------------ | ------ | ------ | ------ | ------ | ------- |
+| PASS               | 36     | 5      | 6      | 3      | **50**  |
+| PARTIAL            | 11     | 2      | 9      | 0      | **22**  |
+| FAIL               | 6      | 15     | 3      | 0      | **24**  |
+| NOT_RUN            | 7      | 11     | 42     | 0      | **60**  |
+| UNKNOWN            | 2      | 6      | 1      | 0      | **9**   |
+| STALE              | 0      | 1      | 0      | 0      | **1**   |
+| NOT_APPLICABLE     | 1      | 1      | 1      | 0      | **3**   |
+| dim-not-meaningful | 1      | 23     | 2      | 61     | **87**  |
+| **Column total**   | **64** | **64** | **64** | **64** | **256** |
+
+> **`dim_not_meaningful` = 87 (was 101).** The JSON previously counted 101 because it inherited the raw file's `§G.1` tally, which double-counted 17 Assurance strength cells (`LOW`/`MEDIUM`) and mis-tallied 3 more. A literal per-cell scan of the raw table gives **87**: `Implementation 1` (E.3) + `Usability 23` + `Validation 2` (A.1, E.1) + `Assurance 61` (42 literal `n/a` + 19 `LOW`/`MEDIUM` strength markers). The 3 `HIGH` Assurance markers (D.1, D.2, E.4) are the only Assurance `PASS` cells.
+>
+> **`NOT_APPLICABLE` = 3 (was 2).** A.9 (Federation / Tracera posture) is `NOT_APPLICABLE` in all three of Implementation, Usability and Validation — the charter puts Tracera out of scope. The raw table's `§G.1` tally recorded only 1, because its A.9 row was `NOT_APPLICABLE` in three cells but counted once.
+>
+> **The raw file's own tally is not authoritative.** `PROGRESS_TREE_RAW.md §G.1` and `§G.2` disagree with each other (G.1 sums `nm = 104`; G.2's "Total verdicts" row sums to 180 verdicts, and `180 + 104 = 284 ≠ 256`). The **per-cell evidence** in the raw table is correct; its **summary arithmetic** is not. The raw file was cited by the JSON but had never been committed to the tree; it is **restored into the tree 2026-10-19T22:31Z** from the orphaned blob `c46a4eedea485937a5007fca95605902561f5e1f` (identity `ap-sfd-2026-10-17T22-14Z@d6b418a6`).
 
 ### Headline numbers (raw counts only — NO percentages)
 
-- **45 / 256** cells are PASS (any verdict in any dimension). This is a count, not a "completeness" claim.
-- **45 / 150** non-`n/a`/`_` cells are PASS.
+- **50 / 256** cells are PASS (any verdict in any dimension). This is a count, not a "completeness" claim.
+- **50 / 166** meaningful cells (neither `dim_not_meaningful` nor `NOT_APPLICABLE`) are PASS.
 - **0 / 92** verification cases have `executed_with_witness` in the JSON-locked schema (`0.4.0`).
 - **5 / 92** cases have a **STRONG** test witness per `verification/CASE_BINDING_2026-10-17.md`; **5 / 92** have an **ADJACENT** witness. (AP-RVC-056 was downgraded from STRONG to ADJACENT after re-reading the case body — the test proves only the immutability half, not the content-attribution half.) The two numbers are not the same claim.
 - **0 / 67** requirements are `runtime_verified`.
 - **3 / 10** NDR items (NDR-1, NDR-2, NDR-3) have a parent-observed PASS witness at the **target** level.
 - **1 / 11** integration surfaces is wired for real (SQLite).
+- **Time to next deployed/installable release: not estimated (UNKNOWN).** The status-report rule (`AGENTS.md`, `verification/FORWARD_WBS_2026-10-04.md`) requires this field to be stated rather than omitted, so it is stated here as UNKNOWN and not guessed. It is gated on the CF-4 CI sequence: merge #1165, re-trigger the six source PRs, confirm the flips with a later scout, then merge #1166 and re-trigger the Dependabot PRs. No date is claimed until that sequence completes and a run is observed green.
 - **1 / 5** Tracera-relevant surfaces (E11 / p2p crate exists but not running) is partially implemented.
-- **3 / 20** gates are clearly PASS (G1 = spec acceptance; G4 = P0 acceptance cohort; G19.Val? — coverage tool aborted, NOT_RUN remains; **E.20 transitioned FAIL→PARTIAL on 2026-10-18T06:48Z** — 3 RUSTSEC-2026-0370/371/372 unmaintained advisories now silenced via deny.toml ignore (PR #1157, commit 070babcd, open); PARTIAL retained (not PASS) because the advisories still exist (only acceptance is declared). B.6 / E.6 Validation and D.3 / NDR-3 Implementation were closed by the cargo audit subagent on 2026-10-17T23:08Z; E.20 was re-validated on 2026-10-18T01:33Z (FAIL, 3 NEW advisories recorded) and again on 2026-10-18T06:48Z (PARTIAL, mitigations recorded). **A.4 / E.9 Validation transitioned UNKNOWN→FAIL on 2026-10-18T01:42Z** (cargo test --workspace 1 fail: `agileplus-cli::commands::mvp::tests::wp_transition_requires_its_contract_evidence_before_mutation` at mvp.rs:626 — panics on `/bin/true` ENOENT; macOS has `/usr/bin/true` only; fix is in PR #1156 / commit 39ee805b, open, unmerged). **E.19 Val still NOT_RUN**; warm-cache `cargo llvm-cov` rerun was budget-cut by owl subagent on 2026-10-18T01:39Z; **fresh sloth attempt at 2026-10-18T06:43:43Z hit ENOSPC** (disk 100% full) — see `llvm_cov_2026-10-18` block in PROGRESS_TREE.snapshot.json.
+- **3 / 20** gates are clearly PASS (G1 = spec acceptance; G4 = P0 acceptance cohort; G19 = coverage ≥85% on current HEAD). **A gate counts as clearly PASS only when every one of its meaningful cells is PASS** — not merely when one cell is PASS. This rule is the one the historical prose used: it yields 2/20 at `8179b549d3` (G1, G4) and 3/20 at `89473b6d03`, matching the md prose at each of those commits. The following gates have a PASS cell but are **not** clear: G8 (Plane round-trip: `~` in Usability), G15/G16/G18 (recovery and ship witnesses: `~` in Validation). **E.20 transitioned FAIL→PARTIAL on 2026-10-18T06:48Z** — 3 RUSTSEC-2026-0370/371/372 unmaintained advisories now silenced via deny.toml ignore (PR #1157, commit 070babcd, open); PARTIAL retained (not PASS) because the advisories still exist (only acceptance is declared). B.6 / E.6 Validation and D.3 / NDR-3 Implementation were closed by the cargo audit subagent on 2026-10-17T23:08Z; E.20 was re-validated on 2026-10-18T01:33Z (FAIL, 3 NEW advisories recorded) and again on 2026-10-18T06:48Z (PARTIAL, mitigations recorded). **A.4 / E.9 Validation transitioned UNKNOWN→FAIL on 2026-10-18T01:42Z** (cargo test --workspace 1 fail: `agileplus-cli::commands::mvp::tests::wp_transition_requires_its_contract_evidence_before_mutation` at mvp.rs:626 — panics on `/bin/true` ENOENT; macOS has `/usr/bin/true` only; fix is in PR #1156 / commit 39ee805b, open, unmerged). **E.19 / G19 Validation transitioned NOT_RUN→PASS on 2026-10-18T09:17Z** (sloth-v3: 93.99% line / 90.84% branch / 94.39% region coverage, all ≥85%). See the `llvm_cov_2026-10-18*` blocks in PROGRESS_TREE.snapshot.json for the superseded NOT_RUN / ENOSPC attempts.
 
 > Per the cross-harness cockpit policy (memory `mem_1792275198980_10767103059655466859`, file `~/.jcode/memories/global/cockpit-progress-tree-policy.md`, adopted 2026-10-17T22:12Z), these counts are the **only** quantitative claims in this tree. They are **never** converted to percentages.
 
@@ -148,7 +178,7 @@ A parallel file `verification/CASE_BINDING_2026-10-17.md` (schema-clean, does no
 - **Transitions are conditional on a follow-up `0.5.0` schema-bump PR** to add `linked_test_targets[]` and `witness_run` fields to the cases file. The binding is the **first-class reference** that PR should consume.
 - **Per the cockpit policy:** the headline `0 / 92` is reported in the JSON-locked schema; the binding's `5 / 92 STRONG + 5 / 92 ADJACENT` is reported in the parallel binding file. These are not the same claim and must not be conflated.
 
-This overlay updates the **Validation** column for B.5, C.4, C.5, C.7, and C.12 from `…` to `~` (PARTIAL: target-level PASS + case-level ADJACENT or STRONG for some sub-cases, pending schema-bump).
+This overlay **will** update the **Validation** column for B.5, C.4, C.5, C.7, and C.12 from `…` to `~` (PARTIAL: target-level PASS + case-level ADJACENT or STRONG for some sub-cases) **once the `0.5.0` schema-bump PR lands**. It is deliberately **not applied** to the tree body yet: those five Validation cells still read `…` (NOT_RUN) in §Tree, so the counts above are current and unaffected. Applying it earlier would assert a PARTIAL verdict that the locked `0.4.0` schema has no field to record.
 
 ---
 
