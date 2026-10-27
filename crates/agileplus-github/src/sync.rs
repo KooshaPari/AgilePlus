@@ -52,11 +52,11 @@ impl LiveGhDataSource {
 #[async_trait]
 impl GhDataSource for LiveGhDataSource {
     async fn list_issues(&self) -> Result<Vec<GhIssue>> {
-        Ok(vec![])
+        anyhow::bail!("live GitHub issue listing is not implemented")
     }
 
     async fn list_prs(&self) -> Result<Vec<GhPullRequest>> {
-        Ok(vec![])
+        anyhow::bail!("live GitHub pull-request listing is not implemented")
     }
 }
 
