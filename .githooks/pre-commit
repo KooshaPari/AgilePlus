@@ -1,8 +1,22 @@
 #!/usr/bin/env bash
-# Canonical Phenotype pre-commit hook: verified-secret scan only.
-# Bypass: HOOKS_SKIP=1 git commit
-#         PRE_COMMIT_SKIP_SECRETS=1 git commit
-#         git commit --no-verify
+# Canonical Phenotype pre-commit hook.
+#
+# Two INDEPENDENT steps run for every commit:
+#   1. verified-secret scan (trufflehog) over the staged files
+#   2. RFC3339 UTC timestamp integrity over the staged .agileplus/*.db blobs
+#
+# A failure in EITHER step fails the commit. Skipping one step never skips
+# the other. The previous version chained the timestamp check *after* the
+# secret scan and exited early from several secret-scan branches
+# (PRE_COMMIT_SKIP_SECRETS=1, "trufflehog not installed", "no staged files
+# to scan"), so the timestamp guard never ran in those cases and a corrupt
+# .agileplus/*.db could still be committed.
+#
+# Bypass:
+#   HOOKS_SKIP=1                  -> skip the whole hook
+#   PRE_COMMIT_SKIP_SECRETS=1     -> skip ONLY step 1 (secret scan)
+#   PRE_COMMIT_SKIP_TIMESTAMPS=1  -> skip ONLY step 2 (timestamp check)
+#   git commit --no-verify        -> skip everything
 set -u
 
 if [ "${HOOKS_SKIP:-0}" = "1" ]; then
@@ -10,53 +24,93 @@ if [ "${HOOKS_SKIP:-0}" = "1" ]; then
   exit 0
 fi
 
+# Locate this script without depending on `dirname` (pure bash).
+script_path="${BASH_SOURCE[0]}"
+case "$script_path" in
+  */*) script_dir="${script_path%/*}" ;;
+  *) script_dir="." ;;
+esac
+hooks_dir="$(CDPATH= cd -- "$script_dir" && pwd)"
+
+# ------------------------------------------------------------------ step 1
+# Verified-secret scan over the staged files.
+run_secret_scan() {
+  local timeout_bin files cmd scan_rc repo_root to_secrets
+
+  if ! command -v trufflehog >/dev/null 2>&1; then
+    # Not a failure of this step: the scan is skipped, but step 2 still runs.
+    echo "[hooks] trufflehog not installed; skipping the secret scan only (brew install trufflehog)"
+    return 0
+  fi
+
+  timeout_bin="${TIMEOUT_BIN:-timeout}"
+  if ! command -v "$timeout_bin" >/dev/null 2>&1; then
+    timeout_bin="gtimeout"
+  fi
+  if ! command -v "$timeout_bin" >/dev/null 2>&1; then
+    echo "[hooks] timeout/gtimeout not installed; running secret scan without timeout"
+    timeout_bin=""
+  fi
+
+  if ! repo_root="$(git rev-parse --show-toplevel)"; then
+    echo "[hooks] FAIL — git rev-parse --show-toplevel failed; cannot locate the repository root" >&2
+    return 1
+  fi
+
+  to_secrets="${PRE_COMMIT_TIMEOUT_SECRETS:-60}"
+  echo "[hooks] trufflehog staged-file scan"
+
+  if ! files="$(git diff --cached --name-only --diff-filter=ACMR)"; then
+    echo "[hooks] FAIL — git diff --cached failed; cannot enumerate staged files" >&2
+    return 1
+  fi
+  if [ -z "$files" ]; then
+    echo "[hooks] no staged files to scan"
+    return 0
+  fi
+
+  cmd=(bash -c 'printf "%s\n" "$1" | xargs -I{} trufflehog filesystem --only-verified --fail --no-update "$2/{}"' _ "$files" "$repo_root")
+  if [ -n "$timeout_bin" ]; then
+    "$timeout_bin" --kill-after=5s "${to_secrets}s" "${cmd[@]}"
+  else
+    "${cmd[@]}"
+  fi
+  scan_rc=$?
+  if [ "$scan_rc" -ne 0 ]; then
+    echo "[hooks] verified secret scan failed"
+    return "$scan_rc"
+  fi
+  return 0
+}
+
+rc=0
+
 if [ "${PRE_COMMIT_SKIP_SECRETS:-0}" = "1" ]; then
-  echo "[hooks] PRE_COMMIT_SKIP_SECRETS=1; skipping secret scan"
-  exit 0
-fi
-
-if ! command -v trufflehog >/dev/null 2>&1; then
-  echo "[hooks] trufflehog not installed; skipping (brew install trufflehog)"
-  exit 0
-fi
-
-timeout_bin="${TIMEOUT_BIN:-timeout}"
-if ! command -v "$timeout_bin" >/dev/null 2>&1; then
-  timeout_bin="gtimeout"
-fi
-if ! command -v "$timeout_bin" >/dev/null 2>&1; then
-  echo "[hooks] timeout/gtimeout not installed; running without timeout"
-  timeout_bin=""
-fi
-
-repo_root="$(git rev-parse --show-toplevel)"
-to_secrets="${PRE_COMMIT_TIMEOUT_SECRETS:-60}"
-echo "[hooks] trufflehog staged-file scan"
-
-files="$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)"
-if [ -z "$files" ]; then
-  echo "[hooks] no staged files to scan"
-  exit 0
-fi
-
-cmd=(bash -c 'printf "%s\n" "$1" | xargs -I{} trufflehog filesystem --only-verified --fail --no-update "$2/{}"' _ "$files" "$repo_root")
-if [ -n "$timeout_bin" ]; then
-  "$timeout_bin" --kill-after=5s "${to_secrets}s" "${cmd[@]}"
+  echo "[hooks] PRE_COMMIT_SKIP_SECRETS=1; skipping the secret scan only"
 else
-  "${cmd[@]}"
+  run_secret_scan || rc=$?
 fi
-rc=$?
+
+# ------------------------------------------------------------------ step 2
+# RFC3339 UTC timestamp integrity for staged .agileplus/*.db files.
+# This step runs unconditionally (except for its own explicit bypass) so
+# that skipping the secret scan can never disable it.
+if [ "${PRE_COMMIT_SKIP_TIMESTAMPS:-0}" = "1" ]; then
+  echo "[hooks] PRE_COMMIT_SKIP_TIMESTAMPS=1; skipping the timestamp check only"
+else
+  ts_hook="$hooks_dir/pre-commit-validate-timestamps"
+  if [ ! -x "$ts_hook" ]; then
+    echo "[hooks] FAIL — $ts_hook missing or not executable; failing closed." >&2
+    rc=1
+  else
+    "$ts_hook" || rc=$?
+  fi
+fi
+
 if [ "$rc" -ne 0 ]; then
-  echo "[hooks] verified secret scan failed"
+  echo "[hooks] pre-commit FAILED (exit $rc)" >&2
   exit "$rc"
 fi
 
 echo "[hooks] pre-commit OK"
-
-# Chain: enforce .agileplus/*.db RFC3339 timestamp integrity (B.y guard).
-hooks_dir="$(dirname "$0")"
-if [ -x "$hooks_dir/pre-commit-validate-timestamps" ]; then
-  "$hooks_dir/pre-commit-validate-timestamps"
-else
-  echo "[hooks] pre-commit-validate-timestamps not found or not executable; skipping"
-fi
+exit 0
