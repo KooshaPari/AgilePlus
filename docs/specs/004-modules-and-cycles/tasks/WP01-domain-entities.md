@@ -5,11 +5,24 @@ lane: "doing"
 dependencies: []
 base_branch: main
 base_commit: 3d3f72886c95592ae83f525d4416118882ab189f
-created_at: '2026-03-04T01:51:18.239715+00:00'
+created_at: "2026-03-04T01:51:18.239715+00:00"
 subtasks: [T001, T002, T003, T004, T005, T006]
 phase: Phase 1 - Domain
 estimated_lines: 350
-frs: [FR-M01, FR-M02, FR-M03, FR-M04, FR-M07, FR-C01, FR-C02, FR-C03, FR-C04, FR-C05, FR-C07]
+frs:
+    [
+        FR-M01,
+        FR-M02,
+        FR-M03,
+        FR-M04,
+        FR-M07,
+        FR-C01,
+        FR-C02,
+        FR-C03,
+        FR-C04,
+        FR-C05,
+        FR-C07,
+    ]
 priority: P1
 shell_pid: "88923"
 agent: "claude-wp01"
@@ -56,11 +69,11 @@ field. Add error variants to `DomainError` that support Module and Cycle operati
 - **Serde defaults**: Fields that are nullable (`Option<_>`) must carry
   `#[serde(default, skip_serializing_if = "Option::is_none")]` to maintain backward compat.
 - **File locations** (all relative to `crates/agileplus-domain/src/`):
-  - NEW: `domain/module.rs`
-  - NEW: `domain/cycle.rs`
-  - MODIFIED: `domain/mod.rs` -- add `pub mod module; pub mod cycle;`
-  - MODIFIED: `domain/feature.rs` -- add `module_id` field
-  - MODIFIED: `error.rs` -- add new variants
+    - NEW: `domain/module.rs`
+    - NEW: `domain/cycle.rs`
+    - MODIFIED: `domain/mod.rs` -- add `pub mod module; pub mod cycle;`
+    - MODIFIED: `domain/feature.rs` -- add `module_id` field
+    - MODIFIED: `error.rs` -- add new variants
 
 ---
 
@@ -78,20 +91,20 @@ field. Add error variants to `DomainError` that support Module and Cycle operati
 
 2. Define the struct:
 
-   ```rust
-   #[derive(Debug, Clone, Serialize, Deserialize)]
-   pub struct Module {
-       pub id: i64,
-       pub slug: String,
-       pub friendly_name: String,
-       #[serde(default, skip_serializing_if = "Option::is_none")]
-       pub description: Option<String>,
-       #[serde(default, skip_serializing_if = "Option::is_none")]
-       pub parent_module_id: Option<i64>,
-       pub created_at: DateTime<Utc>,
-       pub updated_at: DateTime<Utc>,
-   }
-   ```
+    ```rust
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct Module {
+        pub id: i64,
+        pub slug: String,
+        pub friendly_name: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub parent_module_id: Option<i64>,
+        pub created_at: DateTime<Utc>,
+        pub updated_at: DateTime<Utc>,
+    }
+    ```
 
 3. Implement a `Module::new(friendly_name: &str, parent_module_id: Option<i64>) -> Self` constructor
    that sets `id = 0`, derives `slug` from the name, and stamps `created_at`/`updated_at` to
@@ -104,10 +117,10 @@ field. Add error variants to `DomainError` that support Module and Cycle operati
    `slug`, and touches `updated_at`.
 
 6. Write unit tests:
-   - `new_module_defaults`: `id == 0`, slug is kebab-cased from name, `parent_module_id == None`
-     when not given.
-   - `slug_derivation`: `"OAuth Providers"` -> `"oauth-providers"`.
-   - `update_name_re_slugs`: after `update_name`, slug reflects new name.
+    - `new_module_defaults`: `id == 0`, slug is kebab-cased from name, `parent_module_id == None`
+      when not given.
+    - `slug_derivation`: `"OAuth Providers"` -> `"oauth-providers"`.
+    - `update_name_re_slugs`: after `update_name`, slug reflects new name.
 
 **Validation**: `cargo test -p agileplus-domain module::tests` all green.
 
@@ -123,32 +136,32 @@ field. Add error variants to `DomainError` that support Module and Cycle operati
 
 1. Define the struct (Traces to FR-M04):
 
-   ```rust
-   #[derive(Debug, Clone, Serialize, Deserialize)]
-   pub struct ModuleFeatureTag {
-       pub module_id: i64,
-       pub feature_id: i64,
-       pub created_at: DateTime<Utc>,
-   }
-   ```
+    ```rust
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ModuleFeatureTag {
+        pub module_id: i64,
+        pub feature_id: i64,
+        pub created_at: DateTime<Utc>,
+    }
+    ```
 
 2. Add constructor `ModuleFeatureTag::new(module_id: i64, feature_id: i64) -> Self` stamping
    `created_at = Utc::now()`.
 
 3. Define a `ModuleWithFeatures` view struct to carry query results from WP02:
 
-   ```rust
-   #[derive(Debug, Clone, Serialize, Deserialize)]
-   pub struct ModuleWithFeatures {
-       pub module: Module,
-       /// Features where Feature.module_id == this module's id
-       pub owned_features: Vec<crate::domain::feature::Feature>,
-       /// Features linked via module_feature_tags
-       pub tagged_features: Vec<crate::domain::feature::Feature>,
-       /// Direct child modules (non-recursive)
-       pub child_modules: Vec<Module>,
-   }
-   ```
+    ```rust
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ModuleWithFeatures {
+        pub module: Module,
+        /// Features where Feature.module_id == this module's id
+        pub owned_features: Vec<crate::domain::feature::Feature>,
+        /// Features linked via module_feature_tags
+        pub tagged_features: Vec<crate::domain::feature::Feature>,
+        /// Direct child modules (non-recursive)
+        pub child_modules: Vec<Module>,
+    }
+    ```
 
 4. Write unit test `tag_new_stamps_created_at`: verify `created_at` is close to `Utc::now()`.
 
@@ -169,17 +182,17 @@ but with the specific allowed/disallowed edges from the data model.
 
 2. Define the enum (Traces to FR-C02):
 
-   ```rust
-   #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-   #[serde(rename_all = "PascalCase")]
-   pub enum CycleState {
-       Draft,
-       Active,
-       Review,
-       Shipped,
-       Archived,
-   }
-   ```
+    ```rust
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+    #[serde(rename_all = "PascalCase")]
+    pub enum CycleState {
+        Draft,
+        Active,
+        Review,
+        Shipped,
+        Archived,
+    }
+    ```
 
 3. Implement `fmt::Display` matching the PascalCase names: `"Draft"`, `"Active"`, etc.
 
@@ -190,25 +203,25 @@ but with the specific allowed/disallowed edges from the data model.
    Encode the **explicit edge list** from the data model (NOT a simple ordinal >= check, because
    bidirectional edges exist):
 
-   ```
-   Allowed edges:
-   Draft   -> Active
-   Active  -> Review
-   Active  -> Draft      (revert)
-   Review  -> Shipped    (gated -- gate enforced in WP02/WP04, not here)
-   Review  -> Active     (changes requested)
-   Shipped -> Archived
-   ```
+    ```
+    Allowed edges:
+    Draft   -> Active
+    Active  -> Review
+    Active  -> Draft      (revert)
+    Review  -> Shipped    (gated -- gate enforced in WP02/WP04, not here)
+    Review  -> Active     (changes requested)
+    Shipped -> Archived
+    ```
 
-   All other pairs return `DomainError::InvalidTransition { from, to, reason }`.
-   Self-to-self returns `DomainError::NoOpTransition(state.to_string())`.
+    All other pairs return `DomainError::InvalidTransition { from, to, reason }`.
+    Self-to-self returns `DomainError::NoOpTransition(state.to_string())`.
 
 6. Write unit tests covering ALL edges:
-   - `valid_transitions`: Draft->Active, Active->Review, Active->Draft, Review->Shipped,
-     Review->Active, Shipped->Archived all return `Ok(())`.
-   - `invalid_transitions`: Draft->Review, Draft->Shipped, Draft->Archived, Active->Shipped,
-     Active->Archived, Review->Archived, Review->Draft, Shipped->Active, Archived->Draft, etc.
-   - `noop_transition`: any state to itself returns `NoOpTransition`.
+    - `valid_transitions`: Draft->Active, Active->Review, Active->Draft, Review->Shipped,
+      Review->Active, Shipped->Archived all return `Ok(())`.
+    - `invalid_transitions`: Draft->Review, Draft->Shipped, Draft->Archived, Active->Shipped,
+      Active->Archived, Review->Archived, Review->Draft, Shipped->Active, Archived->Draft, etc.
+    - `noop_transition`: any state to itself returns `NoOpTransition`.
 
 **Validation**: `cargo test -p agileplus-domain cycle::tests::` state machine tests all green.
 
@@ -227,22 +240,22 @@ but with the specific allowed/disallowed edges from the data model.
 
 2. Define the struct (Traces to FR-C01):
 
-   ```rust
-   #[derive(Debug, Clone, Serialize, Deserialize)]
-   pub struct Cycle {
-       pub id: i64,
-       pub name: String,
-       #[serde(default, skip_serializing_if = "Option::is_none")]
-       pub description: Option<String>,
-       pub state: CycleState,
-       pub start_date: NaiveDate,
-       pub end_date: NaiveDate,
-       #[serde(default, skip_serializing_if = "Option::is_none")]
-       pub module_scope_id: Option<i64>,
-       pub created_at: DateTime<Utc>,
-       pub updated_at: DateTime<Utc>,
-   }
-   ```
+    ```rust
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct Cycle {
+        pub id: i64,
+        pub name: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
+        pub state: CycleState,
+        pub start_date: NaiveDate,
+        pub end_date: NaiveDate,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub module_scope_id: Option<i64>,
+        pub created_at: DateTime<Utc>,
+        pub updated_at: DateTime<Utc>,
+    }
+    ```
 
 3. Implement `Cycle::new(name: &str, start_date: NaiveDate, end_date: NaiveDate, module_scope_id: Option<i64>) -> Result<Self, DomainError>`.
    Validate that `end_date > start_date`; return `DomainError::Other("end_date must be after start_date".into())` on failure.
@@ -254,10 +267,10 @@ but with the specific allowed/disallowed edges from the data model.
    storage/service layer in WP02 and CLI in WP04 -- this method does NOT check it (see constraint note).
 
 5. Write unit tests:
-   - `new_cycle_valid_dates`: succeeds, state is Draft.
-   - `new_cycle_invalid_dates`: start == end returns Err; start > end returns Err.
-   - `cycle_transition_updates_state`: Draft->Active updates `state` field.
-   - `cycle_new_with_scope`: `module_scope_id` is preserved.
+    - `new_cycle_valid_dates`: succeeds, state is Draft.
+    - `new_cycle_invalid_dates`: start == end returns Err; start > end returns Err.
+    - `cycle_transition_updates_state`: Draft->Active updates `state` field.
+    - `cycle_new_with_scope`: `module_scope_id` is preserved.
 
 **Validation**: `cargo test -p agileplus-domain cycle::tests::cycle_` all green.
 
@@ -274,61 +287,61 @@ validation helper.
 
 1. Define the struct (Traces to FR-C03):
 
-   ```rust
-   #[derive(Debug, Clone, Serialize, Deserialize)]
-   pub struct CycleFeature {
-       pub cycle_id: i64,
-       pub feature_id: i64,
-       pub added_at: DateTime<Utc>,
-   }
-   ```
+    ```rust
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct CycleFeature {
+        pub cycle_id: i64,
+        pub feature_id: i64,
+        pub added_at: DateTime<Utc>,
+    }
+    ```
 
 2. Add constructor `CycleFeature::new(cycle_id: i64, feature_id: i64) -> Self` stamping `added_at`.
 
 3. Define a `CycleWithFeatures` view struct:
 
-   ```rust
-   #[derive(Debug, Clone, Serialize, Deserialize)]
-   pub struct CycleWithFeatures {
-       pub cycle: Cycle,
-       pub features: Vec<crate::domain::feature::Feature>,
-       /// Aggregate count of WPs per WpState across all assigned features.
-       pub wp_progress: WpProgressSummary,
-   }
-   ```
+    ```rust
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct CycleWithFeatures {
+        pub cycle: Cycle,
+        pub features: Vec<crate::domain::feature::Feature>,
+        /// Aggregate count of WPs per WpState across all assigned features.
+        pub wp_progress: WpProgressSummary,
+    }
+    ```
 
 4. Define `WpProgressSummary`:
 
-   ```rust
-   #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-   pub struct WpProgressSummary {
-       pub total: u32,
-       pub planned: u32,
-       pub in_progress: u32,
-       pub done: u32,
-       pub blocked: u32,
-   }
-   ```
+    ```rust
+    #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+    pub struct WpProgressSummary {
+        pub total: u32,
+        pub planned: u32,
+        pub in_progress: u32,
+        pub done: u32,
+        pub blocked: u32,
+    }
+    ```
 
-   Note: `WpState` values map to these buckets. The actual aggregation query is in WP02; this struct
-   is the shape for deserialization.
+    Note: `WpState` values map to these buckets. The actual aggregation query is in WP02; this struct
+    is the shape for deserialization.
 
 5. Implement `CycleWithFeatures::is_shippable(&self) -> bool` that returns `true` only when ALL
    `features` have `state` of `FeatureState::Validated` or `FeatureState::Shipped` (Traces to FR-C07).
    This is the domain-level gate used by `cycle transition shipped` in WP04.
 
 6. Write unit tests:
-   - `empty_cycle_is_shippable_false`: `CycleWithFeatures` with no features returns `false`
-     (empty cycle is NOT shippable -- a cycle must have at least one feature, per spec User Story 2).
+    - `empty_cycle_is_shippable_false`: `CycleWithFeatures` with no features returns `false`
+      (empty cycle is NOT shippable -- a cycle must have at least one feature, per spec User Story 2).
 
-     Actually re-read spec: "an empty Cycle in Draft with no assigned Features is a planning placeholder"
-     (edge cases section). The gate FR-C07 says "all assigned Features" -- vacuously true for zero features.
-     Design decision: return `true` if `features.is_empty()` since there are no blocking features.
-     Document this in a comment.
+        Actually re-read spec: "an empty Cycle in Draft with no assigned Features is a planning placeholder"
+        (edge cases section). The gate FR-C07 says "all assigned Features" -- vacuously true for zero features.
+        Design decision: return `true` if `features.is_empty()` since there are no blocking features.
+        Document this in a comment.
 
-   - `all_validated_is_shippable`: all features in Validated -> true.
-   - `all_shipped_is_shippable`: all features in Shipped -> true.
-   - `mixed_states_not_shippable`: one feature in Implementing -> false.
+    - `all_validated_is_shippable`: all features in Validated -> true.
+    - `all_shipped_is_shippable`: all features in Shipped -> true.
+    - `mixed_states_not_shippable`: one feature in Implementing -> false.
 
 **Validation**: `cargo test -p agileplus-domain cycle::tests::shippable` green.
 
@@ -340,6 +353,7 @@ validation helper.
 Module/Cycle operations.
 
 **Files**:
+
 - MODIFIED: `crates/agileplus-domain/src/domain/feature.rs`
 - MODIFIED: `crates/agileplus-domain/src/error.rs`
 - MODIFIED: `crates/agileplus-domain/src/domain/mod.rs`
@@ -348,63 +362,64 @@ Module/Cycle operations.
 
 1. In `feature.rs`, add to the `Feature` struct after the `labels` field:
 
-   ```rust
-   /// Module that owns this feature (strict ownership, one per feature).
-   /// Null for features that predate module support or are unassigned.
-   /// Traces to: FR-M03
-   #[serde(default, skip_serializing_if = "Option::is_none")]
-   pub module_id: Option<i64>,
-   ```
+    ```rust
+    /// Module that owns this feature (strict ownership, one per feature).
+    /// Null for features that predate module support or are unassigned.
+    /// Traces to: FR-M03
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub module_id: Option<i64>,
+    ```
 
 2. In `Feature::new(...)`, initialise `module_id: None`.
 
 3. In `error.rs`, add new variants using `thiserror`:
 
-   ```rust
-   #[error("module not found: {0}")]
-   ModuleNotFound(String),
+    ```rust
+    #[error("module not found: {0}")]
+    ModuleNotFound(String),
 
-   #[error("cycle not found: {0}")]
-   CycleNotFound(String),
+    #[error("cycle not found: {0}")]
+    CycleNotFound(String),
 
-   #[error("circular module reference: cannot set {child} as parent of {ancestor}")]
-   CircularModuleRef { child: String, ancestor: String },
+    #[error("circular module reference: cannot set {child} as parent of {ancestor}")]
+    CircularModuleRef { child: String, ancestor: String },
 
-   #[error("module has dependents: {0}")]
-   ModuleHasDependents(String),
+    #[error("module has dependents: {0}")]
+    ModuleHasDependents(String),
 
-   #[error("feature not in module scope: feature {feature_slug} is not owned by or tagged to module {module_slug}")]
-   FeatureNotInModuleScope { feature_slug: String, module_slug: String },
+    #[error("feature not in module scope: feature {feature_slug} is not owned by or tagged to module {module_slug}")]
+    FeatureNotInModuleScope { feature_slug: String, module_slug: String },
 
-   #[error("cycle gate not met: {0}")]
-   CycleGateNotMet(String),
-   ```
+    #[error("cycle gate not met: {0}")]
+    CycleGateNotMet(String),
+    ```
 
 4. In `domain/mod.rs`, add:
 
-   ```rust
-   pub mod cycle;
-   pub mod module;
-   ```
+    ```rust
+    pub mod cycle;
+    pub mod module;
+    ```
 
-   Export key types at crate root in `lib.rs` if the crate follows a re-export pattern (check
-   existing `lib.rs` -- if there is a `pub use domain::feature::Feature;` style, add corresponding
-   uses for `Module`, `Cycle`, `CycleState`, etc.).
+    Export key types at crate root in `lib.rs` if the crate follows a re-export pattern (check
+    existing `lib.rs` -- if there is a `pub use domain::feature::Feature;` style, add corresponding
+    uses for `Module`, `Cycle`, `CycleState`, etc.).
 
 5. Verify existing `Feature` tests still pass (no behavior change, only new optional field with
    default).
 
 6. Add unit test `feature_module_id_defaults_to_none`:
 
-   ```rust
-   let f = Feature::new("f", "F", [0u8; 32], None);
-   assert_eq!(f.module_id, None);
-   ```
+    ```rust
+    let f = Feature::new("f", "F", [0u8; 32], None);
+    assert_eq!(f.module_id, None);
+    ```
 
 7. Add serde roundtrip test `feature_without_module_id_deserialises`: construct minimal JSON
    without `module_id` key and verify it deserialises successfully with `module_id = None`.
 
 **Validation**:
+
 - `cargo test -p agileplus-domain` -- ALL tests green (existing + new).
 - `cargo clippy -p agileplus-domain -- -D warnings` zero warnings.
 

@@ -26,21 +26,21 @@ $ git rev-list --count jundot-omlx/main ^HEAD
 
 ## Members in Scope
 
-| Repo | Default | Branches | Last Push | Local Clone |
-|---|---|---|---|---|
-| `phenotype-omlx` | main | 30 | 2026-07-29 | ✅ `/repos/phenotype-omlx` |
-| `zz-archive-phenotype-omlx-recovered` | main | 1 | 2026-07-15 | ❌ (404) |
-| `zz-archive-phenotype-omlx-temp` | main | 23 | 2026-07-18 | remote `temp` on local ✅ |
-| `zz-archive-phenotype-omlx-tmp` | main | 29 | 2026-07-22 | remote `tmp` on local ✅ |
+| Repo                                  | Default | Branches | Last Push  | Local Clone                |
+| ------------------------------------- | ------- | -------- | ---------- | -------------------------- |
+| `phenotype-omlx`                      | main    | 30       | 2026-07-29 | ✅ `/repos/phenotype-omlx` |
+| `zz-archive-phenotype-omlx-recovered` | main    | 1        | 2026-07-15 | ❌ (404)                   |
+| `zz-archive-phenotype-omlx-temp`      | main    | 23       | 2026-07-18 | remote `temp` on local ✅  |
+| `zz-archive-phenotype-omlx-tmp`       | main    | 29       | 2026-07-22 | remote `tmp` on local ✅   |
 
 ## MIGRATE — semantic content mapping
 
-| Source | Target | Rule | Notes |
-|---|---|---|---|
-| `zz-archive-phenotype-omlx-recovered` | retired | receipt | 1 branch, snapshot at 2026-07-15 |
-| `zz-archive-phenotype-omlx-temp` | `phenotype-omlx` (history receipt) | snapshot | 23 branches; OID-equal to omlx at 2026-07-18 |
-| `zz-archive-phenotype-omlx-tmp` | `phenotype-omlx` (history receipt) | snapshot | 29 branches; OID-equal at 2026-07-22 |
-| `jundot/omlx` (upstream) | `phenotype-omlx` (cherry-pick) | **CRITICAL** | 2061 upstream commits not in local; no merge-base means standard rebase impossible |
+| Source                                | Target                             | Rule         | Notes                                                                              |
+| ------------------------------------- | ---------------------------------- | ------------ | ---------------------------------------------------------------------------------- |
+| `zz-archive-phenotype-omlx-recovered` | retired                            | receipt      | 1 branch, snapshot at 2026-07-15                                                   |
+| `zz-archive-phenotype-omlx-temp`      | `phenotype-omlx` (history receipt) | snapshot     | 23 branches; OID-equal to omlx at 2026-07-18                                       |
+| `zz-archive-phenotype-omlx-tmp`       | `phenotype-omlx` (history receipt) | snapshot     | 29 branches; OID-equal at 2026-07-22                                               |
+| `jundot/omlx` (upstream)              | `phenotype-omlx` (cherry-pick)     | **CRITICAL** | 2061 upstream commits not in local; no merge-base means standard rebase impossible |
 
 ## STATE — divergence stats
 
@@ -58,22 +58,28 @@ Local-only commits belong mostly to: `crates/agileplus/sessions/`, `crates/*harn
 Because the fork has no merge-base with upstream, the path forward is **selective cherry-pick** from upstream:
 
 ### Option A — Replace fork with upstream-fresh fork (LOSSY)
+
 1. Drop `phenotype-omlx` repo entirely.
 2. Re-fork `jundot/omlx` clean.
 3. **Migrate the 330 local-unique commits as patch series.**
 4. Re-push from the new fork.
+
 - **Risk**: low; cherry-pickable. All 330 local commits preserved in their own branch.
 
 ### Option B — Cherry-pick all upstream commits onto local (EXPENSIVE)
+
 1. Make local HEAD a branch `feat/upstream-replay-2026-07-29`.
 2. Cherry-pick 2061 upstream commits one wave at a time.
 3. Resolve ~1000+ conflicts across `perf-core/`, `metal/`, `mlx-vlm/`.
+
 - **Risk**: **very high**; conflicts exponential. Expected weeks of work.
 
 ### Option C — Build a "synthesized" history (PARTIAL)
+
 1. Pick a stable upstream tag (e.g., most recent at fork-time) as base.
 2. Cherry-pick only the upstream changes since fork.
 3. Reconcile locally.
+
 - **Risk**: medium; depends on tag selection.
 
 ### Recommended: **Option A**
@@ -94,10 +100,12 @@ The fork has been so heavily customized that re-forking upstream clean and carry
 ## PROPOSED MUTATIONS (NOT EXECUTED — pending approval)
 
 ### Phase 1: snapshot preservation (no mutation)
+
 1. Tag `phenotype-omlx` HEAD as `pre-upstream-sync-2026-07-29` (annotation only).
 2. Verify all 30 branches on `origin` are recoverable from `/repos/phenotype-omlx` local clone. ✅ already verified.
 
 ### Phase 2: re-fork strategy (Option A)
+
 1. Drop local `jundot-omlx` remote (no longer needed).
 2. Re-fork `jundot/omlx` to `<REDACTED>/phenotype-omlx-v2` (or rename after coop).
 3. Cherry-pick the 330 local-unique commits onto the new fork.
@@ -105,6 +113,7 @@ The fork has been so heavily customized that re-forking upstream clean and carry
 5. Old `phenotype-omlx` archived with `archived: true`, retained as receipt.
 
 ### Phase 3: SQUASH (per-group approval)
+
 1. Squash `phenotype-omlx-v2` (or whichever survives) to 1 commit on `main`.
 
 ## LOCAL CHECKOUT COVERAGE
@@ -115,6 +124,7 @@ The fork has been so heavily customized that re-forking upstream clean and carry
 ## RISK CLASS
 
 **HIGHEST OF ALL GROUPS.** Triple-digit cherry-pick surface area. Conflict heat-map (predictions):
+
 - `crates/agileplus/perf-core/` — moderate (mostly local additions)
 - `crates/agileplus/metal/` — high (both local and upstream have heavy edits)
 - `crates/agileplus/mlx-vlm/` — high (both sides have evolved)
@@ -123,7 +133,7 @@ The fork has been so heavily customized that re-forking upstream clean and carry
 
 ## STATUS: ✅ STRATEGY C EXECUTED (2026-07-29) — AWAITING CONFIRMATION
 
-**Operator directive:** *"yes to 1\2 for pending decision C\A\B in that order such that you lose nothing"*
+**Operator directive:** _"yes to 1\2 for pending decision C\A\B in that order such that you lose nothing"_
 
 **Strategy C executed:** Synthesize history from a stable upstream tag. Findings:
 
@@ -144,6 +154,7 @@ Local `phenotype-omlx` has **68 tags** (v0.1.0 → v0.2.24, plus 4 post-releases
 ### C.3 — Upstream branch inventory (current activity)
 
 Upstream has **18 branches**:
+
 - `main` (HEAD: 56bad0e29587)
 - `feat/custom-kernel-packaging`, `feat/deepseek-v4-metal-kernels`, `feat/glm52-native-*` (×3), `feat/index-cache`, `feat/laguna-s21`, `feat/mac-welcome-onboarding-ui`, `feat/minimax-m3-mlx-vlm-pr`, `feat/oqe-imatrix-pr`, `feat/qwen35-prefill-kernels`, `feat/speculative-decoding`
 - `feature/i18n-zh-TW`
@@ -156,14 +167,15 @@ To synthesize a merge-base from stable tag v0.5.3:
 
 1. **Read-only analysis (executed today):** tag inventory ✅, branch inventory ✅
 2. **Next step (awaiting confirmation):**
-   - Fetch upstream tag `v0.5.3` into local repo as `upstream/v0.5.3-anchor-2026-07-29` (no force-push, just a new local branch pointing at the upstream tag).
-   - Create a new local branch `synthesized-base-2026-07-29` rooted at v0.5.3.
-   - This provides a **virtual merge-base** that downstream Strategies A and B can use.
-   - No existing branch is rewritten. No force-push. No remote push.
+    - Fetch upstream tag `v0.5.3` into local repo as `upstream/v0.5.3-anchor-2026-07-29` (no force-push, just a new local branch pointing at the upstream tag).
+    - Create a new local branch `synthesized-base-2026-07-29` rooted at v0.5.3.
+    - This provides a **virtual merge-base** that downstream Strategies A and B can use.
+    - No existing branch is rewritten. No force-push. No remote push.
 
 ### C.5 — Lossless guarantee
 
 All existing branches remain intact:
+
 - `phenotype-omlx/main` (330 commits ahead of v0.5.3) — unchanged
 - `phenotype-omlx/*` (29 other branches) — unchanged
 - `temp/*`, `tmp/*` (archive snapshots) — unchanged
@@ -175,6 +187,7 @@ All existing branches remain intact:
 ## NEXT STEP — AWAITING CONFIRMATION
 
 Reply with one of:
+
 - `execute-C-fetch`: proceed to fetch upstream v0.5.3 into local + create `synthesized-base-2026-07-29` branch (read-only, no force-push)
 - `hold`: pause here; audit findings sufficient
 - `switch-to-A`: skip Strategy C, jump to Strategy A (re-fork clean + cherry-pick 330 forwards)

@@ -1,51 +1,51 @@
 name: Private Desktop Deploy Contract
 on:
-  push:
-    branches: [spec/mature-product-contract-v2]
-    paths:
-      - "Cargo.toml"
-      - "deploy/selfhost/**"
-      - "scripts/verify-private-deploy.py"
-      - "scripts/backup-agileplus-sqlite.py"
-      - "tests/ops/test_agileplus_sqlite_backup.py"
-      - "tests/ops/test_operator_gateway.py"
-      - ".github/workflows/private-deploy-contract.yml"
-  pull_request:
-    paths:
-      - "Cargo.toml"
-      - "deploy/selfhost/**"
-      - "scripts/verify-private-deploy.py"
-      - "scripts/backup-agileplus-sqlite.py"
-      - "tests/ops/**"
-      - ".github/workflows/private-deploy-contract.yml"
+    push:
+        branches: [spec/mature-product-contract-v2]
+        paths:
+            - "Cargo.toml"
+            - "deploy/selfhost/**"
+            - "scripts/verify-private-deploy.py"
+            - "scripts/backup-agileplus-sqlite.py"
+            - "tests/ops/test_agileplus_sqlite_backup.py"
+            - "tests/ops/test_operator_gateway.py"
+            - ".github/workflows/private-deploy-contract.yml"
+    pull_request:
+        paths:
+            - "Cargo.toml"
+            - "deploy/selfhost/**"
+            - "scripts/verify-private-deploy.py"
+            - "scripts/backup-agileplus-sqlite.py"
+            - "tests/ops/**"
+            - ".github/workflows/private-deploy-contract.yml"
 permissions:
-  contents: read
+    contents: read
 jobs:
-  static-deploy-contract:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v7
-      - name: Validate resolved Compose and host Caddy boundary
-        run: python3 scripts/verify-private-deploy.py
-      - name: Parse operator-alpha Caddy route with real Caddy
-        run: |
-          HASH="$(docker run --rm caddy:2.8-alpine caddy hash-password --plaintext smoke-only-password)"
-          docker run --rm \
-            -e AGILEPLUS_OPERATOR_USERNAME=smoke \
-            -e AGILEPLUS_OPERATOR_PASSWORD_HASH="$HASH" \
-            -e AGILEPLUS_API_KEY=smoke-test-only \
-            -e AGILEPLUS_FRONTEND_UPSTREAM_HOST=static-smoke.vercel.app \
-            -v "$PWD/deploy/selfhost/Caddy.operator-alpha.caddy:/etc/caddy/Caddyfile:ro" \
-            caddy:2.8-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
-      - name: Verify SQLite WAL backup and offline restore behavior
-        run: python3 -m unittest discover -s tests/ops -p 'test_agileplus_sqlite_backup.py' -v
-      - name: Exercise real operator gateway authentication and CSRF boundary
-        run: |
-          CONTAINER_ID="$(docker create caddy:2.8-alpine)"
-          trap 'docker rm "$CONTAINER_ID"' EXIT
-          docker cp "$CONTAINER_ID:/usr/bin/caddy" /tmp/agileplus-caddy
-          chmod +x /tmp/agileplus-caddy
-          CADDY_BIN=/tmp/agileplus-caddy python3 -m unittest discover -s tests/ops -p 'test_operator_gateway.py' -v
-      - name: Declare evidence boundary
-        run: echo "Static deploy configuration validated; NO live DNS/TLS/tailnet/browser claim."
+    static-deploy-contract:
+        runs-on: ubuntu-24.04
+        timeout-minutes: 5
+        steps:
+            - uses: actions/checkout@v7
+            - name: Validate resolved Compose and host Caddy boundary
+              run: python3 scripts/verify-private-deploy.py
+            - name: Parse operator-alpha Caddy route with real Caddy
+              run: |
+                  HASH="$(docker run --rm caddy:2.8-alpine caddy hash-password --plaintext smoke-only-password)"
+                  docker run --rm \
+                    -e AGILEPLUS_OPERATOR_USERNAME=smoke \
+                    -e AGILEPLUS_OPERATOR_PASSWORD_HASH="$HASH" \
+                    -e AGILEPLUS_API_KEY=smoke-test-only \
+                    -e AGILEPLUS_FRONTEND_UPSTREAM_HOST=static-smoke.vercel.app \
+                    -v "$PWD/deploy/selfhost/Caddy.operator-alpha.caddy:/etc/caddy/Caddyfile:ro" \
+                    caddy:2.8-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+            - name: Verify SQLite WAL backup and offline restore behavior
+              run: python3 -m unittest discover -s tests/ops -p 'test_agileplus_sqlite_backup.py' -v
+            - name: Exercise real operator gateway authentication and CSRF boundary
+              run: |
+                  CONTAINER_ID="$(docker create caddy:2.8-alpine)"
+                  trap 'docker rm "$CONTAINER_ID"' EXIT
+                  docker cp "$CONTAINER_ID:/usr/bin/caddy" /tmp/agileplus-caddy
+                  chmod +x /tmp/agileplus-caddy
+                  CADDY_BIN=/tmp/agileplus-caddy python3 -m unittest discover -s tests/ops -p 'test_operator_gateway.py' -v
+            - name: Declare evidence boundary
+              run: echo "Static deploy configuration validated; NO live DNS/TLS/tailnet/browser claim."

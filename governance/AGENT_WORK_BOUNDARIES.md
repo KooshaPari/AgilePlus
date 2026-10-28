@@ -5,6 +5,7 @@ Agents work against accepted FRs and a bounded execution frontier.
 Every assignment identifies FRs, parent feature/journey, stage target, dependencies, work package, claim/worktree, source scope, forbidden scope, acceptance/oracle intent, evidence and growth disposition.
 
 Agents MUST NOT:
+
 - invent accepted product scope;
 - bypass claims/leases or another worker's dirty state;
 - weaken their own acceptance/gate to pass;

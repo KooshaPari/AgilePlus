@@ -23,19 +23,20 @@ agileplus specify \
 ```
 
 This creates `kitty-specs/001-oauth2-auth/spec.md`. The spec includes:
+
 - **Functional Requirements** — what the feature does
-  - Users can sign up via Google OAuth
-  - Users can sign up via GitHub OAuth
-  - Sessions persist across browser restarts
-  - Logout clears all sessions
+    - Users can sign up via Google OAuth
+    - Users can sign up via GitHub OAuth
+    - Sessions persist across browser restarts
+    - Logout clears all sessions
 - **User Scenarios** — real-world workflows
-  - User visits login page, clicks "Sign in with Google", is redirected to Google
-  - Returns to app authenticated with user profile
-  - Navigates away and returns; session is still valid
+    - User visits login page, clicks "Sign in with Google", is redirected to Google
+    - Returns to app authenticated with user profile
+    - Navigates away and returns; session is still valid
 - **Acceptance Criteria** — measurable success signals
-  - Both OAuth flows complete in <2 seconds
-  - Session valid for 30 days
-  - Logout is instant (no database lag)
+    - Both OAuth flows complete in <2 seconds
+    - Session valid for 30 days
+    - Logout is instant (no database lag)
 
 ### 2. Research the Codebase
 

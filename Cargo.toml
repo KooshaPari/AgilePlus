@@ -3,6 +3,12 @@ resolver = "2"
 # Active members — only crates/libs with actual source files.
 # Remaining scaffolding (44 crates, 19 libs) tracked but excluded from
 # workspace until source is implemented. See: kitty-specs/003-agileplus-platform-completion.
+# Exclude `rust/` — a leftover scaffolded sub-workspace that also defines
+# `agileplus-proto`, causing `cargo-semver-checks` (which walks the root
+# path and ignores the `members` list) to fail with "package
+# `agileplus-proto` is ambiguous: it is defined by in multiple manifests".
+# See subagent fox CI diagnosis 2026-10-18 for PRs #1156/#1157/#1161/#1162/#1163/#1164.
+exclude = ["rust"]
 members = [
   "tests/e2e", # installed-CLI round-trip; workflow runs this crate from its manifest directory
   "tests/e2e-desktop", # E2E tests for the Tauri desktop app (DB, CLI bridge, tray, config)
@@ -77,6 +83,10 @@ targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-
 install-path = "CARGO_HOME"
 # Which actions to run on pull requests
 pr-run-mode = "plan"
+# Workflows are hand-maintained (persist-credentials hardening); skip dist plan freshness check
+# Also covers the release-lifecycle-v2 R6 ci-gate comment block and the actions/checkout
+# @v7 security bump, which cargo-dist v0.33.0's template pre-dates.
+allow-dirty = ["ci"]
 # Whether to install an updater program
 install-updater = false
 # Build only the required packages, and individually

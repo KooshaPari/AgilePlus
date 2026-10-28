@@ -15,9 +15,9 @@ audience: [developers, agents, pms, sdk]
 ---
 ```
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `title` | string | Display title |
+| Field      | Type     | Description                                                 |
+| ---------- | -------- | ----------------------------------------------------------- |
+| `title`    | string   | Display title                                               |
 | `audience` | string[] | Module filter targets: `agents`, `developers`, `pms`, `sdk` |
 
 ## Optional Fields
@@ -34,24 +34,24 @@ traces_to: ["FR-001", "ADR-023", "WP01"]
 ---
 ```
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `type` | string | Document type for taxonomy |
-| `status` | string | Lifecycle state |
-| `layer` | number | PhenoDocs layer (0–4) |
-| `date` | string | Creation or last-modified date |
-| `author` | string | Who created this document |
+| Field        | Type     | Description                         |
+| ------------ | -------- | ----------------------------------- |
+| `type`       | string   | Document type for taxonomy          |
+| `status`     | string   | Lifecycle state                     |
+| `layer`      | number   | PhenoDocs layer (0–4)               |
+| `date`       | string   | Creation or last-modified date      |
+| `author`     | string   | Who created this document           |
 | `relates_to` | string[] | Bidirectional links to related docs |
-| `traces_to` | string[] | Traceability links (FRs, ADRs, WPs) |
+| `traces_to`  | string[] | Traceability links (FRs, ADRs, WPs) |
 
 ## Audience Values
 
-| Value | Who | What They See |
-|-------|-----|---------------|
-| `agents` | AI coding agents | Prompt formats, constraints, harness integration |
-| `developers` | Human developers | Contributing, architecture, testing, extending |
-| `pms` | Project managers | Roadmap, retrospectives, status, planning |
-| `sdk` | SDK/API consumers | Port traits, gRPC API, MCP tools |
+| Value        | Who               | What They See                                    |
+| ------------ | ----------------- | ------------------------------------------------ |
+| `agents`     | AI coding agents  | Prompt formats, constraints, harness integration |
+| `developers` | Human developers  | Contributing, architecture, testing, extending   |
+| `pms`        | Project managers  | Roadmap, retrospectives, status, planning        |
+| `sdk`        | SDK/API consumers | Port traits, gRPC API, MCP tools                 |
 
 ## Filtering Behavior
 

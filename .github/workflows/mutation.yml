@@ -34,15 +34,38 @@ jobs:
     mutants:
         name: cargo-mutants (agileplus-domain)
         runs-on: ubuntu-latest
-        # 180m still cancelled the job. Run 38830178393 (c505e863), job
-        # 116746915954: "Found 653 mutants" at 00:34:52Z, still scoring
-        # evaluation.rs at 03:33:59Z, then "The operation was canceled" at
-        # 03:34:26Z. Cleanup killed cargo-mutants and an in-flight
-        # credentials_file_store_integration_test. The 425/425 artifact is a
-        # mid-run snapshot, not a finished campaign. Tail pace is ~38s per
-        # mutant, so the ~228 not yet finished need ~144m (324m total).
-        # 360 is the GitHub-hosted job maximum: about 36m of slack at that
-        # pace, and the ceiling if a later mutant runs long.
+        # Keep the GitHub-hosted maximum of 360 minutes. The campaign does not
+        # fit in less, so lowering the ceiling cannot make this check pass --
+        # it only terminates the campaign earlier with strictly less work done
+        # and still no published report.
+        #
+        # Evidence:
+        #  * Run 38830178393 (c505e863), job 116746915954: "Found 653 mutants"
+        #    at 00:34:52Z, still scoring evaluation.rs at 03:33:59Z, then "The
+        #    operation was canceled" at 03:34:26Z; the job record shows
+        #    started_at 2026-10-16T00:33:52Z, completed_at 03:34:38Z,
+        #    conclusion "cancelled" -- i.e. it was killed by the then-180m
+        #    timeout, and the 03:34Z timestamp is the wall-clock cancellation
+        #    time, not an elapsed duration. Cleanup killed
+        #    cargo-mutants and an in-flight
+        #    credentials_file_store_integration_test. The 425/425 artifact is a
+        #    mid-run snapshot, not a finished campaign. Tail pace is ~38s per
+        #    mutant, so the ~228 not yet finished need ~144m more (324m total).
+        #  * Run 40458764122 (main push, 2026-10-27): cargo-mutants job
+        #    2026-10-27T06:03:43Z -> 11:32:10Z = 5h28m27s, ended failed with
+        #    neither a job log nor a mutants.out artifact, i.e. the runner was
+        #    lost before the "List mutation results" / "Upload mutation report"
+        #    steps could run. The campaign was still going at 328 minutes.
+        #  * Run 40459020348 (dependabot/cargo/gix-0.90.0, 2026-10-27):
+        #    cargo-mutants job 2026-10-27T06:08:57Z -> 11:38:36Z = 5h29m39s,
+        #    same failure shape. Still going at 329 minutes.
+        # So the workload needs more than 329 minutes of wall clock and 360
+        # minutes is the only value that leaves room for it to finish.
+        #
+        # Making this check green therefore requires scoping or sharding the
+        # campaign (fewer mutants per job, or a non-blocking job), which is a
+        # separate change with its own risk. See CF-2 in
+        # docs/sessions/20261017-state-forward-docket/.
         timeout-minutes: 360
         steps:
             - uses: actions/checkout@v7

@@ -18,11 +18,13 @@ deterministic `ChunkId(u64)`. A borrowed `ChunkView<'a, T>` provides zero-copy
 access to the voxel slice plus the stable `ChunkId` for meshing.
 
 **Acceptance criteria:**
+
 - `Chunk::default()` produces exactly 4096 voxels all set to `T::default()`.
 - `CHUNK_VOXELS == CHUNK_EDGE³` is enforced at compile+test time.
 - `ChunkView` carries a valid `&[T]` of length `CHUNK_VOXELS`.
 
 **Traceability:**
+
 - PR #1 (format), PR #3 (generic parameterisation)
 - In-code: `FR-PHENO-VOXEL-CHUNK-000`, `FR-PHENO-VOXEL-CHUNK-001` (`src/chunk.rs`)
 
@@ -40,6 +42,7 @@ single run (16 bytes for `u8`). Type-size mismatches are detected before reading
 voxel data.
 
 **Acceptance criteria:**
+
 - Empty (uniform-default) chunk serializes to exactly 16 bytes for `T=u8`.
 - Fully dense alternating chunk round-trips losslessly (4096 runs of length 1).
 - Bad magic returns `io::ErrorKind::InvalidData`.
@@ -47,6 +50,7 @@ voxel data.
 - Run-length sum != `CHUNK_VOXELS` returns an error.
 
 **Traceability:**
+
 - PR #2 (RLE implementation)
 - In-code: `FR-PHENO-VOXEL-SERIAL-000..003` (`src/serial.rs`)
 
@@ -64,11 +68,13 @@ be deterministic for a given `(chunk, lod)` pair. The `CubicVoxel` sub-trait
 `MaterialId` is provided.
 
 **Acceptance criteria:**
+
 - `Mesher::VoxelKind` prevents mixing voxel types at the trait boundary (compile-time enforcement).
 - Any `T: CubicVoxel` can be wired to `CubicMesher<T>` or `GreedyMesher<T>`.
 - Determinism: calling `mesh_chunk` twice on equal `(chunk, lod)` inputs returns bit-identical buffers.
 
 **Traceability:**
+
 - PR #3 (VoxelKind associated type + generic CubicMesher)
 - In-code: `FR-PHENO-VOXEL-CUBIC-002`, `FR-PHENO-VOXEL-CUBIC-011` (`src/cubic_mesher.rs`)
 
@@ -85,6 +91,7 @@ carries `position`, `normal`, `uv`, and `material` from the voxel's `CubicVoxel`
 impl. Index buffer is consistent (no out-of-range references).
 
 **Acceptance criteria:**
+
 - Single solid voxel in empty chunk → exactly 6 faces (12 triangles).
 - Two adjacent solid voxels → shared face suppressed (10 faces).
 - Fully surrounded voxel (all 6 neighbours solid) → 0 faces.
@@ -93,6 +100,7 @@ impl. Index buffer is consistent (no out-of-range references).
 - `indices` only reference valid vertex slots.
 
 **Traceability:**
+
 - PR #3 (generic CubicMesher)
 - In-code: `FR-PHENO-VOXEL-CUBIC-001..010` (`src/cubic_mesher.rs`)
 
@@ -109,6 +117,7 @@ extension). One quad (2 triangles) is emitted per rectangle. Implements the same
 `Mesher` trait as `CubicMesher`.
 
 **Acceptance criteria:**
+
 - Produces the same visible surface (watertight; no T-junctions on flat regions)
   as `CubicMesher` for identical inputs.
 - Triangle count ≤ cubic count for any chunk (regression guard — see NFR-VOXEL-002).
@@ -117,6 +126,7 @@ extension). One quad (2 triangles) is emitted per rectangle. Implements the same
 - `ao` field of produced `MeshBuffer` is all-3 (fully lit; see PLANNED section).
 
 **Traceability:**
+
 - PR #5 (GreedyMesher), PR #6 (benchmark + regression guard)
 - In-code: `FR-PHENO-VOXEL-*` tests in `src/greedy_mesher.rs`
 
@@ -133,6 +143,7 @@ side neighbours solid) to 3 (fully lit, no neighbours). Formula:
 `ao.len()` always equals `vertices.len()`.
 
 **Acceptance criteria:**
+
 - Fully exposed single voxel → all AO values = 3.
 - `ao.len() == vertices.len()` for any mesh output.
 - Triangle count is unchanged relative to non-AO cubic output.
@@ -141,6 +152,7 @@ side neighbours solid) to 3 (fully lit, no neighbours). Formula:
 - Empty chunk → `ao` is empty (all-3 trivially).
 
 **Traceability:**
+
 - PR #7 (per-vertex AO)
 - In-code: `FR-PHENO-VOXEL-CUBIC-AO-001..005` (`src/cubic_mesher.rs`)
 
@@ -158,6 +170,7 @@ side neighbours solid) to 3 (fully lit, no neighbours). Formula:
 GPU VBO upload.
 
 **Acceptance criteria:**
+
 - `to_interleaved().len() == vertex_count() * 9`.
 - Interleaved AO values at offset 8 of each stride match `ao()`.
 - Interleaved positions match `vertices[i].position`.
@@ -165,6 +178,7 @@ GPU VBO upload.
 - All accessor counts equal `vertices.len()` / `indices.len()`.
 
 **Traceability:**
+
 - PR #8 (engine-agnostic export API)
 - In-code: `FR-PHENO-VOXEL-MESH-EXPORT-000..005` (`src/mesh.rs`)
 
@@ -182,6 +196,7 @@ parent-level `Uniform` node. Passes repeat until no further collapses occur.
 Returns total nodes removed. Operation is idempotent.
 
 **Acceptance criteria:**
+
 - 8 uniform siblings → 8 nodes removed, 1 parent node inserted.
 - Mixed-value group → 0 nodes removed.
 - Idempotent: second call on compacted tree → 0 removed, state unchanged.
@@ -190,6 +205,7 @@ Returns total nodes removed. Operation is idempotent.
 - Query semantics preserved: parent node carries merged material.
 
 **Traceability:**
+
 - PR #9 (SVO node compaction)
 - In-code: `FR-PHENO-VOXEL-OCTREE-000..015` (`src/octree.rs`)
 
@@ -206,6 +222,7 @@ across implementations. Idempotent writes (same value already present) do not em
 events. `DirtyChunkEvent` and `WriteSeq` are `Serialize/Deserialize`.
 
 **Acceptance criteria:**
+
 - `WriteSeq::next()` is strictly monotonic.
 - Two events with different `(chunk_id, write_seq)` sort predictably.
 - Idempotent write (same value) → no event emitted.
@@ -213,6 +230,7 @@ events. `DirtyChunkEvent` and `WriteSeq` are `Serialize/Deserialize`.
   bit-identical chunk state.
 
 **Traceability:**
+
 - PR #2 (introduced dirty events), PR #9 (world compaction integration)
 - In-code: `FR-PHENO-VOXEL-DELTA-000..001` (`src/delta.rs`),
   `FR-PHENO-VOXEL-WORLD-001..016` (`src/world.rs`)
@@ -293,32 +311,32 @@ caused by prose comment blocks (not executable code) are excluded. CI enforces
 
 ## Test-ID to Catalog Mapping
 
-| In-code test series | Catalog FR/NFR |
-|---|---|
-| `FR-PHENO-VOXEL-CHUNK-000..001` | FR-VOXEL-001 |
-| `FR-PHENO-VOXEL-SERIAL-000..003` | FR-VOXEL-002 |
-| `FR-PHENO-VOXEL-CUBIC-001..011` | FR-VOXEL-003, FR-VOXEL-004, NFR-VOXEL-004 |
-| `FR-PHENO-VOXEL-CUBIC-AO-001..005` | FR-VOXEL-006 |
-| `FR-PHENO-VOXEL-MESH-000`, `MESH-EXPORT-000..005` | FR-VOXEL-007 |
-| `FR-PHENO-VOXEL-OCTREE-000..015` | FR-VOXEL-008 |
-| `FR-PHENO-VOXEL-DELTA-000..001` | FR-VOXEL-009 |
-| `FR-PHENO-VOXEL-WORLD-001..016` | FR-VOXEL-009, NFR-VOXEL-001 |
-| `FR-PHENO-VOXEL-COORD-000..001` | (coordinate contract, underpins FR-VOXEL-001/009) |
-| `FR-PHENO-VOXEL-LOD-000..006` | (LOD selection, underpins FR-VOXEL-004/005) |
-| `FR-PHENO-VOXEL-MATERIAL-000` | (palette, underpins FR-VOXEL-004/005) |
-| `FR-PHENO-VOXEL-SHAPEHINT-001..009` | (shape-hint registry, not yet in catalog — see PLANNED) |
-| `FR-PHENO-VOXEL-SPRITEVOX-001..006` | (sprite voxelizer, not yet in catalog — see PLANNED) |
+| In-code test series                               | Catalog FR/NFR                                          |
+| ------------------------------------------------- | ------------------------------------------------------- |
+| `FR-PHENO-VOXEL-CHUNK-000..001`                   | FR-VOXEL-001                                            |
+| `FR-PHENO-VOXEL-SERIAL-000..003`                  | FR-VOXEL-002                                            |
+| `FR-PHENO-VOXEL-CUBIC-001..011`                   | FR-VOXEL-003, FR-VOXEL-004, NFR-VOXEL-004               |
+| `FR-PHENO-VOXEL-CUBIC-AO-001..005`                | FR-VOXEL-006                                            |
+| `FR-PHENO-VOXEL-MESH-000`, `MESH-EXPORT-000..005` | FR-VOXEL-007                                            |
+| `FR-PHENO-VOXEL-OCTREE-000..015`                  | FR-VOXEL-008                                            |
+| `FR-PHENO-VOXEL-DELTA-000..001`                   | FR-VOXEL-009                                            |
+| `FR-PHENO-VOXEL-WORLD-001..016`                   | FR-VOXEL-009, NFR-VOXEL-001                             |
+| `FR-PHENO-VOXEL-COORD-000..001`                   | (coordinate contract, underpins FR-VOXEL-001/009)       |
+| `FR-PHENO-VOXEL-LOD-000..006`                     | (LOD selection, underpins FR-VOXEL-004/005)             |
+| `FR-PHENO-VOXEL-MATERIAL-000`                     | (palette, underpins FR-VOXEL-004/005)                   |
+| `FR-PHENO-VOXEL-SHAPEHINT-001..009`               | (shape-hint registry, not yet in catalog — see PLANNED) |
+| `FR-PHENO-VOXEL-SPRITEVOX-001..006`               | (sprite voxelizer, not yet in catalog — see PLANNED)    |
 
 ---
 
 ## Gaps / PLANNED
 
-| ID | Title | Notes |
-|---|---|---|
-| PLAN-VOXEL-001 | Greedy-mesher per-vertex AO | `MeshBuffer.ao` all-3 for GreedyMesher; `TODO` noted in `src/mesh.rs` |
-| PLAN-VOXEL-002 | Bevy adapter crate | `phenotype-voxel-bevy` consuming `MeshBuffer.to_interleaved()`; zero engine deps in core (NFR-VOXEL-003) |
-| PLAN-VOXEL-003 | Performance under load | No bench for world-scale writes or SVO traversal; Criterion suite covers mesher only |
-| PLAN-VOXEL-004 | Shape-hint registry FR | `FR-PHENO-VOXEL-SHAPEHINT-*` tests exist but no catalog entry; formalize as FR-VOXEL-010 |
-| PLAN-VOXEL-005 | Sprite voxelizer FR | `FR-PHENO-VOXEL-SPRITEVOX-*` tests exist but no catalog entry; formalize as FR-VOXEL-011 |
-| PLAN-VOXEL-006 | Full recursive SVO subdivision | `octree.rs` notes "8-way branches reserved for follow-up PR"; current model is flat `BTreeMap` |
-| PLAN-VOXEL-007 | Doctest hygiene | 1 doctest fails on Windows (prose comment mistaken for code block in `cubic_mesher.rs`); fix or mark `ignore` |
+| ID             | Title                          | Notes                                                                                                         |
+| -------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| PLAN-VOXEL-001 | Greedy-mesher per-vertex AO    | `MeshBuffer.ao` all-3 for GreedyMesher; `TODO` noted in `src/mesh.rs`                                         |
+| PLAN-VOXEL-002 | Bevy adapter crate             | `phenotype-voxel-bevy` consuming `MeshBuffer.to_interleaved()`; zero engine deps in core (NFR-VOXEL-003)      |
+| PLAN-VOXEL-003 | Performance under load         | No bench for world-scale writes or SVO traversal; Criterion suite covers mesher only                          |
+| PLAN-VOXEL-004 | Shape-hint registry FR         | `FR-PHENO-VOXEL-SHAPEHINT-*` tests exist but no catalog entry; formalize as FR-VOXEL-010                      |
+| PLAN-VOXEL-005 | Sprite voxelizer FR            | `FR-PHENO-VOXEL-SPRITEVOX-*` tests exist but no catalog entry; formalize as FR-VOXEL-011                      |
+| PLAN-VOXEL-006 | Full recursive SVO subdivision | `octree.rs` notes "8-way branches reserved for follow-up PR"; current model is flat `BTreeMap`                |
+| PLAN-VOXEL-007 | Doctest hygiene                | 1 doctest fails on Windows (prose comment mistaken for code block in `cubic_mesher.rs`); fix or mark `ignore` |

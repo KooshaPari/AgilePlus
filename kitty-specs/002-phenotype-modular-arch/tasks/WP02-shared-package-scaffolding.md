@@ -5,9 +5,9 @@ lane: "planned"
 dependencies: []
 subtasks: ["T006", "T007"]
 history:
-  - date: "2026-03-03"
-    event: "created"
-    by: "spec-kitty.tasks"
+    - date: "2026-03-03"
+      event: "created"
+      by: "spec-kitty.tasks"
 ---
 
 # WP02: Shared Package Scaffolding
@@ -34,36 +34,37 @@ Create 7 empty shared package repositories with proper structure, CI, README, an
 **Steps** (repeat for each):
 
 1. **phenotype-go-authkit**:
-   - `gh repo create <REDACTED>/phenotype-go-authkit --public`
-   - `go mod init github.com/KooshaPari/phenotype-go-authkit`
-   - Create `authkit.go` with package declaration + doc comment
-   - Create `.github/workflows/go-ci.yml` (build, test, vet, lint)
-   - README: purpose (token storage, refresh, provider auth), consumers (cliproxy++, agent++)
+    - `gh repo create <REDACTED>/phenotype-go-authkit --public`
+    - `go mod init github.com/KooshaPari/phenotype-go-authkit`
+    - Create `authkit.go` with package declaration + doc comment
+    - Create `.github/workflows/go-ci.yml` (build, test, vet, lint)
+    - README: purpose (token storage, refresh, provider auth), consumers (cliproxy++, agent++)
 
 2. **phenotype-go-executor-core**:
-   - Same scaffold
-   - `go mod init github.com/KooshaPari/phenotype-go-executor-core`
-   - README: purpose (ExecutorInterface, BaseExecutor, retry/HTTP helpers)
+    - Same scaffold
+    - `go mod init github.com/KooshaPari/phenotype-go-executor-core`
+    - README: purpose (ExecutorInterface, BaseExecutor, retry/HTTP helpers)
 
 3. **phenotype-go-httpkit**:
-   - Same scaffold
-   - `go mod init github.com/KooshaPari/phenotype-go-httpkit`
-   - README: purpose (defaultHttpRequest, proxy helpers, cache helpers)
+    - Same scaffold
+    - `go mod init github.com/KooshaPari/phenotype-go-httpkit`
+    - README: purpose (defaultHttpRequest, proxy helpers, cache helpers)
 
 **Common CI template** (`.github/workflows/go-ci.yml`):
+
 ```yaml
 name: Go CI
 on: [push, pull_request]
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with: { go-version: '1.22' }
-      - run: go build ./...
-      - run: go test ./...
-      - run: go vet ./...
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-go@v5
+              with: { go-version: "1.22" }
+            - run: go build ./...
+            - run: go test ./...
+            - run: go vet ./...
 ```
 
 **Files per repo**: go.mod, {name}.go, README.md, .github/workflows/go-ci.yml, .gitignore, LICENSE
@@ -76,28 +77,28 @@ jobs:
 **Steps**:
 
 1. **phenotype-rs-protocol** (Rust):
-   - `cargo init --lib phenotype-rs-protocol`
-   - Add `prost` dependency in Cargo.toml
-   - Create `src/lib.rs` with doc comment
-   - CI: `cargo build`, `cargo test`, `cargo clippy`
+    - `cargo init --lib phenotype-rs-protocol`
+    - Add `prost` dependency in Cargo.toml
+    - Create `src/lib.rs` with doc comment
+    - CI: `cargo build`, `cargo test`, `cargo clippy`
 
 2. **phenotype-py-infra** (Python):
-   - `uv init phenotype-py-infra`
-   - Create `pyproject.toml` with package metadata
-   - Create `src/phenotype_py_infra/__init__.py`
-   - CI: `uv sync`, `pytest`, `ruff check`
+    - `uv init phenotype-py-infra`
+    - Create `pyproject.toml` with package metadata
+    - Create `src/phenotype_py_infra/__init__.py`
+    - CI: `uv sync`, `pytest`, `ruff check`
 
 3. **@helios/audit-core** (TypeScript):
-   - Create repo `helios-audit-core`
-   - `pnpm init`
-   - Set `"name": "@helios/audit-core"` in package.json
-   - Create `src/index.ts` with placeholder export
-   - CI: `pnpm build` (tsup or tsc), `pnpm test` (vitest)
-   - tsconfig.json with strict mode
+    - Create repo `helios-audit-core`
+    - `pnpm init`
+    - Set `"name": "@helios/audit-core"` in package.json
+    - Create `src/index.ts` with placeholder export
+    - CI: `pnpm build` (tsup or tsc), `pnpm test` (vitest)
+    - tsconfig.json with strict mode
 
 4. **@helios/protocol-types** (TypeScript):
-   - Same scaffold as audit-core
-   - `"name": "@helios/protocol-types"`
+    - Same scaffold as audit-core
+    - `"name": "@helios/protocol-types"`
 
 **Files per repo**: language-specific config, src/ entry point, README.md, CI workflow, .gitignore, LICENSE
 **Validation**: Each repo builds clean with its language toolchain

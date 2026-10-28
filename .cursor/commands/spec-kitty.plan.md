@@ -7,8 +7,8 @@ description: DEPRECATED — use `ap plan` instead. See docs/design/SPECKITTY-MIG
 
 ## Migration
 
-| SpecKitty | AgilePlus (`ap`) |
-|-----------|-------------------|
+| SpecKitty          | AgilePlus (`ap`)       |
+| ------------------ | ---------------------- |
 | `/spec-kitty.plan` | `ap plan <feature-id>` |
 
 ```bash

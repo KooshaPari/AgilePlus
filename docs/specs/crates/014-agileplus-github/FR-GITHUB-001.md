@@ -15,16 +15,16 @@ against the configured secret.
 
 ## Acceptance Criteria
 
-| AC  | Criterion |
-|-----|-----------|
-| AC1 | Webhook handler accepts `issues`, `pull_request`, and `project_card` events. |
-| AC2 | Duplicate webhook deliveries (same delivery ID) are silently dropped after the first. |
+| AC  | Criterion                                                                                   |
+| --- | ------------------------------------------------------------------------------------------- |
+| AC1 | Webhook handler accepts `issues`, `pull_request`, and `project_card` events.                |
+| AC2 | Duplicate webhook deliveries (same delivery ID) are silently dropped after the first.       |
 | AC3 | Webhook signature is verified against the configured secret; invalid signatures return 401. |
-| AC4 | Tokens are loaded from `agileplus-config` and never appear in logs or traces. |
-| AC5 | Outbound API calls are rate-limited (token bucket, configurable RPS). |
-| AC6 | At least one sync direction (inbound issue → work package) is wired with a passing test. |
-| AC7 | 5xx responses trigger exponential backoff with jitter, capped at 6 retries. |
-| AC8 | `github_integration.rs` proves ACs above with at least one assertion per AC. |
+| AC4 | Tokens are loaded from `agileplus-config` and never appear in logs or traces.               |
+| AC5 | Outbound API calls are rate-limited (token bucket, configurable RPS).                       |
+| AC6 | At least one sync direction (inbound issue → work package) is wired with a passing test.    |
+| AC7 | 5xx responses trigger exponential backoff with jitter, capped at 6 retries.                 |
+| AC8 | `github_integration.rs` proves ACs above with at least one assertion per AC.                |
 
 ## Traceability
 

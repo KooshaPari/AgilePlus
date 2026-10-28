@@ -1,0 +1,22 @@
+# v3 ci-scout log — 2026-10-18 20:55 UTC
+
+Read-only scout. No writes outside /tmp/.
+
+20:55:10Z — Read /tmp/ci_scout_v2_2026-10-18-result.md (parent evidence).
+20:55:10Z — Read /tmp/cf_4_investigation_2026-10-18-result.md (parent evidence).
+20:55:10Z-20:55:11Z — Read PR #1156 (12 FAILs, no PENDING; cargo-mutants 5h32m15s).
+20:55:11Z-20:55:12Z — Read PR #1157 (22 FAILs, no PENDING; cargo-fuzz build check NEW FAIL).
+20:55:12Z-20:55:13Z — Read PR #1161 (12 FAILs, no PENDING; cargo-mutants 4h49m24s).
+20:55:13Z-20:55:14Z — Read PR #1162 (12 FAILs, no PENDING; Vercel rate-limit).
+20:55:14Z-20:55:15Z — Read PR #1163 (11 FAILs, no PENDING; Vercel rate-limit).
+20:55:15Z-20:55:16Z — Read PR #1164 (13 FAILs, no PENDING; Vercel rate-limit; semver-checks 8m57s).
+20:55:16Z-20:55:18Z — Read PR #1165 (5 FAILs: Dry run publish, OSV Scanner, Vercel rate-limit, plan, semver-checks; Cargo Deny PASS 2m29s; cargo-deny PASS 25s; many new PASSes).
+20:55:18Z-20:55:19Z — Read PR #1166 (8 FAILs + 1 PENDING; net WORSE than v2; cargo-mutants still PENDING 4h49m-class).
+20:55:19Z-20:55:30Z — Synthesized v3 result.
+20:55:30Z — Wrote /tmp/ci_scout_v3_2026-10-18T20-55Z-result.md (this scout's primary output).
+20:55:30Z — Wrote this log.
+
+Total wall-clock: 20 sec (well under 10-min cap).
+Reads: 8 (one per PR).
+Writes: 2 (result + log, both in /tmp/).
+Forbidden actions avoided: no push, no merge, no file edit in repo, no new PR, no comment, no close, no force-push.

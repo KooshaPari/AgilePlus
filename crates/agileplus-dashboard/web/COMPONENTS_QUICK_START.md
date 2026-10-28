@@ -70,6 +70,7 @@ export function MyComponent() {
 ```
 
 **Props:**
+
 - `variant`: 'primary' | 'secondary' | 'ghost' | 'destructive'
 - `size`: 'sm' | 'md' | 'lg'
 - `disabled`: boolean
@@ -118,6 +119,7 @@ export function LoginForm() {
 ```
 
 **Props:**
+
 - `type`: 'text' | 'email' | 'password' | 'number' | 'date' | 'time'
 - `label`: string
 - `placeholder`: string
@@ -155,6 +157,7 @@ export function StatusFilter() {
 ```
 
 **Props:**
+
 - `options`: { value, label, disabled? }[]
 - `value`: string | number
 - `onChange`: (value) => void
@@ -184,6 +187,7 @@ export function TermsCheckbox() {
 ```
 
 **Props:**
+
 - `checked`: boolean
 - `onChange`: (checked) => void
 - `label`: string
@@ -227,6 +231,7 @@ export function ThemeSelector() {
 ```
 
 **Props:**
+
 - `value`: string
 - `checked`: boolean
 - `onChange`: (value) => void
@@ -256,6 +261,7 @@ export function DarkModeToggle() {
 ```
 
 **Props:**
+
 - `checked`: boolean
 - `onChange`: (checked) => void
 - `label`: string
@@ -286,6 +292,7 @@ export function UserProfile() {
 ```
 
 **Props:**
+
 - `title`: string
 - `children`: ReactNode
 - `footer`: ReactNode
@@ -332,6 +339,7 @@ export function ConfirmDialog() {
 ```
 
 **Props:**
+
 - `isOpen`: boolean
 - `onClose`: () => void
 - `title`: string
@@ -368,6 +376,7 @@ export function NotificationExample() {
 ```
 
 **Props:**
+
 - `type`: 'success' | 'error' | 'warning' | 'info'
 - `message`: string
 - `duration`: number (ms, 0 = no auto-dismiss)
@@ -393,6 +402,7 @@ export function StatusBadge() {
 ```
 
 **Props:**
+
 - `label`: string
 - `variant`: 'default' | 'success' | 'warning' | 'error' | 'info'
 - `icon`: ReactNode
@@ -428,6 +438,7 @@ export function TagManager() {
 ```
 
 **Props:**
+
 - `label`: string
 - `onRemove`: () => void
 - `variant`: 'default' | 'primary' | 'secondary'
@@ -545,12 +556,14 @@ npm run test:ui          # Interactive UI
 ## Accessibility Best Practices
 
 ### Keyboard Navigation
+
 - All buttons are Tab-focusable
 - Modals can be closed with Escape
 - Checkboxes/Radios activate with Space
 - Form inputs support standard browser behavior
 
 ### ARIA Attributes
+
 - Use `ariaLabel` for icon-only buttons
 - Errors use `aria-invalid` and `aria-describedby`
 - Modals have `role="dialog"` with focus trap
@@ -648,7 +661,7 @@ export function SignupForm() {
 **Solution**: Import types from `@/types`:
 
 ```typescript
-import type { ButtonProps, InputProps } from '@/types';
+import type { ButtonProps, InputProps } from "@/types";
 ```
 
 ### Issue: Focus ring not visible
@@ -668,11 +681,13 @@ npm run test -- --reporter=verbose  # Debug output
 ## Next Steps
 
 ### Week 2 Components Coming
+
 - DataTable (sort, filter, paginate)
 - FormBuilder (schema-driven forms)
 - Timeline (event sequences)
 
 ### Module Federation
+
 - Pages will be served as micro-frontends
 - Zero-downtime cutover via feature flag
 - Shared component library via Module Federation
@@ -692,6 +707,7 @@ npm run test -- --reporter=verbose  # Debug output
 ## Support
 
 For issues or questions:
+
 1. Check component props in `src/types/index.ts`
 2. Review component JSDoc comments
 3. Run tests to verify functionality

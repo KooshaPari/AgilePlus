@@ -21,6 +21,7 @@ The historical FR catalogue is retained as provenance and implementation lineage
 Keep durable work/decomposition/project/module/cycle/snapshot/metric concepts where useful.
 
 Supersede:
+
 - `FeatureState` as universal ordered lifecycle;
 - forward-only ordinal lifecycle as mature authority;
 - worker/worktree/PR fields as durable WP identity.
@@ -34,6 +35,7 @@ Mature authority is `CANONICAL_SEMANTIC_DECISIONS.md`: Development, SpecRevision
 Keep append-only audit and chain verification.
 
 Correct the normative envelope:
+
 - v1 hashes transition-core fields only;
 - evidence_refs/event_id/archived_to are not retroactively claimed covered;
 - v2 stronger receipt semantics are mature intent;
@@ -48,6 +50,7 @@ CLI remains a primary human/agent surface. Command names are not themselves the 
 Keep semantic operations for specify/research/plan/decompose/implement/evaluate/promote/recover/inspect where applicable.
 
 Supersede any command behavior that:
+
 - treats fixed lifecycle stages as universal;
 - allows review/CI/policy alone to award accepted work;
 - couples canonical artifact authority to kitty-specs path.
@@ -127,6 +130,7 @@ Historical "single-user", "no web authoring", "no collaboration" and similar Mar
 ## Rule for atomic migration
 
 Every historical FR ID eventually receives one of:
+
 ```text
 UNCHANGED
 MAPPED_TO:<new-id>

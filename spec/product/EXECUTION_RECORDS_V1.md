@@ -10,6 +10,7 @@ Add the minimum immutable records needed to prove worker replacement and exact e
 ## Compatibility mapping
 
 For the first witness:
+
 - Feature acts as the durable development root;
 - WorkPackage remains the durable DAG unit;
 - SpecRevision freezes the accepted spec basis;

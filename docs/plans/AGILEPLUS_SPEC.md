@@ -26,18 +26,18 @@ AgilePlus transforms how teams manage software projects by treating specificatio
 
 Features are the central planning unit in AgilePlus, representing a user-facing capability or technical improvement.
 
-| Attribute | Description |
-|-----------|-------------|
-| `id` | Unique identifier (UUID) |
-| `title` | Short description of the feature |
-| `description` | Detailed specification in markdown |
-| `state` | Current position in the feature lifecycle |
-| `spec_hash` | SHA-256 hash of the specification document |
-| `target_branch` | Git branch where this feature will be merged |
-| `plane_id` | Optional Plane.so issue ID for sync |
-| `module_id` | Parent module this feature belongs to |
-| `priority` | `P1` (critical), `P2` (important), `P3` (nice-to-have) |
-| `labels` | Categorization tags |
+| Attribute       | Description                                            |
+| --------------- | ------------------------------------------------------ |
+| `id`            | Unique identifier (UUID)                               |
+| `title`         | Short description of the feature                       |
+| `description`   | Detailed specification in markdown                     |
+| `state`         | Current position in the feature lifecycle              |
+| `spec_hash`     | SHA-256 hash of the specification document             |
+| `target_branch` | Git branch where this feature will be merged           |
+| `plane_id`      | Optional Plane.so issue ID for sync                    |
+| `module_id`     | Parent module this feature belongs to                  |
+| `priority`      | `P1` (critical), `P2` (important), `P3` (nice-to-have) |
+| `labels`        | Categorization tags                                    |
 
 #### Feature State Machine
 
@@ -47,16 +47,16 @@ Created → Specified → Researched → Planned → Implementing → Validated 
   [skipped]  [skipped]   [skipped] [skipped]    [blocked]   [failed]  [archived]
 ```
 
-| State | Description |
-|-------|-------------|
-| `Created` | Feature idea recorded, not yet elaborated |
-| `Specified` | Full spec written and hash computed |
-| `Researched` | Technical approach validated |
-| `Planned` | Work packages defined, dependencies mapped |
-| `Implementing` | Active development in progress |
-| `Validated` | Tests passing, governance satisfied |
-| `Shipped` | Merged to target branch, released |
-| `Retrospected` | Post-mortem complete, lessons learned |
+| State          | Description                                |
+| -------------- | ------------------------------------------ |
+| `Created`      | Feature idea recorded, not yet elaborated  |
+| `Specified`    | Full spec written and hash computed        |
+| `Researched`   | Technical approach validated               |
+| `Planned`      | Work packages defined, dependencies mapped |
+| `Implementing` | Active development in progress             |
+| `Validated`    | Tests passing, governance satisfied        |
+| `Shipped`      | Merged to target branch, released          |
+| `Retrospected` | Post-mortem complete, lessons learned      |
 
 State transitions are enforced by the domain model and logged to the event store.
 
@@ -64,16 +64,16 @@ State transitions are enforced by the domain model and logged to the event store
 
 Work Packages (WPs) are atomic units of implementation work scoped to a single concern.
 
-| Attribute | Description |
-|-----------|-------------|
-| `id` | Unique identifier (UUID) |
-| `feature_id` | Parent feature this WP belongs to |
-| `title` | Short description of the work |
-| `state` | Current position in the WP lifecycle |
-| `assignee` | Agent or team responsible |
-| `file_scope` | Files this WP is allowed to modify |
-| `depends_on` | List of WP IDs that must complete first |
-| `evidence_requirements` | Governance evidence types needed |
+| Attribute               | Description                             |
+| ----------------------- | --------------------------------------- |
+| `id`                    | Unique identifier (UUID)                |
+| `feature_id`            | Parent feature this WP belongs to       |
+| `title`                 | Short description of the work           |
+| `state`                 | Current position in the WP lifecycle    |
+| `assignee`              | Agent or team responsible               |
+| `file_scope`            | Files this WP is allowed to modify      |
+| `depends_on`            | List of WP IDs that must complete first |
+| `evidence_requirements` | Governance evidence types needed        |
 
 #### Work Package State Machine
 
@@ -83,37 +83,37 @@ Planned → Doing → Review → Done
  Blocked  Blocked Blocked Skipped
 ```
 
-| State | Description |
-|-------|-------------|
-| `Planned` | Defined but not started |
-| `Doing` | Actively being implemented |
-| `Review` | Under review or testing |
-| `Done` | Completed and verified |
-| `Blocked` | Waiting on external dependency |
+| State     | Description                      |
+| --------- | -------------------------------- |
+| `Planned` | Defined but not started          |
+| `Doing`   | Actively being implemented       |
+| `Review`  | Under review or testing          |
+| `Done`    | Completed and verified           |
+| `Blocked` | Waiting on external dependency   |
 | `Skipped` | Not needed after reconsideration |
 
 ### 3. Modules
 
 Modules organize Features into coherent groups, typically corresponding to a subsystem or bounded context.
 
-| Attribute | Description |
-|-----------|-------------|
-| `id` | Unique identifier |
-| `name` | Module name (e.g., "sync", "api", "domain") |
-| `description` | Module purpose and scope |
-| `cycle_id` | Current development cycle |
+| Attribute     | Description                                 |
+| ------------- | ------------------------------------------- |
+| `id`          | Unique identifier                           |
+| `name`        | Module name (e.g., "sync", "api", "domain") |
+| `description` | Module purpose and scope                    |
+| `cycle_id`    | Current development cycle                   |
 
 ### 4. Cycles
 
 Cycles represent time-boxed development periods (similar to sprints or iterations).
 
-| Attribute | Description |
-|-----------|-------------|
-| `id` | Unique identifier |
-| `name` | Cycle name (e.g., "2026-Q1-S1") |
-| `start_date` | Cycle start |
-| `end_date` | Cycle end |
-| `status` | `planning`, `active`, `closing`, `closed` |
+| Attribute    | Description                               |
+| ------------ | ----------------------------------------- |
+| `id`         | Unique identifier                         |
+| `name`       | Cycle name (e.g., "2026-Q1-S1")           |
+| `start_date` | Cycle start                               |
+| `end_date`   | Cycle end                                 |
+| `status`     | `planning`, `active`, `closing`, `closed` |
 
 ---
 
@@ -188,14 +188,14 @@ struct PolicyRule {
 
 ### Evidence Types
 
-| Type | Description |
-|------|-------------|
-| `TestResults` | Output from test suite execution |
-| `CiOutput` | CI/CD pipeline logs |
-| `SecurityScan` | Vulnerability scan results |
-| `ReviewApproval` | Human reviewer sign-off |
-| `LintResults` | Linter/formatter check output |
-| `ManualAttestation` | Human-declared compliance |
+| Type                | Description                      |
+| ------------------- | -------------------------------- |
+| `TestResults`       | Output from test suite execution |
+| `CiOutput`          | CI/CD pipeline logs              |
+| `SecurityScan`      | Vulnerability scan results       |
+| `ReviewApproval`    | Human reviewer sign-off          |
+| `LintResults`       | Linter/formatter check output    |
+| `ManualAttestation` | Human-declared compliance        |
 
 ### Validation Flow
 
@@ -516,14 +516,14 @@ Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `ci`
 
 AgilePlus supports multiple development approaches:
 
-| Methodology | Application |
-|-------------|-------------|
-| **TDD** | Red/green/refactor for domain logic |
-| **BDD** | Gherkin scenarios as acceptance criteria |
-| **SDD** | Specs define what to build |
-| **DDD** | Bounded contexts, aggregates, domain events |
-| **CQRS** | Separate read and write models |
-| **Event Sourcing** | All state changes as immutable events |
+| Methodology        | Application                                 |
+| ------------------ | ------------------------------------------- |
+| **TDD**            | Red/green/refactor for domain logic         |
+| **BDD**            | Gherkin scenarios as acceptance criteria    |
+| **SDD**            | Specs define what to build                  |
+| **DDD**            | Bounded contexts, aggregates, domain events |
+| **CQRS**           | Separate read and write models              |
+| **Event Sourcing** | All state changes as immutable events       |
 
 ### Event-Driven Architecture
 

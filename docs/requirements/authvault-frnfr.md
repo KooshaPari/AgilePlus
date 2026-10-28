@@ -11,11 +11,11 @@
 
 ### FR-AUTHV-001 — PKCE Code-Verifier Generation
 
-| Field | Value |
-|-------|-------|
-| **Title** | RFC 7636-compliant PKCE code-verifier generation |
-| **PR** | #30 (`feat(pkce): RFC 7636-compliant PKCE + CSRF state hardening`) |
-| **RFC** | RFC 7636 §4.1 |
+| Field     | Value                                                              |
+| --------- | ------------------------------------------------------------------ |
+| **Title** | RFC 7636-compliant PKCE code-verifier generation                   |
+| **PR**    | #30 (`feat(pkce): RFC 7636-compliant PKCE + CSRF state hardening`) |
+| **RFC**   | RFC 7636 §4.1                                                      |
 
 **Description**  
 The system SHALL generate a cryptographically-random code verifier consisting of 32 entropy bytes
@@ -38,15 +38,15 @@ Tests: `test_verifier_length_is_rfc_compliant`, `test_verifier_charset_is_unrese
 
 ### FR-AUTHV-002 — PKCE Code-Verifier Ingestion & Validation
 
-| Field | Value |
-|-------|-------|
+| Field     | Value                                                   |
+| --------- | ------------------------------------------------------- |
 | **Title** | Server-side validation of client-supplied code verifier |
-| **PR** | #30 |
-| **RFC** | RFC 7636 §4.1 |
+| **PR**    | #30                                                     |
+| **RFC**   | RFC 7636 §4.1                                           |
 
 **Description**  
 The system SHALL accept a client-supplied verifier string and validate its length
-(`[43, 128]`) and character set before accepting it into the PKCE flow.  Out-of-range or
+(`[43, 128]`) and character set before accepting it into the PKCE flow. Out-of-range or
 non-unreserved-ASCII inputs MUST return `AuthError::ValidationError`.
 
 **Acceptance Criteria**
@@ -65,15 +65,15 @@ Tests: `test_verifier_from_string_valid`, `test_verifier_from_string_too_short_r
 
 ### FR-AUTHV-003 — PKCE S256 Challenge Derivation
 
-| Field | Value |
-|-------|-------|
-| **Title** | S256 code-challenge derivation |
-| **PR** | #30 |
-| **RFC** | RFC 7636 §4.2, §4.6, Appendix B |
+| Field     | Value                           |
+| --------- | ------------------------------- |
+| **Title** | S256 code-challenge derivation  |
+| **PR**    | #30                             |
+| **RFC**   | RFC 7636 §4.2, §4.6, Appendix B |
 
 **Description**  
 The system SHALL derive an S256 code challenge as
-`BASE64URL(SHA-256(ASCII(code_verifier)))` (RFC 7636 §4.6).  The `plain` method is
+`BASE64URL(SHA-256(ASCII(code_verifier)))` (RFC 7636 §4.6). The `plain` method is
 explicitly unsupported to prevent downgrade attacks.
 
 **Acceptance Criteria**
@@ -94,15 +94,15 @@ Tests: `test_s256_challenge_derivation_known_vector`,
 
 ### FR-AUTHV-004 — PKCE Constant-Time Challenge Verification
 
-| Field | Value |
-|-------|-------|
+| Field     | Value                                       |
+| --------- | ------------------------------------------- |
 | **Title** | Constant-time verifier-challenge comparison |
-| **PR** | #30 |
-| **RFC** | RFC 7636 §4.6 |
+| **PR**    | #30                                         |
+| **RFC**   | RFC 7636 §4.6                               |
 
 **Description**  
 Challenge verification SHALL use a byte-by-byte XOR accumulation pattern equivalent to
-`subtle::ConstantTimeEq` to prevent timing-oracle attacks.  A length mismatch fails
+`subtle::ConstantTimeEq` to prevent timing-oracle attacks. A length mismatch fails
 immediately (length is public information and does not constitute an oracle).
 
 **Acceptance Criteria**
@@ -118,11 +118,11 @@ immediately (length is public information and does not constitute an oracle).
 
 ### FR-AUTHV-005 — CSRF State Generation & Constant-Time Verification
 
-| Field | Value |
-|-------|-------|
+| Field     | Value                                           |
+| --------- | ----------------------------------------------- |
 | **Title** | Opaque OAuth2 state parameter (CSRF protection) |
-| **PR** | #30 |
-| **RFC** | RFC 6749 §10.12 |
+| **PR**    | #30                                             |
+| **RFC**   | RFC 6749 §10.12                                 |
 
 **Description**  
 The system SHALL generate a 32-byte cryptographically-random state value
@@ -146,16 +146,16 @@ Tests: `test_state_uniqueness`, `test_state_verify_matching_state_passes`,
 
 ### FR-AUTHV-006 — Secret Vault AEAD Encryption at Rest
 
-| Field | Value |
-|-------|-------|
-| **Title** | ChaCha20-Poly1305 AEAD at-rest encryption for secrets |
-| **PR** | #31 (`feat(vault): ChaCha20-Poly1305 AEAD at-rest encryption for secrets`) |
-| **RFC** | RFC 8439 (ChaCha20-Poly1305) |
+| Field     | Value                                                                      |
+| --------- | -------------------------------------------------------------------------- |
+| **Title** | ChaCha20-Poly1305 AEAD at-rest encryption for secrets                      |
+| **PR**    | #31 (`feat(vault): ChaCha20-Poly1305 AEAD at-rest encryption for secrets`) |
+| **RFC**   | RFC 8439 (ChaCha20-Poly1305)                                               |
 
 **Description**  
 The system SHALL encrypt every secret with ChaCha20-Poly1305 AEAD using a fresh
-96-bit (12-byte) random nonce per seal operation.  The on-wire/on-disk envelope is
-`nonce (12 B) || ciphertext+tag`.  The 256-bit master key never leaves the `VaultKey`
+96-bit (12-byte) random nonce per seal operation. The on-wire/on-disk envelope is
+`nonce (12 B) || ciphertext+tag`. The 256-bit master key never leaves the `VaultKey`
 struct and is zeroed on drop.
 
 **Acceptance Criteria**
@@ -179,14 +179,14 @@ Tests: `round_trip_bytes`, `round_trip_unicode`, `round_trip_empty_value`,
 
 ### FR-AUTHV-007 — Secret Vault TTL / Expiry
 
-| Field | Value |
-|-------|-------|
+| Field     | Value                                          |
+| --------- | ---------------------------------------------- |
 | **Title** | Optional TTL with automatic expiry enforcement |
-| **PR** | #31 |
+| **PR**    | #31                                            |
 
 **Description**  
-`SecretVault::put()` SHALL accept an optional `ttl_seconds: Option<i64>`.  When
-`Some(secs)`, `expires_at` is set to `Utc::now() + secs`.  Any `get()` on an expired
+`SecretVault::put()` SHALL accept an optional `ttl_seconds: Option<i64>`. When
+`Some(secs)`, `expires_at` is set to `Utc::now() + secs`. Any `get()` on an expired
 entry MUST return `VaultError::Expired` without decrypting.
 
 **Acceptance Criteria**
@@ -204,10 +204,10 @@ Tests: `ttl_secret_accessible_before_expiry`, `expired_secret_returns_error`,
 
 ### FR-AUTHV-008 — Secret Vault Key Rotation
 
-| Field | Value |
-|-------|-------|
+| Field     | Value                                                           |
+| --------- | --------------------------------------------------------------- |
 | **Title** | In-place secret rotation with fresh nonce and version increment |
-| **PR** | #31 |
+| **PR**    | #31                                                             |
 
 **Description**  
 `SecretVault::rotate()` SHALL re-encrypt the existing plaintext with a fresh random
@@ -229,10 +229,10 @@ Tests: `rotate_re_encrypts_with_new_nonce`, `rotate_increments_version`,
 
 ### FR-AUTHV-009 — Secret Vault Key Construction
 
-| Field | Value |
-|-------|-------|
+| Field     | Value                          |
+| --------- | ------------------------------ |
 | **Title** | VaultKey generation and import |
-| **PR** | #31 |
+| **PR**    | #31                            |
 
 **Description**  
 `VaultKey::generate()` SHALL produce a fresh CSPRNG 256-bit key.
@@ -252,16 +252,16 @@ Tests: `vault_key_from_bytes_wrong_length_fails`, `vault_key_from_bytes_round_tr
 
 ### FR-AUTHV-010 — Bearer Token Validation
 
-| Field | Value |
-|-------|-------|
-| **Title** | HTTP `Authorization: Bearer <jwt>` validation |
-| **PR** | #32 (`feat: add bearer token validation`) |
-| **RFC** | RFC 6750 §2.1, RFC 7519 (JWT), RFC 7662 (token introspection concepts) |
+| Field     | Value                                                                  |
+| --------- | ---------------------------------------------------------------------- |
+| **Title** | HTTP `Authorization: Bearer <jwt>` validation                          |
+| **PR**    | #32 (`feat: add bearer token validation`)                              |
+| **RFC**   | RFC 6750 §2.1, RFC 7519 (JWT), RFC 7662 (token introspection concepts) |
 
 **Description**  
 The system SHALL parse an `Authorization` header value of the form `Bearer <token>`,
 validate the JWT signature, expiry (`exp`), not-before (`nbf`), issuer (`iss`), and
-audience (`aud`) claims, and return decoded `Claims` on success.  Any deviation MUST
+audience (`aud`) claims, and return decoded `Claims` on success. Any deviation MUST
 return a typed `AuthError` variant.
 
 **Acceptance Criteria**
@@ -285,16 +285,16 @@ Unit tests: `test_validate_bearer_token_success`, `test_validate_bearer_token_ex
 
 ### FR-AUTHV-011 — JWT Generation with Standard Claims
 
-| Field | Value |
-|-------|-------|
+| Field     | Value                                                                                     |
+| --------- | ----------------------------------------------------------------------------------------- |
 | **Title** | JWT access-token generation with `sub`, `iss`, `aud`, `exp`, `iat`, `nbf`, `jti`, `roles` |
-| **PR** | Pre-existing; hardened by #32 |
-| **RFC** | RFC 7519 §4.1 |
+| **PR**    | Pre-existing; hardened by #32                                                             |
+| **RFC**   | RFC 7519 §4.1                                                                             |
 
 **Description**  
 `Authenticator::generate_token()` SHALL produce a signed JWT containing all registered
 claim names (`sub`, `iss`, `aud`, `exp`, `iat`, `nbf`, `jti`) plus a `roles` array.
-The default expiry is 24 hours.  Custom expiry is available via
+The default expiry is 24 hours. Custom expiry is available via
 `generate_token_with_expiry()`.
 
 **Acceptance Criteria**
@@ -315,14 +315,14 @@ Tests: `test_generate_and_verify_token`, `test_expired_token`.
 
 ### NFR-AUTHV-001 — Cryptographic Correctness: S256 Only
 
-| Field | Value |
-|-------|-------|
+| Field     | Value                                                   |
+| --------- | ------------------------------------------------------- |
 | **Title** | Exclusive use of S256 PKCE method; no `plain` downgrade |
-| **PR** | #30 |
-| **RFC** | RFC 7636 §4.2 |
+| **PR**    | #30                                                     |
+| **RFC**   | RFC 7636 §4.2                                           |
 
 **Description**  
-The PKCE implementation SHALL support only the S256 method.  The `plain`
+The PKCE implementation SHALL support only the S256 method. The `plain`
 method MUST NOT be accepted, preventing downgrade attacks.
 
 **Evidence**  
@@ -332,14 +332,14 @@ method MUST NOT be accepted, preventing downgrade attacks.
 
 ### NFR-AUTHV-002 — Cryptographic Correctness: Constant-Time Comparisons
 
-| Field | Value |
-|-------|-------|
+| Field     | Value                                         |
+| --------- | --------------------------------------------- |
 | **Title** | All secret-comparison paths are constant-time |
-| **PR** | #30 |
+| **PR**    | #30                                           |
 
 **Description**  
 All comparisons of cryptographic material (PKCE challenge, OAuth state) SHALL use
-accumulator-XOR or `subtle::ConstantTimeEq` patterns.  No early-exit on content bytes
+accumulator-XOR or `subtle::ConstantTimeEq` patterns. No early-exit on content bytes
 is permitted.
 
 **Evidence**  
@@ -350,14 +350,14 @@ is permitted.
 
 ### NFR-AUTHV-003 — Cryptographic Correctness: Random Nonce per Seal
 
-| Field | Value |
-|-------|-------|
+| Field     | Value                                                      |
+| --------- | ---------------------------------------------------------- |
 | **Title** | Fresh 96-bit CSPRNG nonce for every ChaCha20-Poly1305 seal |
-| **PR** | #31 |
+| **PR**    | #31                                                        |
 
 **Description**  
 Each call to `EncryptedBlob::seal()` SHALL generate a fresh nonce via
-`ChaCha20Poly1305::generate_nonce(&mut OsRng)`.  Nonce reuse under the same key MUST
+`ChaCha20Poly1305::generate_nonce(&mut OsRng)`. Nonce reuse under the same key MUST
 be operationally impossible.
 
 **Evidence**  
@@ -368,10 +368,10 @@ be operationally impossible.
 
 ### NFR-AUTHV-004 — Cryptographic Correctness: ZeroizeOnDrop for Key Material
 
-| Field | Value |
-|-------|-------|
+| Field     | Value                                       |
+| --------- | ------------------------------------------- |
 | **Title** | Master vault key zeroed from memory on drop |
-| **PR** | #31 |
+| **PR**    | #31                                         |
 
 **Description**  
 `VaultKey` SHALL derive `zeroize::ZeroizeOnDrop` so its 32-byte raw array is
@@ -385,22 +385,22 @@ lingering in heap/stack memory.
 
 ### NFR-AUTHV-005 — No Hand-Rolled Cryptography
 
-| Field | Value |
-|-------|-------|
+| Field     | Value                                               |
+| --------- | --------------------------------------------------- |
 | **Title** | Vetted crate usage for all cryptographic primitives |
-| **PR** | #30, #31 |
+| **PR**    | #30, #31                                            |
 
 **Description**  
 All cryptographic operations SHALL use vetted RustCrypto ecosystem crates:
 
-| Primitive | Crate |
-|-----------|-------|
-| AEAD | `chacha20poly1305` |
-| Hash | `sha2` |
+| Primitive | Crate                                       |
+| --------- | ------------------------------------------- |
+| AEAD      | `chacha20poly1305`                          |
+| Hash      | `sha2`                                      |
 | Base64url | `base64` (general_purpose::URL_SAFE_NO_PAD) |
-| CSPRNG | `rand` (OsRng) |
-| Zeroize | `zeroize` |
-| JWT | `jsonwebtoken` |
+| CSPRNG    | `rand` (OsRng)                              |
+| Zeroize   | `zeroize`                                   |
+| JWT       | `jsonwebtoken`                              |
 
 No custom implementations of AES, SHA, or MAC are permitted.
 
@@ -408,10 +408,10 @@ No custom implementations of AES, SHA, or MAC are permitted.
 
 ### NFR-AUTHV-006 — Tamper Detection via AEAD Authentication Tag
 
-| Field | Value |
-|-------|-------|
+| Field     | Value                                                            |
+| --------- | ---------------------------------------------------------------- |
 | **Title** | Any single-bit mutation in ciphertext, tag, or nonce is detected |
-| **PR** | #31 |
+| **PR**    | #31                                                              |
 
 **Description**  
 The Poly1305 authentication tag SHALL ensure that any modification to the
@@ -426,11 +426,11 @@ Tests: `tampered_ciphertext_rejected`, `tampered_tag_rejected`,
 
 ### NFR-AUTHV-007 — JWT Claim Validation (Expiry, Issuer, Audience)
 
-| Field | Value |
-|-------|-------|
+| Field     | Value                                           |
+| --------- | ----------------------------------------------- |
 | **Title** | JWT decoder enforces `exp`, `nbf`, `iss`, `aud` |
-| **PR** | #32 |
-| **RFC** | RFC 7519 §4.1, RFC 6750 |
+| **PR**    | #32                                             |
+| **RFC**   | RFC 7519 §4.1, RFC 6750                         |
 
 **Description**  
 `Authenticator::validation()` SHALL configure `jsonwebtoken::Validation` with
@@ -445,15 +445,15 @@ Each failure maps to a distinct `AuthError` variant for consumer diagnostic clar
 
 ### NFR-AUTHV-008 — Bearer Token Header Strict Parsing
 
-| Field | Value |
-|-------|-------|
+| Field     | Value                                                            |
+| --------- | ---------------------------------------------------------------- |
 | **Title** | `Bearer` scheme check is case-insensitive; extra tokens rejected |
-| **PR** | #32 |
-| **RFC** | RFC 6750 §2.1 |
+| **PR**    | #32                                                              |
+| **RFC**   | RFC 6750 §2.1                                                    |
 
 **Description**  
 The bearer token parser SHALL accept `Bearer` (case-insensitive) followed by exactly
-one token.  Headers with a different scheme, no token, or extra whitespace-separated
+one token. Headers with a different scheme, no token, or extra whitespace-separated
 tokens SHALL return `AuthError::Malformed`.
 
 **Evidence**  
@@ -464,10 +464,10 @@ tokens SHALL return `AuthError::Malformed`.
 
 ### NFR-AUTHV-009 — Test Coverage: Cryptographic Rejection Paths
 
-| Field | Value |
-|-------|-------|
+| Field     | Value                                                           |
+| --------- | --------------------------------------------------------------- |
 | **Title** | All cryptographic failure paths have dedicated regression tests |
-| **PR** | #30, #31, #32 |
+| **PR**    | #30, #31, #32                                                   |
 
 **Description**  
 Every rejection path for PKCE, vault AEAD, and bearer-token validation SHALL have at
@@ -495,15 +495,15 @@ Tests covering rejection paths:
 
 ## 3. Gaps / PLANNED
 
-| ID | Area | Gap | Status |
-|----|------|-----|--------|
-| GAP-001 | PKCE | `code_challenge_method` negotiation — server must reject `plain` at the protocol level, not just by omission | PLANNED |
-| GAP-002 | Vault | Persistent backend (e.g., Redis/Postgres) — current `SecretVault` is in-memory only; restarts lose all secrets | PLANNED |
-| GAP-003 | Vault | Key-wrapping / KMS integration — `VaultKey` can be loaded from bytes but there is no KMS plugin interface | PLANNED |
-| GAP-004 | Vault | Audit log — no record of `put`, `rotate`, `get`, or `remove` operations with caller identity | PLANNED |
-| GAP-005 | Tokens | Refresh-token rotation — `refresh_token()` re-uses the same `sub`/`roles` without invalidating the prior token | PLANNED |
-| GAP-006 | Tokens | Token revocation list — no mechanism to revoke a non-expired JWT before its `exp` | PLANNED |
-| GAP-007 | Bearer | Asymmetric (RS256/ES256) signing key support — current implementation is HMAC-only | PLANNED |
-| GAP-008 | PKCE | State binding to server session — `OAuthState` is generated but the server-side session association is not enforced at the middleware layer | PLANNED |
-| GAP-009 | General | Rate-limiting on failed auth attempts — no brute-force protection for verifier/state/bearer endpoints | PLANNED |
-| GAP-010 | General | Tracera / AgilePlus middleware adapter — wiring of these requirements into Axum tower layers for consumer repos not yet documented | PLANNED |
+| ID      | Area    | Gap                                                                                                                                         | Status  |
+| ------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| GAP-001 | PKCE    | `code_challenge_method` negotiation — server must reject `plain` at the protocol level, not just by omission                                | PLANNED |
+| GAP-002 | Vault   | Persistent backend (e.g., Redis/Postgres) — current `SecretVault` is in-memory only; restarts lose all secrets                              | PLANNED |
+| GAP-003 | Vault   | Key-wrapping / KMS integration — `VaultKey` can be loaded from bytes but there is no KMS plugin interface                                   | PLANNED |
+| GAP-004 | Vault   | Audit log — no record of `put`, `rotate`, `get`, or `remove` operations with caller identity                                                | PLANNED |
+| GAP-005 | Tokens  | Refresh-token rotation — `refresh_token()` re-uses the same `sub`/`roles` without invalidating the prior token                              | PLANNED |
+| GAP-006 | Tokens  | Token revocation list — no mechanism to revoke a non-expired JWT before its `exp`                                                           | PLANNED |
+| GAP-007 | Bearer  | Asymmetric (RS256/ES256) signing key support — current implementation is HMAC-only                                                          | PLANNED |
+| GAP-008 | PKCE    | State binding to server session — `OAuthState` is generated but the server-side session association is not enforced at the middleware layer | PLANNED |
+| GAP-009 | General | Rate-limiting on failed auth attempts — no brute-force protection for verifier/state/bearer endpoints                                       | PLANNED |
+| GAP-010 | General | Tracera / AgilePlus middleware adapter — wiring of these requirements into Axum tower layers for consumer repos not yet documented          | PLANNED |

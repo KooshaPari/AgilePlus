@@ -24,14 +24,14 @@ canonical_home: github.com/KooshaPari/phenoShared/crates/phenotype-cache-adapter
 
 Per the canonical-home ADR, `phenotype-cache-adapter` (two-tier LRU + DashMap with TTL) is duplicated across **5 host workspaces**:
 
-| Host workspace | Notes |
-|----------------|-------|
-| `phenoShared` (canonical) | Same-day evolution; ADR-elected canonical |
-| `pheno` | snapshot, 2026-03-31 |
-| `PhenoProc` (root copy) | 2026-04-03 |
-| `PhenoProc` (nested `crates/phenotype-shared/crates/`) | 2026-04-03 |
-| `DataKit/rust` | snapshot, 2026-04-05 |
-| `PhenoKits/HexaKit` | snapshot, 2026-03-31 |
+| Host workspace                                         | Notes                                     |
+| ------------------------------------------------------ | ----------------------------------------- |
+| `phenoShared` (canonical)                              | Same-day evolution; ADR-elected canonical |
+| `pheno`                                                | snapshot, 2026-03-31                      |
+| `PhenoProc` (root copy)                                | 2026-04-03                                |
+| `PhenoProc` (nested `crates/phenotype-shared/crates/`) | 2026-04-03                                |
+| `DataKit/rust`                                         | snapshot, 2026-04-05                      |
+| `PhenoKits/HexaKit`                                    | snapshot, 2026-03-31                      |
 
 External (cross-workspace) consumers: **0**. The audit calls out: "API parity check required" — divergent TTL eviction semantics between L1 (LRU) and L2 (DashMap) layers can produce visible behavior differences.
 
@@ -58,14 +58,14 @@ External (cross-workspace) consumers: **0**. The audit calls out: "API parity ch
 
 ## Functional Requirements
 
-| FR ID | Requirement |
-|-------|-------------|
-| FR-CCA-001 | Each non-canonical host workspace MUST replace its `crates/phenotype-cache-adapter/` member with a workspace dep targeting `phenoShared`. |
-| FR-CCA-002 | Each deprecated copy MUST carry a `DEPRECATED.md` per ADR template. |
-| FR-CCA-003 | Each deprecated copy's `src/lib.rs` MUST carry a `// DEPRECATED — see DEPRECATED.md` banner during transition. |
-| FR-CCA-004 | Host workspace `cargo build --workspace` and `cargo test --workspace` MUST pass after the swap. |
+| FR ID      | Requirement                                                                                                                                        |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-CCA-001 | Each non-canonical host workspace MUST replace its `crates/phenotype-cache-adapter/` member with a workspace dep targeting `phenoShared`.          |
+| FR-CCA-002 | Each deprecated copy MUST carry a `DEPRECATED.md` per ADR template.                                                                                |
+| FR-CCA-003 | Each deprecated copy's `src/lib.rs` MUST carry a `// DEPRECATED — see DEPRECATED.md` banner during transition.                                     |
+| FR-CCA-004 | Host workspace `cargo build --workspace` and `cargo test --workspace` MUST pass after the swap.                                                    |
 | FR-CCA-005 | Cache-semantics parity tests (TTL expiry ordering, eviction policy, capacity bound) MUST pass on canonical for every consumer's existing behavior. |
-| FR-CCA-006 | `cargo metadata --workspace` from any host MUST resolve exactly one `phenotype-cache-adapter` entry. |
+| FR-CCA-006 | `cargo metadata --workspace` from any host MUST resolve exactly one `phenotype-cache-adapter` entry.                                               |
 
 ## Acceptance Criteria
 
@@ -76,8 +76,8 @@ External (cross-workspace) consumers: **0**. The audit calls out: "API parity ch
 
 ## Risk Register
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| L1/L2 eviction order differs between variants | Medium | High | Phase 2 design step runs a parity matrix before swap; differences become canonical-side feature flags. |
-| Downstream consumers depend on a private API surface | Low | Medium | Phase 1 discovery captures all `use phenotype_cache_adapter::*` sites. |
-| `PhenoProc` nested copy shadows root copy | Medium | Low | Single migration commit retires both; cargo resolution check catches double-resolution. |
+| Risk                                                 | Likelihood | Impact | Mitigation                                                                                             |
+| ---------------------------------------------------- | ---------- | ------ | ------------------------------------------------------------------------------------------------------ |
+| L1/L2 eviction order differs between variants        | Medium     | High   | Phase 2 design step runs a parity matrix before swap; differences become canonical-side feature flags. |
+| Downstream consumers depend on a private API surface | Low        | Medium | Phase 1 discovery captures all `use phenotype_cache_adapter::*` sites.                                 |
+| `PhenoProc` nested copy shadows root copy            | Medium     | Low    | Single migration commit retires both; cargo resolution check catches double-resolution.                |

@@ -1,0 +1,2109 @@
+=== raven E.2.P1-GENERIC investigation log ===
+started: 2026-10-18T13:02:59-07:00
+cwd: /Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus
+
+=== STEP 1: locate features.rs in domain ===
+
+=== STEP 1b: locate feature.rs in domain ===
+./.archive/AgilePlus-recovery-20260714/PhenoLang-crates-2026-06-20/crates/agileplus-domain/src/domain/feature.rs
+./.archive/AgilePlus-recovery-20260714/PhenoLang-crates-2026-06-20/crates/agileplus-domain/src/domain/cycle/feature.rs
+./crates/agileplus-domain/src/domain/feature.rs
+./crates/agileplus-domain/src/domain/cycle/feature.rs
+
+=== STEP 1c: all features.rs anywhere ===
+./.archive/AgilePlus-recovery-20260714/PhenoLang-crates-2026-06-20/crates/agileplus-api/src/routes/features.rs
+./.archive/AgilePlus-recovery-20260714/PhenoLang-crates-2026-06-20/crates/agileplus-sqlite/src/repository/features.rs
+./.archive/AgilePlus-recovery-20260714/PhenoLang-crates-2026-06-20/crates/agileplus-grpc/src/server/features.rs
+./.archive/AgilePlus-recovery-20260714/PhenoLang-crates-2026-06-20/crates/agileplus-import/src/importer/features.rs
+./crates/agileplus-api/src/routes/features.rs
+./crates/agileplus-sqlite/src/repository/features.rs
+./crates/agileplus-grpc/src/server/features.rs
+./crates/agileplus-import/src/importer/features.rs
+./crates/agileplus-dashboard/src/routes/features.rs
+
+=== STEP 2: search for 'generic' occurrences in cargo source ===
+crates/agileplus-triage/src/claim_store_sqlite.rs:61:        // else, the underlying rusqlite error becomes a generic
+crates/agileplus-application/src/test_cases/story_lifecycle.rs:310:/// The rejection carries the transition it refused, not just a generic error.
+crates/agileplus-triage/src/ast_tokenize.rs:74:/// generic `ID` token.  Operators and digit runs are emitted verbatim.
+crates/agileplus-triage/src/classifier.rs:205:        let r = c.classify("something generic with no keywords");
+crates/agileplus-triage/tests/wave10_ast_tokenize.rs:172:fn rust_tokenizer_handles_generic_type_params() {
+crates/agileplus-grpc/src/server/mod.rs:708:            // generic state transition. Until gRPC is wired to the canonical
+crates/agileplus-cache/tests/cache_tests.rs:427:// Mock store via concrete type (trait not dyn-compatible due to generics)
+crates/agileplus-grpc/tests/rpc_dispatch_command.rs:191:        .expect_err("generic validate must not mint terminal acceptance");
+crates/agileplus-grpc/tests/rpc_dispatch_command.rs:203:        .expect_err("generic ship must not mint promotion");
+crates/agileplus-grpc/tests/rpc_dispatch_command.rs:258:        .expect_err("generic gRPC validate must fail closed");
+crates/agileplus-grpc/tests/rpc_dispatch_command.rs:297:        .expect_err("generic gRPC ship must fail closed");
+crates/agileplus-grpc/tests/rpc_dispatch_command.rs:336:        .expect_err("generic gRPC validate must not bypass canonical acceptance");
+crates/agileplus-grpc/tests/rpc_dispatch_command.rs:348:async fn generic_validate_never_interprets_governance_or_evidence_locally() {
+crates/agileplus-grpc/tests/rpc_dispatch_command.rs:363:        .expect_err("generic validate must delegate terminal authority");
+crates/agileplus-grpc/tests/server_logic_comprehensive.rs:52:fn generic_error_maps_to_internal() {
+crates/agileplus-grpc/tests/server_logic_comprehensive.rs:58:fn generic_error_preserves_message() {
+crates/agileplus-cli/src/commands/mvp.rs:765:        .expect_err("generic MVP transition must not self-award Done");
+crates/agileplus-cli/tests/queue_command_flow.rs:5://! `run_queue` is generic over `ContentStoragePort`. These tests drive it with
+crates/agileplus-domain/src/ports/execution.rs:60:/// Focused, all-or-nothing acceptance capability; separate from generic StoragePort.
+crates/agileplus-cli/src/commands/cycle/mod.rs:75:    // indicate the transition with a generic "previous" label.
+crates/agileplus-cli/src/commands/ship.rs:60:            // A generic context-only error makes a fail-closed decision impossible
+crates/agileplus-cli/src/commands/list_tests.rs:77:    /// `delete_module` fails with a generic storage error.
+crates/agileplus-cli/src/commands/list_tests.rs:85:    /// `add_feature_to_cycle` fails with a generic storage error.
+crates/agileplus-cli/src/commands/list_tests.rs:87:    /// `remove_feature_from_cycle` fails with a generic storage error.
+crates/agileplus-api/src/routes/features.rs:392:    fn terminal_feature_states_are_not_generic_transition_targets() {
+crates/agileplus-api/src/error.rs:136:    fn internal_error_display_is_generic() {
+crates/agileplus-api/src/error.rs:257:    async fn template_error_body_is_generic_and_hides_details() {
+crates/agileplus-api/src/error.rs:270:    async fn internal_error_body_is_generic_and_hides_details() {
+crates/agileplus-api/tests/api_error_paths.rs:44:fn assert_generic_500(resp: &TestResponse) {
+crates/agileplus-api/tests/api_error_paths.rs:67:async fn features_list_returns_generic_500_when_storage_scan_fails() {
+crates/agileplus-api/tests/api_error_paths.rs:73:    assert_generic_500(&resp);
+crates/agileplus-api/tests/api_error_paths.rs:77:async fn events_list_returns_generic_500_when_storage_scan_fails() {
+crates/agileplus-api/tests/api_error_paths.rs:83:    assert_generic_500(&resp);
+crates/agileplus-api/tests/api_error_paths.rs:87:async fn events_detail_returns_generic_500_when_storage_scan_fails() {
+crates/agileplus-api/tests/api_error_paths.rs:93:    assert_generic_500(&resp);
+crates/agileplus-api/tests/api_error_paths.rs:127:async fn module_tree_returns_generic_500_when_module_lookup_fails() {
+crates/agileplus-api/tests/api_error_paths.rs:134:    assert_generic_500(&resp);
+crates/agileplus-api/tests/api_error_paths.rs:138:async fn module_detail_returns_generic_500_when_module_lookup_fails() {
+crates/agileplus-api/tests/api_error_paths.rs:145:    assert_generic_500(&resp);
+crates/agileplus-api/tests/api_error_paths.rs:151:async fn modules_page_returns_generic_500_when_module_lookup_fails() {
+crates/agileplus-api/tests/api_error_paths.rs:169:    assert_generic_500(&resp);
+crates/agileplus-domain/fuzz/fuzz_targets/api_types_deser.rs:35:            // Successfully parsed as generic JSON value.
+crates/agileplus-api/tests/api_integration/vcs_contract.rs:45:fn assert_generic_500(resp: &TestResponse) {
+crates/agileplus-api/tests/api_integration/vcs_contract.rs:72:async fn list_branches_surfaces_a_vcs_failure_as_a_generic_500() {
+crates/agileplus-api/tests/api_integration/vcs_contract.rs:78:    assert_generic_500(&resp);
+crates/agileplus-api/tests/api_integration/vcs_contract.rs:82:async fn create_branch_surfaces_a_vcs_failure_as_a_generic_500() {
+crates/agileplus-api/tests/api_integration/vcs_contract.rs:89:    assert_generic_500(&resp);
+crates/agileplus-api/tests/api_integration/vcs_contract.rs:93:async fn checkout_branch_surfaces_a_vcs_failure_as_a_generic_500() {
+crates/agileplus-api/tests/api_integration/vcs_contract.rs:100:    assert_generic_500(&resp);
+crates/agileplus-api/tests/api_integration/vcs_contract.rs:104:async fn delete_branch_surfaces_a_vcs_failure_as_a_generic_500() {
+
+=== STEP 2b: search for 'Generic' (capitalized) ===
+crates/agileplus-dashboard/src/routes/health.rs:99:/// Generic template renderer: converts Askama templates to HTML responses.
+crates/agileplus-cli/src/context.rs:59:/// Generic over storage and VCS adapters to maintain type safety and
+crates/agileplus-triage/src/ast_tokenize.rs:70:// -------- Generic scanner -----------------------------------------------
+crates/agileplus-triage/src/tree_sitter.rs:138:    /// Generic scanner: emit keywords verbatim, identifiers as `ID`,
+=== STEP 3: read features.rs around line 391-399 (actual location) ===
+
+    #[test]
+    fn feature_list_params_defaults() {
+        let params = FeatureListParams {
+            state: None,
+            label: None,
+        };
+        assert!(params.state.is_none());
+        assert!(params.label.is_none());
+    }
+
+    #[test]
+    fn terminal_feature_states_are_not_generic_transition_targets() {
+        for target in [FeatureState::Validated, FeatureState::Shipped] {
+            assert!(matches!(
+                target,
+                FeatureState::Validated | FeatureState::Shipped
+            ));
+        }
+    }
+
+    #[test]
+    fn transition_response_fields() {
+        let resp = TransitionResponse {
+            feature_slug: "my-feat".into(),
+            from_state: "created".into(),
+            to_state: "specified".into(),
+            timestamp: "2025-01-01T00:00:00Z".into(),
+        };
+        assert_eq!(resp.feature_slug, "my-feat");
+        assert_eq!(resp.from_state, "created");
+        assert_eq!(resp.to_state, "specified");
+    }
+
+    #[test]
+    fn transition_response_serializes() {
+        let resp = TransitionResponse {
+            feature_slug: "slug".into(),
+            from_state: "a".into(),
+            to_state: "b".into(),
+            timestamp: "t".into(),
+
+=== STEP 4: count lines ===
+     427 crates/agileplus-api/src/routes/features.rs
+
+=== STEP 5: read Feature struct in domain ===
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//! Feature aggregate — the central planning unit.
+
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+
+use super::state_machine::FeatureState;
+
+pub(crate) mod hex_bytes {
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(bytes: &[u8; 32], serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        const HEX: &[u8; 16] = b"0123456789abcdef";
+        let mut out = String::with_capacity(64);
+        for byte in bytes {
+            out.push(HEX[(byte >> 4) as usize] as char);
+            out.push(HEX[(byte & 0x0f) as usize] as char);
+        }
+        serializer.serialize_str(&out)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<[u8; 32], D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+        if value.len() != 64 {
+            return Err(serde::de::Error::invalid_length(
+                value.len(),
+                &"64 hex chars",
+            ));
+        }
+
+        let mut bytes = [0_u8; 32];
+        for (index, chunk) in value.as_bytes().as_chunks::<2>().0.iter().enumerate() {
+            let high = hex_value(chunk[0]).map_err(serde::de::Error::custom)?;
+            let low = hex_value(chunk[1]).map_err(serde::de::Error::custom)?;
+            bytes[index] = (high << 4) | low;
+        }
+        Ok(bytes)
+    }
+
+    fn hex_value(byte: u8) -> Result<u8, &'static str> {
+        match byte {
+            b'0'..=b'9' => Ok(byte - b'0'),
+            b'a'..=b'f' => Ok(byte - b'a' + 10),
+            b'A'..=b'F' => Ok(byte - b'A' + 10),
+            _ => Err("invalid hex digit"),
+        }
+    }
+}
+
+/// A software feature tracked through the planning lifecycle.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Feature {
+    pub id: i64,
+    pub slug: String,
+    pub friendly_name: String,
+    pub state: FeatureState,
+    pub spec_hash: [u8; 32],
+    pub target_branch: String,
+    pub plane_issue_id: Option<String>,
+    pub plane_state_id: Option<String>,
+    pub labels: Vec<String>,
+    pub module_id: Option<i64>,
+    pub project_id: Option<i64>,
+    pub created_at_commit: Option<String>,
+    pub last_modified_commit: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl Feature {
+    /// Derive a kebab-case slug from a display name.
+    pub fn slug_from_name(name: &str) -> String {
+        name.chars()
+            .map(|c| {
+                if c.is_alphanumeric() {
+                    c.to_ascii_lowercase()
+                } else {
+                    '-'
+                }
+            })
+            .collect::<String>()
+            .split('-')
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+=== STEP 6: read gRPC generic tests ===
+        assert_eq!(
+            harness.persisted_feature("alpha").await.state.to_string(),
+            expected_state
+        );
+    }
+
+    harness
+        .set_feature_state(feature.id, FeatureState::Implementing)
+        .await;
+    let validate = dispatch(&harness, "validate", "alpha", &[])
+        .await
+        .expect_err("generic validate must not mint terminal acceptance");
+    assert_eq!(validate.code(), Code::Unimplemented);
+    assert_eq!(
+        harness.persisted_feature("alpha").await.state,
+        FeatureState::Implementing
+    );
+
+    harness
+        .set_feature_state(feature.id, FeatureState::Validated)
+        .await;
+    let ship = dispatch(&harness, "ship", "alpha", &[])
+        .await
+        .expect_err("generic ship must not mint promotion");
+    assert_eq!(ship.code(), Code::Unimplemented);
+    assert_eq!(
+        harness.persisted_feature("alpha").await.state,
+        FeatureState::Validated
+    );
+
+    harness
+        .set_feature_state(feature.id, FeatureState::Shipped)
+        .await;
+    let retrospective = dispatch(&harness, "retrospective", "alpha", &[])
+        .await
+        .expect("retrospective remains a non-acceptance transition");
+    assert!(retrospective.success);
+    assert_eq!(
+        harness.persisted_feature("alpha").await.state,
+        FeatureState::Retrospected
+    );
+=== --- ===
+        .expect("planning should bind a contract");
+
+    assert_eq!(contract.feature_id, feature.id);
+    assert_eq!(contract.version, 1);
+    assert_eq!(contract.rules.len(), 1);
+    assert!(contract.rules[0].transition.is_empty());
+    assert!(contract.rules[0].required_evidence.is_empty());
+}
+
+#[tokio::test]
+async fn dispatch_command_validate_cannot_bypass_canonical_acceptance() {
+    let harness = Harness::new().await;
+    harness
+        .seed_feature("alpha", FeatureState::Implementing)
+        .await;
+
+    let status = dispatch(&harness, "validate", "alpha", &[])
+        .await
+        .expect_err("generic gRPC validate must fail closed");
+
+    assert_eq!(status.code(), Code::Unimplemented);
+    assert!(status.message().contains("canonical acceptance"));
+    assert_eq!(
+        harness.persisted_feature("alpha").await.state,
+        FeatureState::Implementing
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Core commands: rejection paths
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn dispatch_command_rejects_an_invalid_transition() {
+    let harness = Harness::new().await;
+    harness.seed_feature("alpha", FeatureState::Created).await;
+
+    let status = dispatch(&harness, "research", "alpha", &[])
+        .await
+        .expect_err("researching a created feature must fail");
+
+    assert_eq!(status.code(), Code::FailedPrecondition);
+    assert!(status.message().contains("invalid transition"));
+    assert_eq!(
+        harness.persisted_feature("alpha").await.state,
+        FeatureState::Created,
+        "a rejected transition must not be persisted"
+    );
+}
+
+#[tokio::test]
+async fn dispatch_command_ship_cannot_bypass_canonical_promotion() {
+    let harness = Harness::new().await;
+    harness.seed_feature("alpha", FeatureState::Validated).await;
+
+    let status = dispatch(&harness, "ship", "alpha", &[])
+        .await
+        .expect_err("generic gRPC ship must fail closed");
+
+    assert_eq!(status.code(), Code::Unimplemented);
+    assert!(status.message().contains("canonical acceptance/promotion"));
+    assert_eq!(
+        harness.persisted_feature("alpha").await.state,
+        FeatureState::Validated
+    );
+}
+
+#[tokio::test]
+async fn dispatch_command_rejects_a_repeated_transition() {
+    let harness = Harness::new().await;
+    harness.seed_feature("alpha", FeatureState::Specified).await;
+=== --- ===
+    );
+}
+
+#[tokio::test]
+async fn dispatch_command_validate_blocks_when_required_evidence_is_missing() {
+    let harness = Harness::new().await;
+    let feature = harness
+        .seed_feature("alpha", FeatureState::Implementing)
+        .await;
+    harness.seed_wp(feature.id, 1, WpState::Done).await;
+    harness
+        .seed_contract(feature.id, 1, vec![rule("validate", &["FR-7:test_result"])])
+        .await;
+
+    let status = dispatch(&harness, "validate", "alpha", &[])
+        .await
+        .expect_err("generic gRPC validate must not bypass canonical acceptance");
+
+    assert_eq!(status.code(), Code::Unimplemented);
+    assert!(status.message().contains("canonical acceptance"));
+    assert_eq!(
+        harness.persisted_feature("alpha").await.state,
+        FeatureState::Implementing,
+        "rejected transport-local validation must not mutate feature state"
+    );
+}
+
+#[tokio::test]
+async fn generic_validate_never_interprets_governance_or_evidence_locally() {
+    let harness = Harness::new().await;
+    let feature = harness
+        .seed_feature("alpha", FeatureState::Implementing)
+        .await;
+    let wp = harness.seed_wp(feature.id, 1, WpState::Done).await;
+    harness
+        .seed_evidence(wp.id, "FR-7", EvidenceType::TestResult)
+        .await;
+    harness
+        .seed_contract(feature.id, 1, vec![rule("validate", &["FR-7:test_result"])])
+        .await;
+
+    let status = dispatch(&harness, "validate", "alpha", &[])
+        .await
+        .expect_err("generic validate must delegate terminal authority");
+    assert_eq!(status.code(), Code::Unimplemented);
+    assert!(status.message().contains("canonical acceptance"));
+    assert_eq!(
+        harness.persisted_feature("alpha").await.state,
+        FeatureState::Implementing
+    );
+}
+
+#[tokio::test]
+async fn dispatch_command_plan_keeps_an_existing_contract_when_binding_fails() {
+    let harness = Harness::new().await;
+    let feature = harness
+        .seed_feature("alpha", FeatureState::Researched)
+        .await;
+    // Version 1 already exists, so binding the default contract hits the
+    // unique (feature_id, version) constraint. The command must degrade
+    // gracefully instead of failing the transition.
+=== STEP 7: read CLI MVP 'generic' test ===
+        let mut wp = WorkPackage::new(feature_id, "WP", 1, "criterion");
+        wp.state = WpState::Review;
+        let wp_id = StoragePort::create_work_package(&storage, &wp)
+            .await
+            .unwrap();
+
+        let err = transition(
+            &TransitionArgs {
+                wp: Some(wp_id),
+                story: None,
+                to: "done".into(),
+            },
+            &storage,
+        )
+        .await
+        .expect_err("generic MVP transition must not self-award Done");
+        assert!(
+            err.to_string().contains("exact candidate-bound evaluation"),
+            "unexpected error: {err}"
+        );
+
+        let stored = StoragePort::get_work_package(&storage, wp_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(stored.state, WpState::Review);
+    }
+
+    // ── wp_state_label additional ──────────────────────────────────────────
+
+    #[test]
+    fn wp_state_label_all_unique() {
+        let labels: Vec<&str> = vec![
+            wp_state_label(WpState::Planned),
+            wp_state_label(WpState::Doing),
+            wp_state_label(WpState::Review),
+            wp_state_label(WpState::Done),
+            wp_state_label(WpState::Blocked),
+        ];
+        let unique: std::collections::HashSet<&str> = labels.into_iter().collect();
+        assert_eq!(unique.len(), 5, "all state labels should be unique");
+
+=== STEP 8: read grpc server mod.rs around line 700 ===
+    /// Dispatch core (non-agent) commands with real state transitions.
+    ///
+    /// Each command looks up the feature by slug, validates the state transition
+    /// via the domain model, persists the change, and returns the new state.
+    async fn dispatch_core_command(
+        &self,
+        command: &str,
+        feature_slug: &str,
+        args: &HashMap<String, String>,
+    ) -> Result<(String, HashMap<String, String>), Status> {
+        info!(command, feature_slug, "core command dispatched via gRPC");
+
+        // Determine the target state for this command.
+        let target_state = match command {
+            "specify" => FeatureState::Specified,
+            "research" => FeatureState::Researched,
+            "plan" => FeatureState::Planned,
+            // Terminal acceptance and promotion have stronger invariants than a
+            // generic state transition. Until gRPC is wired to the canonical
+            // validate/ship application services, fail closed rather than minting
+            // Validated/Shipped states from transport-local checks.
+            "validate" | "ship" => {
+                return Err(Status::unimplemented(format!(
+                    "command '{command}' requires the canonical acceptance/promotion service"
+                )));
+            }
+            "retrospective" => FeatureState::Retrospected,
+            other => {
+                return Err(Status::unimplemented(format!("unknown command: '{other}'")));
+            }
+        };
+
+=== STEP 9: search 'canonical acceptance' in grp/dom/cli ===
+crates/agileplus-grpc/src/server/mod.rs:713:                    "command '{command}' requires the canonical acceptance/promotion service"
+crates/agileplus-grpc/tests/rpc_dispatch_command.rs:261:    assert!(status.message().contains("canonical acceptance"));
+crates/agileplus-grpc/tests/rpc_dispatch_command.rs:300:    assert!(status.message().contains("canonical acceptance/promotion"));
+crates/agileplus-grpc/tests/rpc_dispatch_command.rs:336:        .expect_err("generic gRPC validate must not bypass canonical acceptance");
+crates/agileplus-grpc/tests/rpc_dispatch_command.rs:339:    assert!(status.message().contains("canonical acceptance"));
+crates/agileplus-grpc/tests/rpc_dispatch_command.rs:365:    assert!(status.message().contains("canonical acceptance"));
+=== STEP 10: locate E.2 mature contract / spec ===
+./spec/product/mature-contract.v1.json
+./python/.venv/lib/python3.14/site-packages/jsonschema_specifications/schemas/draft6/metaschema.json
+./python/.venv/lib/python3.14/site-packages/jsonschema_specifications/schemas/draft7/metaschema.json
+./python/.venv/lib/python3.14/site-packages/jsonschema_specifications/schemas/draft201909/metaschema.json
+./python/.venv/lib/python3.14/site-packages/jsonschema_specifications/schemas/draft202012/metaschema.json
+./python/.venv/lib/python3.14/site-packages/jsonschema_specifications/schemas/draft4/metaschema.json
+./python/.venv/lib/python3.14/site-packages/jsonschema_specifications/schemas/draft3/metaschema.json
+./specs/epic_F/meta.json
+./node_modules/@standard-schema/spec/package.json
+./node_modules/object-inspect/package.json
+./node_modules/object-inspect/package-support.json
+
+=== STEP 11: FORWARD WBS / DELTA ===
+ATOMIC_ACCEPTANCE_BOUNDARY_2026-10-02.md
+ATOMIC_ACCEPTANCE_GATE_2026-10-03.md
+AUTOGRADER_CONTRACT.md
+CASE_BINDING_2026-10-17.md
+check_intent_reconciliation.py
+CI_EVIDENCE_2026-10-01.md
+EXECUTION_QUEUE.md
+FORWARD_DELTA_2026-10-04.md
+FORWARD_WBS_2026-10-04.md
+INTENT_RECONCILIATION_2026-10-14.md
+NEXT_DEPLOYABLE_RELEASE_2026-10-04.md
+OPERATOR_DASHBOARD_2026-10-08.md
+PROMOTION_RECOVERY_2026-10-08.md
+RELEASE_EVIDENCE_LEDGER_2026-10-07.md
+RUNTIME_CONVERGENCE_2026-10-04.md
+RUNTIME_EVIDENCE_PLAN.md
+semantic-verification-cases.v1.json
+SPECIFICATION_ACCEPTANCE_CONTRACT.md
+
+=== STEP 12: read FORWARD_WBS ===
+# AgilePlus forward work breakdown
+
+Status: canonical recovery WBS as of 2026-10-04.
+
+This document is the operational continuation point for future ChatGPT chats,
+ChatGPT Work sessions, coding agents and human contributors. It supplements the
+semantic authority chain; it does not override the accepted mature product
+contract.
+
+## Release target
+
+The next meaningful release is a remotely usable, zero-paid-service,
+SaaS-style private/operator alpha.
+
+Target topology:
+
+```
+Vercel Hobby dashboard
+  -> product domain
+  -> tailnet-aware/private API naming
+  -> Tailscale organizational network
+  -> stable service identity where practical
+  -> one host-level Caddy
+  -> owner's desktop
+  -> agileplus-api
+  -> persistent SQLite
+```
+
+Cloudflare Tunnel is optional public ingress later, not the private network
+foundation.
+
+### Current engineering ETA
+
+Assuming focused execution and no newly discovered major dashboard regression:
+
+- native/operator API alpha: 1–2 focused working days;
+- first usable authenticated browser alpha: 4–7 focused working days;
+- stronger alpha with acceptance UI and worker/recovery visibility: 8–15 focused working days.
+
+These are estimates, not completion percentages.
+
+## P0 — make canonical atomic acceptance natively green
+
+Do not broaden product scope until this gate has authoritative execution.
+
+1. Run Rust formatting, Clippy, compile and workspace tests on the canonical head.
+2. Execute canonical SQLite atomic acceptance witnesses:
+   - complete commit;
+   - exact replay;
+   - conflicting request reuse;
+   - invalid existing audit chain;
+   - forced late receipt failure rollback.
+3. Execute real-SQLite HTTP acceptance witnesses:
+   - auth required;
+   - commit;
+   - exact replay;
+   - conflict;
+   - validation/precondition failure is 422;
+   - failure leaves terminal state unchanged.
+4. Preserve the corrected CI truth rule:
+
+=== STEP 12b: search E.2.P1-GENERIC in verif/sessions ===
+docs/sessions/20261017-state-forward-docket/e2_e5_p1p2_val_2026-10-18-trex-result.md:34:| generic feature transition cannot award Validated or Shipped | `terminal_feature_states_are_not_generic_transition_targets` (file: `crates/agileplus-api/src/routes/features.rs:392`) | **NO PRODUCTION ENFORCEMENT** (see cheap close E.2.P1-GENERIC) |
+docs/sessions/20261017-state-forward-docket/e2_e5_p1p2_val_2026-10-18-trex-result.md:170:### E.2.P1-GENERIC — Implement the "generic feature transition cannot award Validated or Shipped" rule
+docs/sessions/20261017-state-forward-docket/e2_e5_p1p2_val_2026-10-18-trex-result.md:219:- **E.2.P1-GENERIC** is the only blocking issue. Without an enforcement decision + production change + behavior test, the P1 exit criterion ("HTTP is a projection of the application acceptance use case, not a parallel lifecycle implementation") is partially unmet for the "generic cannot award Validated or Shipped" sub-case. All other P1+P2 sub-tasks have current evidence and pass.
+docs/sessions/20261017-state-forward-docket/e2_e5_p1p2_val_2026-10-18-trex-result.md:224:1. Decide the product semantics of "generic feature" — E.2.P1-GENERIC, eta 60 m.
+docs/sessions/20261017-state-forward-docket/DOCKET_CLOSE_OUT.md:19:| Cheap closes filed (new) | 0 | **6** (B.y, E.2.P1-422, E.2.P1-GENERIC, CF-1, CF-2, CF-3) | +6 |
+docs/sessions/20261017-state-forward-docket/DOCKET_CLOSE_OUT.md:44:| 11 | E.2 / E.5 Validation | PARTIAL | **t-rex subagent** (95s; P1 10/10, P2 6/6; 1 new carry-forward: E.2.P1-GENERIC) | 2026-10-18T19:36Z |
+docs/sessions/20261017-state-forward-docket/DOCKET_CLOSE_OUT.md:55:| 15 | E.2.P1-GENERIC — Implement "generic" rule | Production gap: "generic feature transition cannot award Validated or Shipped" has no production enforcement and no real test. The only existing test is a tautology. 60m subagent task. **BLOCKING** the P1 exit criterion. | Operator: (1) decide product semantics — is "generic" a `Feature.kind` field or a governance-contract property? (2) implement in `Feature::transition()` or `accept_feature.rs`. (3) replace tautology with behavior test. |
+docs/sessions/20261017-state-forward-docket/DOCKET_CLOSE_OUT.md:119:### E.2.P1-GENERIC (open, 60m, BLOCKING)
+docs/sessions/20261017-state-forward-docket/DOCKET_CLOSE_OUT.md:172:- ✅ Carry-forwards honestly filed (B.y from newt; E.2.P1-422 + E.2.P1-GENERIC from t-rex)
+docs/sessions/20261017-state-forward-docket/DOCKET_CLOSE_OUT.md:188:2. **High-leverage**: dispatch subagent to investigate E.2.P1-GENERIC and propose a design (60m, requires product decision from operator on whether "generic" is a `Feature.kind` field or a governance-contract property)
+docs/sessions/20261017-state-forward-docket/DOCKET_CLOSE_OUT.md:224:**Open work honestly attributed**: 5 cheap_closes (2× A.4/E.9 blocked on PR #1156, 1× F.3 LOWEST, 1× E.2.P1-GENERIC BLOCKING, 1× CF-3 deferred to kitty-spec 003), 8 PRs (6 source-code PRs blocked on the 2 unblocker PRs #1165 + #1166 merging; PR #1156 still needs sloth-v4 contingent), 8 operator-gated items (Vercel, Tailscale, etc.).
+=== STEP 13: read t-rex result file (focus on E.2.P1-GENERIC) ===
+# E.2 / E.5 Validation (P1+P2) — t-rex, 2026-10-18T19:36Z
+
+**Verdict**: PARTIAL
+**Subagent session**: t-rex (`session_snake_1792352065409_e571d49ceb42da4e`)
+**Wall-clock**: ~95 s (start 19:34:31Z, end 19:36:07Z)
+**Cheap closes filed**: 2
+
+## Setup
+
+- Working directory: `/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus`
+- Branch: `docs/state-forward-docket-20261017`
+- Pre-existing untracked file (not from this run): `docs/sessions/20261017-state-forward-docket/dependabot_bumps_2026-10-18-stingray.log`
+- Build: `cargo build --workspace --all-targets` → exit 0, 13.19 s (target/ warm cache)
+- No source mutations made during validation.
+
+## Source-of-truth mapping
+
+`verification/FORWARD_WBS_2026-10-04.md` lines 69–109 define P1+P2. The P1+P2 sub-tasks map to the existing test suites as follows:
+
+### P1 (HTTP acceptance)
+
+P1 sub-task 1 (OpenAPI contract) — verified by `crates/agileplus-api/src/routes/acceptance.rs` (production code) and the test runner below. Production code was not modified by this validation; OpenAPI documentation artifact presence is out of scope for a validation cheap_close.
+
+P1 sub-task 2 (idempotency / request_id semantics) — verified by tests below.
+
+P1 sub-task 3 (the 6 provable cases):
+| WBS case | Test name (file: `crates/agileplus-api/tests/atomic_acceptance_http.rs`) | Verdict |
+|---|---|---|
+| missing feature → 404 | `missing_feature_returns_404_without_acceptance_side_effects` (l. 317) | PASS |
+| stale governance version → 409 | `stale_governance_expectation_cannot_accept_over_http` (l. 330) | PASS |
+| bad correctness/governance → 422 | `client_cannot_supply_a_pass_or_actor_override` (l. 353) | **PASS but weak assertion** (see cheap close E.2.P1-422) |
+| storage failure → sanitized 500 | `persistence_failure_over_http_leaves_no_terminal_state_or_receipt` (l. 376) | PASS |
+| exact replay returns original receipt | `authenticated_http_acceptance_commits_and_replays_one_receipt` (l. 260) | PASS |
+| generic feature transition cannot award Validated or Shipped | `terminal_feature_states_are_not_generic_transition_targets` (file: `crates/agileplus-api/src/routes/features.rs:392`) | **NO PRODUCTION ENFORCEMENT** (see cheap close E.2.P1-GENERIC) |
+
+P1 sub-task 4 (receipt identity retrievable after restart) — `mounted_receipt_survives_database_reopen_without_regrading` (l. 218). PASS.
+
+P1 sub-task 5 (restart-backed DB integration witness) — same test as P1-4. PASS.
+
+### P2 (gRPC validation parity)
+
+=== --- 160-230 --- ===
+- **Move**: tighten the assertion in `crates/agileplus-api/tests/atomic_acceptance_http.rs:370` from `response.status_code().is_client_error()` to `assert_eq!(response.status_code(), StatusCode::UNPROCESSABLE_ENTITY)` for the `passed: true`, `authoritative: true`, and `actor: "owner"` payloads.
+- **Why**: production code at `acceptance.rs:152-155` already maps `DomainError::Validation` to HTTP 422; the test passes for any 4xx, so a future regression that returns 400 or 409 would still satisfy the assertion and silently weaken the contract.
+- **eta_min**: 10
+- **Evidence**:
+  ```
+  $ rg -n "is_client_error|UNPROCESSABLE_ENTITY" crates/agileplus-api/tests/atomic_acceptance_http.rs
+  370:        assert!(response.status_code().is_client_error());
+  ```
+- **Risk**: zero behavior change; assertion tightening only.
+
+### E.2.P1-GENERIC — Implement the "generic feature transition cannot award Validated or Shipped" rule
+
+- **Cell**: E.2 / E.5
+- **Move**:
+  1. Decide whether "generic" is a property of the **Feature** (new `kind` field with `Generic`/`Specific`) or of the **governance contract** (e.g. missing acceptance contract ⇒ transitions to Validated/Shipped are rejected). Either is defensible; the WBS does not specify.
+  2. Implement the rule in `crates/agileplus-domain/src/domain/feature.rs::Feature::transition()` (lines 95–115) and/or the atomic acceptance port at `crates/agileplus-application/src/use_cases/accept_feature.rs` (currently 17 lines — currently only documents that "callers cannot supply a boolean governance pass or separately write terminal state").
+  3. Replace the tautology at `crates/agileplus-api/src/routes/features.rs:392` with a behavior test that attempts `transition(FeatureState::Implementing, FeatureState::Validated)` on a feature whose governance contract is absent (or whose `kind == Generic`) and asserts `Err(...)`.
+- **Why**: the WBS sub-task 3 sixth case is the only P1-3 case without production enforcement and without a real test. Today, any feature (even one without governance) can be transitioned to `Validated`/`Shipped` via the feature-level state machine.
+- **eta_min**: 60 (rule design + 2 acceptance-port changes + 2 tests)
+- **Evidence**:
+  ```
+  $ rg -n "feature_kind|FeatureKind|is_generic|feature_category" crates/ --include='*.rs'
+  (no matches)
+  $ sed -n '57,74p' crates/agileplus-domain/src/domain/feature.rs
+  pub struct Feature {
+      pub id: i64,
+      pub slug: String,
+      pub friendly_name: String,
+      pub state: FeatureState,
+      pub spec_hash: [u8; 32],
+      pub target_branch: String,
+      pub plane_issue_id: Option<String>,
+      pub plane_state_id: Option<String>,
+      pub labels: Vec<String>,
+      pub module_id: Option<i64>,
+      pub project_id: Option<i64>,
+      pub created_at_commit: Option<String>,
+      pub last_modified_commit: Option<String>,
+      pub created_at: DateTime<Utc>,
+      pub updated_at: DateTime<Utc>,
+  }
+  ```
+  ```
+  $ sed -n '391,399p' crates/agileplus-api/src/routes/features.rs
+  fn terminal_feature_states_are_not_generic_transition_targets() {
+      for target in [FeatureState::Validated, FeatureState::Shipped] {
+          assert!(matches!(
+              target,
+              FeatureState::Validated | FeatureState::Shipped
+          ));
+      }
+  }
+  ```
+- **Risk**: medium — requires product decision (where does "generic" live?). Likely blocks the P1 exit criterion until resolved.
+
+---
+
+## Blockers
+
+- **E.2.P1-GENERIC** is the only blocking issue. Without an enforcement decision + production change + behavior test, the P1 exit criterion ("HTTP is a projection of the application acceptance use case, not a parallel lifecycle implementation") is partially unmet for the "generic cannot award Validated or Shipped" sub-case. All other P1+P2 sub-tasks have current evidence and pass.
+- E.2.P1-422 is a test-quality fix; not blocking, but cheap to land.
+
+## Operator action required
+
+1. Decide the product semantics of "generic feature" — E.2.P1-GENERIC, eta 60 m.
+2. Land the assertion tightening — E.2.P1-422, eta 10 m.
+3. Re-run `cargo test -p agileplus-api --test atomic_acceptance_http --no-fail-fast` and `cargo test -p agileplus-grpc --test atomic_acceptance_rpc --no-fail-fast` after each fix to confirm green.
+
+## Operator-safe verification log
+
+- `tail -F /tmp/e2_e5_p1p2_val_2026-10-18.log` for the full tee stream.
+
+=== STEP 14: read mature-contract.v1.json ===
+{
+  "schema_version": "2.1.0",
+  "record_type": "mature_contract_recovery_manifest",
+  "product_id": "PRD-AGILEPLUS",
+  "canonical_name": "AgilePlus",
+  "status": "accepted_mature_semantic_contract_runtime_evidence_pending",
+  "accepted": true,
+  "mature_complete": false,
+  "grading_eligible_for_semantic_spine": true,
+  "grading_eligible_for_full_mature_contract": false,
+  "requirement_count_policy": "derived_only_no_target_floor_ceiling_or_range",
+  "canonical_semantics": "spec/product/CANONICAL_SEMANTIC_DECISIONS.md",
+  "canonical_spine": {
+    "path": "spec/product/requirements.semantic.v1.json",
+    "derived_requirement_count": 67
+  },
+  "journeys": {
+    "path": "spec/product/journeys.v1.json",
+    "status": "accepted_mature_semantic_journeys",
+    "count": 12
+  },
+  "verification": {
+    "path": "verification/semantic-verification-cases.v1.json",
+    "status": "specified_not_executed",
+    "case_count": 92,
+    "requirement_trace_complete": true
+  },
+  "historical_requirement_disposition": {
+    "path": "spec/product/historical-fr-disposition.v1.json",
+    "historical_requirement_count": 90
+  },
+  "mature_domain_denominator": "spec/product/MATURE_DOMAIN_COVERAGE_MAP.md",
+  "specification_acceptance": "verification/SPECIFICATION_ACCEPTANCE_CONTRACT.md",
+  "finality_ledger": "spec/product/NON_CODE_FINALITY_LEDGER.md",
+  "invalidated_predecessor": {
+    "reason": "quota-shaped/generated catalogue was not source-backed semantic decomposition"
+  },
+  "closure_rule": "Mature semantic/product-method specification accepted. Full product completion remains false until implementation/runtime evidence closes evaluator, persistence, worker-replacement, interface and federation witnesses. Newly recovered independently gradable behavior may expand the natural contract denominator through explicit accepted revisions.",
+  "mature_semantic_complete": true,
+  "grading_eligible_for_semantic_contract": true,
+  "grading_eligible_for_runtime_completion": false,
+  "authority_index": "spec/product/AUTHORITY_INDEX.md"
+}
+=== STEP 15: read Feature::transition (claimed l.95-115) ===
+                }
+            })
+            .collect::<String>()
+            .split('-')
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join("-")
+    }
+
+    /// Attempt a state transition. Returns an error string if the transition is not allowed.
+    pub fn transition(&mut self, target: FeatureState) -> Result<(), String> {
+        use FeatureState::*;
+        let allowed = match self.state {
+            Created => matches!(target, Specified),
+            Specified => matches!(target, Researched),
+            Researched => matches!(target, Planned),
+            Planned => matches!(target, Implementing),
+            Implementing => matches!(target, Validated),
+            Validated => matches!(target, Shipped),
+            Shipped => matches!(target, Retrospected),
+            Retrospected => false,
+        };
+        if allowed {
+            self.state = target;
+            self.updated_at = Utc::now();
+            Ok(())
+        } else {
+            Err(format!(
+                "invalid transition {:?} -> {:?}",
+                self.state, target
+            ))
+        }
+    }
+
+    /// Construct a new Feature with sensible defaults.
+    pub fn new(
+        slug: &str,
+        friendly_name: &str,
+        spec_hash: [u8; 32],
+        target_branch: Option<&str>,
+    ) -> Self {
+        let now = Utc::now();
+        Self {
+            id: 0,
+            slug: slug.to_string(),
+            friendly_name: friendly_name.to_string(),
+            state: FeatureState::Created,
+            spec_hash,
+            target_branch: target_branch.unwrap_or("main").to_string(),
+            plane_issue_id: None,
+            plane_state_id: None,
+            labels: Vec::new(),
+            module_id: None,
+            project_id: None,
+            created_at_commit: None,
+            last_modified_commit: None,
+
+=== STEP 15b: continue Feature ===
+            last_modified_commit: None,
+            created_at: now,
+            updated_at: now,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn valid_transition_updates_state() {
+        let mut feature = Feature::new("auth", "Authentication", [0; 32], None);
+
+        feature
+            .transition(FeatureState::Specified)
+            .expect("domain operation");
+
+        assert_eq!(feature.state, FeatureState::Specified);
+    }
+
+    #[test]
+    fn invalid_transition_is_rejected_without_mutating_state() {
+        let mut feature = Feature::new("auth", "Authentication", [0; 32], None);
+
+        let err = feature.transition(FeatureState::Shipped).unwrap_err();
+
+        assert_eq!(feature.state, FeatureState::Created);
+        assert!(err.contains("invalid transition Created -> Shipped"));
+    }
+
+    #[test]
+    fn full_happy_path_transition_chain() {
+        let mut feature = Feature::new("feat", "Feature", [0; 32], None);
+        let chain = [
+            FeatureState::Specified,
+            FeatureState::Researched,
+            FeatureState::Planned,
+            FeatureState::Implementing,
+            FeatureState::Validated,
+            FeatureState::Shipped,
+            FeatureState::Retrospected,
+        ];
+        for target in chain {
+            feature.transition(target).unwrap();
+        }
+        assert_eq!(feature.state, FeatureState::Retrospected);
+    }
+
+    #[test]
+    fn retrospected_cannot_transition() {
+        let mut feature = Feature::new("done", "Done", [0; 32], None);
+        feature.transition(FeatureState::Specified).unwrap();
+        feature.transition(FeatureState::Researched).unwrap();
+        feature.transition(FeatureState::Planned).unwrap();
+        feature.transition(FeatureState::Implementing).unwrap();
+        feature.transition(FeatureState::Validated).unwrap();
+        feature.transition(FeatureState::Shipped).unwrap();
+        feature.transition(FeatureState::Retrospected).unwrap();
+
+        // Retrospected is a terminal state; no outgoing transitions.
+        assert!(feature.transition(FeatureState::Created).is_err());
+        assert!(feature.transition(FeatureState::Shipped).is_err());
+        assert_eq!(feature.state, FeatureState::Retrospected);
+    }
+
+    #[test]
+    fn all_invalid_transitions_from_created() {
+        let invalid_targets = [
+            FeatureState::Created,
+            FeatureState::Researched,
+            FeatureState::Planned,
+            FeatureState::Implementing,
+            FeatureState::Validated,
+            FeatureState::Shipped,
+            FeatureState::Retrospected,
+        ];
+        for target in invalid_targets {
+            let mut feature = Feature::new("x", "X", [0; 32], None);
+            assert!(
+
+=== STEP 16: count lines feature.rs ===
+     570 crates/agileplus-domain/src/domain/feature.rs
+
+=== STEP 17: read acceptance.rs (HTTP) ===
+     173 crates/agileplus-api/src/routes/acceptance.rs
+//! Authenticated terminal acceptance, distinct from governance-only `/validate`.
+
+use crate::state::AppState;
+use agileplus_application::{
+    error::AppError,
+    use_cases::accept_feature::{AcceptFeatureCommand, accept_feature},
+};
+use agileplus_domain::ports::vcs::VcsPort;
+use agileplus_domain::{
+    error::DomainError,
+    ports::{ObservabilityPort, StoragePort},
+};
+use axum::{
+    Json, Router,
+    extract::{Path, State},
+    http::StatusCode,
+    routing::{get, post},
+};
+use serde::Deserialize;
+use serde_json::{Value, json};
+use std::sync::Arc;
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AcceptRequest {
+    pub request_id: String,
+    pub expected_governance_version: Option<i32>,
+}
+
+type HttpError = (StatusCode, Json<Value>);
+
+pub fn routes<S, V, O>() -> Router<AppState<S, V, O>>
+where
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
+{
+    Router::new()
+        .route("/{slug}/accept", post(accept::<S, V, O>))
+        .route("/{slug}/acceptance-receipt", get(receipt::<S, V, O>))
+}
+
+/// Returns a historical committed receipt; does not assert current applicability.
+pub async fn receipt<S, V, O>(
+    State(state): State<AppState<S, V, O>>,
+    Path(slug): Path<String>,
+) -> Result<Json<agileplus_domain::domain::acceptance::FeatureAcceptanceReceipt>, HttpError>
+where
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
+{
+    let port = state.atomic_acceptance.as_ref().ok_or_else(|| {
+        (
+            StatusCode::NOT_IMPLEMENTED,
+            Json(json!({"error":"atomic_acceptance_not_configured"})),
+        )
+    })?;
+    let feature = state
+        .storage
+        .get_feature_by_slug(&slug)
+        .await
+        .map_err(domain_error)?
+        .ok_or_else(|| {
+            (
+                StatusCode::NOT_FOUND,
+                Json(json!({"error":"feature_not_found"})),
+            )
+        })?;
+    let receipt = port
+        .get_feature_acceptance_receipt(feature.id)
+        .await
+        .map_err(domain_error)?
+        .ok_or_else(|| {
+            (
+                StatusCode::NOT_FOUND,
+                Json(json!({"error":"acceptance_receipt_not_found"})),
+            )
+        })?;
+    Ok(Json(receipt))
+
+=== STEP 17b: read accept_feature.rs use case ===
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//! Terminal acceptance delegates to one focused transactional capability.
+//! Callers cannot supply a boolean governance pass or separately write terminal state.
+
+use crate::error::AppError;
+pub use agileplus_domain::domain::acceptance::{
+    AcceptFeatureCommand, AcceptanceOutcome, FeatureAcceptanceReceipt,
+};
+use agileplus_domain::ports::execution::AtomicAcceptancePort;
+
+pub async fn accept_feature<S: AtomicAcceptancePort + ?Sized>(
+    storage: &S,
+    command: &AcceptFeatureCommand,
+) -> Result<AcceptanceOutcome, AppError> {
+    command.validate()?;
+    Ok(storage.accept_feature_atomic(command).await?)
+}
+=== STEP 18: read WBS P1/P2 tasks ===
+78-   - exact replay returns the original receipt;
+79:   - generic feature transition cannot award Validated or Shipped.
+80-4. Ensure acceptance receipt identity can be retrieved after restart.
+81-5. Add restart-backed database integration witness.
+82-
+--
+87-
+88:Generic gRPC lifecycle dispatch currently fails closed. Replace only validate
+89-with the canonical path:
+90-
+91-```
+
+=== STEP 18b: full P1 P2 read ===
+4. Preserve the corrected CI truth rule:
+   test not executed != test passed.
+5. Separate unrelated repository debt from this gate:
+   Python lint, Cargo Deny, coverage, security and release failures remain
+   tracked but cannot be used either to hide or fabricate acceptance evidence.
+
+Exit criterion: one concrete commit has native evidence that Rust tests
+actually executed and the atomic acceptance suite passed.
+
+## P1 — finish HTTP acceptance as a production contract
+
+1. Add OpenAPI contract for the dedicated acceptance endpoint.
+2. Pin request/response/idempotency semantics.
+3. Prove:
+   - missing feature -> 404;
+   - stale governance version -> 409;
+   - bad correctness/governance -> 422;
+   - storage failure -> sanitized 500;
+   - exact replay returns the original receipt;
+   - generic feature transition cannot award Validated or Shipped.
+4. Ensure acceptance receipt identity can be retrieved after restart.
+5. Add restart-backed database integration witness.
+
+Exit criterion: HTTP is a projection of the application acceptance use case,
+not a parallel lifecycle implementation.
+
+## P2 — gRPC validation parity
+
+Generic gRPC lifecycle dispatch currently fails closed. Replace only validate
+with the canonical path:
+
+```
+RPC
+  -> resolve feature
+  -> durable request identity
+  -> AcceptFeatureCommand
+  -> accept_feature
+  -> AtomicAcceptancePort
+  -> AcceptanceOutcome
+```
+
+Rules:
+
+- no gRPC-local governance evaluator;
+- no gRPC-local candidate evaluator;
+- no direct state mutation;
+- request identity must be stable/idempotent;
+- if the protobuf cannot represent the required command, version the API.
+
+Do not implement ship through the same shortcut.
+
+## P3 — worker replacement and restart recovery
+
+Prove the durable work model rather than merely the happy path.
+
+Required journey:
+
+=== STEP 19: search 'FeatureKind' and 'kind' field anywhere ===
+crates/agileplus-application/src/use_cases/triage.rs:57:        category: Option<&str>,
+crates/agileplus-application/src/use_cases/triage.rs:234:            category: None,
+crates/agileplus-application/src/use_cases/triage.rs:571:            category: None,
+crates/agileplus-application/src/use_cases/triage.rs:589:            category: None,
+crates/agileplus-application/src/dto/mod.rs:31:    pub category: Option<String>,
+crates/agileplus-application/src/dto/mod.rs:135:    pub category: Option<String>,
+crates/agileplus-application/src/dto/mod.rs:225:            category: Some("bug".into()),
+crates/agileplus-application/src/dto/mod.rs:241:            category: None,
+crates/agileplus-application/src/dto/mod.rs:493:            category: Some("infra".into()),
+crates/agileplus-application/src/test_cases/triage.rs:52:            category: Some("bug".to_string()),
+crates/agileplus-application/src/test_cases/triage.rs:75:            category: None,
+crates/agileplus-application/tests/dto_serialization.rs:16:        category: Some("bug".into()),
+crates/agileplus-application/tests/dto_serialization.rs:32:        category: None,
+crates/agileplus-application/tests/dto_serialization.rs:46:        category: None,
+crates/agileplus-application/tests/dto_serialization.rs:477:        category: Some("infra".into()),
+crates/agileplus-application/tests/dto_serialization.rs:508:        category: None,
+crates/agileplus-application/tests/dto_serialization.rs:525:        category: None,
+crates/agileplus-application/tests/triage_app_state_tests.rs:95:        category: Option<&str>,
+crates/agileplus-application/tests/triage_app_state_tests.rs:154:            category: Some("bug".into()),
+crates/agileplus-application/tests/triage_app_state_tests.rs:178:            category: None,
+
+=== STEP 19b: search 'is_generic' ===
+crates/agileplus-api/src/error.rs:136:    fn internal_error_display_is_generic() {
+crates/agileplus-api/src/error.rs:257:    async fn template_error_body_is_generic_and_hides_details() {
+crates/agileplus-api/src/error.rs:270:    async fn internal_error_body_is_generic_and_hides_details() {
+=== STEP 20: look for HTTP state transition routes ===
+8://! - POST /api/v1/features/:slug/transition → state transition
+44:        .route("/{slug}/transition", post(transition_feature::<S, V, O>))
+173:        FeatureState::Validated | FeatureState::Shipped
+264:/// `POST /api/v1/features/:slug/transition`
+265:pub async fn transition_feature<S, V, O>(
+283:    if matches!(target, FeatureState::Validated | FeatureState::Shipped) {
+288:    let result = agileplus_domain::domain::state_machine::transition(feature.state, target)
+298:        from_state: result.transition.from.to_string(),
+299:        to_state: result.transition.to.to_string(),
+345:        assert_eq!(state, FeatureState::Validated);
+351:        assert_eq!(state, FeatureState::Shipped);
+392:    fn terminal_feature_states_are_not_generic_transition_targets() {
+393:        for target in [FeatureState::Validated, FeatureState::Shipped] {
+396:                FeatureState::Validated | FeatureState::Shipped
+402:    fn transition_response_fields() {
+415:    fn transition_response_serializes() {
+
+=== STEP 20b: read full features.rs routes ===
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//! Feature route handlers.
+//!
+//! - GET  /api/v1/features                  → list (with ?state=, ?label= filters)
+//! - GET  /api/v1/features/:slug            → detail
+//! - POST /api/v1/features                  → create
+//! - PATCH /api/v1/features/:slug           → update
+//! - POST /api/v1/features/:slug/transition → state transition
+//!
+//! Traceability: WP11-T066
+
+use axum::extract::{Path, Query, State};
+use axum::http::StatusCode;
+use axum::routing::{get, post};
+use axum::{Json, Router};
+use chrono::Utc;
+use serde::{Deserialize, Serialize};
+use utoipa::{IntoParams, ToSchema};
+
+use agileplus_domain::domain::feature::Feature;
+use agileplus_domain::domain::state_machine::FeatureState;
+use agileplus_domain::ports::vcs::VcsPort;
+use agileplus_domain::ports::{ObservabilityPort, StoragePort};
+
+use crate::error::ApiError;
+use crate::responses::FeatureResponse;
+use crate::state::AppState;
+
+pub fn routes<S, V, O>() -> Router<AppState<S, V, O>>
+where
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
+{
+    Router::new()
+        .route(
+            "/",
+            get(list_features::<S, V, O>).post(create_feature::<S, V, O>),
+        )
+        .route(
+            "/{slug}",
+            get(get_feature::<S, V, O>).patch(update_feature::<S, V, O>),
+        )
+        .route("/{slug}/transition", post(transition_feature::<S, V, O>))
+}
+
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct FeatureListParams {
+    /// Filter by feature state (e.g. `planned`, `in_progress`, `done`).
+    pub state: Option<String>,
+    /// Filter by label.
+    pub label: Option<String>,
+}
+
+/// `GET /api/v1/features[?state=<state>&label=<label>]`
+#[utoipa::path(
+    get,
+    path = "/api/v1/features",
+    tag = "features",
+    params(FeatureListParams),
+    responses(
+        (status = 200, description = "List features", body = [FeatureResponse]),
+        (status = 401, description = "Missing or invalid API key"),
+    ),
+    security(("api_key" = []))
+)]
+pub async fn list_features<S, V, O>(
+    State(state): State<AppState<S, V, O>>,
+    Query(params): Query<FeatureListParams>,
+) -> Result<Json<Vec<FeatureResponse>>, ApiError>
+where
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
+{
+    let features = if let Some(state_filter) = &params.state {
+        let fs = parse_feature_state(state_filter)?;
+        state
+            .storage
+            .list_features_by_state(fs)
+
+=== STEP 20c: continue features.rs ===
+            .list_features_by_state(fs)
+            .await
+            .map_err(ApiError::from)?
+    } else if let Some(label) = &params.label {
+        state
+            .storage
+            .list_features_by_label(label)
+            .await
+            .map_err(ApiError::from)?
+    } else {
+        state
+            .storage
+            .list_all_features()
+            .await
+            .map_err(ApiError::from)?
+    };
+
+    let features: Vec<Feature> = if let Some(label_filter) = &params.label {
+        features
+            .into_iter()
+            .filter(|f| f.labels.contains(label_filter))
+            .collect()
+    } else {
+        features
+    };
+
+    Ok(Json(
+        features.into_iter().map(FeatureResponse::from).collect(),
+    ))
+}
+
+/// `GET /api/v1/features/:slug`
+pub async fn get_feature<S, V, O>(
+    State(state): State<AppState<S, V, O>>,
+    Path(slug): Path<String>,
+) -> Result<Json<FeatureResponse>, ApiError>
+where
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
+{
+    let feature = state
+        .storage
+        .get_feature_by_slug(&slug)
+        .await
+        .map_err(ApiError::from)?
+        .ok_or_else(|| ApiError::NotFound(format!("Feature '{slug}' not found")))?;
+
+    Ok(Json(FeatureResponse::from(feature)))
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CreateFeatureRequest {
+    /// Human-friendly title; used to derive the slug.
+    pub title: String,
+    /// Optional long-form description.
+    pub description: Option<String>,
+    /// Initial state (defaults to `planned`).
+    pub state: Option<String>,
+    /// Target git branch for the feature; defaults to `main`.
+    pub target_branch: Option<String>,
+}
+
+/// `POST /api/v1/features`
+#[utoipa::path(
+    post,
+    path = "/api/v1/features",
+    tag = "features",
+    request_body = CreateFeatureRequest,
+    responses(
+        (status = 201, description = "Feature created", body = FeatureResponse),
+        (status = 400, description = "Invalid payload"),
+        (status = 401, description = "Missing or invalid API key"),
+    ),
+    security(("api_key" = []))
+)]
+pub async fn create_feature<S, V, O>(
+    State(app): State<AppState<S, V, O>>,
+    Json(body): Json<CreateFeatureRequest>,
+) -> Result<(StatusCode, Json<FeatureResponse>), ApiError>
+where
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
+{
+    let initial_state = body
+        .state
+        .as_deref()
+        .map(parse_feature_state)
+        .transpose()?
+        .unwrap_or(FeatureState::Created);
+    if matches!(
+        initial_state,
+        FeatureState::Validated | FeatureState::Shipped
+    ) {
+        return Err(ApiError::BadRequest(
+            "terminal feature states cannot be assigned at creation; use canonical acceptance/promotion"
+                .to_string(),
+        ));
+    }
+
+    let slug = body.title.to_lowercase().replace(' ', "-");
+    let now = Utc::now();
+    let feature = Feature {
+        id: 0,
+        slug: slug.clone(),
+        friendly_name: body.title.clone(),
+        state: initial_state,
+        spec_hash: [0u8; 32],
+        target_branch: body.target_branch.unwrap_or_else(|| "main".to_string()),
+        plane_issue_id: None,
+        plane_state_id: None,
+        labels: vec![],
+        module_id: None,
+        project_id: None,
+        created_at: now,
+        updated_at: now,
+        created_at_commit: None,
+        last_modified_commit: None,
+    };
+
+
+=== STEP 20d: continue features.rs (200-340) ===
+
+    let id = app
+        .storage
+        .create_feature(&feature)
+        .await
+        .map_err(ApiError::from)?;
+
+    let created = Feature { id, ..feature };
+    Ok((StatusCode::CREATED, Json(FeatureResponse::from(created))))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateFeatureRequest {
+    pub title: Option<String>,
+    pub target_branch: Option<String>,
+}
+
+/// `PATCH /api/v1/features/:slug`
+pub async fn update_feature<S, V, O>(
+    State(app): State<AppState<S, V, O>>,
+    Path(slug): Path<String>,
+    Json(body): Json<UpdateFeatureRequest>,
+) -> Result<Json<FeatureResponse>, ApiError>
+where
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
+{
+    let feature = app
+        .storage
+        .get_feature_by_slug(&slug)
+        .await
+        .map_err(ApiError::from)?
+        .ok_or_else(|| ApiError::NotFound(format!("Feature '{slug}' not found")))?;
+
+    // Apply updates to a new owned copy.
+    let updated = Feature {
+        friendly_name: body.title.unwrap_or(feature.friendly_name.clone()),
+        target_branch: body.target_branch.unwrap_or(feature.target_branch.clone()),
+        updated_at: Utc::now(),
+        ..feature
+    };
+
+    app.storage
+        .update_feature(&updated)
+        .await
+        .map_err(ApiError::from)?;
+
+    Ok(Json(FeatureResponse::from(updated)))
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct TransitionRequest {
+    pub target_state: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct TransitionResponse {
+    pub feature_slug: String,
+    pub from_state: String,
+    pub to_state: String,
+    pub timestamp: String,
+}
+
+/// `POST /api/v1/features/:slug/transition`
+pub async fn transition_feature<S, V, O>(
+    State(app): State<AppState<S, V, O>>,
+    Path(slug): Path<String>,
+    Json(body): Json<TransitionRequest>,
+) -> Result<Json<TransitionResponse>, ApiError>
+where
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
+{
+    let feature = app
+        .storage
+        .get_feature_by_slug(&slug)
+        .await
+        .map_err(ApiError::from)?
+        .ok_or_else(|| ApiError::NotFound(format!("Feature '{slug}' not found")))?;
+
+    let target = parse_feature_state(&body.target_state)?;
+    if matches!(target, FeatureState::Validated | FeatureState::Shipped) {
+        return Err(ApiError::BadRequest(
+            "terminal feature states require the canonical validate/ship operation".to_string(),
+        ));
+    }
+    let result = agileplus_domain::domain::state_machine::transition(feature.state, target)
+        .map_err(ApiError::from)?;
+
+    app.storage
+        .update_feature_state(feature.id, target)
+        .await
+        .map_err(ApiError::from)?;
+
+    Ok(Json(TransitionResponse {
+        feature_slug: slug,
+        from_state: result.transition.from.to_string(),
+        to_state: result.transition.to.to_string(),
+        timestamp: result.timestamp.to_rfc3339(),
+    }))
+}
+
+pub fn parse_feature_state(s: &str) -> Result<FeatureState, ApiError> {
+    s.parse::<FeatureState>().map_err(ApiError::BadRequest)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_feature_state_created() {
+        let state = parse_feature_state("created").unwrap();
+        assert_eq!(state, FeatureState::Created);
+    }
+
+    #[test]
+    fn parse_feature_state_specified() {
+        let state = parse_feature_state("specified").unwrap();
+        assert_eq!(state, FeatureState::Specified);
+    }
+
+    #[test]
+    fn parse_feature_state_researched() {
+        let state = parse_feature_state("researched").unwrap();
+        assert_eq!(state, FeatureState::Researched);
+    }
+
+    #[test]
+    fn parse_feature_state_planned() {
+        let state = parse_feature_state("planned").unwrap();
+        assert_eq!(state, FeatureState::Planned);
+    }
+
+    #[test]
+    fn parse_feature_state_implementing() {
+        let state = parse_feature_state("implementing").unwrap();
+        assert_eq!(state, FeatureState::Implementing);
+    }
+
+=== STEP 20e: tail of features.rs ===
+    }
+
+    #[test]
+    fn parse_feature_state_validated() {
+        let state = parse_feature_state("validated").unwrap();
+        assert_eq!(state, FeatureState::Validated);
+    }
+
+    #[test]
+    fn parse_feature_state_shipped() {
+        let state = parse_feature_state("shipped").unwrap();
+        assert_eq!(state, FeatureState::Shipped);
+    }
+
+    #[test]
+    fn parse_feature_state_retrospected() {
+        let state = parse_feature_state("retrospected").unwrap();
+        assert_eq!(state, FeatureState::Retrospected);
+    }
+
+    #[test]
+    fn parse_feature_state_invalid() {
+        let err = parse_feature_state("bogus");
+        assert!(err.is_err());
+        match err.unwrap_err() {
+            ApiError::BadRequest(msg) => assert!(msg.contains("bogus") || !msg.is_empty()),
+            other => panic!("expected BadRequest, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parse_feature_state_empty_string() {
+        assert!(parse_feature_state("").is_err());
+    }
+
+    #[test]
+    fn parse_feature_state_case_sensitive() {
+        // FromStr is case-sensitive
+        assert!(parse_feature_state("Created").is_err());
+    }
+
+    #[test]
+    fn feature_list_params_defaults() {
+        let params = FeatureListParams {
+            state: None,
+            label: None,
+        };
+        assert!(params.state.is_none());
+        assert!(params.label.is_none());
+    }
+
+    #[test]
+    fn terminal_feature_states_are_not_generic_transition_targets() {
+        for target in [FeatureState::Validated, FeatureState::Shipped] {
+            assert!(matches!(
+                target,
+                FeatureState::Validated | FeatureState::Shipped
+            ));
+        }
+    }
+
+    #[test]
+    fn transition_response_fields() {
+        let resp = TransitionResponse {
+            feature_slug: "my-feat".into(),
+            from_state: "created".into(),
+            to_state: "specified".into(),
+            timestamp: "2025-01-01T00:00:00Z".into(),
+        };
+        assert_eq!(resp.feature_slug, "my-feat");
+        assert_eq!(resp.from_state, "created");
+        assert_eq!(resp.to_state, "specified");
+    }
+
+    #[test]
+    fn transition_response_serializes() {
+        let resp = TransitionResponse {
+            feature_slug: "slug".into(),
+            from_state: "a".into(),
+            to_state: "b".into(),
+            timestamp: "t".into(),
+        };
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["feature_slug"], "slug");
+        assert_eq!(json["from_state"], "a");
+        assert_eq!(json["to_state"], "b");
+    }
+}
+=== STEP 21: locate state_machine module ===
+crates/agileplus-domain/fuzz/fuzz_targets/state_machine.rs
+crates/agileplus-domain/src/domain/state_machine.rs
+
+=== STEP 21b: search state_machine module ===
+//! Feature lifecycle state machine — re-exported from `traceability-core`.
+
+pub use traceability_core::lifecycle::{FeatureState, Transition, TransitionResult};
+
+use crate::error::DomainError;
+
+/// Transition a feature state, mapping core lifecycle errors to [`DomainError`].
+pub fn transition(
+    state: FeatureState,
+    target: FeatureState,
+) -> Result<TransitionResult, DomainError> {
+    state
+        .transition(target)
+        .map_err(|e| DomainError::InvalidTransition {
+            from: e.from,
+            to: e.to,
+            reason: e.reason,
+        })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn valid_lifecycle_transition_succeeds() {
+        let result =
+            transition(FeatureState::Created, FeatureState::Specified).expect("domain operation");
+        assert_eq!(result.transition.from, FeatureState::Created);
+        assert_eq!(result.transition.to, FeatureState::Specified);
+    }
+
+    #[test]
+    fn invalid_transition_returns_error() {
+        let err = transition(FeatureState::Created, FeatureState::Shipped).unwrap_err();
+        assert!(matches!(err, DomainError::InvalidTransition { .. }));
+    }
+
+    #[test]
+    fn backward_transition_rejected() {
+        let err = transition(FeatureState::Specified, FeatureState::Created).unwrap_err();
+        assert!(matches!(err, DomainError::InvalidTransition { .. }));
+    }
+
+    #[test]
+    fn full_happy_path_lifecycle() {
+        let states = [
+            FeatureState::Created,
+            FeatureState::Specified,
+            FeatureState::Researched,
+            FeatureState::Planned,
+            FeatureState::Implementing,
+            FeatureState::Validated,
+            FeatureState::Shipped,
+            FeatureState::Retrospected,
+        ];
+        for window in states.windows(2) {
+            let result = transition(window[0], window[1]);
+            assert!(
+                result.is_ok(),
+                "transition {:?} -> {:?} should succeed",
+                window[0],
+                window[1]
+            );
+        }
+    }
+
+    #[test]
+    fn feature_state_from_str_roundtrips() {
+        let all_states = [
+            "created",
+            "specified",
+            "researched",
+            "planned",
+            "implementing",
+            "validated",
+            "shipped",
+            "retrospected",
+        ];
+        for s in all_states {
+=== STEP 23: read atomic_acceptance_http test setup ===
+//! Mounted HTTP acceptance witnesses: authentication, real SQLite, commit and rollback.
+use agileplus_api::{AppState, create_router};
+use agileplus_domain::{
+    config::AppConfig,
+    credentials::{CredentialStore, InMemoryCredentialStore},
+    ports::observability::{LogEntry, ObservabilityPort, SpanContext},
+};
+use agileplus_git::GitVcsAdapter;
+use axum::http::StatusCode;
+use axum_test::TestServer;
+use serde_json::{Value, json};
+use std::sync::Arc;
+
+use agileplus_domain::{
+    domain::{
+        execution::{
+            Assignment, AssignmentStatus, Attempt, AttemptStatus, CriterionEvaluation, Evaluation,
+            EvaluationResult, SpecRevision, snapshot_acceptance_criteria,
+        },
+        feature::Feature,
+        governance::{Evidence, EvidenceType, GovernanceContract, GovernanceRule},
+        state_machine::FeatureState,
+        work_package::{WorkPackage, WpState},
+    },
+    ports::{ExecutionRecordPort, StoragePort},
+};
+use agileplus_sqlite::SqliteStorageAdapter;
+use chrono::Utc;
+
+pub(crate) async fn seed(db: &SqliteStorageAdapter) -> i64 {
+    let mut feature = Feature::new("atomic", "Atomic acceptance", [7; 32], None);
+    feature.state = FeatureState::Implementing;
+    let feature_id = StoragePort::create_feature(db, &feature).await.unwrap();
+    let now = Utc::now();
+    let revision = SpecRevision {
+        id: "spec:1".into(),
+        feature_id,
+        content_hash: "sha256:accepted".into(),
+        parent_revision_id: None,
+        accepted_at: now,
+        authority: "owner".into(),
+    };
+    db.create_spec_revision(&revision).await.unwrap();
+    for seq in [1, 2] {
+        let mut wp = WorkPackage::new(feature_id, "Atomic WP", seq, "result meets the contract");
+        wp.state = WpState::Review;
+        let wp_id = StoragePort::create_work_package(db, &wp).await.unwrap();
+        StoragePort::create_evidence(
+            db,
+            &Evidence {
+                id: 0,
+                wp_id,
+                fr_id: format!("FR-{seq}"),
+                evidence_type: EvidenceType::TestResult,
+                artifact_path: "artifact:fixture".into(),
+                metadata: None,
+                created_at: now,
+            },
+        )
+        .await
+        .unwrap();
+        let assignment = Assignment {
+            id: format!("assignment:{seq}"),
+            wp_id,
+            spec_revision_id: revision.id.clone(),
+            created_at: now,
+            supersedes_assignment_id: None,
+            status: AssignmentStatus::Active,
+        };
+        let criteria = snapshot_acceptance_criteria("result meets the contract");
+        db.create_assignment_with_criteria(&assignment, &criteria)
+            .await
+            .unwrap();
+        let candidate_ref = format!("git:{:040x}", seq);
+        let attempt = Attempt {
+            id: format!("attempt:{seq}"),
+            assignment_id: assignment.id.clone(),
+            worker_id: "worker".into(),
+            backend: "test".into(),
+            job_id: None,
+=== --- 80-150 --- ===
+            job_id: None,
+            worktree_path: None,
+            base_candidate_ref: Some(format!("git:{:040x}", 0)),
+            result_candidate_ref: Some(candidate_ref.clone()),
+            status: AttemptStatus::Completed,
+            failure_class: None,
+            started_at: now,
+            ended_at: Some(now),
+        };
+        db.create_attempt(&attempt).await.unwrap();
+        let result = CriterionEvaluation {
+            criterion_id: criteria[0].id.clone(),
+            result: EvaluationResult::Satisfied,
+            evidence_refs: vec![format!("artifact:proof-{seq}")],
+            rationale: Some("fixture".into()),
+        };
+        db.create_evaluation_receipt(
+            &Evaluation {
+                id: format!("evaluation:{seq}"),
+                assignment_id: assignment.id,
+                attempt_id: Some(attempt.id),
+                candidate_ref,
+                evaluator_id: "independent-grader".into(),
+                evaluator_version: "1".into(),
+                result: EvaluationResult::Satisfied,
+                evidence_refs: result.evidence_refs.clone(),
+                started_at: now,
+                finished_at: now,
+            },
+            &[result],
+        )
+        .await
+        .unwrap();
+    }
+    StoragePort::create_governance_contract(
+        db,
+        &GovernanceContract {
+            id: 0,
+            feature_id,
+            version: 1,
+            bound_at: now,
+            rules: vec![GovernanceRule {
+                transition: "Implementing -> Validated".into(),
+                required_evidence: vec!["FR-1:test_result".into(), "FR-2:test_result".into()],
+                policy_refs: Vec::new(),
+            }],
+        },
+    )
+    .await
+    .unwrap();
+    feature_id
+}
+
+const KEY: &str = "atomic-acceptance-fixture-only";
+pub(crate) struct Noop;
+impl ObservabilityPort for Noop {
+    fn start_span(&self, _: &str, _: Option<&SpanContext>) -> SpanContext {
+        SpanContext {
+            trace_id: String::new(),
+            span_id: String::new(),
+            parent_span_id: None,
+        }
+    }
+    fn end_span(&self, _: &SpanContext) {}
+    fn add_span_event(&self, _: &SpanContext, _: &str, _: &[(&str, &str)]) {}
+    fn set_span_error(&self, _: &SpanContext, _: &str) {}
+    fn record_counter(&self, _: &str, _: u64, _: &[(&str, &str)]) {}
+    fn record_histogram(&self, _: &str, _: f64, _: &[(&str, &str)]) {}
+    fn record_gauge(&self, _: &str, _: f64, _: &[(&str, &str)]) {}
+    fn log(&self, _: &LogEntry) {}
+    fn log_info(&self, _: &str) {}
+
+=== STEP 24: search 'transition' HTTP path testing ===
+122:                transition: "Implementing -> Validated".into(),
+
+=== STEP 25: any test that exercises generic transition HTTP ===
+crates/agileplus-application/src/use_cases/advance_feature.rs:32:        let target = FeatureState::from_str(&cmd.target_state)
+crates/agileplus-fixtures/src/payloads.rs:17:pub fn transition_payload(target_state: &str) -> Value {
+crates/agileplus-fixtures/src/payloads.rs:19:        "target_state": target_state,
+crates/agileplus-fixtures/src/payloads.rs:47:    fn transition_payload_contains_target_state() {
+crates/agileplus-fixtures/src/payloads.rs:49:        assert_eq!(p["target_state"], "specified");
+crates/agileplus-fixtures/src/payloads.rs:101:        assert!(text.contains("target_state"));
+crates/agileplus-fixtures/src/payloads.rs:118:            assert_eq!(transition_payload(state)["target_state"], state);
+crates/agileplus-api/src/routes/work_packages.rs:214:    pub target_state: String,
+crates/agileplus-api/src/routes/work_packages.rs:242:    let target = parse_wp_state(&body.target_state)?;
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs:37:            target_state: "specified".to_string(),
+=== STEP 26: advance_feature.rs ===
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//! Use case: Advance a Feature to the next lifecycle state.
+
+use std::str::FromStr;
+use std::sync::Arc;
+
+use agileplus_domain::domain::state_machine::FeatureState;
+use agileplus_domain::ports::StoragePort;
+use agileplus_domain::ports::events::{DomainEvent, DomainEventPublisher};
+
+use crate::dto::AdvanceFeatureCmd;
+use crate::error::AppError;
+
+/// Advances a Feature one step along the lifecycle state machine.
+pub struct AdvanceFeature {
+    repo: Arc<dyn StoragePort>,
+    publisher: Arc<dyn DomainEventPublisher>,
+}
+
+impl AdvanceFeature {
+    pub fn new(repo: Arc<dyn StoragePort>, publisher: Arc<dyn DomainEventPublisher>) -> Self {
+        Self { repo, publisher }
+    }
+
+    pub async fn execute(&self, cmd: AdvanceFeatureCmd) -> Result<(), AppError> {
+        let mut feature = self
+            .repo
+            .get_feature_by_id(cmd.feature_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound(format!("feature {}", cmd.feature_id)))?;
+
+        let target = FeatureState::from_str(&cmd.target_state)
+            .map_err(|e| AppError::Domain(agileplus_domain::error::DomainError::Validation(e)))?;
+
+        let from = feature.state.to_string();
+        // Validate via domain state machine (returns DomainError on bad transition)
+        feature
+            .transition(target)
+            .map_err(|e| AppError::Domain(agileplus_domain::error::DomainError::Validation(e)))?;
+
+        self.repo
+            .update_feature_state(cmd.feature_id, feature.state)
+            .await?;
+
+        self.publisher.publish(DomainEvent::FeatureStateAdvanced {
+            id: cmd.feature_id,
+            from,
+            to: feature.state.to_string(),
+        })?;
+
+        Ok(())
+    }
+}
+
+=== STEP 27: search 'transition' in app layer ===
+crates/agileplus-application/src/use_cases/mod.rs:6:pub mod advance_feature;
+crates/agileplus-application/src/use_cases/mod.rs-7-pub mod create_epic;
+crates/agileplus-application/src/use_cases/mod.rs-8-pub mod create_feature;
+crates/agileplus-application/src/use_cases/mod.rs-9-pub mod create_story;
+--
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs:15:use crate::use_cases::{advance_feature::AdvanceFeature, create_feature::CreateFeature};
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs-16-
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs-17-#[tokio::test]
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs:18:async fn advance_feature_valid_transition() {
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs-19-    let repo = Arc::new(InMemoryFeatureRepo::default());
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs-20-    let pub_ = Arc::new(SpyPublisher::default());
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs-21-    let create_uc = CreateFeature::new(repo.clone(), pub_.clone());
+--
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs:54:async fn advance_feature_invalid_transition_rejected() {
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs-55-    let repo = Arc::new(InMemoryFeatureRepo::default());
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs-56-    let pub_ = Arc::new(SpyPublisher::default());
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs-57-    let create_uc = CreateFeature::new(repo.clone(), pub_.clone());
+--
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs:82:async fn advance_feature_not_found() {
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs-83-    let repo = Arc::new(InMemoryFeatureRepo::default());
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs-84-    let pub_ = Arc::new(SpyPublisher::default());
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs-85-    let uc = AdvanceFeature::new(repo.clone(), pub_.clone());
+--
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs:103:async fn advance_feature_walks_entire_lifecycle() {
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs-104-    let repo = Arc::new(InMemoryFeatureRepo::default());
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs-105-    let pub_ = Arc::new(SpyPublisher::default());
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs-106-    let create_uc = CreateFeature::new(repo.clone(), pub_.clone());
+--
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs:181:async fn advance_feature_rejects_unknown_target_state() {
+crates/agileplus-application/src/test_cases/feature_lifecycle.rs-182-    let repo = Arc::new(InMemoryFeatureRepo::default());
+
+=== STEP 28: orchestration: search for transition HTTP integration tests ===
+crates/agileplus-api/tests/api_integration.rs:391:        .post("/api/v1/epics/1/transition")
+crates/agileplus-api/tests/api_integration.rs:469:        .post("/api/v1/stories/1/transition")
+crates/agileplus-api/tests/api_integration/route_coverage.rs:373:        .post("/api/v1/features/flow/transition")
+crates/agileplus-api/tests/api_integration/route_coverage.rs:388:        .post("/api/v1/features/test-feature/transition")
+crates/agileplus-api/tests/api_integration/route_coverage.rs:400:        .post("/api/v1/features/test-feature/transition")
+crates/agileplus-api/tests/api_integration/route_coverage.rs:411:        .post("/api/v1/features/ghost/transition")
+crates/agileplus-api/tests/api_integration/route_coverage.rs:529:        .post(&format!("/api/v1/work-packages/{id}/transition"))
+crates/agileplus-api/tests/api_integration/route_coverage.rs:552:            .post(&format!("/api/v1/work-packages/{id}/transition"))
+crates/agileplus-api/tests/api_integration/route_coverage.rs:560:        .post(&format!("/api/v1/work-packages/{id}/transition"))
+crates/agileplus-api/tests/api_integration/route_coverage.rs:571:        .post("/api/v1/work-packages/1/transition")
+
+=== STEP 29: existing tests that go through transition HTTP route ===
+crates/agileplus-api/tests/api_integration.rs:391:        .post("/api/v1/epics/1/transition")
+crates/agileplus-api/tests/api_integration.rs:469:        .post("/api/v1/stories/1/transition")
+crates/agileplus-api/tests/api_integration/route_coverage.rs:373:        .post("/api/v1/features/flow/transition")
+crates/agileplus-api/tests/api_integration/route_coverage.rs:375:        .json(&serde_json::json!({ "target_state": "specified" }))
+crates/agileplus-api/tests/api_integration/route_coverage.rs:388:        .post("/api/v1/features/test-feature/transition")
+crates/agileplus-api/tests/api_integration/route_coverage.rs:390:        .json(&serde_json::json!({ "target_state": "sideways" }))
+crates/agileplus-api/tests/api_integration/route_coverage.rs:400:        .post("/api/v1/features/test-feature/transition")
+crates/agileplus-api/tests/api_integration/route_coverage.rs:402:        .json(&serde_json::json!({ "target_state": "created" }))
+crates/agileplus-api/tests/api_integration/route_coverage.rs:411:        .post("/api/v1/features/ghost/transition")
+crates/agileplus-api/tests/api_integration/route_coverage.rs:413:        .json(&serde_json::json!({ "target_state": "specified" }))
+crates/agileplus-api/tests/api_integration/route_coverage.rs:529:        .post(&format!("/api/v1/work-packages/{id}/transition"))
+crates/agileplus-api/tests/api_integration/route_coverage.rs:531:        .json(&serde_json::json!({ "target_state": "doing" }))
+crates/agileplus-api/tests/api_integration/route_coverage.rs:552:            .post(&format!("/api/v1/work-packages/{id}/transition"))
+crates/agileplus-api/tests/api_integration/route_coverage.rs:554:            .json(&serde_json::json!({ "target_state": target }))
+crates/agileplus-api/tests/api_integration/route_coverage.rs:560:        .post(&format!("/api/v1/work-packages/{id}/transition"))
+crates/agileplus-api/tests/api_integration/route_coverage.rs:562:        .json(&serde_json::json!({ "target_state": "done" }))
+crates/agileplus-api/tests/api_integration/route_coverage.rs:571:        .post("/api/v1/work-packages/1/transition")
+crates/agileplus-api/tests/api_integration/route_coverage.rs:573:        .json(&serde_json::json!({ "target_state": "warp" }))
+crates/agileplus-api/tests/api_integration/route_coverage.rs:583:        .post("/api/v1/work-packages/1/transition")
+crates/agileplus-api/tests/api_integration/route_coverage.rs:585:        .json(&serde_json::json!({ "target_state": "doing" }))
+crates/agileplus-api/tests/api_integration/route_coverage.rs:594:        .post("/api/v1/work-packages/404/transition")
+crates/agileplus-api/tests/api_integration/route_coverage.rs:596:        .json(&serde_json::json!({ "target_state": "doing" }))
+crates/agileplus-api/tests/api_integration/route_coverage.rs:896:        .post("/api/v1/epics/1/transition")
+crates/agileplus-api/tests/api_integration/route_coverage.rs:907:        .post("/api/v1/epics/999/transition")
+crates/agileplus-api/tests/api_integration/route_coverage.rs:943:        .post("/api/v1/stories/1/transition")
+crates/agileplus-api/tests/api_integration/route_coverage.rs:954:        .post("/api/v1/stories/999/transition")
+crates/agileplus-api/tests/api_integration/domain_lifecycle.rs:21:        .post("/api/v1/epics/1/transition")
+crates/agileplus-api/tests/api_integration/domain_lifecycle.rs:50:        .post("/api/v1/stories/1/transition")
+crates/agileplus-api/tests/api_integration/module_cycle.rs:212:        .post("/api/cycles/1/transition")
+crates/agileplus-api/tests/api_integration/module_cycle.rs:235:        .post("/api/cycles/1/transition")
+crates/agileplus-api/tests/api_integration/module_cycle.rs:250:        .post("/api/cycles/404/transition")
+crates/agileplus-api/tests/api_integration/module_cycle.rs:261:        .post("/api/cycles/1/transition")
+crates/agileplus-api/tests/api_integration/module_cycle.rs:275:        .post("/api/cycles/1/transition")
+crates/agileplus-api/tests/api_integration/module_cycle.rs:286:        .post("/api/cycles/1/transition")
+crates/agileplus-api/tests/api_integration/module_cycle.rs:299:        .post("/api/cycles/1/transition")
+crates/agileplus-api/tests/api_integration/module_cycle.rs:709:        .post("/api/cycles/1/transition")
+=== STEP 30: existing HTTP transition integration test ===
+    created.assert_status(StatusCode::CREATED);
+
+    let resp = server
+        .post("/api/v1/features/flow/transition")
+        .add_header(KEY, TEST_API_KEY)
+        .json(&serde_json::json!({ "target_state": "specified" }))
+        .await;
+    resp.assert_status_ok();
+    let body: serde_json::Value = resp.json();
+    assert_eq!(body["from_state"], "created");
+    assert_eq!(body["to_state"], "specified");
+    assert_eq!(body["feature_slug"], "flow");
+}
+
+#[tokio::test]
+async fn coverage_transition_feature_invalid_target_is_400() {
+    let server = setup_test_server().await;
+    server
+        .post("/api/v1/features/test-feature/transition")
+        .add_header(KEY, TEST_API_KEY)
+        .json(&serde_json::json!({ "target_state": "sideways" }))
+        .await
+        .assert_status(StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn coverage_transition_feature_not_allowed_is_409() {
+    let server = setup_test_server().await;
+    // test-feature is Implementing; Implementing -> Created is not a legal step.
+    server
+        .post("/api/v1/features/test-feature/transition")
+        .add_header(KEY, TEST_API_KEY)
+        .json(&serde_json::json!({ "target_state": "created" }))
+        .await
+        .assert_status(StatusCode::CONFLICT);
+}
+
+#[tokio::test]
+async fn coverage_transition_feature_unknown_slug_is_404() {
+    let server = setup_test_server().await;
+    server
+        .post("/api/v1/features/ghost/transition")
+        .add_header(KEY, TEST_API_KEY)
+        .json(&serde_json::json!({ "target_state": "specified" }))
+        .await
+        .assert_status(StatusCode::NOT_FOUND);
+}
+
+// ── Work packages ────────────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn coverage_get_work_package() {
+    let server = setup_test_server().await;
+    let resp = server
+        .get("/api/v1/work-packages/1")
+        .add_header(KEY, TEST_API_KEY)
+=== STEP 33: read coverage_create_feature_rejects_terminal_states ===
+// positive macro above skips them on purpose; this negative test covers
+// both terminal values to keep the full state enum represented in the
+// route-coverage suite.
+#[tokio::test]
+async fn coverage_create_feature_rejects_terminal_states() {
+    for terminal in ["validated", "shipped"] {
+        let server = setup_test_server().await;
+        let resp = server
+            .post("/api/v1/features")
+            .add_header(KEY, TEST_API_KEY)
+            .json(&serde_json::json!({ "title": "State Feature", "state": terminal }))
+            .await;
+        resp.assert_status(StatusCode::BAD_REQUEST);
+        let body: serde_json::Value = resp.json();
+        assert!(
+            body["error"]
+                .as_str()
+                .unwrap_or("")
+                .contains("terminal feature states"),
+            "expected terminal-state rejection, got: {body}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn coverage_create_feature_defaults_to_created() {
+    let server = setup_test_server().await;
+    let resp = server
+        .post("/api/v1/features")
+        .add_header(KEY, TEST_API_KEY)
+        .json(&serde_json::json!({ "title": "No State" }))
+        .await;
+    resp.assert_status(StatusCode::CREATED);
+    let body: serde_json::Value = resp.json();
+    assert_eq!(body["state"], "created");
+    assert_eq!(body["target_branch"], "main");
+}
+
+#[tokio::test]
+async fn coverage_create_feature_custom_target_branch() {
+    let server = setup_test_server().await;
+
+=== STEP 34: create_feature_state_test macro ===
+        .get("/api/v1/features/does-not-exist")
+        .add_header(KEY, TEST_API_KEY)
+        .await
+        .assert_status(StatusCode::NOT_FOUND);
+}
+
+// ── Features: create ─────────────────────────────────────────────────────────
+
+macro_rules! create_feature_state_test {
+    ($name:ident, $state:literal) => {
+        #[tokio::test]
+        async fn $name() {
+            let server = setup_test_server().await;
+            let resp = server
+                .post("/api/v1/features")
+                .add_header(KEY, TEST_API_KEY)
+                .json(&serde_json::json!({ "title": "State Feature", "state": $state }))
+                .await;
+            resp.assert_status(StatusCode::CREATED);
+            let body: serde_json::Value = resp.json();
+            assert_eq!(body["state"], $state);
+            assert_eq!(body["slug"], "state-feature");
+        }
+    };
+}
+
+create_feature_state_test!(coverage_create_feature_created, "created");
+create_feature_state_test!(coverage_create_feature_specified, "specified");
+create_feature_state_test!(coverage_create_feature_researched, "researched");
+create_feature_state_test!(coverage_create_feature_planned, "planned");
+create_feature_state_test!(coverage_create_feature_implementing, "implementing");
+create_feature_state_test!(coverage_create_feature_retrospected, "retrospected");
+
+// `validated` and `shipped` are terminal states and must NOT be assignable
+// at creation. The canonical path is the acceptance/promotion use case. The
+// positive macro above skips them on purpose; this negative test covers
+// both terminal values to keep the full state enum represented in the
+// route-coverage suite.
+#[tokio::test]
+async fn coverage_create_feature_rejects_terminal_states() {
+    for terminal in ["validated", "shipped"] {
+        let server = setup_test_server().await;
+        let resp = server
+            .post("/api/v1/features")
+            .add_header(KEY, TEST_API_KEY)
+            .json(&serde_json::json!({ "title": "State Feature", "state": terminal }))
+=== file inventory ===
+-rw-r--r--@ 1 kooshapari  wheel  29776 Oct 18 13:07 /tmp/e2_p1_generic_2026-10-18-result.md
+-rw-r--r--@ 1 kooshapari  wheel  89365 Oct 18 13:07 /tmp/e2_p1_generic_2026-10-18.log
+
+=== result file size ===
+     685 /tmp/e2_p1_generic_2026-10-18-result.md
+
+=== log file size (lines + bytes) ===
+    2083   89657 /tmp/e2_p1_generic_2026-10-18.log
+
+=== verify file head and tail ===
+# E.2.P1-GENERIC Investigation (raven, 2026-10-18T20:05Z)
+
+**Verdict**: PASS-WITH-OPERATOR-DECISION (investigation complete, design proposed,
+awaiting operator pick).
+**Subagent session**: raven
+**Wall-clock start**: 2026-10-18T20:02:53Z (scaffold); investigation began 20:03Z.
+**Investigation window**: ~3 min wall-clock; well under the 45-minute cap.
+**Cell**: E.2.P1-GENERIC
+**Verdict before**: OPEN, BLOCKING the P1 exit criterion.
+**Verdict after**: OPEN awaiting operator product decision; investigation advanced
+...
+  `acceptance.rs`, `accept_feature.rs`, `features.rs`, `mvp.rs`,
+  `mod.rs`, `advance_feature.rs`.
+- The pattern-match library of "generic" test names.
+- The WBS line-range read of `verification/FORWARD_WBS_2026-10-04.md`
+  showing the exact wording of P1-3 sub-task 3 sixth case.
+- The t-rex result file's E.2.P1-GENERIC section, full read.
+
+The result file at `/tmp/e2_p1_generic_2026-10-18-result.md` (this file)
+is the canonical deliverable; the log is the tee stream.
+
+
+=== verify no source files were modified ===

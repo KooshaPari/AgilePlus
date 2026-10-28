@@ -1,12 +1,15 @@
 # ADR-019: Local-First SQLite State Only
 
 ## Status
+
 Proposed
 
 ## Context
+
 AgilePlus is fundamentally a client-side tool: a semantic process engine for humans and agents. All other tools (CLI, desktop, API, MCP) are interfaces to the same local state.
 
 Evidence from architecture and history:
+
 - `crates/agileplus-sqlite` provides SQLite persistence via `rusqlite` (bundled, zero external deps)
 - `.agileplus/agileplus.db` is the single source of truth for all features, work packages, tasks, audit trails
 - The CLI works standalone with SQLite — no platform services needed
@@ -17,9 +20,11 @@ Evidence from architecture and history:
 The platform services (NATS, Dragonfly, Neo4j, MinIO, API) belong to Tracera (the platform), not AgilePlus (the client).
 
 ## Decision
+
 AgilePlus state MUST live in `.agileplus/agileplus.db` (SQLite) only. No external services. No platform dependencies. Every interface (CLI, desktop, MCP) reads and writes the same SQLite database.
 
 ### `.agileplus/` directory structure (target):
+
 ```
 .agileplus/
 ├── agileplus.db           # SQLite database (single source of truth)
@@ -35,6 +40,7 @@ AgilePlus state MUST live in `.agileplus/agileplus.db` (SQLite) only. No externa
 ## Consequences
 
 ### Positive
+
 - ✅ **VSCode-like architecture**: `.agileplus/` is to AgilePlus what `.vscode/` is to VS Code — local state, version-controllable
 - ✅ **Zero external deps** for core operation
 - ✅ **Portable**: Copy `.agileplus/` between machines, git clone it
@@ -45,11 +51,13 @@ AgilePlus state MUST live in `.agileplus/agileplus.db` (SQLite) only. No externa
 - ✅ **Desktop clean**: Electrobun reads `.db` directly via rusqlite FFI or HTTP proxy
 
 ### Negative
+
 - ❌ Multi-device sync requires git or external sync (not handled by AgilePlus)
 - ❌ Graph traces (Neo4j) and artifact storage (MinIO) need separate infrastructure if needed
 - ❌ Concurrent writes across processes need SQLite WAL discipline
 
 ## Implementation Plan
+
 1. **Document** the `.agileplus/` layout as canonical
 2. **Enforce** `agileplus --db .agileplus/agileplus.db` as the only state path for all interfaces
 3. **Add** config file support (`config.toml`) in `.agileplus/`
@@ -57,6 +65,7 @@ AgilePlus state MUST live in `.agileplus/agileplus.db` (SQLite) only. No externa
 5. **Add** `.agileplus/` to `.gitignore` except for versionable artifacts (`config.toml`, audit exports)
 
 ## Related
+
 - ADR-018: Remove Platform Services from AgilePlus Core
 - `crates/agileplus-sqlite/` — the SQLite adapter
 - `desktop/` — Electrobun client, must read `.agileplus/agileplus.db`

@@ -24,32 +24,32 @@ payload / state round-trip through `serde_json` without loss.
 ## Steps
 
 1. Construct a new event via `Event::new("story", 42, "Created", json, "user@host")`.
-   *Stub (TODO):* `docs/journeys/assets/stubs/domain-event-construction.gif` — capture pending.
+   _Stub (TODO):_ `docs/journeys/assets/stubs/domain-event-construction.gif` — capture pending.
 2. Construct a new snapshot via `Snapshot::new("story", 42, json, 100)`.
-   *Stub (TODO):* `docs/journeys/assets/stubs/domain-snapshot-construction.gif` — capture pending.
+   _Stub (TODO):_ `docs/journeys/assets/stubs/domain-snapshot-construction.gif` — capture pending.
 3. Serialize both values to JSON and back, then compare payload / state.
-   *Stub (TODO):* `docs/journeys/assets/stubs/domain-event-roundtrip.gif` — capture pending.
+   _Stub (TODO):_ `docs/journeys/assets/stubs/domain-event-roundtrip.gif` — capture pending.
 4. Inspect store-managed fields: `id == 0`, `sequence == 0`,
    `prev_hash == [0; 32]`, `hash == [0; 32]` for `Event`;
    `id == 0` for `Snapshot`.
-   *Stub (TODO):* `docs/journeys/assets/stubs/domain-store-managed-defaults.gif` — capture pending.
+   _Stub (TODO):_ `docs/journeys/assets/stubs/domain-store-managed-defaults.gif` — capture pending.
 5. Confirm timestamps are non-future and the hash-chain remains available
    for the event store to populate.
-   *Stub (TODO):* `docs/journeys/assets/stubs/domain-hash-chain-handoff.gif` — capture pending.
+   _Stub (TODO):_ `docs/journeys/assets/stubs/domain-hash-chain-handoff.gif` — capture pending.
 
 ## Traceability
 
-| AC  | Criterion | Test / Evidence |
-|-----|-----------|-----------------|
-| AC1 | `Event::new` preserves identity, event_type, payload, actor | `event.rs::event_new_preserves_identity_payload_actor` |
-| AC2 | `Event::new` defaults `id`, `sequence`, `prev_hash`, `hash` | `event.rs::event_new_initializes_store_managed_fields` |
-| AC3 | `Event` timestamp is non-future relative to post-construction clock | `event.rs::event_new_timestamp_is_non_future` |
-| AC4 | `Event` round-trips through `serde_json` | `event.rs::event_round_trips_through_serde_json` |
-| AC5 | `Snapshot::new` preserves identity, state, event_sequence | `snapshot.rs::snapshot_new_preserves_identity_state_sequence` |
-| AC6 | `Snapshot::new` defaults `id` to `0` | `snapshot.rs::snapshot_new_initializes_id_to_zero` |
-| AC7 | `Snapshot` timestamp is non-future relative to post-construction clock | `snapshot.rs::snapshot_new_timestamp_is_non_future` |
-| AC8 | `Snapshot` round-trips through `serde_json` | `snapshot.rs::snapshot_round_trips_through_serde_json` |
-| AC9 | Unit tests in `crates/agileplus-domain/src/domain/{event,snapshot}.rs` cover ACs | this file + the two source files |
+| AC  | Criterion                                                                        | Test / Evidence                                               |
+| --- | -------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| AC1 | `Event::new` preserves identity, event_type, payload, actor                      | `event.rs::event_new_preserves_identity_payload_actor`        |
+| AC2 | `Event::new` defaults `id`, `sequence`, `prev_hash`, `hash`                      | `event.rs::event_new_initializes_store_managed_fields`        |
+| AC3 | `Event` timestamp is non-future relative to post-construction clock              | `event.rs::event_new_timestamp_is_non_future`                 |
+| AC4 | `Event` round-trips through `serde_json`                                         | `event.rs::event_round_trips_through_serde_json`              |
+| AC5 | `Snapshot::new` preserves identity, state, event_sequence                        | `snapshot.rs::snapshot_new_preserves_identity_state_sequence` |
+| AC6 | `Snapshot::new` defaults `id` to `0`                                             | `snapshot.rs::snapshot_new_initializes_id_to_zero`            |
+| AC7 | `Snapshot` timestamp is non-future relative to post-construction clock           | `snapshot.rs::snapshot_new_timestamp_is_non_future`           |
+| AC8 | `Snapshot` round-trips through `serde_json`                                      | `snapshot.rs::snapshot_round_trips_through_serde_json`        |
+| AC9 | Unit tests in `crates/agileplus-domain/src/domain/{event,snapshot}.rs` cover ACs | this file + the two source files                              |
 
 ## Eval checklist
 

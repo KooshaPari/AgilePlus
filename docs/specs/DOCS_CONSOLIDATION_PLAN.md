@@ -7,8 +7,8 @@ created: 2026-06-24
 type: governance
 supersedes: null
 related_adrs:
-  - docs/adr/0003-docs-tree-consolidation.md
-  - docs/adr/0004-json-to-frontmatter-decorators.md
+    - docs/adr/0003-docs-tree-consolidation.md
+    - docs/adr/0004-json-to-frontmatter-decorators.md
 ---
 
 # AgilePlus Docs Consolidation Plan
@@ -43,47 +43,47 @@ Snapshot counts and locations as of 2026-06-24.
 
 ### Top-level legacy roots
 
-| Root | Status | Contents (approx.) |
-|------|--------|-------------------|
-| `kitty-specs/` | **Active + legacy** | 49 top-level feature dirs; ~50 `spec.md`; 29 `meta.json`; numbered specs (`001-*`…`022-*`), eco specs (`eco-001`…`eco-012`), fleet audits, phenosdk waves, archive subtree. README is a redirect stub. |
-| `specs/` | **Mostly relocated** | `README.md` redirect stub; `issue-spec-discoverability.md` (chore doc referencing `kitty-specs`). |
-| `traces/` | **Relocated** | `README.md` redirect stub only at repo root. |
-| `docs/` | **Partially canonical** | See subtree inventory below. |
+| Root           | Status                  | Contents (approx.)                                                                                                                                                                                     |
+| -------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `kitty-specs/` | **Active + legacy**     | 49 top-level feature dirs; ~50 `spec.md`; 29 `meta.json`; numbered specs (`001-*`…`022-*`), eco specs (`eco-001`…`eco-012`), fleet audits, phenosdk waves, archive subtree. README is a redirect stub. |
+| `specs/`       | **Mostly relocated**    | `README.md` redirect stub; `issue-spec-discoverability.md` (chore doc referencing `kitty-specs`).                                                                                                      |
+| `traces/`      | **Relocated**           | `README.md` redirect stub only at repo root.                                                                                                                                                           |
+| `docs/`        | **Partially canonical** | See subtree inventory below.                                                                                                                                                                           |
 
 ### `docs/` subtree (canonical targets)
 
-| Path | Status | Contents (approx.) |
-|------|--------|-------------------|
-| `docs/specs/eco/` | **Canonical (partial)** | 36 eco spec dirs (`eco-001`…`eco-034`, plus `align-version-drift-2026-06-08`, `021-polyrepo-ecosystem-stabilization`). Most have `spec.md` + `plan.md` + `tasks.md`; frontmatter merged for migrated eco specs. |
-| `docs/specs/crates/` | **Canonical** | 6 crate FR specs: `001-agileplus-core`, `002-agileplus-dashboard`, `011-agileplus-import`, `012-agileplus-telemetry`, `013-agileplus-grpc`, `014-agileplus-github`. |
-| `docs/specs/00N-*` | **Duplicated with kitty-specs** | 9 numbered platform specs at `docs/specs/` root (`001-spec-driven-development-engine` … `007-thegent-completion`). Mirror content still under `kitty-specs/`. |
-| `docs/adr/` | **Canonical** | ADR-0001…0006, task-runner/registry ADRs, `ARCHITECTURE.md`. Includes ADR-0003 (tree) and ADR-0004 (frontmatter/decorators). |
-| `docs/journeys/` | **Canonical** | `FR-024-1.md`…`FR-024-8.md` with trace frontmatter; `dashboard-health-check.md`, `domain-models.md`, `assets/`. |
-| `docs/requirements/` | **Canonical** | Repo-level `*-frnfr.md` files; `traceability/` (schema/matrix docs). |
-| `docs/_archive/meta-json/` | **Archive** | 33 `meta.json` copies from completed eco migrations. |
-| `docs/_archive/traces-json/` | **Archive** | 8 `FR-024-*.json` trace sidecars. |
+| Path                         | Status                          | Contents (approx.)                                                                                                                                                                                              |
+| ---------------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/specs/eco/`            | **Canonical (partial)**         | 36 eco spec dirs (`eco-001`…`eco-034`, plus `align-version-drift-2026-06-08`, `021-polyrepo-ecosystem-stabilization`). Most have `spec.md` + `plan.md` + `tasks.md`; frontmatter merged for migrated eco specs. |
+| `docs/specs/crates/`         | **Canonical**                   | 6 crate FR specs: `001-agileplus-core`, `002-agileplus-dashboard`, `011-agileplus-import`, `012-agileplus-telemetry`, `013-agileplus-grpc`, `014-agileplus-github`.                                             |
+| `docs/specs/00N-*`           | **Duplicated with kitty-specs** | 9 numbered platform specs at `docs/specs/` root (`001-spec-driven-development-engine` … `007-thegent-completion`). Mirror content still under `kitty-specs/`.                                                   |
+| `docs/adr/`                  | **Canonical**                   | ADR-0001…0006, task-runner/registry ADRs, `ARCHITECTURE.md`. Includes ADR-0003 (tree) and ADR-0004 (frontmatter/decorators).                                                                                    |
+| `docs/journeys/`             | **Canonical**                   | `FR-024-1.md`…`FR-024-8.md` with trace frontmatter; `dashboard-health-check.md`, `domain-models.md`, `assets/`.                                                                                                 |
+| `docs/requirements/`         | **Canonical**                   | Repo-level `*-frnfr.md` files; `traceability/` (schema/matrix docs).                                                                                                                                            |
+| `docs/_archive/meta-json/`   | **Archive**                     | 33 `meta.json` copies from completed eco migrations.                                                                                                                                                            |
+| `docs/_archive/traces-json/` | **Archive**                     | 8 `FR-024-*.json` trace sidecars.                                                                                                                                                                               |
 
 ### Duplication hotspots
 
-| Artifact | Canonical location | Legacy / duplicate location | Gap |
-|----------|-------------------|----------------------------|-----|
-| Eco specs (eco-001…012) | `docs/specs/eco/<slug>/` | `kitty-specs/eco-*/` (still has `meta.json`) | Legacy dirs not removed; `meta.json` not archived for all |
-| Numbered platform specs | `docs/specs/00N-*/` | `kitty-specs/00N-*/` | Full duplicate trees (~9 specs) |
-| Portfolio / phenosdk specs | — | `kitty-specs/portfolio-audit-*`, `phenosdk-*`, etc. | Not yet under `docs/specs/` |
-| Spec metadata | `spec.md` YAML frontmatter | `kitty-specs/*/meta.json` (29 remaining) | `governance_index.py` still requires `meta.json` |
-| FR trace cross-refs | `docs/journeys/FR-*.md` frontmatter | `docs/_archive/traces-json/FR-*.json` | Journey bodies still reference `kitty-specs/` and `traces/` paths |
-| Code coverage | `#[trace_fr(...)]` (planned) | `tests`/`code_modules` in journey frontmatter | No proc-macro or collector yet |
+| Artifact                   | Canonical location                  | Legacy / duplicate location                         | Gap                                                               |
+| -------------------------- | ----------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------- |
+| Eco specs (eco-001…012)    | `docs/specs/eco/<slug>/`            | `kitty-specs/eco-*/` (still has `meta.json`)        | Legacy dirs not removed; `meta.json` not archived for all         |
+| Numbered platform specs    | `docs/specs/00N-*/`                 | `kitty-specs/00N-*/`                                | Full duplicate trees (~9 specs)                                   |
+| Portfolio / phenosdk specs | —                                   | `kitty-specs/portfolio-audit-*`, `phenosdk-*`, etc. | Not yet under `docs/specs/`                                       |
+| Spec metadata              | `spec.md` YAML frontmatter          | `kitty-specs/*/meta.json` (29 remaining)            | `governance_index.py` still requires `meta.json`                  |
+| FR trace cross-refs        | `docs/journeys/FR-*.md` frontmatter | `docs/_archive/traces-json/FR-*.json`               | Journey bodies still reference `kitty-specs/` and `traces/` paths |
+| Code coverage              | `#[trace_fr(...)]` (planned)        | `tests`/`code_modules` in journey frontmatter       | No proc-macro or collector yet                                    |
 
 ### Tooling still on legacy paths
 
-| Component | Current root | Must retarget |
-|-----------|-------------|---------------|
-| `tooling/governance_index.py` | `kitty-specs/` | `docs/specs/eco/` (+ index generation at `docs/specs/INDEX-eco.md`) |
-| `scripts/phase3-docs-consolidate.py` | reads `kitty-specs/`, `specs/`, `traces/` | idempotent re-run after execution PRs |
-| CLI `specify` / `implement` workflow docs | `docs/workflow/specify.md` references `kitty-specs/` | `docs/specs/eco/` |
-| `python/src/agileplus_mcp/server.py` | `file://kitty-specs/{slug}/` URIs | `docs/specs/eco/{slug}/` |
-| Git adapter / SQLite rebuild (WP06) | scans `kitty-specs/*/meta.json` | frontmatter parse on `docs/specs/**/spec.md` |
-| Trace validator (`tooling/trace-validator/`) | hard-coded `AgilePlus/traces/`, `kitty-specs/` strings | `docs/journeys/`, `docs/specs/eco/` |
+| Component                                    | Current root                                           | Must retarget                                                       |
+| -------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------- |
+| `tooling/governance_index.py`                | `kitty-specs/`                                         | `docs/specs/eco/` (+ index generation at `docs/specs/INDEX-eco.md`) |
+| `scripts/phase3-docs-consolidate.py`         | reads `kitty-specs/`, `specs/`, `traces/`              | idempotent re-run after execution PRs                               |
+| CLI `specify` / `implement` workflow docs    | `docs/workflow/specify.md` references `kitty-specs/`   | `docs/specs/eco/`                                                   |
+| `python/src/agileplus_mcp/server.py`         | `file://kitty-specs/{slug}/` URIs                      | `docs/specs/eco/{slug}/`                                            |
+| Git adapter / SQLite rebuild (WP06)          | scans `kitty-specs/*/meta.json`                        | frontmatter parse on `docs/specs/**/spec.md`                        |
+| Trace validator (`tooling/trace-validator/`) | hard-coded `AgilePlus/traces/`, `kitty-specs/` strings | `docs/journeys/`, `docs/specs/eco/`                                 |
 
 ---
 
@@ -128,35 +128,35 @@ traces/README.md        → redirect to docs/journeys/
 
 ### Spec directories
 
-| Source pattern | Target | Slug rule | Notes |
-|----------------|--------|-----------|-------|
-| `kitty-specs/eco-<NN>-<name>/` | `docs/specs/eco/eco-<NN>-<name>/` | keep slug | Already migrated for eco-001…034; remove legacy copy after link sweep |
-| `kitty-specs/<NNN>-<name>/` | `docs/specs/platform/<NNN>-<name>/` | keep numeric prefix | Avoid collision with `docs/specs/eco/`; alternative: keep at `docs/specs/<NNN>-<name>/` if platform subdir is deferred |
-| `kitty-specs/<kebab-audit>/` (fleet-audit, portfolio-audit-*, phenosdk-*) | `docs/specs/eco/<kebab-audit>/` or `docs/specs/audits/<kebab-audit>/` | keep dirname | Classify per `type` in meta/frontmatter (`operational` → eco; one-off audits → `audits/`) |
-| `kitty-specs/archive/*` | `docs/_archive/specs/<slug>/` | preserve | Retired completions (005-heliosapp, etc.) |
-| `specs/issue-spec-discoverability.md` | `docs/specs/chore/issue-spec-discoverability.md` | chore | Update internal path references |
-| `specs/*` (future crate FR) | `docs/specs/crates/<id>-<name>/` | id-name | README already points here |
+| Source pattern                                                            | Target                                                                | Slug rule           | Notes                                                                                                                  |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `kitty-specs/eco-<NN>-<name>/`                                            | `docs/specs/eco/eco-<NN>-<name>/`                                     | keep slug           | Already migrated for eco-001…034; remove legacy copy after link sweep                                                  |
+| `kitty-specs/<NNN>-<name>/`                                               | `docs/specs/platform/<NNN>-<name>/`                                   | keep numeric prefix | Avoid collision with `docs/specs/eco/`; alternative: keep at `docs/specs/<NNN>-<name>/` if platform subdir is deferred |
+| `kitty-specs/<kebab-audit>/` (fleet-audit, portfolio-audit-_, phenosdk-_) | `docs/specs/eco/<kebab-audit>/` or `docs/specs/audits/<kebab-audit>/` | keep dirname        | Classify per `type` in meta/frontmatter (`operational` → eco; one-off audits → `audits/`)                              |
+| `kitty-specs/archive/*`                                                   | `docs/_archive/specs/<slug>/`                                         | preserve            | Retired completions (005-heliosapp, etc.)                                                                              |
+| `specs/issue-spec-discoverability.md`                                     | `docs/specs/chore/issue-spec-discoverability.md`                      | chore               | Update internal path references                                                                                        |
+| `specs/*` (future crate FR)                                               | `docs/specs/crates/<id>-<name>/`                                      | id-name             | README already points here                                                                                             |
 
 ### Trace / journey artifacts
 
-| Source | Target | Notes |
-|--------|--------|-------|
-| `traces/FR-<id>.json` | Fold into `docs/journeys/FR-<id>.md` frontmatter; archive JSON | 8 files already archived; root `traces/` is stub-only |
-| `docs/operations/journeys/*.md` (if any remain) | `docs/journeys/*.md` | `phase3-docs-consolidate.py` handles merge |
-| `traces/SCHEMA.md`, `traces/MATRIX.md` | `docs/requirements/traceability/` | Already specified in ADR-0003 |
+| Source                                          | Target                                                         | Notes                                                 |
+| ----------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------- |
+| `traces/FR-<id>.json`                           | Fold into `docs/journeys/FR-<id>.md` frontmatter; archive JSON | 8 files already archived; root `traces/` is stub-only |
+| `docs/operations/journeys/*.md` (if any remain) | `docs/journeys/*.md`                                           | `phase3-docs-consolidate.py` handles merge            |
+| `traces/SCHEMA.md`, `traces/MATRIX.md`          | `docs/requirements/traceability/`                              | Already specified in ADR-0003                         |
 
 ### Requirements
 
-| Source | Target |
-|--------|--------|
-| Root / scattered `*-frnfr.md` | `docs/requirements/` (already canonical) |
+| Source                                  | Target                                                   |
+| --------------------------------------- | -------------------------------------------------------- |
+| Root / scattered `*-frnfr.md`           | `docs/requirements/` (already canonical)                 |
 | `FUNCTIONAL_REQUIREMENTS.md` references | Update anchors to `docs/specs/eco/` and `docs/journeys/` |
 
 ### ADRs
 
-| Source | Target |
-|--------|--------|
-| `docs/adr/` | No move; remains canonical |
+| Source                    | Target                                           |
+| ------------------------- | ------------------------------------------------ |
+| `docs/adr/`               | No move; remains canonical                       |
 | Root `ADR.md` inline ADRs | Cross-link only; no merge required in this phase |
 
 ---
@@ -167,19 +167,19 @@ Per ADR-0004. Execution uses `scripts/phase3-docs-consolidate.py` (`merge_meta_i
 
 ### Field mapping
 
-| `meta.json` key | `spec.md` frontmatter key | Transform |
-|-----------------|---------------------------|-----------|
-| `spec_id` | `spec_id` | direct |
-| `slug` | `slug` | direct |
-| `title` | `title` | direct |
-| `status` | `status` + `state` | `state` = uppercase `status` when `state` absent |
-| `created_at` | `created` + `created_at` | both for backward compat during transition |
-| `completed_at` | `completed_at` | direct |
-| `retired_at` | `retired_at` | direct |
-| `retirement_reason` | `retirement_reason` | direct |
-| `superseded_by` | `superseded_by` | direct |
-| `type` | `type` | `operational`, `platform`, etc. |
-| `_path` | — | drop (tooling internal) |
+| `meta.json` key     | `spec.md` frontmatter key | Transform                                        |
+| ------------------- | ------------------------- | ------------------------------------------------ |
+| `spec_id`           | `spec_id`                 | direct                                           |
+| `slug`              | `slug`                    | direct                                           |
+| `title`             | `title`                   | direct                                           |
+| `status`            | `status` + `state`        | `state` = uppercase `status` when `state` absent |
+| `created_at`        | `created` + `created_at`  | both for backward compat during transition       |
+| `completed_at`      | `completed_at`            | direct                                           |
+| `retired_at`        | `retired_at`              | direct                                           |
+| `retirement_reason` | `retirement_reason`       | direct                                           |
+| `superseded_by`     | `superseded_by`           | direct                                           |
+| `type`              | `type`                    | `operational`, `platform`, etc.                  |
+| `_path`             | —                         | drop (tooling internal)                          |
 
 ### Per-spec execution checklist
 
@@ -203,18 +203,18 @@ Per ADR-0004. Execution uses `fold_trace_into_journey` in `phase3-docs-consolida
 
 ### JSON → frontmatter field mapping
 
-| `FR-*.json` key | `docs/journeys/FR-*.md` frontmatter |
-|---------------|--------------------------------------|
-| `fr_id` | `fr_id` |
-| `spec_slug` | `spec_slug` |
-| `spec_anchor` | `spec_anchor` |
-| `docs_pages` | `docs_pages` (list) |
-| `tests` | `tests` (list) |
-| `code_modules` | `code_modules` (list) |
-| `journeys` | `journeys` (list; rewrite paths to `docs/journeys/`) |
-| `status` | `status` |
-| `last_validated` | `last_validated` |
-| `schema_version` | `schema_version` |
+| `FR-*.json` key  | `docs/journeys/FR-*.md` frontmatter                  |
+| ---------------- | ---------------------------------------------------- |
+| `fr_id`          | `fr_id`                                              |
+| `spec_slug`      | `spec_slug`                                          |
+| `spec_anchor`    | `spec_anchor`                                        |
+| `docs_pages`     | `docs_pages` (list)                                  |
+| `tests`          | `tests` (list)                                       |
+| `code_modules`   | `code_modules` (list)                                |
+| `journeys`       | `journeys` (list; rewrite paths to `docs/journeys/`) |
+| `status`         | `status`                                             |
+| `last_validated` | `last_validated`                                     |
+| `schema_version` | `schema_version`                                     |
 
 ### Journey body cleanup (post-fold)
 
@@ -283,14 +283,14 @@ fn validate_trace_required() { /* ... */ }
 
 ### Phase 5 — Tooling retarget
 
-| Tool | Change |
-|------|--------|
+| Tool                          | Change                                                                          |
+| ----------------------------- | ------------------------------------------------------------------------------- |
 | `tooling/governance_index.py` | `SPEC_ROOT = docs/specs/eco`; parse frontmatter; emit `docs/specs/INDEX-eco.md` |
-| `tooling/trace-validator/` | Resolve `docs/journeys/`, `docs/specs/eco/`; drop `traces/*.json` reads |
-| CLI git adapter | Scan `docs/specs/**/spec.md` frontmatter |
-| MCP server URIs | `file://docs/specs/eco/{slug}/` |
-| CI governance workflow | Path filters on `docs/specs/**` not `kitty-specs/**` |
-| `docs/workflow/specify.md` | Update examples and created-path templates |
+| `tooling/trace-validator/`    | Resolve `docs/journeys/`, `docs/specs/eco/`; drop `traces/*.json` reads         |
+| CLI git adapter               | Scan `docs/specs/**/spec.md` frontmatter                                        |
+| MCP server URIs               | `file://docs/specs/eco/{slug}/`                                                 |
+| CI governance workflow        | Path filters on `docs/specs/**` not `kitty-specs/**`                            |
+| `docs/workflow/specify.md`    | Update examples and created-path templates                                      |
 
 ### Phase 6 — Decorator rollout
 
@@ -309,27 +309,27 @@ fn validate_trace_required() { /* ... */ }
 
 ## Validation Gates (per phase)
 
-| Gate | Command / check |
-|------|-----------------|
-| Encoding | `agileplus validate-encoding --all` |
-| Spec completeness | `python tooling/governance_index.py --check` (after retarget) |
-| Trace closure | `tooling/trace-validator` (or successor) against `docs/journeys/FR-*.md` |
-| Link sweep | `rg 'kitty-specs|/traces/FR-' --glob '!docs/_archive/**'` → zero hits in active paths |
+| Gate               | Command / check                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Encoding           | `agileplus validate-encoding --all`                                                         |
+| Spec completeness  | `python tooling/governance_index.py --check` (after retarget)                               |
+| Trace closure      | `tooling/trace-validator` (or successor) against `docs/journeys/FR-*.md`                    |
+| Link sweep         | `rg 'kitty-specs                                                                            | /traces/FR-' --glob '!docs/\_archive/\*\*'` → zero hits in active paths |
 | Frontmatter schema | JSON Schema or `taplo`/custom linter for required keys: `slug`, `spec_id`, `state`, `title` |
-| No hand JSON | `find . -path './kitty-specs/*/meta.json' -o -path './traces/FR-*.json'` → empty |
-| Decorator matrix | `cargo xtask traceability --check` (Phase 6+) |
+| No hand JSON       | `find . -path './kitty-specs/*/meta.json' -o -path './traces/FR-*.json'` → empty            |
+| Decorator matrix   | `cargo xtask traceability --check` (Phase 6+)                                               |
 
 ---
 
 ## Risk Register
 
-| Risk | Mitigation |
-|------|------------|
-| Duplicate spec dirs diverge during hybrid state | Phase 1 prioritizes eco specs with both copies; use `diff -r` before deleting legacy |
-| `git mv` breaks external deep links | Keep redirect README stubs; archive copies preserve audit trail |
-| Frontmatter merge loses fields | Archive original `meta.json` before delete; dry-run diff on frontmatter |
-| Decorator adoption lag | Journey frontmatter remains authoritative until Phase 6 equality gate passes |
-| INDEX.md consumers | Publish `docs/specs/INDEX-eco.md`; symlink or generate stub at old path for one release |
+| Risk                                            | Mitigation                                                                              |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Duplicate spec dirs diverge during hybrid state | Phase 1 prioritizes eco specs with both copies; use `diff -r` before deleting legacy    |
+| `git mv` breaks external deep links             | Keep redirect README stubs; archive copies preserve audit trail                         |
+| Frontmatter merge loses fields                  | Archive original `meta.json` before delete; dry-run diff on frontmatter                 |
+| Decorator adoption lag                          | Journey frontmatter remains authoritative until Phase 6 equality gate passes            |
+| INDEX.md consumers                              | Publish `docs/specs/INDEX-eco.md`; symlink or generate stub at old path for one release |
 
 ---
 

@@ -9,15 +9,15 @@
 
 ## Summary
 
-| Category | Count |
-|---|---|
-| Clean (zero ignores) | 42 repos |
-| Has ignores | 9 repos |
-| TOML parse errors | 2 repos |
-| Malformed ignore entries (silent) | 1 repo |
-| **Total ignored advisories** | **65** |
-| Ignores with rationale | 0 (0%) |
-| Ignores with date | 0 (0%) |
+| Category                          | Count    |
+| --------------------------------- | -------- |
+| Clean (zero ignores)              | 42 repos |
+| Has ignores                       | 9 repos  |
+| TOML parse errors                 | 2 repos  |
+| Malformed ignore entries (silent) | 1 repo   |
+| **Total ignored advisories**      | **65**   |
+| Ignores with rationale            | 0 (0%)   |
+| Ignores with date                 | 0 (0%)   |
 
 **No date fields were found on any ignore entry, making staleness determination impossible via automated parsing.**
 
@@ -31,32 +31,32 @@
 
 All 24 ignores have no rationale and no date.
 
-| Advisory ID | Has Rationale | Date | Notes |
-|---|---|---|---|
-| RUSTSEC-2024-0411 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0412 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0413 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0414 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0415 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0416 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0417 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0418 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0419 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0420 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0384 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0370 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0375 | NO | -- | 2024 batch |
-| RUSTSEC-2025-0012 | NO | -- | |
-| RUSTSEC-2025-0057 | NO | -- | |
-| RUSTSEC-2025-0075 | NO | -- | |
-| RUSTSEC-2025-0080 | NO | -- | |
-| RUSTSEC-2025-0081 | NO | -- | |
-| RUSTSEC-2025-0098 | NO | -- | |
-| RUSTSEC-2025-0100 | NO | -- | |
-| RUSTSEC-2025-0119 | NO | -- | |
-| RUSTSEC-2025-0134 | NO | -- | |
-| RUSTSEC-2023-0071 | NO | -- | **3 years old** |
-| RUSTSEC-2017-0008 | NO | -- | **9 years old -- most dangerous** |
+| Advisory ID       | Has Rationale | Date | Notes                             |
+| ----------------- | ------------- | ---- | --------------------------------- |
+| RUSTSEC-2024-0411 | NO            | --   | 2024 batch                        |
+| RUSTSEC-2024-0412 | NO            | --   | 2024 batch                        |
+| RUSTSEC-2024-0413 | NO            | --   | 2024 batch                        |
+| RUSTSEC-2024-0414 | NO            | --   | 2024 batch                        |
+| RUSTSEC-2024-0415 | NO            | --   | 2024 batch                        |
+| RUSTSEC-2024-0416 | NO            | --   | 2024 batch                        |
+| RUSTSEC-2024-0417 | NO            | --   | 2024 batch                        |
+| RUSTSEC-2024-0418 | NO            | --   | 2024 batch                        |
+| RUSTSEC-2024-0419 | NO            | --   | 2024 batch                        |
+| RUSTSEC-2024-0420 | NO            | --   | 2024 batch                        |
+| RUSTSEC-2024-0384 | NO            | --   | 2024 batch                        |
+| RUSTSEC-2024-0370 | NO            | --   | 2024 batch                        |
+| RUSTSEC-2024-0375 | NO            | --   | 2024 batch                        |
+| RUSTSEC-2025-0012 | NO            | --   |                                   |
+| RUSTSEC-2025-0057 | NO            | --   |                                   |
+| RUSTSEC-2025-0075 | NO            | --   |                                   |
+| RUSTSEC-2025-0080 | NO            | --   |                                   |
+| RUSTSEC-2025-0081 | NO            | --   |                                   |
+| RUSTSEC-2025-0098 | NO            | --   |                                   |
+| RUSTSEC-2025-0100 | NO            | --   |                                   |
+| RUSTSEC-2025-0119 | NO            | --   |                                   |
+| RUSTSEC-2025-0134 | NO            | --   |                                   |
+| RUSTSEC-2023-0071 | NO            | --   | **3 years old**                   |
+| RUSTSEC-2017-0008 | NO            | --   | **9 years old -- most dangerous** |
 
 Notable: `RUSTSEC-2017-0008` (9 years old, no rationale) and `RUSTSEC-2023-0071` (3 years old, no rationale) are the most potentially stale. `RUSTSEC-2017-0008` also appears twice (duplicate entry in same file).
 
@@ -66,25 +66,25 @@ Notable: `RUSTSEC-2017-0008` (9 years old, no rationale) and `RUSTSEC-2023-0071`
 
 All 17 ignores have no rationale and no date.
 
-| Advisory ID | Has Rationale | Date | Notes |
-|---|---|---|---|
-| RUSTSEC-2024-0370 | NO | -- | |
-| RUSTSEC-2024-0411 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0412 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0413 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0414 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0415 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0416 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0417 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0418 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0419 | NO | -- | 2024 batch |
-| RUSTSEC-2024-0420 | NO | -- | 2024 batch |
-| RUSTSEC-2025-0057 | NO | -- | |
-| RUSTSEC-2025-0075 | NO | -- | |
-| RUSTSEC-2025-0080 | NO | -- | |
-| RUSTSEC-2025-0081 | NO | -- | |
-| RUSTSEC-2025-0098 | NO | -- | |
-| RUSTSEC-2025-0100 | NO | -- | |
+| Advisory ID       | Has Rationale | Date | Notes      |
+| ----------------- | ------------- | ---- | ---------- |
+| RUSTSEC-2024-0370 | NO            | --   |            |
+| RUSTSEC-2024-0411 | NO            | --   | 2024 batch |
+| RUSTSEC-2024-0412 | NO            | --   | 2024 batch |
+| RUSTSEC-2024-0413 | NO            | --   | 2024 batch |
+| RUSTSEC-2024-0414 | NO            | --   | 2024 batch |
+| RUSTSEC-2024-0415 | NO            | --   | 2024 batch |
+| RUSTSEC-2024-0416 | NO            | --   | 2024 batch |
+| RUSTSEC-2024-0417 | NO            | --   | 2024 batch |
+| RUSTSEC-2024-0418 | NO            | --   | 2024 batch |
+| RUSTSEC-2024-0419 | NO            | --   | 2024 batch |
+| RUSTSEC-2024-0420 | NO            | --   | 2024 batch |
+| RUSTSEC-2025-0057 | NO            | --   |            |
+| RUSTSEC-2025-0075 | NO            | --   |            |
+| RUSTSEC-2025-0080 | NO            | --   |            |
+| RUSTSEC-2025-0081 | NO            | --   |            |
+| RUSTSEC-2025-0098 | NO            | --   |            |
+| RUSTSEC-2025-0100 | NO            | --   |            |
 
 Shares the same 10-advisory batch (RUSTSEC-2024-0411 through -0420) with hwLedger.
 
@@ -94,17 +94,17 @@ Shares the same 10-advisory batch (RUSTSEC-2024-0411 through -0420) with hwLedge
 
 All 9 ignores have no rationale and no date.
 
-| Advisory ID | Has Rationale | Date | Notes |
-|---|---|---|---|
-| RUSTSEC-2024-0320 | NO | -- | Appears twice (duplicate) |
-| RUSTSEC-2024-0436 | NO | -- | |
-| RUSTSEC-2025-0134 | NO | -- | |
-| RUSTSEC-2025-0141 | NO | -- | |
-| RUSTSEC-2026-0098 | NO | -- | |
-| RUSTSEC-2026-0099 | NO | -- | |
-| RUSTSEC-2026-0104 | NO | -- | |
-| RUSTSEC-2026-0118 | NO | -- | |
-| RUSTSEC-2026-0119 | NO | -- | |
+| Advisory ID       | Has Rationale | Date | Notes                     |
+| ----------------- | ------------- | ---- | ------------------------- |
+| RUSTSEC-2024-0320 | NO            | --   | Appears twice (duplicate) |
+| RUSTSEC-2024-0436 | NO            | --   |                           |
+| RUSTSEC-2025-0134 | NO            | --   |                           |
+| RUSTSEC-2025-0141 | NO            | --   |                           |
+| RUSTSEC-2026-0098 | NO            | --   |                           |
+| RUSTSEC-2026-0099 | NO            | --   |                           |
+| RUSTSEC-2026-0104 | NO            | --   |                           |
+| RUSTSEC-2026-0118 | NO            | --   |                           |
+| RUSTSEC-2026-0119 | NO            | --   |                           |
 
 Note: RUSTSEC-2024-0320 appears twice in the same file (copy-paste error).
 
@@ -112,65 +112,65 @@ Note: RUSTSEC-2024-0320 appears twice in the same file (copy-paste error).
 
 **File:** `/Users/<REDACTED>/CodeProjects/Phenotype/repos/FocalPoint/deny.toml`
 
-| Advisory ID | Has Rationale | Date |
-|---|---|---|
-| RUSTSEC-2024-0388 | NO | -- |
-| RUSTSEC-2024-0436 | NO | -- |
-| RUSTSEC-2025-0057 | NO | -- |
-| RUSTSEC-2025-0141 | NO | -- |
+| Advisory ID       | Has Rationale | Date |
+| ----------------- | ------------- | ---- |
+| RUSTSEC-2024-0388 | NO            | --   |
+| RUSTSEC-2024-0436 | NO            | --   |
+| RUSTSEC-2025-0057 | NO            | --   |
+| RUSTSEC-2025-0141 | NO            | --   |
 
 ### 5. rust -- 4 ignores
 
 **File:** `/Users/<REDACTED>/CodeProjects/Phenotype/repos/rust/deny.toml`
 
-| Advisory ID | Has Rationale | Date |
-|---|---|---|
-| RUSTSEC-2024-0436 | NO | -- |
-| RUSTSEC-2025-0134 | NO | -- |
-| RUSTSEC-2025-0140 | NO | -- |
-| RUSTSEC-2026-0049 | NO | -- |
+| Advisory ID       | Has Rationale | Date |
+| ----------------- | ------------- | ---- |
+| RUSTSEC-2024-0436 | NO            | --   |
+| RUSTSEC-2025-0134 | NO            | --   |
+| RUSTSEC-2025-0140 | NO            | --   |
+| RUSTSEC-2026-0049 | NO            | --   |
 
 ### 6. helioscope -- 3 ignores
 
 **File:** `/Users/<REDACTED>/CodeProjects/Phenotype/repos/helioscope/deny.toml`
 
-| Advisory ID | Has Rationale | Date |
-|---|---|---|
-| RUSTSEC-2025-0134 | NO | -- |
-| RUSTSEC-2025-0140 | NO | -- |
-| RUSTSEC-2026-0049 | NO | -- |
+| Advisory ID       | Has Rationale | Date |
+| ----------------- | ------------- | ---- |
+| RUSTSEC-2025-0134 | NO            | --   |
+| RUSTSEC-2025-0140 | NO            | --   |
+| RUSTSEC-2026-0049 | NO            | --   |
 
 ### 7. HeliosLab -- 1 ignore
 
 **File:** `/Users/<REDACTED>/CodeProjects/Phenotype/repos/HeliosLab/deny.toml`
 
-| Advisory ID | Has Rationale | Date |
-|---|---|---|
-| RUSTSEC-2024-0436 | NO | -- |
+| Advisory ID       | Has Rationale | Date |
+| ----------------- | ------------- | ---- |
+| RUSTSEC-2024-0436 | NO            | --   |
 
 ### 8. helios-cli -- 1 ignore
 
 **File:** `/Users/<REDACTED>/CodeProjects/Phenotype/repos/helios-cli/deny.toml`
 
-| Advisory ID | Has Rationale | Date |
-|---|---|---|
-| RUSTSEC-2026-0049 | NO | -- |
+| Advisory ID       | Has Rationale | Date |
+| ----------------- | ------------- | ---- |
+| RUSTSEC-2026-0049 | NO            | --   |
 
 ### 9. phenoData -- 1 ignore
 
 **File:** `/Users/<REDACTED>/CodeProjects/Phenotype/repos/phenoData/deny.toml`
 
-| Advisory ID | Has Rationale | Date | Notes |
-|---|---|---|---|
-| RUSTSEC-2023-0071 | NO | -- | 3 years old |
+| Advisory ID       | Has Rationale | Date | Notes       |
+| ----------------- | ------------- | ---- | ----------- |
+| RUSTSEC-2023-0071 | NO            | --   | 3 years old |
 
 ### 10. phenoUtils -- 1 ignore
 
 **File:** `/Users/<REDACTED>/CodeProjects/Phenotype/repos/phenoUtils/deny.toml`
 
-| Advisory ID | Has Rationale | Date |
-|---|---|---|
-| RUSTSEC-2026-0049 | NO | -- |
+| Advisory ID       | Has Rationale | Date |
+| ----------------- | ------------- | ---- |
+| RUSTSEC-2026-0049 | NO            | --   |
 
 ---
 
@@ -228,22 +228,22 @@ cargo-deny expects `{ id, rationale, date }` but this file uses `{ crate, adviso
 
 ## Cross-Repo Advisory Frequency
 
-| Advisory ID | Repos Affected | Advisory IDs Ignored |
-|---|---|---|
-| RUSTSEC-2025-0134 | 6 | hwLedger, forgecode, FocalPoint, rust, helioscope, rust |
-| RUSTSEC-2024-0436 | 5 | hwLedger, forgecode, FocalPoint, rust, HeliosLab |
-| RUSTSEC-2026-0049 | 5 | rust, helioscope, helios-cli, phenoUtils, rust |
-| RUSTSEC-2023-0071 | 3 | hwLedger, phenoData, hwLedger (duplicate) |
-| RUSTSEC-2025-0140 | 3 | rust, helioscope, rust |
-| RUSTSEC-2024-0411 through -0420 | 2 each | hwLedger + BytePort (same 10-advisory batch) |
-| RUSTSEC-2024-0370 | 2 | hwLedger, BytePort |
-| RUSTSEC-2025-0057 | 2 | hwLedger, FocalPoint |
-| RUSTSEC-2025-0075, -0080, -0081, -0098, -0100 | 2 each | hwLedger + BytePort |
-| RUSTSEC-2025-0119 | 2 | hwLedger + PhenoControl (via wrong field names) |
-| RUSTSEC-2017-0008 | 2 | hwLedger (duplicate entry) |
-| RUSTSEC-2026-0098, -0099, -0104, -0118, -0119 | 2 each | forgecode |
-| RUSTSEC-2025-0141 | 2 | forgecode, FocalPoint |
-| RUSTSEC-2024-0320 | 2 | forgecode (duplicate entry) |
+| Advisory ID                                   | Repos Affected | Advisory IDs Ignored                                    |
+| --------------------------------------------- | -------------- | ------------------------------------------------------- |
+| RUSTSEC-2025-0134                             | 6              | hwLedger, forgecode, FocalPoint, rust, helioscope, rust |
+| RUSTSEC-2024-0436                             | 5              | hwLedger, forgecode, FocalPoint, rust, HeliosLab        |
+| RUSTSEC-2026-0049                             | 5              | rust, helioscope, helios-cli, phenoUtils, rust          |
+| RUSTSEC-2023-0071                             | 3              | hwLedger, phenoData, hwLedger (duplicate)               |
+| RUSTSEC-2025-0140                             | 3              | rust, helioscope, rust                                  |
+| RUSTSEC-2024-0411 through -0420               | 2 each         | hwLedger + BytePort (same 10-advisory batch)            |
+| RUSTSEC-2024-0370                             | 2              | hwLedger, BytePort                                      |
+| RUSTSEC-2025-0057                             | 2              | hwLedger, FocalPoint                                    |
+| RUSTSEC-2025-0075, -0080, -0081, -0098, -0100 | 2 each         | hwLedger + BytePort                                     |
+| RUSTSEC-2025-0119                             | 2              | hwLedger + PhenoControl (via wrong field names)         |
+| RUSTSEC-2017-0008                             | 2              | hwLedger (duplicate entry)                              |
+| RUSTSEC-2026-0098, -0099, -0104, -0118, -0119 | 2 each         | forgecode                                               |
+| RUSTSEC-2025-0141                             | 2              | forgecode, FocalPoint                                   |
+| RUSTSEC-2024-0320                             | 2              | forgecode (duplicate entry)                             |
 
 ---
 
@@ -262,8 +262,8 @@ cargo-deny expects `{ id, rationale, date }` but this file uses `{ crate, adviso
 6. **Duplicate identical ignores in hwLedger and forgecode.** RUSTSEC-2017-0008 appears twice in hwLedger; RUSTSEC-2024-0320 appears twice in forgecode. Copy-paste errors.
 
 7. **The most dangerous ignores are the oldest ones without rationale or date:**
-   - `RUSTSEC-2017-0008` (hwLedger) -- 9 years old, no rationale, unknown vulnerability class
-   - `RUSTSEC-2023-0071` (hwLedger, phenoData) -- 3 years old, no rationale
+    - `RUSTSEC-2017-0008` (hwLedger) -- 9 years old, no rationale, unknown vulnerability class
+    - `RUSTSEC-2023-0071` (hwLedger, phenoData) -- 3 years old, no rationale
 
 8. **A common dependency drives the largest ignore cluster.** The 10-advisory batch RUSTSEC-2024-0411 through -0420 appears identically across BytePort and hwLedger. These likely originate from the same transitive dependency (possibly axum, tokio-postgres, or surrealdb) and should be evaluated together.
 

@@ -10,6 +10,7 @@ The strongest shared inspiration for AgilePlus and Tracera is not a conventional
 An oracle is useful precisely because it gives the worker a measurable target. The design goal is not to hide the target from the agent; it is to make the target truthful, multidimensional, difficult to game, and aligned with the accepted product outcome.
 
 The environment should let an agent observe:
+
 - where it is;
 - what remains;
 - which dimension is failing;
@@ -45,6 +46,7 @@ Attempts are restartable. Verified progress should survive when its dependencies
 Do not collapse progress to one score.
 
 Candidate dimensions include:
+
 - accepted functional behavior;
 - negative/error behavior;
 - acceptance/oracle coverage;
@@ -59,6 +61,7 @@ Candidate dimensions include:
 - human-judgment debt.
 
 For each applicable dimension track, where meaningful:
+
 - current position;
 - delta from prior attempt;
 - slope/velocity;
@@ -73,6 +76,7 @@ The "asymptote" is the accepted outcome under the current contract, not a perman
 ## Anti-Goodhart rules
 
 The worker may see the rubric and feedback. The system protects alignment by:
+
 - separating accepted grader policy from ordinary implementation authority;
 - retaining adversarial/negative controls;
 - binding results to exact candidate/environment/verifier;
@@ -87,6 +91,7 @@ The worker may see the rubric and feedback. The system protects alignment by:
 ## Failure classification
 
 A failed grade should localize the problem when possible:
+
 - implementation defect;
 - missing behavior;
 - regression;
@@ -109,6 +114,7 @@ Humans remain disproportionately responsible for irreducibly subjective product 
 ## AgilePlus scope
 
 AgilePlus applies MACE at the **bounded work/assignment level**:
+
 - compile assignment/rubric/context;
 - execute attempt;
 - run applicable graders;
@@ -120,6 +126,7 @@ AgilePlus applies MACE at the **bounded work/assignment level**:
 ## Tracera scope
 
 Tracera applies MACE at the **persistent product level**:
+
 - maintain the accepted multidimensional product contract;
 - aggregate requirement/feature/journey/quality evidence;
 - show product position and trajectory;
@@ -132,6 +139,7 @@ Tracera does not own AgilePlus's attempt/execution state machine; AgilePlus does
 ## Architecture consequences
 
 Both products need first-class identities for:
+
 - rubric/criterion/oracle;
 - grader/verifier version;
 - attempt/evaluation;

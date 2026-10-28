@@ -5,16 +5,16 @@ lane: "done"
 dependencies: []
 base_branch: main
 base_commit: 9c06b087a5d1f3955c281428c7eed15ac7763c00
-created_at: '2026-03-02T11:55:22.678824+00:00'
+created_at: "2026-03-02T11:55:22.678824+00:00"
 subtasks: [T034, T035, T036, T037, T038, T039]
 shell_pid: "61443"
 agent: "claude-opus"
 reviewed_by: "Koosha Paridehpour"
 review_status: "approved"
 history:
-- date: '2026-03-02'
-  action: created
-  by: spec-kitty
+    - date: "2026-03-02"
+      action: created
+      by: spec-kitty
 ---
 
 # Artifact Storage (MinIO) (WP06)
@@ -26,6 +26,7 @@ Create the `agileplus-artifacts` crate with MinIO/S3-compatible object storage f
 ## Objective
 
 Implement:
+
 - MinIO/S3 connection with configurable endpoint
 - 4 managed buckets for different artifact types
 - ArtifactStore trait with CRUD operations
@@ -36,6 +37,7 @@ Implement:
 ## Architecture
 
 The artifact storage layer provides:
+
 - **Bucket organization** by purpose (artifacts, events, audit, snapshots)
 - **Lifecycle management** for archival and cleanup
 - **Multipart upload** for efficiency and resumability
@@ -49,6 +51,7 @@ The artifact storage layer provides:
 Create a new crate at `crates/agileplus-artifacts/`.
 
 **Cargo.toml:**
+
 ```toml
 [package]
 name = "agileplus-artifacts"
@@ -72,6 +75,7 @@ tokio = { version = "1", features = ["full"] }
 ```
 
 **Directory structure:**
+
 ```
 crates/agileplus-artifacts/
 ├── Cargo.toml
@@ -85,6 +89,7 @@ crates/agileplus-artifacts/
 ```
 
 **lib.rs content:**
+
 ```rust
 pub mod archival;
 pub mod bucket;

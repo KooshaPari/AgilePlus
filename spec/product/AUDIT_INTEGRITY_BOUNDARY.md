@@ -6,6 +6,7 @@
 ## Finding
 
 `hash_entry` currently hashes:
+
 - feature_id;
 - wp_id when present;
 - timestamp;
@@ -14,6 +15,7 @@
 - prev_hash.
 
 It does not hash:
+
 - entry id;
 - evidence_refs;
 - event_id;

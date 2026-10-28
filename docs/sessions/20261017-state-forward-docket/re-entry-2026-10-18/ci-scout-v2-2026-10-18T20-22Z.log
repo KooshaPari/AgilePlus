@@ -1,0 +1,378 @@
+2026-10-18T20:21:55Z v2 scout PR-read phase starting
+=== PR #1156 ===
+2026-10-18T20:22:08Z
+Cargo Deny	fail	2m40s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462965/job/117607234166	
+Cargo Deny (Advisories + Licenses)	fail	1m11s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462959/job/117609709338	
+Dry run publish	fail	31s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462983/job/117607233437	
+OSV Scanner (Cargo.lock) (advisory)	fail	39s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462965/job/117607234122	
+benchmark thresholds (advisory)	fail	26m9s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104463013/job/117607233889	
+cargo-deny	fail	23s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462980/job/117607233915	
+cargo-mutants (agileplus-domain)	fail	5h32m15s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104463004/job/117607234077	
+ci / lint	fail	3s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462959/job/117620432199	
+ci / test	fail	2s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462959/job/117621695101	
+perf (k6 → 95p budget, advisory)	fail	18s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462919/job/117607233528	
+python-coverage (uv)	fail	33s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104463006/job/117607234010	
+semver-checks	fail	9m9s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462967/job/117607233380	
+CLI round-trip (ubuntu)	pass	5m7s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462972/job/117607233752	
+Cargo Audit	pass	2m34s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462965/job/117607234063	
+CodeQL (python)	pass	1m2s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462965/job/117607234127	
+CodeRabbit	pass	0		Review completed
+Dependency Review	pass	8s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462959/job/117607234046	
+Detect Languages	pass	7s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462959/job/117607233768	
+GitGuardian Security Checks	pass	1s	https://dashboard.gitguardian.com	
+Gitleaks	pass	26s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462965/job/117607234235	
+Kilo Code Review	pass	7h12m38s	https://app.kilo.ai/code-reviews/0a719c3b-a872-4da8-9098-6877e2151ff8	
+Lint & Format	pass	16s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462940/job/117607233573	
+Python	pass	10s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462959/job/117609709435	
+Python Security	pass	14s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462965/job/117607233876	
+Rust	pass	18m30s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462959/job/117609709341	
+Security Scan	pass	26s	https://github.com/KooshaPari/AgilePlus/actions/runs/39104462959/job/117609709402	
+Socket Security: Project Report	pass	23s	https://socket.dev/dashboard/org/phenotype/sbom/970e51bf-eb67-4c5d-ba74-150ce0234fb6	
+Socket Security: Pull Request Alerts	pass	28s	https://socket.dev	
+SonarCloud Code Analysis	pass	34s	https://sonarcloud.io/dashboard?id=KooshaPari_AgilePlus&pullRequest=1156	
+Summary	pass	3s	https://dashboard.mergify.com/orgs/KooshaPari/repos/AgilePlus/activity-log?pull_request=1156	
+=== END PR #1156 ===
+=== PR #1162 ===
+=== PR #1166 ===
+2026-10-18T20:22:17Z
+2026-10-18T20:22:17Z
+=== PR #1161 ===
+2026-10-18T20:22:17Z
+=== PR #1165 ===
+2026-10-18T20:22:17Z
+=== PR #1164 ===
+2026-10-18T20:22:17Z
+=== PR #1157 ===
+=== PR #1163 ===
+2026-10-18T20:22:17Z
+2026-10-18T20:22:17Z
+Dry run publish	fail	36s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160560986/job/117772786919	
+OSV Scanner (Cargo.lock) (advisory)	fail	40s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561007/job/117772787486	
+Vercel	fail	0	https://vercel.com/koosha-paridehpours-projects?upgradeToPro=build-rate-limit	Deployment rate limited — retry in 24 hours.
+plan	fail	31s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160560964/job/117772786842	
+semver-checks	fail	7m35s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561019/job/117772786882	
+Cargo Audit	pass	3m11s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561007/job/117772787445	
+Cargo Deny	pass	2m29s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561007/job/117772787468	
+CodeQL	pass	4s	https://github.com/KooshaPari/AgilePlus/runs/117774712551	
+CodeQL (python)	pass	55s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561007/job/117772787294	
+CodeRabbit	pass	0		Review skipped: reviews are disabled for this base branch
+GitGuardian Security Checks	pass	1s	https://dashboard.gitguardian.com	
+Gitleaks	pass	29s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561007/job/117772787479	
+Kilo Code Review	pass	20m31s	https://app.kilo.ai/code-reviews/ea2e2c49-8868-4a34-8fec-fcadb983bd3b	
+Lint & Format	pass	15s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561022/job/117772787207	
+Python Security	pass	12s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561007/job/117772787423	
+Socket Security: Project Report	pass	3s	https://socket.dev/dashboard/org/phenotype/sbom/cd7d0cd4-7395-40fa-8d4b-b999d94f9e95	
+Socket Security: Pull Request Alerts	pass	13s	https://socket.dev	
+SonarCloud Code Analysis	pass	26s	https://sonarcloud.io/dashboard?id=KooshaPari_AgilePlus&pullRequest=1165	
+Summary	pass	0	https://dashboard.mergify.com/orgs/KooshaPari/repos/AgilePlus/activity-log?pull_request=1165	
+Workspace Path Dependency Audit	pass	24s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561046/job/117772787642	
+audit	pass	3m14s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160560982/job/117772786975	
+cargo-deny	pass	25s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561173/job/117772787675	
+coverage-gate (>=85% lines)	pass	7s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160544832/job/117778394270	
+fuzz	pass	47s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561005/job/117772786939	
+gate	pass	2s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160694925/job/117773182391	
+gitleaks scan	pass	25s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160544830/job/117772741819	
+gitleaks scan	pass	25s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160560922/job/117772786716	
+go-coverage (go test -cover)	pass	43s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160544832/job/117772741979	
+osv-scanner	pass	3s	https://github.com/KooshaPari/AgilePlus/runs/117775504883	
+python-coverage (uv)	pass	29s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160544832/job/117772742205	
+Cargo Deny	fail	2m30s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891052/job/117773776408	
+Cargo Deny (Advisories + Licenses)	fail	1m29s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891398/job/117775741763	
+Dry run publish	fail	33s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891035/job/117773776054	
+OSV Scanner (Cargo.lock) (advisory)	fail	43s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891052/job/117773776139	
+perf (k6 → 95p budget, advisory)	fail	20s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891156/job/117773776861	
+python-coverage (uv)	fail	39s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891380/job/117773777405	
+Cargo Audit	pass	2m36s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891052/job/117773776453	
+CodeQL (python)	pass	56s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891052/job/117773776438	
+CodeRabbit	pass	0		Review rate limited
+Dependency Review	pass	5s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891398/job/117773777816	
+Detect Languages	pass	7s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891398/job/117773777742	
+GitGuardian Security Checks	pass	1s	https://dashboard.gitguardian.com	
+Gitleaks	pass	25s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891052/job/117773776368	
+Kilo Code Review	pass	23m2s	https://app.kilo.ai/code-reviews/bfc1755f-4cb0-49e5-ac7a-1a9a8b000a96	
+Lint & Format	pass	14s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160890999/job/117773776098	
+Python	pass	10s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891398/job/117775741747	
+Python Security	pass	10s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891052/job/117773776377	
+Security Scan	pass	31s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891398/job/117775741769	
+Socket Security: Project Report	pass	2s	https://socket.dev/dashboard/org/phenotype/sbom/11158ec3-f244-4616-b033-7e344daf635e	
+Socket Security: Pull Request Alerts	pass	9s	https://socket.dev	
+SonarCloud Code Analysis	pass	25s	https://sonarcloud.io/dashboard?id=KooshaPari_AgilePlus&pullRequest=1166	
+Summary	pass	1s	https://dashboard.mergify.com/orgs/KooshaPari/repos/AgilePlus/activity-log?pull_request=1166	
+TS/JS	pass	18s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891398/job/117775741782	
+Vercel	pass	0	https://vercel.com/koosha-paridehpours-projects/agileplus/DAZra2huWSxevYeyyBHUwpLQy6Lx	Deployment has completed
+Vercel Preview Comments	pass	0	https://vercel.com/github	
+Workspace Path Dependency Audit	pass	27s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891161/job/117773776658	
+cargo-fuzz build check (agileplus-domain)	pass	2m40s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891016/job/117773776090	
+detect-unused-dependencies	pass	22s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891029/job/117773775936	
+flaky-test detection	pass	17m43s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891054/job/117773776292	
+fuzz	pass	52s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160890978/job/117773775977	
+=== END PR #1165 ===
+=== END PR #1166 ===
+Cargo Deny	fail	2m29s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145031/job/117648048179	
+Cargo Deny (Advisories + Licenses)	fail	1m21s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145010/job/117650262419	
+Dry run publish	fail	23s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145032/job/117648047427	
+Lint & Format	fail	17s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145055/job/117648047653	
+OSV Scanner (Cargo.lock) (advisory)	fail	39s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145031/job/117648048129	
+SonarCloud Code Analysis	fail	29s	https://sonarcloud.io/dashboard?id=KooshaPari_AgilePlus&pullRequest=1161	
+benchmark thresholds (advisory)	fail	26m16s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145011/job/117648047564	
+cargo-mutants (agileplus-domain)	fail	4h49m24s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145043/job/117648047876	
+ci / lint	fail	3s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145010/job/117657128769	
+ci / test	fail	3s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145010/job/117657167500	
+perf (k6 → 95p budget, advisory)	fail	21s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145030/job/117648047557	
+python-coverage (uv)	fail	37s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145049/job/117648047895	
+Cargo Audit	pass	2m33s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145031/job/117648048257	
+CodeQL (python)	pass	44s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145031/job/117648048199	
+CodeRabbit	pass	0		Review completed
+Dependency Review	pass	8s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145010/job/117648047503	
+Detect Languages	pass	6s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145010/job/117648047635	
+GitGuardian Security Checks	pass	1s	https://dashboard.gitguardian.com	
+Gitleaks	pass	40s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145031/job/117648048188	
+Kilo Code Review	pass	7h14m21s	https://app.kilo.ai/code-reviews/4877bde1-3224-4cca-baa1-1cf765fbf953	
+Python	pass	8s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145010/job/117650262388	
+Python Security	pass	9s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145031/job/117648048226	
+Rust	pass	17m36s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145010/job/117650262380	
+Security Scan	pass	26s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145010/job/117650262365	
+Socket Security: Project Report	pass	2s	https://socket.dev/dashboard/org/phenotype/sbom/015157c2-acd0-4a51-8844-bb3542837017	
+Socket Security: Pull Request Alerts	pass	2s	https://socket.dev	
+Mergify Merge Protections	skipping	3s	https://dashboard.mergify.com/orgs/KooshaPari/repos/AgilePlus/activity-log?pull_request=1161	
+perf (T118 real HTTP; warning targets)	pass	4m38s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145030/job/117648047684	
+perf-qe-gate (execution integrity)	pass	4s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145030/job/117650644740	
+qe / lint	pass	5m31s	https://github.com/KooshaPari/AgilePlus/actions/runs/39118145015/job/117648047344	
+=== END PR #1161 ===
+Cargo Deny	fail	2m4s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923276/job/117770880915	
+Cargo Deny (Advisories + Licenses)	fail	1m38s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923301/job/117771524505	
+Dry run publish	fail	29s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923339/job/117770881006	
+Lint & Format	fail	16s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923287/job/117770880774	
+OSV Scanner (Cargo.lock) (advisory)	fail	45s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923276/job/117770881050	
+SonarCloud Code Analysis	fail	42s	https://sonarcloud.io/dashboard?id=KooshaPari_AgilePlus&pullRequest=1164	
+Vercel	fail	0	https://vercel.com/koosha-paridehpours-projects?upgradeToPro=build-rate-limit	Deployment rate limited — retry in 24 hours.
+benchmark thresholds (advisory)	fail	26m7s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923384/job/117770881825	
+cargo-deny	fail	29s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923395/job/117770881842	
+ci / lint	fail	3s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923301/job/117775125174	
+ci / test	fail	2s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923301/job/117776148781	
+perf (k6 → 95p budget, advisory)	fail	24s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923345/job/117770881251	
+python-coverage (uv)	fail	24s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923392/job/117770881683	
+semver-checks	fail	8m57s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923325/job/117770880778	
+Cargo Audit	pass	2m10s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923276/job/117770881079	
+CodeQL (python)	pass	58s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923276/job/117770881125	
+CodeRabbit	pass	0		Review rate limited
+Dependency Review	pass	5s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923301/job/117770881091	
+Detect Languages	pass	7s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923301/job/117770881240	
+GitGuardian Security Checks	pass	1s	https://dashboard.gitguardian.com	
+Gitleaks	pass	26s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923276/job/117770881060	
+Kilo Code Review	pass	20m56s	https://app.kilo.ai/code-reviews/52aeb4fd-cb6e-4ffa-8fdd-9c71ac591d41	
+Python	pass	10s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923301/job/117771524484	
+Python Security	pass	12s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923276/job/117770881265	
+Rust	pass	14m31s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923301/job/117771524534	
+Security Scan	pass	32s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923301/job/117771524492	
+Socket Security: Project Report	pass	4s	https://socket.dev/dashboard/org/phenotype/sbom/3421534f-bc4f-4147-9415-9d69a9234aae	
+Socket Security: Pull Request Alerts	pass	2s	https://socket.dev	
+Summary	pass	0	https://dashboard.mergify.com/orgs/KooshaPari/repos/AgilePlus/activity-log?pull_request=1164	
+TS/JS	pass	17s	https://github.com/KooshaPari/AgilePlus/actions/runs/39159923301/job/117771524537	
+=== END PR #1164 ===
+Cargo Deny	fail	2m10s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754413/job/117767367348	
+Cargo Deny (Advisories + Licenses)	fail	1m17s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754421/job/117767397637	
+Dry run publish	fail	30s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754404/job/117767367090	
+Lint & Format	fail	18s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754554/job/117767367678	
+OSV Scanner (Cargo.lock) (advisory)	fail	41s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754413/job/117767367331	
+SonarCloud Code Analysis	fail	25s	https://sonarcloud.io/dashboard?id=KooshaPari_AgilePlus&pullRequest=1162	
+Vercel	fail	0	https://vercel.com/koosha-paridehpours-projects?upgradeToPro=build-rate-limit	Deployment rate limited — retry in 24 hours.
+benchmark thresholds (advisory)	fail	26m19s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754526/job/117767367738	
+ci / lint	fail	3s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754421/job/117771495832	
+ci / test	fail	3s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754421/job/117771829046	
+perf (k6 → 95p budget, advisory)	fail	17s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754418/job/117767367350	
+python-coverage (uv)	fail	35s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754481/job/117767367832	
+Cargo Audit	pass	2m5s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754413/job/117767367064	
+CodeQL (python)	pass	1m2s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754413/job/117767367258	
+CodeRabbit	pass	0		Review completed
+Dependency Review	pass	8s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754421/job/117767367332	
+Detect Languages	pass	6s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754421/job/117767367577	
+GitGuardian Security Checks	pass	1s	https://dashboard.gitguardian.com	
+Gitleaks	pass	29s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754413/job/117767367366	
+Kilo Code Review	pass	20m2s	https://app.kilo.ai/code-reviews/9bda8b23-f070-49a7-98e1-296ccec3248b	
+Python	pass	10s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754421/job/117767397703	
+Python Security	pass	14s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754413/job/117767367347	
+Rust	pass	17m44s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754421/job/117767397707	
+Security Scan	pass	26s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754421/job/117767397732	
+Socket Security: Project Report	pass	3s	https://socket.dev/dashboard/org/phenotype/sbom/0080d65a-ce9e-43fe-ba79-4522c088c51b	
+Socket Security: Pull Request Alerts	pass	17s	https://socket.dev	
+Summary	pass	1s	https://dashboard.mergify.com/orgs/KooshaPari/repos/AgilePlus/activity-log?pull_request=1162	
+TS/JS	pass	17s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754421/job/117767397671	
+Workspace Path Dependency Audit	pass	26s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754406/job/117767367035	
+cargo-fuzz build check (agileplus-domain)	pass	2m36s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158754546/job/117767367500	
+=== END PR #1162 ===
+Cargo Deny	fail	2m12s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933870/job/117767907048	
+Cargo Deny (Advisories + Licenses)	fail	1m23s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933883/job/117767931944	
+Dry run publish	fail	31s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933936/job/117767907108	
+OSV Scanner (Cargo.lock) (advisory)	fail	43s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933870/job/117767906861	
+Vercel	fail	0	https://vercel.com/koosha-paridehpours-projects?upgradeToPro=build-rate-limit	Deployment rate limited — retry in 24 hours.
+benchmark thresholds (advisory)	fail	26m11s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933856/job/117767907059	
+cargo-deny	fail	27s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933895/job/117767907214	
+ci / lint	fail	3s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933883/job/117772172308	
+ci / test	fail	3s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933883/job/117772807497	
+perf (k6 → 95p budget, advisory)	fail	16s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933790/job/117767906808	
+python-coverage (uv)	fail	24s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933845/job/117767907211	
+Cargo Audit	pass	3m13s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933870/job/117767907075	
+CodeQL (python)	pass	58s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933870/job/117767907091	
+CodeRabbit	pass	0		Review rate limited
+Dependency Review	pass	8s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933883/job/117767907332	
+Detect Languages	pass	4s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933883/job/117767907137	
+GitGuardian Security Checks	pass	2s	https://dashboard.gitguardian.com	
+Gitleaks	pass	28s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933870/job/117767907262	
+JSX a11y lint	pass	15s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933769/job/117767906709	
+Kilo Code Review	pass	20m8s	https://app.kilo.ai/code-reviews/6364b5b6-e38c-48dd-9c06-d472de6cc363	
+Lint & Format	pass	15s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933881/job/117767907409	
+Python	pass	8s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933883/job/117767931974	
+Python Security	pass	9s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933870/job/117767907132	
+Rust	pass	17m50s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933883/job/117767932014	
+Security Scan	pass	26s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933883/job/117767932069	
+Socket Security: Project Report	pass	8s	https://socket.dev/dashboard/org/phenotype/sbom/17cf9253-72ec-4a34-b131-0fc892ff7466	
+Socket Security: Pull Request Alerts	pass	45s	https://socket.dev	
+SonarCloud Code Analysis	pass	23s	https://sonarcloud.io/dashboard?id=KooshaPari_AgilePlus&pullRequest=1163	
+Summary	pass	1s	https://dashboard.mergify.com/orgs/KooshaPari/repos/AgilePlus/activity-log?pull_request=1163	
+TS/JS	pass	19s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933883/job/117767931948	
+Cargo Deny	fail	1m56s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326576/job/117609800745	
+Cargo Deny (Advisories + Licenses)	fail	1m14s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326691/job/117617880666	
+Dry run publish	fail	32s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326730/job/117609801294	
+OSV Scanner (Cargo.lock) (advisory)	fail	32s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326576/job/117609800600	
+Rust	fail	58s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326691/job/117617880665	
+Workspace Path Dependency Audit	fail	26s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326668/job/117609800637	
+benchmark thresholds (advisory)	fail	39s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326665/job/117609801203	
+cargo-deny	fail	22s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326649/job/117609800612	
+cargo-fuzz build check (agileplus-domain)	fail	31s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326584/job/117609800886	
+ci / lint	fail	4s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326691/job/117620556304	
+ci / test	fail	3s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326691/job/117621740729	
+flaky-test detection	fail	58s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326665/job/117609800990	
+perf (T118 real HTTP; warning targets)	fail	1m1s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326707/job/117609801296	
+perf (k6 → 95p budget, advisory)	fail	22s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326707/job/117609801488	
+perf-qe-gate (execution integrity)	fail	2s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326707/job/117618083745	
+plan	fail	22s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326738/job/117609801034	
+python-coverage (uv)	fail	36s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326680/job/117609801464	
+qe / lint	fail	44s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326736/job/117609801682	
+qe / test	fail	1m1s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326736/job/117609801561	
+rust-coverage (cargo-llvm-cov)	fail	2m7s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326680/job/117609801517	
+semver-checks	fail	1m8s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326616/job/117609800633	
+static-deploy-contract	fail	7s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326718/job/117609800618	
+Cargo Audit	pass	2m51s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326576/job/117609800798	
+CodeQL (python)	pass	58s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326576/job/117609800752	
+CodeRabbit	pass	0		Review rate limited
+Dependency Review	pass	7s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326691/job/117609801028	
+Detect Languages	pass	5s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326691/job/117609800933	
+GitGuardian Security Checks	pass	1s	https://dashboard.gitguardian.com	
+Gitleaks	pass	25s	https://github.com/KooshaPari/AgilePlus/actions/runs/39105326576/job/117609800782	
+Kilo Code Review	pass	7h43m1s	https://app.kilo.ai/code-reviews/c0098ac3-cc1e-459c-843a-8c1d705be041	
+=== END PR #1163 ===
+=== END PR #1157 ===
+=== PR #1165 (no head, full) ===
+Dry run publish	fail	36s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160560986/job/117772786919	
+OSV Scanner (Cargo.lock) (advisory)	fail	40s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561007/job/117772787486	
+Vercel	fail	0	https://vercel.com/koosha-paridehpours-projects?upgradeToPro=build-rate-limit	Deployment rate limited — retry in 24 hours.
+plan	fail	31s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160560964/job/117772786842	
+semver-checks	fail	7m35s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561019/job/117772786882	
+Cargo Audit	pass	3m11s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561007/job/117772787445	
+Cargo Deny	pass	2m29s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561007/job/117772787468	
+CodeQL	pass	4s	https://github.com/KooshaPari/AgilePlus/runs/117774712551	
+CodeQL (python)	pass	55s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561007/job/117772787294	
+CodeRabbit	pass	0		Review skipped: reviews are disabled for this base branch
+GitGuardian Security Checks	pass	1s	https://dashboard.gitguardian.com	
+Gitleaks	pass	29s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561007/job/117772787479	
+Kilo Code Review	pass	20m31s	https://app.kilo.ai/code-reviews/ea2e2c49-8868-4a34-8fec-fcadb983bd3b	
+Lint & Format	pass	15s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561022/job/117772787207	
+Python Security	pass	12s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561007/job/117772787423	
+Socket Security: Project Report	pass	3s	https://socket.dev/dashboard/org/phenotype/sbom/cd7d0cd4-7395-40fa-8d4b-b999d94f9e95	
+Socket Security: Pull Request Alerts	pass	13s	https://socket.dev	
+SonarCloud Code Analysis	pass	26s	https://sonarcloud.io/dashboard?id=KooshaPari_AgilePlus&pullRequest=1165	
+Summary	pass	0	https://dashboard.mergify.com/orgs/KooshaPari/repos/AgilePlus/activity-log?pull_request=1165	
+Workspace Path Dependency Audit	pass	24s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561046/job/117772787642	
+audit	pass	3m14s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160560982/job/117772786975	
+cargo-deny	pass	25s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561173/job/117772787675	
+coverage-gate (>=85% lines)	pass	7s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160544832/job/117778394270	
+fuzz	pass	47s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160561005/job/117772786939	
+gate	pass	2s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160694925/job/117773182391	
+gitleaks scan	pass	25s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160544830/job/117772741819	
+gitleaks scan	pass	25s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160560922/job/117772786716	
+go-coverage (go test -cover)	pass	43s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160544832/job/117772741979	
+osv-scanner	pass	3s	https://github.com/KooshaPari/AgilePlus/runs/117775504883	
+python-coverage (uv)	pass	29s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160544832/job/117772742205	
+rust-coverage (cargo-llvm-cov)	pass	15m42s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160544832/job/117772742173	
+Macroscope - Correctness Check	skipping	2s	https://github.com/KooshaPari/AgilePlus/pull/1165/checks?check_run_id=117772790088	
+Mergify Merge Protections	skipping	2s	https://dashboard.mergify.com/orgs/KooshaPari/repos/AgilePlus/activity-log?pull_request=1165	
+announce	skipping	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160560964/job/117774363398	
+static-deploy-contract	pass	11s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160560939/job/117772786546	
+Mergify Merge Queue	skipping	0	https://dashboard.mergify.com/orgs/KooshaPari/repos/AgilePlus/queues/status?branch=docs%2Fstate-forward-docket-20261017&pull=1165	
+Publish to crates.io	skipping	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160560986/job/117772788061	
+Verify CI passed for tagged commit	skipping	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160560986/job/117772788136	
+build-local-artifacts (${{ join(matrix.targets, ', ') }})	skipping	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160560964/job/117774362962	
+semgrep-cloud-platform/scan	pass	1m35s	https://semgrep.dev/orgs/phenotype/projects/5604926/scans/248879073	
+build-global-artifacts	skipping	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160560964/job/117774363372	
+security/snyk (kooshapari)	pass	0	https://app.snyk.io/org/kooshapari/pr-checks/2f61d732-aa86-449a-9379-070febc448dc	No manifest changes detected in 1 project
+host	skipping	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160560964/job/117774363009	
+=== END #1165 ===
+=== PR #1166 (no head, full) ===
+Cargo Deny	fail	2m30s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891052/job/117773776408	
+Cargo Deny (Advisories + Licenses)	fail	1m29s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891398/job/117775741763	
+Dry run publish	fail	33s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891035/job/117773776054	
+OSV Scanner (Cargo.lock) (advisory)	fail	43s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891052/job/117773776139	
+perf (k6 → 95p budget, advisory)	fail	20s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891156/job/117773776861	
+python-coverage (uv)	fail	39s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891380/job/117773777405	
+Cargo Audit	pass	2m36s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891052/job/117773776453	
+CodeQL (python)	pass	56s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891052/job/117773776438	
+CodeRabbit	pass	0		Review rate limited
+Dependency Review	pass	5s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891398/job/117773777816	
+Detect Languages	pass	7s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891398/job/117773777742	
+GitGuardian Security Checks	pass	1s	https://dashboard.gitguardian.com	
+Gitleaks	pass	25s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891052/job/117773776368	
+Kilo Code Review	pass	23m2s	https://app.kilo.ai/code-reviews/bfc1755f-4cb0-49e5-ac7a-1a9a8b000a96	
+Lint & Format	pass	14s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160890999/job/117773776098	
+Python	pass	10s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891398/job/117775741747	
+Python Security	pass	10s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891052/job/117773776377	
+Security Scan	pass	31s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891398/job/117775741769	
+Socket Security: Project Report	pass	2s	https://socket.dev/dashboard/org/phenotype/sbom/11158ec3-f244-4616-b033-7e344daf635e	
+Socket Security: Pull Request Alerts	pass	9s	https://socket.dev	
+SonarCloud Code Analysis	pass	25s	https://sonarcloud.io/dashboard?id=KooshaPari_AgilePlus&pullRequest=1166	
+Summary	pass	1s	https://dashboard.mergify.com/orgs/KooshaPari/repos/AgilePlus/activity-log?pull_request=1166	
+TS/JS	pass	18s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891398/job/117775741782	
+Vercel	pass	0	https://vercel.com/koosha-paridehpours-projects/agileplus/DAZra2huWSxevYeyyBHUwpLQy6Lx	Deployment has completed
+Vercel Preview Comments	pass	0	https://vercel.com/github	
+Workspace Path Dependency Audit	pass	27s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891161/job/117773776658	
+cargo-fuzz build check (agileplus-domain)	pass	2m40s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891016/job/117773776090	
+coverage-gate (>=85% lines)	pass	8s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891380/job/117779654061	
+detect-unused-dependencies	pass	22s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891029/job/117773775936	
+flaky-test detection	pass	17m43s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891054/job/117773776292	
+fuzz	pass	52s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160890978/job/117773775977	
+gate	pass	3s	https://github.com/KooshaPari/AgilePlus/actions/runs/39161101478/job/117774408835	
+gitleaks scan	pass	29s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160883426/job/117773750658	
+gitleaks scan	pass	43s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891048/job/117773777093	
+go-coverage (go test -cover)	pass	46s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160883470/job/117773751228	
+go-coverage (go test -cover)	pass	42s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891380/job/117773777579	
+osv-scanner	pass	4s	https://github.com/KooshaPari/AgilePlus/runs/117775709981	
+perf (T118 real HTTP; warning targets)	pass	4m37s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891156/job/117773776589	
+perf-qe-gate (execution integrity)	pass	2s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891156/job/117776681161	
+plan	pass	30s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160890994/job/117773776108	
+python-coverage (uv)	pass	28s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160883470/job/117773751030	
+qe / lint	pass	4m16s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891103/job/117773776593	
+qe / test	pass	12m15s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891103/job/117773776715	
+rust-coverage (cargo-llvm-cov)	pass	17m26s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891380/job/117773777576	
+Mergify Merge Protections	skipping	5s	https://dashboard.mergify.com/orgs/KooshaPari/repos/AgilePlus/activity-log?pull_request=1166	
+security/snyk (kooshapari)	pass	0	https://app.snyk.io/org/kooshapari/pr-checks/6ad4afb8-2446-41f3-aa02-c885bd0de34b	No manifest changes detected in 1 project
+Rust	pending	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891398/job/117775741851	
+CodeQL	skipping	1s	https://github.com/KooshaPari/AgilePlus/runs/117776670568	
+cargo-mutants (agileplus-domain)	pending	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891016/job/117773776213	
+semgrep-cloud-platform/scan	pass	1m37s	https://semgrep.dev/orgs/phenotype/projects/5604926/scans/248880119	
+rust-coverage (cargo-llvm-cov)	pending	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160883470/job/117773751251	
+benchmark thresholds (advisory)	pending	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891054/job/117773776506	
+Go	skipping	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891398/job/117775743339	
+Macroscope - Correctness Check	skipping	2s	https://github.com/KooshaPari/AgilePlus/pull/1166/checks?check_run_id=117773778302	
+Mergify Merge Queue	skipping	0	https://dashboard.mergify.com/orgs/KooshaPari/repos/AgilePlus/queues/status?branch=main&pull=1166	
+Publish to crates.io	skipping	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891035/job/117773777026	
+Verify CI passed for tagged commit	skipping	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891035/job/117773776925	
+announce	skipping	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160890994/job/117775572670	
+build-global-artifacts	skipping	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160890994/job/117775572047	
+build-local-artifacts (${{ join(matrix.targets, ', ') }})	skipping	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160890994/job/117775571583	
+host	skipping	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160890994/job/117775572324	
+=== END #1166 ===
+=== v2 scout complete ===
+2026-10-18T20:23:08Z
+      41 /tmp/ci_scout_v2_2026-10-18-result.md
+     374 /tmp/ci_scout_v2_2026-10-18.log
+     415 total

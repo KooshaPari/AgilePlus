@@ -5,7 +5,7 @@
 > **Date:** 2026-06-14  
 > **Status:** DESIGN — pending review  
 > **Owner:** `docs/superpowers/specs/`  
-> **Scope:** All Phenotype-org projects (AgilePlus, Dino, Civis, KWatch, etc.)  
+> **Scope:** All Phenotype-org projects (AgilePlus, Dino, Civis, KWatch, etc.)
 
 ---
 
@@ -25,14 +25,15 @@ The artifact is the **first artifact created** when any agent receives a user pr
 
 ## 2. Artifact Location & Naming
 
-| Element | Convention |
-|---------|------------|
+| Element   | Convention                                                                      |
+| --------- | ------------------------------------------------------------------------------- |
 | Directory | `docs/superpowers/specs/` (or `docs/intents/` for projects without superpowers) |
-| Filename | `YYYY-MM-DD-<slug>-intent.md` |
-| Slug | Lowercase, kebab-case, derived from the intent title |
-| Example | `2026-06-14-dark-mode-intent.md` |
+| Filename  | `YYYY-MM-DD-<slug>-intent.md`                                                   |
+| Slug      | Lowercase, kebab-case, derived from the intent title                            |
+| Example   | `2026-06-14-dark-mode-intent.md`                                                |
 
 Every project MUST have one of:
+
 - `docs/superpowers/specs/` (preferred, if the project has superpowers infrastructure)
 - `docs/intents/` (fallback for projects without superpowers)
 
@@ -61,7 +62,7 @@ confidence: <0.0-1.0>
 
 > **Status:** `draft` | **Project:** `<project>` | **Agent:** `<agent_id>`  
 > **Source prompt hash:** `sha256:<...>` (see Section 4)  
-> **Upstream spec:** `<upstream_spec>` | **Upstream FR:** `<upstream_fr>`  
+> **Upstream spec:** `<upstream_spec>` | **Upstream FR:** `<upstream_fr>`
 
 ---
 
@@ -70,9 +71,10 @@ confidence: <0.0-1.0>
 > **Rule:** This section is immutable once the artifact is created. The prompt is pasted verbatim, without paraphrasing, summarization, or editorial correction. If the user followed up with clarifications, append them as a chronological list.
 
 ### 4.1 Original Prompt
-
 ```
+
 <paste the exact user prompt here, preserving line breaks, punctuation, and formatting>
+
 ```
 
 ### 4.2 Clarifications / Follow-ups (optional)
@@ -224,31 +226,31 @@ confidence: <0.0-1.0>
 
 ### 4.1 Front Matter
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `artifact_id` | string | Yes | Unique ID: `YYYY-MM-DD-slug-intent` |
-| `artifact_version` | string | Yes | SemVer of the artifact format itself |
-| `artifact_type` | enum | Yes | Always `prompt-intent` |
-| `status` | enum | Yes | `draft` → `review` → `approved` → `superseded` |
-| `project` | string | Yes | Project name (AgilePlus, Dino, Civis, etc.) |
-| `created_at` | ISO-8601 | Yes | UTC timestamp of creation |
-| `agent_id` | string | Yes | The agent that created the artifact |
-| `source_prompt_hash` | sha256 | No | Hash of the exact prompt (for integrity) |
-| `upstream_spec` | string | No | `kitty-specs/<slug>` if linked |
-| `upstream_fr` | string | No | `FR-XXX-NNN` if linked |
-| `confidence` | float | No | Agent's confidence in the synthesis (0.0–1.0) |
+| Field                | Type     | Required | Description                                    |
+| -------------------- | -------- | -------- | ---------------------------------------------- |
+| `artifact_id`        | string   | Yes      | Unique ID: `YYYY-MM-DD-slug-intent`            |
+| `artifact_version`   | string   | Yes      | SemVer of the artifact format itself           |
+| `artifact_type`      | enum     | Yes      | Always `prompt-intent`                         |
+| `status`             | enum     | Yes      | `draft` → `review` → `approved` → `superseded` |
+| `project`            | string   | Yes      | Project name (AgilePlus, Dino, Civis, etc.)    |
+| `created_at`         | ISO-8601 | Yes      | UTC timestamp of creation                      |
+| `agent_id`           | string   | Yes      | The agent that created the artifact            |
+| `source_prompt_hash` | sha256   | No       | Hash of the exact prompt (for integrity)       |
+| `upstream_spec`      | string   | No       | `kitty-specs/<slug>` if linked                 |
+| `upstream_fr`        | string   | No       | `FR-XXX-NNN` if linked                         |
+| `confidence`         | float    | No       | Agent's confidence in the synthesis (0.0–1.0)  |
 
 ### 4.2 Body Sections
 
-| Section | Purpose | Immutable? |
-|---------|---------|------------|
-| 4. Exact Prompt | Preserves the raw input | **Yes** |
-| 5. Intent Synthesis | Agent's interpretation | No (can be revised with user feedback) |
-| 6. Project Context | Snapshot of the workspace | **Yes** (snapshot semantics) |
-| 7. Success Criteria | Definition of done | No (can be refined) |
-| 8. Derived Tasks | Decomposed work items | No (updated as work progresses) |
-| 9. Execution Log | Audit trail | Append-only |
-| 10. Eval Checklist | Self-verification gate | No (checked by agent) |
+| Section             | Purpose                   | Immutable?                             |
+| ------------------- | ------------------------- | -------------------------------------- |
+| 4. Exact Prompt     | Preserves the raw input   | **Yes**                                |
+| 5. Intent Synthesis | Agent's interpretation    | No (can be revised with user feedback) |
+| 6. Project Context  | Snapshot of the workspace | **Yes** (snapshot semantics)           |
+| 7. Success Criteria | Definition of done        | No (can be refined)                    |
+| 8. Derived Tasks    | Decomposed work items     | No (updated as work progresses)        |
+| 9. Execution Log    | Audit trail               | Append-only                            |
+| 10. Eval Checklist  | Self-verification gate    | No (checked by agent)                  |
 
 ---
 
@@ -265,6 +267,7 @@ If the project uses `agileplus-mcp-intent`, the artifact's Sections 5 and 8 can 
 ### 5.3 Downstream: kitty-specs
 
 If the intent requires a formal specification, the artifact feeds into `kitty-specs/<slug>/spec.md`:
+
 - Section 5 (Intent Synthesis) → Problem statement
 - Section 7 (Success Criteria) → Acceptance Criteria
 - Section 8 (Derived Tasks) → Functional Requirements
@@ -272,6 +275,7 @@ If the intent requires a formal specification, the artifact feeds into `kitty-sp
 ### 5.4 Downstream: FR/NFR Catalog
 
 If the intent requires a new functional requirement, the artifact feeds into `docs/requirements/<project>-frnfr.md`:
+
 - Section 5 → Description
 - Section 7 → Acceptance Criteria
 - Section 6 → Traceability
@@ -279,6 +283,7 @@ If the intent requires a new functional requirement, the artifact feeds into `do
 ### 5.5 Downstream: Journey Pages
 
 If the intent requires user-facing documentation, the artifact feeds into `docs/journeys/<journey-id>.md`:
+
 - Section 5 → User story
 - Section 7 → Acceptance Criteria
 - Section 8 → Steps
@@ -289,40 +294,40 @@ If the intent requires user-facing documentation, the artifact feeds into `docs/
 
 ### 6.1 Existing Spec Artifacts in AgilePlus
 
-| Artifact | Location | Format | Notes |
-|----------|----------|--------|-------|
-| FR specs | `specs/<module>/FR-XXX-NNN.md` | Markdown | Per-crate functional requirements; no front matter |
-| BDD features | `specs/<module>/bdd/*.feature` | Gherkin | Linked to FR specs via tags |
-| kitty-specs | `kitty-specs/<slug>/spec.md` | Markdown + YAML front matter | Ecosystem-level specs; formal structure |
-| FR/NFR catalog | `docs/requirements/agileplus-frnfr.md` | Markdown | Backfilled from shipped PRs |
-| Journey pages | `docs/journeys/*.md` | Markdown + YAML front matter | Rich-media stubs, traceability tables |
-| Journey templates | `docs/templates/journey-template.md` | Markdown | Copy-paste template with eval checklist |
-| BDD templates | `docs/templates/bdd-feature-template.feature` | Gherkin | Copy-paste template with tagging rules |
-| Intent graph (JSON) | `crates/agileplus-mcp-intent/README.md` | JSON example | Rule-based prompt-to-graph converter |
-| Architecture | `ARCHITECTURE.md` | Markdown | Project-level architecture |
-| SPEC | `SPEC.md` | Markdown | Stack, commands, decisions |
-| Governance | `docs/ai-dd-governance.md` | Markdown | Quality gates, drift detection, traceability |
+| Artifact            | Location                                      | Format                       | Notes                                              |
+| ------------------- | --------------------------------------------- | ---------------------------- | -------------------------------------------------- |
+| FR specs            | `specs/<module>/FR-XXX-NNN.md`                | Markdown                     | Per-crate functional requirements; no front matter |
+| BDD features        | `specs/<module>/bdd/*.feature`                | Gherkin                      | Linked to FR specs via tags                        |
+| kitty-specs         | `kitty-specs/<slug>/spec.md`                  | Markdown + YAML front matter | Ecosystem-level specs; formal structure            |
+| FR/NFR catalog      | `docs/requirements/agileplus-frnfr.md`        | Markdown                     | Backfilled from shipped PRs                        |
+| Journey pages       | `docs/journeys/*.md`                          | Markdown + YAML front matter | Rich-media stubs, traceability tables              |
+| Journey templates   | `docs/templates/journey-template.md`          | Markdown                     | Copy-paste template with eval checklist            |
+| BDD templates       | `docs/templates/bdd-feature-template.feature` | Gherkin                      | Copy-paste template with tagging rules             |
+| Intent graph (JSON) | `crates/agileplus-mcp-intent/README.md`       | JSON example                 | Rule-based prompt-to-graph converter               |
+| Architecture        | `ARCHITECTURE.md`                             | Markdown                     | Project-level architecture                         |
+| SPEC                | `SPEC.md`                                     | Markdown                     | Stack, commands, decisions                         |
+| Governance          | `docs/ai-dd-governance.md`                    | Markdown                     | Quality gates, drift detection, traceability       |
 
 ### 6.2 Missing Artifacts
 
-| Missing Artifact | Impact | This Design Addresses |
-|------------------|--------|----------------------|
-| `docs/superpowers/` directory | No canonical place for agent-level artifacts | Creates `docs/superpowers/specs/` |
-| Prompt-intent template | No bridge from raw prompt to structured specs | Defines the base driver format |
-| Verbatim prompt preservation | User prompts are lost or paraphrased | Section 4: immutable exact prompt |
-| Confidence scoring | No structured confidence metadata | `confidence` front-matter field |
-| Out-of-scope enumeration | Scope creep is common | Section 5.4: explicit exclusions |
-| Session-sized task decomposition | Intents are too large for single sessions | Section 8: ordered task list with dependencies |
-| Execution audit trail | No log of agent actions per intent | Section 9: append-only execution log |
+| Missing Artifact                 | Impact                                        | This Design Addresses                          |
+| -------------------------------- | --------------------------------------------- | ---------------------------------------------- |
+| `docs/superpowers/` directory    | No canonical place for agent-level artifacts  | Creates `docs/superpowers/specs/`              |
+| Prompt-intent template           | No bridge from raw prompt to structured specs | Defines the base driver format                 |
+| Verbatim prompt preservation     | User prompts are lost or paraphrased          | Section 4: immutable exact prompt              |
+| Confidence scoring               | No structured confidence metadata             | `confidence` front-matter field                |
+| Out-of-scope enumeration         | Scope creep is common                         | Section 5.4: explicit exclusions               |
+| Session-sized task decomposition | Intents are too large for single sessions     | Section 8: ordered task list with dependencies |
+| Execution audit trail            | No log of agent actions per intent            | Section 9: append-only execution log           |
 
 ### 6.3 Cross-Project Gap Analysis
 
-| Project | Has `specs/` | Has `docs/superpowers/` | Has intent template | Has FR catalog |
-|---------|------------|------------------------|---------------------|----------------|
-| AgilePlus | Yes | **No** | **No** | Yes |
-| Dino | Yes | Yes (plans only) | **No** | Partial |
-| Civis | Yes | Yes (plans only) | **No** | Partial |
-| KWatch | Yes | **No** | **No** | Partial |
+| Project   | Has `specs/` | Has `docs/superpowers/` | Has intent template | Has FR catalog |
+| --------- | ------------ | ----------------------- | ------------------- | -------------- |
+| AgilePlus | Yes          | **No**                  | **No**              | Yes            |
+| Dino      | Yes          | Yes (plans only)        | **No**              | Partial        |
+| Civis     | Yes          | Yes (plans only)        | **No**              | Partial        |
+| KWatch    | Yes          | **No**                  | **No**              | Partial        |
 
 > **Finding:** No project in the Phenotype org has a canonical prompt-intent artifact. The `agileplus-mcp-intent` crate produces JSON graphs, but there is no human-readable markdown equivalent that preserves the raw prompt and captures the agent's reasoning. This design fills that gap.
 
@@ -356,21 +361,21 @@ If the intent requires user-facing documentation, the artifact feeds into `docs/
 
 ## 8. Governance & Quality Gates
 
-| Gate | Rule | Enforcer |
-|------|------|----------|
-| **Immutable Prompt** | Section 4 must not be edited after creation | Agent self-check + lefthook |
-| **Verifiable Criteria** | Every SC must have a verification method | `docs/ai-dd-governance.md` traceability |
-| **Session Sizing** | No task in Section 8 may exceed a single agent session | PR size check (≤ 800 lines) |
-| **Real Paths** | Every path in Section 6.2 must exist in the working tree | `git ls-files` validation |
-| **Downstream Linkage** | If an intent spawns a spec, the spec must link back to the intent | `tooling/trace-validator` |
+| Gate                    | Rule                                                              | Enforcer                                |
+| ----------------------- | ----------------------------------------------------------------- | --------------------------------------- |
+| **Immutable Prompt**    | Section 4 must not be edited after creation                       | Agent self-check + lefthook             |
+| **Verifiable Criteria** | Every SC must have a verification method                          | `docs/ai-dd-governance.md` traceability |
+| **Session Sizing**      | No task in Section 8 may exceed a single agent session            | PR size check (≤ 800 lines)             |
+| **Real Paths**          | Every path in Section 6.2 must exist in the working tree          | `git ls-files` validation               |
+| **Downstream Linkage**  | If an intent spawns a spec, the spec must link back to the intent | `tooling/trace-validator`               |
 
 ---
 
 ## 9. Version History
 
-| Version | Date | Change | Author |
-|---------|------|--------|--------|
-| 1.0.0 | 2026-06-14 | Initial design | Forge |
+| Version | Date       | Change         | Author |
+| ------- | ---------- | -------------- | ------ |
+| 1.0.0   | 2026-06-14 | Initial design | Forge  |
 
 ---
 

@@ -65,6 +65,7 @@ ADR-0012's rule that `kitty-specs/<feature-id>/` is the sole permanent authority
 Canonical authority belongs to typed artifact identities and accepted revisions, not a framework-specific directory.
 
 Core roles include:
+
 - Intent;
 - Research;
 - Requirement/Scenario;
@@ -107,12 +108,14 @@ Derived trace files are projections, never silent sources of accepted intent.
 ADR-0019 remains authoritative.
 
 Acceptance requires both:
+
 1. correctness proof against non-empty accepted criteria for the exact candidate; and
 2. governance permission for the transition.
 
 Review approval, CI green, policy presence, work completion, merge, or agent self-report cannot individually award terminal accepted work.
 
 Explicit non-success states include at minimum:
+
 - Unsatisfied;
 - Inconclusive;
 - Unknown;
@@ -128,6 +131,7 @@ Empty applicable criteria can never yield accepted work.
 Historical audit entries retain **audit-hash-v1** semantics: transition-core fields are hash-covered; evidence_refs/event_id/archive metadata are not retroactively claimed as covered.
 
 The mature contract requires **audit-hash-v2** for future stronger receipts:
+
 - explicit schema version;
 - canonical serialization;
 - exact immutable identities for evidence/evaluation references;
@@ -140,6 +144,7 @@ Until v2 exists, documentation must not claim the v1 chain attests mutable field
 ## 8. Worker replacement
 
 Worker replacement is first-class:
+
 - replacement creates a new Attempt;
 - prior Attempt remains durable;
 - claims are re-issued explicitly;

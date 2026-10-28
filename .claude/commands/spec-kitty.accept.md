@@ -2,7 +2,6 @@
 description: Validate feature readiness and guide final acceptance steps.
 ---
 
-
 # /spec-kitty.accept - Validate Feature Readiness
 
 **Version**: 0.11.0+
@@ -34,9 +33,9 @@ Before running the acceptance workflow, gather the following:
 
 1. **Feature slug** (e.g., `005-awesome-thing`). If omitted, detect automatically.
 2. **Acceptance mode**:
-   - `pr` when the feature will merge via hosted pull request.
-   - `local` when the feature will merge locally without a PR.
-   - `checklist` to run the readiness checklist without committing or producing merge instructions.
+    - `pr` when the feature will merge via hosted pull request.
+    - `local` when the feature will merge locally without a PR.
+    - `checklist` to run the readiness checklist without committing or producing merge instructions.
 3. **Validation commands executed** (tests/builds). Collect each command verbatim; omit if none.
 4. **Acceptance actor** (optional, defaults to the current agent name).
 
@@ -45,22 +44,22 @@ Ask one focused question per item and confirm the summary before continuing. End
 ## Execution Plan
 
 1. Compile the acceptance options into an argument list:
-   - Always include `--actor "claude"`.
-   - Append `--feature "<slug>"` when the user supplied a slug.
-   - Append `--mode <mode>` (`pr`, `local`, or `checklist`).
-   - Append `--test "<command>"` for each validation command provided.
+    - Always include `--actor "claude"`.
+    - Append `--feature "<slug>"` when the user supplied a slug.
+    - Append `--mode <mode>` (`pr`, `local`, or `checklist`).
+    - Append `--test "<command>"` for each validation command provided.
 2. Run `(Missing script command for sh)` (the CLI wrapper) with the assembled arguments **and** `--json`.
 3. Parse the JSON response. It contains:
-   - `summary.ok` (boolean) and other readiness details.
-   - `summary.outstanding` categories when issues remain.
-   - `instructions` (merge steps) and `cleanup_instructions`.
-   - `notes` (e.g., acceptance commit hash).
+    - `summary.ok` (boolean) and other readiness details.
+    - `summary.outstanding` categories when issues remain.
+    - `instructions` (merge steps) and `cleanup_instructions`.
+    - `notes` (e.g., acceptance commit hash).
 4. Present the outcome:
-   - If `summary.ok` is `false`, list each outstanding category with bullet points and advise the user to resolve them before retrying acceptance.
-   - If `summary.ok` is `true`, display:
-     - Acceptance timestamp, actor, and (if present) acceptance commit hash.
-     - Merge instructions and cleanup instructions as ordered steps.
-     - Validation commands executed (if any).
+    - If `summary.ok` is `false`, list each outstanding category with bullet points and advise the user to resolve them before retrying acceptance.
+    - If `summary.ok` is `true`, display:
+        - Acceptance timestamp, actor, and (if present) acceptance commit hash.
+        - Merge instructions and cleanup instructions as ordered steps.
+        - Validation commands executed (if any).
 5. When the mode is `checklist`, make it clear no commits or merge instructions were produced.
 
 ## Output Requirements

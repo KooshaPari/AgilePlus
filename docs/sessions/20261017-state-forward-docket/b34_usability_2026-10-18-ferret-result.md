@@ -8,20 +8,20 @@
 
 ## Commands run (chronological)
 
-| # | Invocation | Result |
-|---|---|---|
-| 1 | `./target/debug/agileplus --version` | `agileplus 0.2.4` (clean exit 0) |
-| 2 | `./target/debug/agileplus --help` | Full subcommand list (cycle, list, evidence, specify, queue, module, research, plan, implement, evaluate, validate, ship, retrospective, triage, rubric, dag, okf, mvp, dashboard, cockpit, help) — clean exit 0 |
-| 3 | `./target/debug/agileplus list` | **FAIL**: `Error: listing features: Storage error: Conversion error from type Text at index: 7, premature end of input` — corrupted DB row at index 7 in local `agileplus.db` (data issue, NOT a CLI invocation issue) |
-| 4 | `./target/debug/agileplus list --help` | Clean help text with `--state`, `--json`, `--repo`, `-v`, `-h` flags — exit 0 |
-| 5 | `./target/debug/agileplus dashboard --help` | Clean help text — exit 0 |
-| 6 | `./target/debug/agileplus help` | Identical to `--help` — exit 0 |
-| 7 | `./target/debug/agileplus cycle --help` | Subcommand list: create, list, show, add, remove, transition, help — exit 0 |
-| 8 | `./target/debug/agileplus cycle list --help` | Subcommand-specific help with `--state` enum (Draft/Active/Review/Shipped/Archived) — exit 0 |
-| 9 | `./target/debug/agileplus mvp --help` | Subcommand list: project, epic, story, wp, dep, cycle-create, cycle-add, transition, next-ready, help — exit 0 |
-| 10 | `./target/debug/agileplus cockpit --help` | Subcommand list: read, publish, path, help — exit 0 |
-| 11 | `cargo test -p agileplus-cli --test cli_integration help_prints_usage` | **PASS** (7 s wall-clock incl. 5.89 s incremental compile) |
-| 12 | `cargo test -p agileplus-cli --test cli_integration version_flag_prints_package_version` | **PASS** (1.4 s wall-clock, reused compile) |
+| #   | Invocation                                                                               | Result                                                                                                                                                                                                                 |
+| --- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `./target/debug/agileplus --version`                                                     | `agileplus 0.2.4` (clean exit 0)                                                                                                                                                                                       |
+| 2   | `./target/debug/agileplus --help`                                                        | Full subcommand list (cycle, list, evidence, specify, queue, module, research, plan, implement, evaluate, validate, ship, retrospective, triage, rubric, dag, okf, mvp, dashboard, cockpit, help) — clean exit 0       |
+| 3   | `./target/debug/agileplus list`                                                          | **FAIL**: `Error: listing features: Storage error: Conversion error from type Text at index: 7, premature end of input` — corrupted DB row at index 7 in local `agileplus.db` (data issue, NOT a CLI invocation issue) |
+| 4   | `./target/debug/agileplus list --help`                                                   | Clean help text with `--state`, `--json`, `--repo`, `-v`, `-h` flags — exit 0                                                                                                                                          |
+| 5   | `./target/debug/agileplus dashboard --help`                                              | Clean help text — exit 0                                                                                                                                                                                               |
+| 6   | `./target/debug/agileplus help`                                                          | Identical to `--help` — exit 0                                                                                                                                                                                         |
+| 7   | `./target/debug/agileplus cycle --help`                                                  | Subcommand list: create, list, show, add, remove, transition, help — exit 0                                                                                                                                            |
+| 8   | `./target/debug/agileplus cycle list --help`                                             | Subcommand-specific help with `--state` enum (Draft/Active/Review/Shipped/Archived) — exit 0                                                                                                                           |
+| 9   | `./target/debug/agileplus mvp --help`                                                    | Subcommand list: project, epic, story, wp, dep, cycle-create, cycle-add, transition, next-ready, help — exit 0                                                                                                         |
+| 10  | `./target/debug/agileplus cockpit --help`                                                | Subcommand list: read, publish, path, help — exit 0                                                                                                                                                                    |
+| 11  | `cargo test -p agileplus-cli --test cli_integration help_prints_usage`                   | **PASS** (7 s wall-clock incl. 5.89 s incremental compile)                                                                                                                                                             |
+| 12  | `cargo test -p agileplus-cli --test cli_integration version_flag_prints_package_version` | **PASS** (1.4 s wall-clock, reused compile)                                                                                                                                                                            |
 
 ## Smoke test result
 

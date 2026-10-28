@@ -7,9 +7,9 @@ description: DEPRECATED — use `ap dashboard` instead. See docs/design/SPECKITT
 
 ## Migration
 
-| SpecKitty | AgilePlus (`ap`) |
-|-----------|-------------------|
-| `/spec-kitty.status` | `ap dashboard` |
+| SpecKitty            | AgilePlus (`ap`) |
+| -------------------- | ---------------- |
+| `/spec-kitty.status` | `ap dashboard`   |
 
 ```bash
 ap dashboard

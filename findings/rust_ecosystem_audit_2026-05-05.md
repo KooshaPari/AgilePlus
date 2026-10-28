@@ -54,14 +54,14 @@ PhenoSynth and kitty-specs have no deny.toml.
 
 ### Compliance Assessment
 
-| Repo | Ignores | Quality | Status |
-|------|---------|---------|--------|
-| FocalPoint | 4 | All reasoned (unmaintained) | Acceptable |
-| PhenoControl | 2 | Reasoned (not in dep tree) | Acceptable |
-| PhenoObservability | 1 | Fully documented with expiry | Acceptable |
-| AgilePlus | 0 | N/A | Clean |
-| AtomsBot | 0 | N/A | Clean |
-| PhenoMCP | 0 | N/A | Clean |
+| Repo               | Ignores | Quality                      | Status     |
+| ------------------ | ------- | ---------------------------- | ---------- |
+| FocalPoint         | 4       | All reasoned (unmaintained)  | Acceptable |
+| PhenoControl       | 2       | Reasoned (not in dep tree)   | Acceptable |
+| PhenoObservability | 1       | Fully documented with expiry | Acceptable |
+| AgilePlus          | 0       | N/A                          | Clean      |
+| AtomsBot           | 0       | N/A                          | Clean      |
+| PhenoMCP           | 0       | N/A                          | Clean      |
 
 ---
 
@@ -118,12 +118,12 @@ AgilePlus reported "1 unused" but machete said "didn't find any unused dependenc
 
 ### Assessment
 
-| Repo | Flagged | Real unused? | Action |
-|------|---------|--------------|--------|
-| PhenoMCP | 1 crate | Likely false positive | Run with `--with-metadata` |
+| Repo               | Flagged  | Real unused?                      | Action                                                      |
+| ------------------ | -------- | --------------------------------- | ----------------------------------------------------------- |
+| PhenoMCP           | 1 crate  | Likely false positive             | Run with `--with-metadata`                                  |
 | PhenoObservability | 9 crates | Mixed (workspace breakage likely) | Fix missing workspace crates; re-run with `--with-metadata` |
-| FocalPoint | 9 crates | Likely false positives | Run with `--with-metadata` |
-| PhenoControl | ~0 | Unclear | Re-run with `--with-metadata` |
+| FocalPoint         | 9 crates | Likely false positives            | Run with `--with-metadata`                                  |
+| PhenoControl       | ~0       | Unclear                           | Re-run with `--with-metadata`                               |
 
 **Recommendation**: Re-run all with `cargo machete --with-metadata` before taking action. Many flagged deps in these multi-crate workspaces are likely transitive or conditionally compiled.
 
@@ -148,6 +148,7 @@ Dependency tree: rsa 0.9.10 -> jsonwebtoken 10.3.0
 **Status**: Active. `jsonwebtoken` 10.3.0 pulls in `rsa` 0.9.10. The attack requires a network-attackable RSA key-handling path. No safe upgrade available from rsa crate. Options: suppress with reason, replace `jsonwebtoken` with a non-RSA algorithm (e.g., EdDSA), or accept the risk until upstream fixes.
 
 **Also flagged** (warnings/allowed):
+
 - RUSTSEC-2023-0089: `heapless` via `rstar` -> `geo-types` (LOW)
 - RUSTSEC-2026-0097: `rand` via `surrealdb-types` (LOW)
 - 4 additional allowed warnings

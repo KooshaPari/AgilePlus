@@ -6,9 +6,11 @@ Manual-only workflows: 97
 Workflows with TODO markers: 6
 
 ## Repos missing push/PR CI trigger
+
 - `phenotype-shared`
 
 ## Manual-only workflows (no push/PR)
+
 - `BytePort/sbom-refresh.yml`
 - `Civis/alert-sync-issues.yml`
 - `Configra/verify-merge-token.yml`
@@ -41,6 +43,7 @@ Workflows with TODO markers: 6
 - `Tracera/alert-sync-issues.yml`
 
 ## Workflows with TODO markers
+
 - `QuadSGM/coverage.yml`
 - `QuadSGM/qa-governance.yml`
 - `Tracera/chaos-tests.yml`

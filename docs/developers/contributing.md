@@ -9,58 +9,65 @@ How to set up your development environment, follow the development workflow, and
 ## Prerequisites
 
 - **Rust 1.85+** (edition 2024) — Language toolchain
-  ```bash
-  rustup default stable
-  rustup update stable
-  rustup component add rustfmt clippy
-  # Verify version
-  rustc --version   # must be >= 1.85.0
-  ```
+
+    ```bash
+    rustup default stable
+    rustup update stable
+    rustup component add rustfmt clippy
+    # Verify version
+    rustc --version   # must be >= 1.85.0
+    ```
 
 - **process-compose** — Service orchestration
-  ```bash
-  brew install F1bonacci/homebrew-tap/process-compose
-  # or: cargo install process-compose
-  ```
+
+    ```bash
+    brew install F1bonacci/homebrew-tap/process-compose
+    # or: cargo install process-compose
+    ```
 
 - **NATS server** — Event bus (required for integration tests)
-  ```bash
-  brew install nats-server
-  nats-server --version   # verify install
-  ```
+
+    ```bash
+    brew install nats-server
+    nats-server --version   # verify install
+    ```
 
 - **Dragonfly** — Redis-compatible cache
-  ```bash
-  brew install dragonflydb/dragonfly/dragonfly
-  ```
+
+    ```bash
+    brew install dragonflydb/dragonfly/dragonfly
+    ```
 
 - **Bun** — JavaScript runtime for docs build
-  ```bash
-  curl -fsSL https://bun.sh/install | bash
-  ```
+
+    ```bash
+    curl -fsSL https://bun.sh/install | bash
+    ```
 
 - **Git 2.30+** — Version control (git worktree support required)
-  ```bash
-  git --version   # must be >= 2.30
-  ```
+
+    ```bash
+    git --version   # must be >= 2.30
+    ```
 
 - **SQLite 3.35+** — Default database (comes with macOS; check version)
-  ```bash
-  sqlite3 --version
-  ```
+    ```bash
+    sqlite3 --version
+    ```
 
 **Optional (for full platform integration tests):**
 
 - **Neo4j** — Dependency graph storage
-  ```bash
-  brew install neo4j
-  neo4j start
-  ```
+
+    ```bash
+    brew install neo4j
+    neo4j start
+    ```
 
 - **MinIO** — Artifact storage
-  ```bash
-  brew install minio/stable/minio
-  ```
+    ```bash
+    brew install minio/stable/minio
+    ```
 
 ## Setup
 
@@ -157,12 +164,14 @@ git checkout -b feat/descriptive-name
 ```
 
 Branch naming conventions:
+
 - Feature: `feat/feature-description`
 - Bug fix: `fix/issue-description`
 - Docs: `docs/topic`
 - Refactor: `refactor/component`
 
 Example:
+
 ```bash
 git checkout -b feat/add-agent-retry-logic
 ```
@@ -170,6 +179,7 @@ git checkout -b feat/add-agent-retry-logic
 ### 2. Make Changes
 
 Edit code in:
+
 - Core logic: `crates/agileplus-core/src/`
 - Engine: `crates/agileplus-engine/src/`
 - CLI: `crates/agileplus-cli/src/`
@@ -253,6 +263,7 @@ Fixes #147
 ```
 
 **Types**:
+
 - `feat` — New feature
 - `fix` — Bug fix
 - `docs` — Documentation
@@ -261,6 +272,7 @@ Fixes #147
 - `chore` — Build, dependency, or tooling changes
 
 **Scope** (optional, but recommended):
+
 - `dispatch` — Agent dispatch logic
 - `sync` — Tracker synchronization
 - `cli` — Command-line interface
@@ -268,12 +280,14 @@ Fixes #147
 - `engine` — Planning/orchestration engine
 
 **Description**:
+
 - Use imperative mood: "add", not "added"
 - Capitalize first letter
 - No period at end
 - < 72 characters
 
 **Body** (for non-trivial commits):
+
 - Explain **why** (not **what** — code shows that)
 - Reference issues: `Fixes #147`, `Relates to #150`
 - Include migration instructions if needed
@@ -287,13 +301,14 @@ git push origin feat/add-agent-retry-logic
 Then open PR on GitHub with:
 
 **Title**: Match commit message format
+
 ```
 feat(dispatch): add retry logic for agent sessions
 ```
 
 **Description**: Explain the change
 
-```markdown
+````markdown
 ## What's Changed
 
 Added exponential backoff retry logic for failed agent dispatches.
@@ -306,11 +321,14 @@ Retries with backoff improve reliability without compromising UX.
 ## How to Test
 
 Run dispatch tests:
+
 ```bash
 cargo test dispatch
 ```
+````
 
 Manual testing:
+
 1. Set up Plane API to return 500 error (or use mock)
 2. Dispatch agent: `agileplus implement 001 --wp WP02`
 3. Should retry 3 times, then fail gracefully
@@ -323,7 +341,8 @@ Manual testing:
 - [x] Commit messages explain why
 - [x] Tests for new functionality
 - [x] Docs updated (if needed)
-```
+
+````
 
 ## Code Style Guide
 
@@ -334,7 +353,7 @@ Manual testing:
 ```bash
 cargo fmt  # Auto-format all code
 cargo clippy -- -D warnings  # No warnings allowed
-```
+````
 
 ### No `unwrap()` in Library Code
 
@@ -535,6 +554,7 @@ https://docs.agileplus.dev
 ## Maintainer Support
 
 If you need help:
+
 1. Comment on the issue you're working on
 2. Tag maintainers: `@<REDACTED>`
 3. Ask in discussions

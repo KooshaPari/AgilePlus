@@ -183,20 +183,25 @@ The interview output becomes a `spec.md` with these sections:
 # Email Notifications
 
 ## Problem Statement
+
 Users want to be notified about important events via email.
 
 ## Value Proposition
+
 - Keep users informed without app login
 - Increase engagement and retention
 - Provide audit trail via email archive
 
 ## Scope
+
 In-scope:
+
 - Event-triggered emails (comments, mentions, receipts)
 - Email subscription management
 - Unsubscribe handling
 
 Out-of-scope:
+
 - SMS, push notifications
 - Email template UI builder
 - Bounce/complaint handling
@@ -208,14 +213,17 @@ Out-of-scope:
 ## User Scenarios
 
 ### Scenario 1: New User Signs Up
+
 When Alice signs up, she receives a welcome email within 1 minute.
 She can unsubscribe from non-critical emails in her account settings.
 
 ### Scenario 2: Mentioned in Comment
+
 Bob mentions Alice in a comment.
 Alice receives an email within 5 minutes with the comment text and a link to respond.
 
 ### Scenario 3: Payment Processed
+
 User makes a payment.
 They receive a receipt email with transaction details within 10 minutes.
 ```
@@ -225,14 +233,14 @@ They receive a receipt email with transaction details within 10 minutes.
 ```markdown
 ## Functional Requirements
 
-| Requirement | Details |
-|-------------|---------|
-| Send welcome email | On signup, within 1 minute |
-| Send mention email | When mentioned, include context |
-| Send receipt email | On payment, include transaction details |
-| Unsubscribe | Users can disable any email category |
-| Retry logic | Retry failed sends 3 times over 24 hours |
-| Rate limiting | Max 10 emails per user per hour |
+| Requirement        | Details                                  |
+| ------------------ | ---------------------------------------- |
+| Send welcome email | On signup, within 1 minute               |
+| Send mention email | When mentioned, include context          |
+| Send receipt email | On payment, include transaction details  |
+| Unsubscribe        | Users can disable any email category     |
+| Retry logic        | Retry failed sends 3 times over 24 hours |
+| Rate limiting      | Max 10 emails per user per hour          |
 ```
 
 ### 4. Success Criteria
@@ -264,6 +272,7 @@ They receive a receipt email with transaction details within 10 minutes.
 ## Key Entities
 
 ### Email
+
 - id: unique identifier
 - event_type: mention, payment, welcome, etc.
 - recipient: user email address
@@ -272,6 +281,7 @@ They receive a receipt email with transaction details within 10 minutes.
 - created_at, sent_at: timestamps
 
 ### EmailPreference
+
 - user_id: who this applies to
 - category: which type of email
 - enabled: boolean subscription status
@@ -284,16 +294,16 @@ The system also creates `meta.json` with metadata:
 
 ```json
 {
-  "id": "001",
-  "title": "Email Notifications",
-  "description": "Send emails when users take actions",
-  "status": "specified",
-  "created_at": "2026-03-01T10:30:00Z",
-  "created_by": "alice",
-  "complexity": "medium",
-  "estimated_hours": 16,
-  "dependencies": ["authentication", "event-bus"],
-  "tags": ["emails", "notifications", "user-engagement"]
+    "id": "001",
+    "title": "Email Notifications",
+    "description": "Send emails when users take actions",
+    "status": "specified",
+    "created_at": "2026-03-01T10:30:00Z",
+    "created_by": "alice",
+    "complexity": "medium",
+    "estimated_hours": 16,
+    "dependencies": ["authentication", "event-bus"],
+    "tags": ["emails", "notifications", "user-engagement"]
 }
 ```
 
@@ -316,21 +326,26 @@ Users can enable two-factor authentication (2FA) on their accounts using
 time-based one-time passwords (TOTP), such as Google Authenticator or Authy.
 
 ### Problem Statement
+
 Accounts with weak passwords are vulnerable to brute-force attacks and
 credential leaks. 2FA adds a second layer of security.
 
 ### Value Proposition
+
 - Users feel confident their accounts are secure
 - Reduces account takeover incidents by 95%+
 - Supports regulatory compliance (SOC2, ISO27001)
 
 ### Scope
+
 **In-scope:**
+
 - TOTP setup and validation
 - Backup codes for account recovery
 - Disabling 2FA
 
 **Out-of-scope:**
+
 - SMS-based 2FA, hardware keys, biometric
 - Forced 2FA for all users
 - Admin enforcement policies
@@ -338,42 +353,45 @@ credential leaks. 2FA adds a second layer of security.
 ## User Scenarios
 
 ### Scenario 1: Enable 2FA
+
 1. Alice logs in to her account
 2. She goes to Security Settings
 3. She clicks "Enable 2FA"
 4. She scans a QR code with Google Authenticator
 5. She enters a 6-digit code to confirm
 6. She saves 10 backup codes in a safe place
-✓ 2FA is now enabled
+   ✓ 2FA is now enabled
 
 ### Scenario 2: Login with 2FA
+
 1. Bob goes to login
 2. He enters email and password
 3. He's prompted for his TOTP code
 4. He opens Google Authenticator and enters the code
 5. He's logged in
-✓ Takes 30 seconds total
+   ✓ Takes 30 seconds total
 
 ### Scenario 3: Recover Account with Backup Code
+
 1. Carol has lost her phone with Authenticator
 2. She tries to log in
 3. She's prompted for TOTP
 4. She enters a backup code instead
 5. She's logged in
 6. The backup code is marked as used
-✓ One-time recovery works
+   ✓ One-time recovery works
 
 ## Functional Requirements
 
-| # | Requirement | Details |
-|---|-------------|---------|
-| 1 | TOTP Setup | Generate secret, show QR code, confirm with code |
-| 2 | TOTP Validation | Accept 6-digit codes, check timing window ±1 step |
-| 3 | Backup Codes | Generate 10 codes, hash them, track usage |
-| 4 | Login Flow | Enforce TOTP after password, before session |
-| 5 | Disable 2FA | Require password confirmation |
-| 6 | Recovery | Allow backup codes during login |
-| 7 | Export Codes | User can download backup codes as PDF |
+| #   | Requirement     | Details                                           |
+| --- | --------------- | ------------------------------------------------- |
+| 1   | TOTP Setup      | Generate secret, show QR code, confirm with code  |
+| 2   | TOTP Validation | Accept 6-digit codes, check timing window ±1 step |
+| 3   | Backup Codes    | Generate 10 codes, hash them, track usage         |
+| 4   | Login Flow      | Enforce TOTP after password, before session       |
+| 5   | Disable 2FA     | Require password confirmation                     |
+| 6   | Recovery        | Allow backup codes during login                   |
+| 7   | Export Codes    | User can download backup codes as PDF             |
 
 ## Success Criteria
 
@@ -394,11 +412,13 @@ credential leaks. 2FA adds a second layer of security.
 ## Key Entities
 
 ### User
+
 - id, email, password_hash
 - **2fa_secret**: encrypted TOTP secret
 - **2fa_enabled**: boolean
 
 ### BackupCode
+
 - id, user_id
 - code_hash, used_at (nullable)
 - created_at
@@ -437,9 +457,11 @@ Every requirement should be testable:
 
 ```markdown
 # ✗ Bad (not testable)
+
 - Users can search for items
 
 # ✓ Good (testable)
+
 - Users can search by name, tag, or date
 - Search results appear within 500ms
 - Searches match partial text and are case-insensitive

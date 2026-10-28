@@ -35,8 +35,8 @@ flowchart LR
     end
 
     subgraph OtherInfra["Other local infra"]
-        NEO4J[Neo4j<br/>G14: behind 'neo4j' feature flag]
-        MCPSRV[MCP server :50051<br/>G15: stub — tools return not_implemented]
+        NEO4J[Neo4j<br/>no gate row — behind 'neo4j' feature flag]
+        MCPSRV[MCP server :50051<br/>no gate row — stub, tools return not_implemented]
     end
 
     OPR -->|tailnet| TS
@@ -47,11 +47,11 @@ flowchart LR
     API -.->|env-gated| PLANE
     API -.->|unused| GH
     API -.->|G11: no dep| MINIO
-    API -.->|G14: feature flag off| NEO4J
+    API -.->|feature flag off| NEO4J
     API -.->|in-memory only| NATSD
     NATSD -.->|not wired| PNATS
-    API -.->|G17: unused| PREDIS
-    API -.->|G15: stub| MCPSRV
+    API -.->|unused| PREDIS
+    API -.->|stub| MCPSRV
 
     VR -.->|old dashboard<br/>zero epics| OPR
     PAPI -.->|planned| TS
@@ -66,7 +66,9 @@ flowchart LR
     classDef notrun fill:#e0e0e0,stroke:#616161,color:#212121
     classDef partial fill:#ffe0b2,stroke:#e65100,color:#bf360c
 
+    %% Legend: a node's colour follows its gate's operator-facing (Usability)
+    %% verdict, not its Implementation verdict. `notrun` = grey.
     class DB,GDB pass
-    class GH,MINIO,NEO4J,MCPSRV,PNATS,PMINIO,PREDIS fail
-    class NATSD partial
-    class PLANE,VR,CADDY,API,TS notrun
+    class GH,MINIO,NEO4J,MCPSRV,PNATS,PMINIO,PREDIS,VR fail
+    class NATSD,PLANE partial
+    class CADDY,API,TS notrun

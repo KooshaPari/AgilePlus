@@ -14,6 +14,7 @@ Older PRD/spec/ADR generations remain provenance. A conflicting older statement 
 ## Required mature-spec domains
 
 The accepted specification must decompose, where applicable:
+
 - development identity and accepted spec revisions;
 - exploration/brownfield understanding;
 - research/clarification;
@@ -42,6 +43,7 @@ No domain is complete merely because a corresponding runtime type exists.
 ## Assignment oracle readiness
 
 Every executable Assignment specification must define:
+
 - accepted SpecRevision;
 - exact WorkPackage/development scope;
 - context bundle and provenance;
@@ -57,6 +59,7 @@ Every executable Assignment specification must define:
 ## Mandatory adversarial families
 
 Where applicable:
+
 - zero criteria;
 - missing/stale/wrong-candidate evidence;
 - evaluator unavailable;
@@ -88,6 +91,7 @@ No empty catalogue, empty journey set or empty criterion set can be accepted.
 ## Final gate
 
 AgilePlus non-code specification is not final until:
+
 - mature semantic decisions are canonical;
 - source generations are dispositioned;
 - mature requirements are decomposed;

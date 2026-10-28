@@ -10,14 +10,14 @@ should require the following on protected branches:
 - CODEOWNERS review
 - conversation resolution before merge
 - required checks:
-  - `policy-gate`
-  - `pr-governance-gate`
-  - `verify`
-  - `semgrep`
-  - `secrets`
-  - `lint-rust`
-  - `license-check`
-  - `snyk-test` when Snyk is configured
+    - `policy-gate`
+    - `pr-governance-gate`
+    - `verify`
+    - `semgrep`
+    - `secrets`
+    - `lint-rust`
+    - `license-check`
+    - `snyk-test` when Snyk is configured
 
 ## Branch Policy
 

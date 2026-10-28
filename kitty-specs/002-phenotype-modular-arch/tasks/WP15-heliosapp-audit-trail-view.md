@@ -1,13 +1,13 @@
 ---
 work_package_id: WP15
-title: 'heliosApp: Aggregated Audit Trail View'
+title: "heliosApp: Aggregated Audit Trail View"
 lane: planned
 dependencies: [WP11]
 subtasks: [T039]
 history:
-- date: '2026-03-03'
-  event: created
-  by: spec-kitty.tasks
+    - date: "2026-03-03"
+      event: created
+      by: spec-kitty.tasks
 ---
 
 # WP15: heliosApp — Aggregated Audit Trail View
@@ -33,27 +33,30 @@ Implement an aggregated audit trail view in heliosApp that consumes structured a
 > **Emmett integration**: Use Emmett's projection engine and `readStream` / `readAll` APIs instead of custom ingestion and replay code. Emmett projections automatically maintain read models as events are appended, eliminating the need for manual SQLite read-side updates.
 
 **Steps**:
+
 1. Create audit trail ingestion:
-   - Consume events from all repos (file-based, API, or event bus — start with file-based for MVP)
-   - Append to Emmett event store via @helios/audit-core (which wraps Emmett)
-   - Define Emmett projections for: timeline read-model, per-repo aggregation, correlation trace
+    - Consume events from all repos (file-based, API, or event bus — start with file-based for MVP)
+    - Append to Emmett event store via @helios/audit-core (which wraps Emmett)
+    - Define Emmett projections for: timeline read-model, per-repo aggregation, correlation trace
 2. Create UI component:
-   - Timeline view showing events chronologically (reads from Emmett projection)
-   - Filter by repo, event type, correlation_id
-   - Expand event details (payload, actor, timestamps)
-   - Trace view: follow a correlation_id across repos to see full execution path
+    - Timeline view showing events chronologically (reads from Emmett projection)
+    - Filter by repo, event type, correlation_id
+    - Expand event details (payload, actor, timestamps)
+    - Trace view: follow a correlation_id across repos to see full execution path
 3. Implement replay:
-   - Use Emmett's `readStream` with time-range to replay event sequences
-   - Use Emmett inline snapshots for efficient state reconstruction at any point in time
+    - Use Emmett's `readStream` with time-range to replay event sequences
+    - Use Emmett inline snapshots for efficient state reconstruction at any point in time
 4. Wire into heliosApp navigation (new "Audit" tab/panel)
 
 **Files**:
+
 - `apps/desktop/src/components/audit/AuditTrailView.tsx` (~200 lines)
 - `apps/desktop/src/components/audit/EventTimeline.tsx` (~150 lines)
 - `apps/desktop/src/components/audit/TraceView.tsx` (~150 lines)
 - `apps/runtime/src/services/audit-ingestion.ts` (~100 lines)
 
 **Validation**:
+
 - Events from multiple repos display in timeline
 - Filtering works correctly
 - Correlation ID trace shows cross-repo flow

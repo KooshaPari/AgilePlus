@@ -3,47 +3,47 @@ work_package_id: WP21
 title: CLI Triage & Queue Commands + Agent Defaults
 lane: "done"
 dependencies:
-- WP01
-- WP03
-- WP04
-- WP05
-- WP06
-- WP07
-- WP08
-- WP09
-- WP10
-- WP11
-- WP12
-- WP13
-- WP14
-- WP15
-- WP17
-- WP18
-- WP19
-- WP20
+    - WP01
+    - WP03
+    - WP04
+    - WP05
+    - WP06
+    - WP07
+    - WP08
+    - WP09
+    - WP10
+    - WP11
+    - WP12
+    - WP13
+    - WP14
+    - WP15
+    - WP17
+    - WP18
+    - WP19
+    - WP20
 base_branch: 001-spec-driven-development-engine-WP20
 base_commit: 53afb3364d1c7775fe6a110bbe55c7ad3bc8af0f
-created_at: '2026-02-28T13:34:30.451070+00:00'
+created_at: "2026-02-28T13:34:30.451070+00:00"
 subtasks:
-- T121
-- T122
-- T123
-- T124
-- T125
-- T126
-- T127
+    - T121
+    - T122
+    - T123
+    - T124
+    - T125
+    - T126
+    - T127
 phase: Phase 5 - Triage, Sync & Sub-Commands
-assignee: ''
+assignee: ""
 agent: "claude-opus"
 shell_pid: "79650"
 review_status: "approved"
 reviewed_by: "Koosha Paridehpour"
 history:
-- timestamp: '2026-02-27T00:00:00Z'
-  lane: planned
-  agent: system
-  shell_pid: ''
-  action: Prompt generated via /spec-kitty.tasks
+    - timestamp: "2026-02-27T00:00:00Z"
+      lane: planned
+      agent: system
+      shell_pid: ""
+      action: Prompt generated via /spec-kitty.tasks
 ---
 
 # WP21 — CLI Triage & Queue Commands + Agent Defaults
@@ -211,11 +211,11 @@ Options:
 2. Call `TriageAdapter.classify(input)` to determine the classification.
 3. If `--type` is provided, override the classification result.
 4. Route based on classification:
-   - `Bug` → call `triage:file-bug` sub-command dispatch (reuse T115 handler).
-     If `GitHubSyncAdapter` is configured, display the GitHub issue URL.
-   - `Feature` → call `triage:classify` result display + prompt user to run `specify`.
-   - `Idea` → call `triage:queue-idea` sub-command dispatch (reuse T119 handler).
-   - `TechDebt` → create a backlog item of type TechDebt, no external sync.
+    - `Bug` → call `triage:file-bug` sub-command dispatch (reuse T115 handler).
+      If `GitHubSyncAdapter` is configured, display the GitHub issue URL.
+    - `Feature` → call `triage:classify` result display + prompt user to run `specify`.
+    - `Idea` → call `triage:queue-idea` sub-command dispatch (reuse T119 handler).
+    - `TechDebt` → create a backlog item of type TechDebt, no external sync.
 5. Display the classification result and any created artifact reference.
 6. If `--dry-run`, stop after step 2 and display the classification without creating
    anything.
@@ -331,19 +331,20 @@ pub struct AutoTriageConfig {
 
 Built-in patterns (configurable):
 
-| Pattern ID | Trigger | Action |
-|---|---|---|
-| `error_keyword` | Agent output contains "ERROR:", "FATAL:", "panic!" | Classify + optionally file bug |
-| `todo_marker` | Agent output contains "TODO:", "FIXME:", "HACK:" | Classify as tech-debt, queue |
-| `test_failure` | Agent output contains "test ... FAILED", "assertion failed" | Classify as bug |
-| `compile_error` | Agent output contains "^^ error[E" (rustc format) | Classify + file bug |
-| `clippy_warning` | Agent output contains "warning: " with lint code | Classify as tech-debt |
+| Pattern ID       | Trigger                                                     | Action                         |
+| ---------------- | ----------------------------------------------------------- | ------------------------------ |
+| `error_keyword`  | Agent output contains "ERROR:", "FATAL:", "panic!"          | Classify + optionally file bug |
+| `todo_marker`    | Agent output contains "TODO:", "FIXME:", "HACK:"            | Classify as tech-debt, queue   |
+| `test_failure`   | Agent output contains "test ... FAILED", "assertion failed" | Classify as bug                |
+| `compile_error`  | Agent output contains "^^ error[E" (rustc format)           | Classify + file bug            |
+| `clippy_warning` | Agent output contains "warning: " with lint code            | Classify as tech-debt          |
 
 **Invocation**:
 
 `AutoTriageHook` implements a `fn process_output_chunk(&self, chunk: &str, context: &ImplementContext) -> Vec<AutoTriageAction>` interface that is called by the `implement` command's output streaming loop.
 
 Each `AutoTriageAction` is either:
+
 - `QueueItem { pattern_id, extracted_text, suggested_type }` — add to backlog.
 - `FileBug { pattern_id, title, description, severity }` — call `triage:file-bug`.
 - `Notify { message }` — display to user without creating artifacts.
@@ -383,6 +384,7 @@ and prepares to commit work.
 **Conventional Commit Enforcement**:
 
 Provide a `ConventionalCommitValidator` that:
+
 - Parses a commit message string against the spec: `<type>(<scope>): <subject>`.
 - Accepts types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `ci`, `perf`, `build`.
 - Returns `ValidationResult { valid: bool, parsed: Option<ConventionalCommit>, errors: Vec<String> }`.
@@ -399,6 +401,7 @@ Validate branch names via `BranchNameValidator::validate(name: &str) -> Validati
 **Pre-Push Checklist**:
 
 `DevOpsDefaultsEnforcer::pre_push_check(context: &AgentContext) -> PrePushReport`:
+
 1. Validate commit message format.
 2. Validate branch name format.
 3. Run `devops:lint-and-format` (via sub-command dispatch).
@@ -408,6 +411,7 @@ Validate branch names via `BranchNameValidator::validate(name: &str) -> Validati
 
 When an agent opens a PR, `PrTemplateBuilder::build(wp: &WorkPackage, commits: &[Commit]) -> String`
 generates a PR body including:
+
 - WP ID and title.
 - Subtasks addressed (from commits).
 - Test coverage summary (from `cargo test` output).
@@ -462,14 +466,14 @@ appropriate sub-command chain for the agent to execute first.
 2. Identify the WP phase and lane.
 3. Select a recommended first-action sub-command chain based on phase/lane:
 
-| Phase | Lane | First Action Chain |
-|---|---|---|
-| specify | in_progress | `context:load-spec` → `governance:check-gates` |
-| plan | in_progress | `context:load-plan` → `governance:check-gates` |
+| Phase     | Lane        | First Action Chain                                                    |
+| --------- | ----------- | --------------------------------------------------------------------- |
+| specify   | in_progress | `context:load-spec` → `governance:check-gates`                        |
+| plan      | in_progress | `context:load-plan` → `governance:check-gates`                        |
 | implement | in_progress | `context:load-spec` → `devops:lint-and-format` → `git:branch-from-wp` |
-| review | in_progress | `governance:check-gates` → `governance:verify-chain` |
-| accept | in_progress | `governance:verify-chain` → `sync:push-plane` |
-| any | blocked | `governance:check-gates` (to surface the blocking gate) |
+| review    | in_progress | `governance:check-gates` → `governance:verify-chain`                  |
+| accept    | in_progress | `governance:verify-chain` → `sync:push-plane`                         |
+| any       | blocked     | `governance:check-gates` (to surface the blocking gate)               |
 
 4. Return `FirstActionPlan { wp_id, phase, lane, sub_command_chain: Vec<String> }`.
 
@@ -484,11 +488,15 @@ CLAUDE.md output. The hints block is a JSON object keyed by WP ID:
 
 ```json
 {
-  "WP21": {
-    "phase": "implement",
-    "lane": "in_progress",
-    "recommended_chain": ["context:load-spec", "devops:lint-and-format", "git:branch-from-wp"]
-  }
+    "WP21": {
+        "phase": "implement",
+        "lane": "in_progress",
+        "recommended_chain": [
+            "context:load-spec",
+            "devops:lint-and-format",
+            "git:branch-from-wp"
+        ]
+    }
 }
 ```
 
@@ -533,6 +541,7 @@ Both commands must appear in the top-level `--help` output with one-line descrip
 **Telemetry**:
 
 Each command invocation must emit a telemetry event via `TelemetryPort`:
+
 - `event_type`: `"cli_command"`.
 - `command`: `"triage"` or `"queue"`.
 - `subcommand`: for `queue`, the sub-subcommand (`"add"`, `"list"`, etc.).
@@ -569,13 +578,13 @@ subcommand: triage:classify
 category: triage
 description: Classify freetext input into bug/feature/idea/tech-debt
 required_args:
-  - input
+    - input
 optional_args: []
 example_usage: agileplus subcommand triage:classify --input "login fails on mobile"
 source_refs:
-  - spec-kitty
-  - bmad
-  - gsd
+    - spec-kitty
+    - bmad
+    - gsd
 ---
 
 # triage:classify
@@ -585,9 +594,10 @@ source_refs:
 [One paragraph description of what this sub-command does and when to use it.]
 
 ## Usage
-
 ```
+
 agileplus subcommand triage:classify --input "<text>"
+
 ```
 
 ## Arguments
@@ -634,15 +644,15 @@ and is not part of the primary command surface.
 
 ## Risks & Mitigations
 
-| Risk | Likelihood | Mitigation |
-|---|---|---|
-| Auto-triage hook producing false positives and flooding the backlog | Medium | Conservative default threshold; `auto_file_bugs = false` by default; user notification before filing |
-| DevOps defaults being too opinionated for existing team workflows | Medium | All defaults configurable via `.agileplus/devops-defaults.toml`; each check independently toggleable |
-| `queue` command surfacing too many items during `specify`/`plan` and becoming noise | Low | Banner is advisory only; user must explicitly run `queue list` for details; scoped by feature-id |
-| Prompt file seeder overwriting manually curated content | Medium | `manually_edited` frontmatter flag prevents overwrite; seeder is idempotent on unedited files |
-| Circular dependency between `agileplus-agents` and `agileplus-cli` | Low | Classifier reads router output file on disk; does not import or call cli crate types |
-| CLAUDE.md hints block format changing in WP17 updates | Low | Classifier has a fallback parser for prose-based extraction; hints block is an optimization, not a hard requirement |
-| Telemetry blocking command execution under slow network | Low | Non-blocking channel; telemetry failures are silently discarded; timeout of 500ms hard limit |
+| Risk                                                                                | Likelihood | Mitigation                                                                                                          |
+| ----------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------- |
+| Auto-triage hook producing false positives and flooding the backlog                 | Medium     | Conservative default threshold; `auto_file_bugs = false` by default; user notification before filing                |
+| DevOps defaults being too opinionated for existing team workflows                   | Medium     | All defaults configurable via `.agileplus/devops-defaults.toml`; each check independently toggleable                |
+| `queue` command surfacing too many items during `specify`/`plan` and becoming noise | Low        | Banner is advisory only; user must explicitly run `queue list` for details; scoped by feature-id                    |
+| Prompt file seeder overwriting manually curated content                             | Medium     | `manually_edited` frontmatter flag prevents overwrite; seeder is idempotent on unedited files                       |
+| Circular dependency between `agileplus-agents` and `agileplus-cli`                  | Low        | Classifier reads router output file on disk; does not import or call cli crate types                                |
+| CLAUDE.md hints block format changing in WP17 updates                               | Low        | Classifier has a fallback parser for prose-based extraction; hints block is an optimization, not a hard requirement |
+| Telemetry blocking command execution under slow network                             | Low        | Non-blocking channel; telemetry failures are silently discarded; timeout of 500ms hard limit                        |
 
 ---
 
@@ -675,13 +685,14 @@ The reviewer should verify the following before moving this WP to `done`:
 
 ## Activity Log
 
-| Timestamp | Actor | Action | Notes |
-|---|---|---|---|
+| Timestamp            | Actor  | Action     | Notes                           |
+| -------------------- | ------ | ---------- | ------------------------------- |
 | 2026-02-27T00:00:00Z | system | WP created | Generated via /spec-kitty.tasks |
 
 ---
 
 _Work Package WP21 — Phase 5: Triage, Sync & Sub-Commands_
+
 - 2026-02-28T13:34:30Z – claude-opus – shell_pid=66424 – lane=doing – Assigned agent via workflow command
 - 2026-02-28T13:38:23Z – claude-opus – shell_pid=66424 – lane=for_review – Triage/queue CLI commands, 25 prompt seeds. 4 tests.
 - 2026-02-28T23:22:54Z – claude-opus – shell_pid=79650 – lane=doing – Started review via workflow command
