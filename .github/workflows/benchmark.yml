@@ -30,9 +30,9 @@ jobs:
             - uses: actions/checkout@v7
 
             - name: Install Rust (nightly)
-              uses: dtolnay/rust-toolchain@nightly
+              uses: dtolnay/rust-toolchain@2c76c034f9e32a5d6e2c104dc4df23a22476db04 # nightly
 
-            - uses: Swatinem/rust-cache@v2
+            - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
               with:
                   cache-all-crates: true
                   key: bench-${{ github.sha }}
@@ -109,7 +109,7 @@ jobs:
             # ── Post PR comment with summary ────────────────────────────────
             - name: Find existing benchmark comment
               if: github.event_name == 'pull_request'
-              uses: peter-evans/find-comment@v4
+              uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad # v4.0.0
               id: find-comment
               with:
                   issue-number: ${{ github.event.pull_request.number }}
@@ -118,7 +118,7 @@ jobs:
 
             - name: Post or update benchmark comment
               if: github.event_name == 'pull_request'
-              uses: peter-evans/create-or-update-comment@v5
+              uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
               with:
                   comment-id: ${{ steps.find-comment.outputs.comment-id }}
                   issue-number: ${{ github.event.pull_request.number }}

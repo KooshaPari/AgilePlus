@@ -1,0 +1,350 @@
+#!/usr/bin/env bash
+# .githooks/pre-commit-validate-timestamps
+#
+# Reject commits that introduce non-RFC3339 timestamps in any staged
+# .agileplus/*.db file.
+#
+# This is the durable guard against the B.x finding (5 corrupt updated_at rows
+# in commit ea5a517a 2026-08-07 10:43:57 UTC that gecko fixed on
+# 2026-10-18T09:46:39Z). All 14 repository UPDATE bindings audited use
+# chrono::Utc::now().to_rfc3339(); the binary file replacement in ea5a517a is
+# the only known root cause, so this hook blocks any future direct commit
+# of a non-RFC3339 updated_at value in a staged SQLite file.
+#
+# WHAT IS SCANNED
+#   The STAGED BLOB, i.e. exactly the bytes git will write into the commit.
+#   The blob is extracted with `git cat-file blob <index-sha>` into a
+#   temporary file and that copy is scanned. The working-tree copy is never
+#   trusted: a file can be staged and then edited or removed before the
+#   commit runs, in which case the working tree and the commit disagree.
+#
+# FAIL-CLOSED CONTRACT
+#   Every failure mode below rejects the commit; none of them degrades into
+#   a silent pass:
+#     - sqlite3 missing from PATH           -> reject
+#     - grep / python3 / validator missing  -> reject
+#     - schema-discovery query error        -> reject
+#     - row query error (no such column,
+#       corrupt page, permission denied)    -> reject
+#     - validator error or crash            -> reject
+#   The only empty result that is accepted is a table that genuinely has no
+#   non-NULL updated_at values.
+#
+# The accept/reject decision is made by the strict Python validator
+# (.githooks/rfc3339-utc-validate.py). SQLite is only used to extract
+# candidate values; it never decides whether a value is acceptable, and no
+# GLOB/LIKE-style value filter is applied anywhere in the pipeline, so a
+# value such as "definitelyTnot-rfc3339" reaches the validator and is
+# rejected there.
+#
+# Bypass:   HOOKS_SKIP=1 git commit
+#           PRE_COMMIT_SKIP_TIMESTAMPS=1 git commit
+#           git commit --no-verify
+#
+# This hook is invoked from .githooks/pre-commit when
+# core.hooksPath=.githooks is configured. It can also be invoked directly
+# against any SQLite file: HOOK_TARGET=/path/to.db ./pre-commit-validate-timestamps
+set -euo pipefail
+
+if [ "${HOOKS_SKIP:-0}" = "1" ]; then
+  echo "[hooks] HOOKS_SKIP=1; skipping pre-commit-validate-timestamps"
+  exit 0
+fi
+
+if [ "${PRE_COMMIT_SKIP_TIMESTAMPS:-0}" = "1" ]; then
+  echo "[hooks] PRE_COMMIT_SKIP_TIMESTAMPS=1; skipping timestamp scan"
+  exit 0
+fi
+
+# Locate this script and the strict validator (pure bash; no `dirname`).
+script_path="${BASH_SOURCE[0]}"
+case "$script_path" in
+  */*) script_dir="${script_path%/*}" ;;
+  *) script_dir="." ;;
+esac
+hook_dir="$(CDPATH= cd -- "$script_dir" && pwd)"
+validator="$hook_dir/rfc3339-utc-validate.py"
+
+orig_pwd="$PWD"
+
+# ------------------------------------------------------------------ targets
+# Either an explicit manual target, or every staged .agileplus/*.db path.
+manual_target=""
+staged_dbs=""
+
+if [ -n "${HOOK_TARGET:-}" ]; then
+  case "$HOOK_TARGET" in
+    /*) manual_target="$HOOK_TARGET" ;;
+    *) manual_target="$orig_pwd/$HOOK_TARGET" ;;
+  esac
+  if [ ! -f "$manual_target" ]; then
+    echo "[hooks] pre-commit-validate-timestamps: HOOK_TARGET=$manual_target not found" >&2
+    exit 1
+  fi
+else
+  if ! repo_root="$(git rev-parse --show-toplevel 2>&1)"; then
+    echo "[hooks] pre-commit-validate-timestamps: FAIL — not inside a git repository: $repo_root" >&2
+    exit 1
+  fi
+  cd "$repo_root"
+
+  # --no-renames keeps renames visible as an "A" of the new path (the old
+  # path is a "D" and is filtered out), so a renamed database is still
+  # validated under its new name.
+  staged_all=""
+  if ! staged_all="$(git diff --cached --name-only --diff-filter=AM --no-renames)"; then
+    echo "[hooks] pre-commit-validate-timestamps: FAIL — git diff --cached failed; cannot enumerate staged files" >&2
+    exit 1
+  fi
+  grep_rc=0
+  staged_dbs="$(printf '%s\n' "$staged_all" | grep -E '^\.agileplus/.*\.db$')" || grep_rc=$?
+  if [ "$grep_rc" -gt 1 ]; then
+    echo "[hooks] pre-commit-validate-timestamps: FAIL — staged-path filter failed (grep exit $grep_rc)" >&2
+    exit 1
+  fi
+fi
+
+if [ -z "$manual_target" ] && [ -z "$staged_dbs" ]; then
+  # Nothing staged to validate. Every dependency check below is only
+  # meaningful once there is something to scan, so a missing sqlite3 must
+  # not block commits that do not touch a database.
+  exit 0
+fi
+
+# ------------------------------------------------------------- dependencies
+# Every one of these is load-bearing; a missing tool must fail the commit
+# rather than silently skip the guard.
+if ! command -v sqlite3 >/dev/null 2>&1; then
+  echo "[hooks] pre-commit-validate-timestamps: FAIL — sqlite3 not found in PATH." >&2
+  echo "[hooks] Install the SQLite CLI (macOS: brew install sqlite; Debian/Ubuntu: apt-get install sqlite3)." >&2
+  echo "[hooks] The timestamp guard cannot run without it, so the commit is rejected." >&2
+  echo "[hooks] Bypass (not recommended): PRE_COMMIT_SKIP_TIMESTAMPS=1" >&2
+  exit 1
+fi
+
+if ! command -v grep >/dev/null 2>&1; then
+  echo "[hooks] pre-commit-validate-timestamps: FAIL — grep not found in PATH; required for table-name sanitisation. Failing closed." >&2
+  exit 1
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "[hooks] pre-commit-validate-timestamps: FAIL — python3 not found in PATH; required by the strict UTC RFC3339 validator. Failing closed." >&2
+  echo "[hooks] Install python3 or set PRE_COMMIT_SKIP_TIMESTAMPS=1 (not recommended)." >&2
+  exit 1
+fi
+
+if [ ! -f "$validator" ]; then
+  echo "[hooks] pre-commit-validate-timestamps: FAIL — validator missing: $validator" >&2
+  exit 1
+fi
+
+# ---------------------------------------------------------------- tempfiles
+# Scratch files live in JCODE_SCRATCH_DIR when it is set, otherwise in the
+# platform temporary directory. They are always removed by the cleanup trap.
+tmp_base="${JCODE_SCRATCH_DIR:-${TMPDIR:-/tmp}}"
+case "$tmp_base" in
+  */) tmp_base="${tmp_base%/}" ;;
+esac
+tmp_files=""
+
+cleanup() {
+  set +e
+  local f
+  for f in $tmp_files; do
+    if [ -n "$f" ]; then rm -f "$f"; fi
+  done
+  tmp_files=""
+  return 0
+}
+trap cleanup EXIT
+trap 'cleanup; exit 130' INT
+trap 'cleanup; exit 143' TERM
+
+# new_tmp creates a temporary file and publishes its path in NEW_TMP.
+# It must NOT be called from a command substitution: that would run in a
+# subshell and the file would not be registered for cleanup.
+NEW_TMP=""
+new_tmp() {
+  NEW_TMP="$(mktemp "${tmp_base}/agileplus-ts.XXXXXX")"
+  tmp_files="$tmp_files $NEW_TMP"
+}
+
+# Print a file's contents without depending on `cat`.
+print_file() {
+  local line
+  while IFS= read -r line || [ -n "$line" ]; do
+    printf '%s\n' "$line"
+  done <"$1"
+}
+
+# ------------------------------------------------------------------- scanner
+# scan_database <file-on-disk> <display-label>
+# Returns 1 when the database contains a rejected row or could not be
+# scanned; 0 when every non-NULL updated_at value is a strict UTC RFC3339
+# timestamp (or when the database genuinely has no such value).
+scan_database() {
+  local db_file="$1"
+  local label="$2"
+  local file_bad=0
+  local tables table cols rows_tmp out_tmp err_tmp vrc total shown line
+
+  echo "[hooks] pre-commit-validate-timestamps: scanning $label for non-RFC3339 updated_at rows..."
+
+  new_tmp
+  err_tmp="$NEW_TMP"
+
+  # Schema discovery. Any sqlite3 error here is a hard failure: swallowing
+  # it would reduce the scan to "no tables found" -> silently accepted.
+  tables=""
+  if ! tables="$(sqlite3 -separator '|' "$db_file" "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name;" 2>"$err_tmp")"; then
+    echo "[hooks] pre-commit-validate-timestamps: FAIL — schema discovery failed for $label; failing closed." >&2
+    print_file "$err_tmp" >&2
+    return 1
+  fi
+
+  while IFS= read -r table || [ -n "$table" ]; do
+    [ -n "$table" ] || continue
+
+    # Sanitise the identifier before interpolating it into SQL.
+    if ! printf '%s' "$table" | grep -qE '^[A-Za-z_][A-Za-z0-9_]*$'; then
+      echo "[hooks] pre-commit-validate-timestamps: FAIL — unsafe table name (not a plain identifier): $table" >&2
+      file_bad=$((file_bad + 1))
+      continue
+    fi
+
+    # Does the table really have an updated_at column? PRAGMA table_info is
+    # authoritative. Matching the CREATE TABLE text instead can produce a
+    # false positive (a column named "xupdated_aty" contains the substring)
+    # which, combined with fail-closed query errors, would reject a valid
+    # commit.
+    cols=""
+    if ! cols="$(sqlite3 -separator '|' "$db_file" "PRAGMA table_info(\"$table\");" 2>"$err_tmp")"; then
+      echo "[hooks] pre-commit-validate-timestamps: FAIL — PRAGMA table_info failed for $label table=$table; failing closed." >&2
+      print_file "$err_tmp" >&2
+      file_bad=$((file_bad + 1))
+      continue
+    fi
+    if ! printf '%s\n' "$cols" | grep -qiE '^[^|]*\|updated_at\|'; then
+      continue
+    fi
+
+    # Row extraction. Only updated_at is required: many tables (for example
+    # channel_iterations, whose primary key is channel_id) have no `id`
+    # column at all, and requiring one made the query fail, which was then
+    # swallowed into an empty result and silently accepted the table.
+    # No value filter is applied here: every non-NULL updated_at value is
+    # handed to the strict validator.
+    new_tmp
+    rows_tmp="$NEW_TMP"
+    if ! sqlite3 -separator '|' "$db_file" "SELECT 'updated_at', updated_at FROM \"$table\" WHERE updated_at IS NOT NULL;" >"$rows_tmp" 2>"$err_tmp"; then
+      echo "[hooks] pre-commit-validate-timestamps: FAIL — row query failed for $label table=$table; failing closed." >&2
+      print_file "$err_tmp" >&2
+      file_bad=$((file_bad + 1))
+      continue
+    fi
+    if [ ! -s "$rows_tmp" ]; then
+      # No non-NULL updated_at values: nothing to validate, not an error.
+      continue
+    fi
+
+    # The validator's contract is "id|value" lines on stdin. The literal
+    # label keeps that contract without requiring an id column.
+    new_tmp
+    out_tmp="$NEW_TMP"
+    vrc=0
+    python3 "$validator" <"$rows_tmp" >"$out_tmp" 2>"$err_tmp" || vrc=$?
+    if [ "$vrc" -eq 1 ]; then
+      echo "[hooks] pre-commit-validate-timestamps: FAIL — $label table=$table has non-UTC-RFC3339 updated_at rows:" >&2
+      total=0
+      shown=0
+      while IFS= read -r line || [ -n "$line" ]; do
+        total=$((total + 1))
+        if [ "$shown" -lt 50 ]; then
+          printf '%s\n' "$line" >&2
+          shown=$((shown + 1))
+        fi
+      done <"$out_tmp"
+      if [ "$total" -gt "$shown" ]; then
+        echo "[hooks] pre-commit-validate-timestamps: ($((total - shown)) further rejected row(s) not shown)" >&2
+      fi
+      file_bad=$((file_bad + 1))
+    elif [ "$vrc" -ne 0 ]; then
+      # 2 = usage/IO error, >=126 = could not execute. Either way the
+      # commit is rejected; a crashed validator never degrades into a pass.
+      echo "[hooks] pre-commit-validate-timestamps: FAIL — validator error (exit $vrc) on $label table=$table; failing closed." >&2
+      print_file "$err_tmp" >&2
+      file_bad=$((file_bad + 1))
+    fi
+  done <<EOF
+$tables
+EOF
+
+  if [ "$file_bad" -gt 0 ]; then
+    return 1
+  fi
+  return 0
+}
+
+# --------------------------------------------------------------------- main
+bad_files=0
+
+if [ -n "$manual_target" ]; then
+  scan_database "$manual_target" "$manual_target" || bad_files=$((bad_files + 1))
+else
+  err_tmp=""
+  new_tmp
+  err_tmp="$NEW_TMP"
+  while IFS= read -r db || [ -n "$db" ]; do
+    [ -n "$db" ] || continue
+
+    # Resolve the staged blob: the index entry, not the working tree.
+    entry=""
+    if ! entry="$(git ls-files --stage -- ":(literal)$db" 2>"$err_tmp")"; then
+      echo "[hooks] pre-commit-validate-timestamps: FAIL — git ls-files failed for $db; failing closed." >&2
+      print_file "$err_tmp" >&2
+      bad_files=$((bad_files + 1))
+      continue
+    fi
+    if [ -z "$entry" ]; then
+      echo "[hooks] pre-commit-validate-timestamps: note — $db is not in the index; nothing staged to validate." >&2
+      continue
+    fi
+    staged_mode="${entry%% *}"
+    staged_sha="${entry#* }"
+    staged_sha="${staged_sha%% *}"
+    if [ "$staged_mode" = "160000" ]; then
+      echo "[hooks] pre-commit-validate-timestamps: note — $db is a gitlink (submodule), not a SQLite database; skipping." >&2
+      continue
+    fi
+    case "$staged_sha" in
+      0000000000000000000000000000000000000000)
+        echo "[hooks] pre-commit-validate-timestamps: note — $db has no staged content (intent-to-add); nothing to validate." >&2
+        continue
+        ;;
+    esac
+
+    new_tmp
+    blob_tmp="$NEW_TMP"
+    if ! git cat-file blob "$staged_sha" >"$blob_tmp" 2>"$err_tmp"; then
+      echo "[hooks] pre-commit-validate-timestamps: FAIL — could not read the staged blob for $db; failing closed." >&2
+      print_file "$err_tmp" >&2
+      bad_files=$((bad_files + 1))
+      continue
+    fi
+
+    scan_database "$blob_tmp" "$db (staged blob)" || bad_files=$((bad_files + 1))
+  done <<EOF
+$staged_dbs
+EOF
+fi
+
+if [ "$bad_files" -gt 0 ]; then
+  echo "[hooks] pre-commit-validate-timestamps: rejected $bad_files file(s) with non-RFC3339 updated_at rows." >&2
+  echo "[hooks] Fix by running the strict Python validator manually:" >&2
+  echo "[hooks]   python3 $validator < <(sqlite3 <db> \"SELECT 'updated_at', updated_at FROM <table> WHERE updated_at IS NOT NULL\")" >&2
+  echo "[hooks] Or set PRE_COMMIT_SKIP_TIMESTAMPS=1 (not recommended)." >&2
+  exit 1
+fi
+
+echo "[hooks] pre-commit-validate-timestamps: all staged .agileplus/*.db files have valid RFC3339 timestamps."
+exit 0

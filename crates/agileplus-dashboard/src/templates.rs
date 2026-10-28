@@ -1,7 +1,7 @@
 //! Askama template structs — one per HTML template file.
 //!
-//! The `#[template(path = "...")]` path is relative to the `templates/` dirs
-//! configured in `[package.metadata.askama]`.
+//! The `#[template(path = "...")]` path is relative to this crate's own
+//! `templates/` directory, which is askama's built-in default template dir.
 
 use std::collections::HashMap;
 
@@ -453,6 +453,41 @@ mod tests {
     use super::*;
     use agileplus_domain::domain::state_machine::FeatureState;
     use agileplus_domain::domain::work_package::{WorkPackage, WpState};
+
+    #[test]
+    fn home_page_renders_with_extends_and_includes_from_crate_templates_dir() {
+        let html = HomePage {
+            total_features: 3,
+            active_features: 1,
+            shipped_features: 2,
+            projects: Vec::new(),
+        }
+        .render()
+        .expect("home page template renders");
+
+        // `pages/home.html` extends `base.html`, and `base.html` includes
+        // `partials/theme-toggle.html` and `partials/lightbox.html`. All of
+        // them live in this crate's `templates/` directory now, so a
+        // successful render proves the whole extends/include chain still
+        // resolves after the templates were relocated out of the repo root.
+        assert!(html.contains("<!DOCTYPE html>"), "base layout not rendered");
+        assert!(
+            html.contains("<title>AgilePlus — Home</title>"),
+            "title block from home.html not applied"
+        );
+        assert!(
+            html.contains("Multi-Project Control Surface"),
+            "home page content block not rendered"
+        );
+        assert!(
+            html.contains("localStorage.getItem('theme')"),
+            "theme-toggle partial was not included by base.html"
+        );
+        assert!(
+            html.contains("Lightbox / Asset Viewer"),
+            "lightbox partial was not included by base.html"
+        );
+    }
 
     fn make_feature_for_view(id: i64, state: FeatureState) -> Feature {
         let mut f = Feature::new(

@@ -39,7 +39,7 @@ jobs:
             - name: Native fixture prerequisites
               run: |
                   sudo apt-get update -qq
-                  sudo apt-get install -y protobuf-compiler libssl-dev pkg-config
+                  sudo apt-get install -y protobuf-compiler libssl-dev pkg-config libdbus-1-dev
                   curl -fsSL https://github.com/caddyserver/caddy/releases/download/v2.11.7/caddy_2.11.7_linux_amd64.tar.gz -o /tmp/caddy.tar.gz
                   echo "727b91701a392de6ebc5027509f548bf39979e5216340d0faed8fa5e69c84f8b  /tmp/caddy.tar.gz" | sha256sum --check
                   tar -xzf /tmp/caddy.tar.gz -C /tmp caddy

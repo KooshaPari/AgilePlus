@@ -29,7 +29,7 @@ fn row_to_epic(row: &rusqlite::Row<'_>) -> rusqlite::Result<Epic> {
         description: row.get(3)?,
         status: status_str.parse().unwrap_or(EpicStatus::Backlog),
         owner_id: row.get(5)?,
-        requirement_id: None,
+        requirement_id: row.get(8)?,
         created_at: parse_dt(&created_at),
         updated_at: parse_dt(&updated_at),
     })
@@ -61,7 +61,7 @@ pub fn get_epic_by_requirement_id(
 ) -> Result<Option<Epic>, DomainError> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, project_id, title, description, status, owner_id, created_at, updated_at \
+            "SELECT id, project_id, title, description, status, owner_id, created_at, updated_at, requirement_id \
              FROM epics WHERE requirement_id = ?1",
         )
         .map_err(map_err)?;
@@ -112,7 +112,7 @@ pub fn upsert_epic_by_requirement_id(conn: &Connection, epic: &Epic) -> Result<i
 pub fn get_epic_by_id(conn: &Connection, id: i64) -> Result<Option<Epic>, DomainError> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, project_id, title, description, status, owner_id, created_at, updated_at \
+            "SELECT id, project_id, title, description, status, owner_id, created_at, updated_at, requirement_id \
              FROM epics WHERE id = ?1",
         )
         .map_err(map_err)?;
@@ -147,7 +147,7 @@ pub fn update_epic_status(
 pub fn list_epics_by_project(conn: &Connection, project_id: i64) -> Result<Vec<Epic>, DomainError> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, project_id, title, description, status, owner_id, created_at, updated_at \
+            "SELECT id, project_id, title, description, status, owner_id, created_at, updated_at, requirement_id \
              FROM epics WHERE project_id = ?1 ORDER BY created_at ASC",
         )
         .map_err(map_err)?;
@@ -326,6 +326,23 @@ mod tests {
                 .unwrap()
                 .is_none()
         );
+    }
+
+    #[test]
+    fn get_epic_by_id_returns_requirement_id() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        setup_project(&conn, 1);
+        let mut epic = sample_epic(1, "Requirement linked epic");
+        epic.requirement_id = Some("FR-EPIC-1".to_string());
+        let id = upsert_epic_by_requirement_id(&conn, &epic).unwrap();
+
+        let fetched = get_epic_by_id(&conn, id).unwrap().unwrap();
+        assert_eq!(fetched.requirement_id.as_deref(), Some("FR-EPIC-1"));
+
+        let listed = list_epics_by_project(&conn, 1).unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].requirement_id.as_deref(), Some("FR-EPIC-1"));
     }
 
     #[test]

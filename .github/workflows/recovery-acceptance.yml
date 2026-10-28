@@ -51,7 +51,7 @@ jobs:
             - name: Install protoc for real tonic/prost types (never fallback stubs)
               run: |
                   sudo apt-get update -qq
-                  sudo apt-get install -y protobuf-compiler
+                  sudo apt-get install -y protobuf-compiler libdbus-1-dev pkg-config
                   protoc --version
             - name: Exact evidence identity
               run: |

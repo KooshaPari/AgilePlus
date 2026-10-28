@@ -231,8 +231,19 @@ export interface TimelineProps {
 export interface WorkPackage {
   id: string;
   title: string;
-  status: 'planned' | 'in_progress' | 'completed' | 'blocked';
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  /**
+   * Canonical status category. The API does not report a priority, an assignee
+   * or a due date, so those stay unset rather than being defaulted.
+   */
+  status:
+    | 'planned'
+    | 'in_progress'
+    | 'review'
+    | 'completed'
+    | 'blocked'
+    | 'cancelled'
+    | 'unknown';
+  priority?: 'low' | 'medium' | 'high' | 'critical';
   assignee?: string;
   dueDate?: Date;
   completedDate?: Date;

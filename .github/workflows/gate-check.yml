@@ -38,8 +38,16 @@ jobs:
         timeout-minutes: 20
         steps:
             - uses: actions/checkout@v7
+            - name: Install libdbus development files
+              # keyring 3.6.3's sync-secret-service backend links against the
+              # system libdbus via libdbus-sys, which resolves it with
+              # pkg-config. Without this the build fails with
+              # "Package 'dbus-1', required by 'virtual:world', not found".
+              run: |
+                  sudo apt-get update -qq
+                  sudo apt-get install -y libdbus-1-dev pkg-config
             - name: Set up toolchain
-              uses: dtolnay/rust-toolchain@stable
+              uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
             - name: cargo fmt --check
               run: cargo fmt --all -- --check
             - name: cargo clippy
@@ -52,9 +60,17 @@ jobs:
         timeout-minutes: 45
         steps:
             - uses: actions/checkout@v7
+            - name: Install libdbus development files
+              # keyring 3.6.3's sync-secret-service backend links against the
+              # system libdbus via libdbus-sys, which resolves it with
+              # pkg-config. Without this the build fails with
+              # "Package 'dbus-1', required by 'virtual:world', not found".
+              run: |
+                  sudo apt-get update -qq
+                  sudo apt-get install -y libdbus-1-dev pkg-config
             - name: Set up toolchain
-              uses: dtolnay/rust-toolchain@stable
-            - uses: Swatinem/rust-cache@v2
+              uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+            - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
             - name: cargo test
               run: cargo test --workspace --locked --all-targets --no-fail-fast
 
@@ -66,7 +82,7 @@ jobs:
         steps:
             - uses: actions/checkout@v7
             - name: cargo-deny
-              uses: EmbarkStudios/cargo-deny-action@v2
+              uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
               with:
                   command: check
                   arguments: --hide-inclusion-graph

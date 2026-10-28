@@ -227,8 +227,8 @@ pub struct AgentSettingsForm {
 
 /// Form data for the connection-URL form on the services settings page.
 ///
-/// Field names mirror `templates/pages/settings-services.html`. A blank field
-/// means "leave the default alone", so every value is optional.
+/// Field names mirror `crates/agileplus-dashboard/templates/pages/settings-services.html`.
+/// A blank field means "leave the default alone", so every value is optional.
 #[derive(Debug, Default, Deserialize)]
 pub struct ServiceSettingsForm {
     #[serde(default)]

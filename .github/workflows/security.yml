@@ -31,7 +31,7 @@ jobs:
             issues: write
         steps:
             - uses: actions/checkout@v7
-            - uses: rustsec/audit-check@v2.0.0
+            - uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998 # v2.0.0
               with:
                   token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -41,7 +41,7 @@ jobs:
         runs-on: ubuntu-24.04
         steps:
             - uses: actions/checkout@v7
-            - uses: dtolnay/rust-toolchain@stable
+            - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
             - name: Install cargo-deny
               run: cargo install cargo-deny
             - name: Check advisories, licenses, duplicates
@@ -71,10 +71,10 @@ jobs:
                 language: [python] # cpp removed: not in repo
         steps:
             - uses: actions/checkout@v7
-            - uses: github/codeql-action/init@v4
+            - uses: github/codeql-action/init@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
               with:
                   languages: ${{ matrix.language }}
-            - uses: github/codeql-action/analyze@v4
+            - uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
 
     # ─── Python Security (bandit) ─────────────────────────────────────────
     python-security:
@@ -108,7 +108,7 @@ jobs:
             security-events: write
         steps:
             - uses: actions/checkout@v7
-            - uses: dtolnay/rust-toolchain@stable
+            - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
             - name: Generate Cargo.lock for scanning
               run: cargo generate-lockfile
             - name: Install OSV-Scanner
@@ -125,7 +125,7 @@ jobs:
             - name: Upload OSV SARIF to GitHub Code Scanning
               if: always()
               continue-on-error: true
-              uses: github/codeql-action/upload-sarif@v4
+              uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
               with:
                   sarif_file: osv-results.sarif
                   category: osv-cargo-lock
