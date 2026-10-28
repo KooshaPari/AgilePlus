@@ -42,6 +42,7 @@ ignore = [
   { id = "RUSTSEC-2026-0370", reason = "zvariant unmaintained (info): merged into zbus 6.0.0 as zbus::wire on 2026-10-16. LINUX-ONLY path via keyring 4.x -> zbus-secret-service-keyring-store 1.0.1 -> zbus 5 (which still pulls the deprecated zvariant 5.15.x). On macOS, cargo-deny emits advisory-not-detected for this entry (benign, same pattern as RUSTSEC-2024-0429). Re-evaluate when zbus-secret-service-keyring-store cuts a release on zbus 6." },
   { id = "RUSTSEC-2026-0371", reason = "zbus_names unmaintained (info): merged into zbus 6.0.0 as zbus::names on 2026-10-16. Same LINUX-ONLY path as RUSTSEC-2026-0370 (zbus 5 backend). Re-evaluate alongside -0370 when keyring's linux backend migrates to zbus 6." },
   { id = "RUSTSEC-2026-0372", reason = "zvariant_derive unmaintained (info): merged into zbus 6.0.0 macros on 2026-10-16. Same LINUX-ONLY path as RUSTSEC-2026-0370. Re-evaluate alongside -0370 when keyring's linux backend migrates to zbus 6." },
+  { id = "RUSTSEC-2026-0374", reason = "basic-toml unmaintained (archived upstream): transitive, build-time only; no safe upgrade exists." },
 ]
 
 [licenses]
