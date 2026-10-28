@@ -317,9 +317,11 @@ function StoriesView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
   });
 
   // The canonical backend owns the vocabulary; the filter lists what it sent.
+  // The comparator is explicit: Array.prototype.sort without one is not a
+  // stable, locale-aware ordering (Sonar typescript:S2871).
   const statusOptions = Array.from(
     new Set(stories.map((s) => s.status.trim().toLowerCase())),
-  ).sort();
+  ).sort((a, b) => a.localeCompare(b));
 
   return (
     <div>
@@ -357,7 +359,7 @@ function StoriesView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
             >
               {s === 'all'
                 ? 'All'
-                : s.replace(/_/g, ' ').charAt(0).toUpperCase() + s.replace(/_/g, ' ').slice(1)}
+                : s.replaceAll('_', ' ').charAt(0).toUpperCase() + s.replaceAll('_', ' ').slice(1)}
             </button>
           ))}
         </div>
@@ -382,17 +384,7 @@ function StoriesView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
             </Card>
           );
         })}
-        {stories.length === 0 ? (
-          <EmptyState
-            title="No stories in this backend."
-            description="The canonical API reported no stories for any epic."
-          />
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            title="No stories match your filters"
-            description="Try adjusting your filter criteria to see more results."
-          />
-        ) : null}
+        {renderStoriesState(stories.length, filtered.length)}
       </div>
     </div>
   );
@@ -448,7 +440,7 @@ function EvidenceGalleryView({ loading }: { loading?: boolean }) {
  * The canonical API did not answer. This state is deliberately distinct from
  * the empty state: it never renders anything that could read as a real row.
  */
-function BackendUnavailable({ error }: { error: string }) {
+function BackendUnavailable({ error }: { readonly error: string }) {
   return (
     <div
       role="alert"
@@ -464,6 +456,58 @@ function BackendUnavailable({ error }: { error: string }) {
 }
 
 // ─── Root App ─────────────────────────────────────────────────────────────────
+
+/// The stories region has three mutually exclusive states: the backend
+/// reported no stories at all, the backend reported stories but the active
+/// filters excluded them all, or there is nothing to report. Extracted from
+/// the render tree so the branch is a statement rather than a nested ternary
+/// (Sonar typescript:S3358).
+function renderStoriesState(totalStories: number, filteredStories: number) {
+  if (totalStories === 0) {
+    return (
+      <EmptyState
+        title="No stories in this backend."
+        description="The canonical API reported no stories for any epic."
+      />
+    );
+  }
+  if (filteredStories === 0) {
+    return (
+      <EmptyState
+        title="No stories match your filters"
+        description="Try adjusting your filter criteria to see more results."
+      />
+    );
+  }
+  return null;
+}
+
+/// The active view's body. Extracted so the render tree carries one branch
+/// instead of a chain of view comparisons inside a fragment.
+function AppViewSwitch({
+  view,
+  epics,
+  stories,
+}: {
+  readonly view: string;
+  readonly epics: Epic[];
+  readonly stories: Story[];
+}) {
+  switch (view) {
+    case 'dashboard':
+      return <DashboardView epics={epics} stories={stories} loading={false} />;
+    case 'epics':
+      return <EpicsView epics={epics} stories={stories} />;
+    case 'stories':
+      return <StoriesView epics={epics} stories={stories} />;
+    case 'evidence':
+      return <EvidenceGalleryView />;
+    case 'settings':
+      return <SettingsView />;
+    default:
+      return null;
+  }
+}
 
 export function App() {
   // Read persisted locale from localStorage
@@ -562,13 +606,7 @@ function AppContent() {
         ) : backendError ? (
           <BackendUnavailable error={backendError} />
         ) : (
-          <>
-            {view === 'dashboard' && <DashboardView epics={epics} stories={stories} loading={false} />}
-            {view === 'epics' && <EpicsView epics={epics} stories={stories} />}
-            {view === 'stories' && <StoriesView epics={epics} stories={stories} />}
-            {view === 'evidence' && <EvidenceGalleryView />}
-            {view === 'settings' && <SettingsView />}
-          </>
+          <AppViewSwitch view={view} epics={epics} stories={stories} />
         )}
       </main>
 

@@ -96,12 +96,15 @@ export async function apiGet<T>(path: string, signal?: AbortSignal): Promise<T> 
       message?: string;
       error?: string;
     };
-    const reason =
-      typeof payload.message === 'string'
-        ? payload.message
-        : typeof payload.error === 'string'
-          ? payload.error
-          : response.statusText;
+    // The backend may report the failure under either key; pick the first
+    // present one. Stated as statements rather than a nested ternary
+    // (Sonar typescript:S3358).
+    let reason = response.statusText;
+    if (typeof payload.message === 'string') {
+      reason = payload.message;
+    } else if (typeof payload.error === 'string') {
+      reason = payload.error;
+    }
     throw new DashboardApiError(response.status, `HTTP ${response.status}: ${reason}`);
   }
   if (!response.headers.get('content-type')?.includes('application/json')) {
@@ -118,6 +121,10 @@ export async function loadEpicsAndStories(
   const epics: Epic[] = [];
   const stories: Story[] = [];
   for (const project of projects) {
+    // The awaits here are deliberately sequential, not parallel: a story is
+    // only reachable through its epic, so the epic list has to be resolved
+    // before its stories can be requested. Each project is independent, so
+    // only the inner story fetch is serial (Sonar typescript:S9382).
     const projectEpics = await apiGet<Epic[]>(
       `/projects/${encodeURIComponent(project.slug)}/epics`,
       signal,
@@ -136,6 +143,8 @@ export async function loadWorkPackages(signal?: AbortSignal): Promise<WorkPackag
   const features = await apiGet<Feature[]>('/features', signal);
   const workPackages: WorkPackage[] = [];
   for (const feature of features) {
+    // Sequential for the same reason as loadEpicsAndStories: a work package
+    // is only reachable through its feature (Sonar typescript:S9382).
     const featurePackages = await apiGet<WorkPackage[]>(
       `/features/${encodeURIComponent(feature.slug)}/work-packages`,
       signal,

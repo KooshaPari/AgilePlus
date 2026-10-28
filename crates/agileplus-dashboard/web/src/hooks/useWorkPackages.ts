@@ -46,11 +46,11 @@ export function useWorkPackages(options: UseWorkPackagesOptions = {}) {
           ),
         );
         setError(null);
-      } catch (caught) {
+      } catch (error_) {
         if (controller.signal.aborted) return;
         setWorkPackages([]);
-        setError(describeBackendError(caught));
-        console.error('Failed to fetch work packages:', caught);
+        setError(describeBackendError(error_));
+        console.error('Failed to fetch work packages:', error_);
       } finally {
         setLoading(false);
       }
