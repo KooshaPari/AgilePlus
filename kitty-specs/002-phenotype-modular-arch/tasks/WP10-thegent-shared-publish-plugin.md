@@ -1,16 +1,16 @@
 ---
 work_package_id: WP10
-title: 'thegent: Shared Publish + Plugin System + Re-export'
+title: "thegent: Shared Publish + Plugin System + Re-export"
 lane: planned
 dependencies: []
 subtasks: [T028, T029, T030, T031, T033]
 history:
-- date: '2026-03-03'
-  event: created
-  by: spec-kitty.tasks
-- date: '2026-03-03'
-  event: revised
-  by: external-library-leverage research integration
+    - date: "2026-03-03"
+      event: created
+      by: spec-kitty.tasks
+    - date: "2026-03-03"
+      event: revised
+      by: external-library-leverage research integration
 ---
 
 # WP10: thegent — Shared Publish + Plugin System + Re-export Layer
@@ -33,6 +33,7 @@ Publish thegent-infra internals to `phenotype-py-infra` shared repo. Formalize t
 ### T028: Publish to phenotype-py-infra (+ shared LiteLLM proxy)
 
 **Steps**:
+
 1. Copy thegent-infra source to `phenotype-py-infra/src/phenotype_py_infra/`
 2. Set up pyproject.toml with proper metadata, version 0.1.0
 3. In thegent, replace local thegent-infra with `phenotype-py-infra` dependency
@@ -40,6 +41,7 @@ Publish thegent-infra internals to `phenotype-py-infra` shared repo. Formalize t
 5. **Shared LiteLLM proxy**: Configure `BerriAI/litellm` in proxy mode as a shared gateway for both thegent and portage. This eliminates ~1.7K LOC of duplicate LiteLLM wrappers (1K thegent + 700 portage). Include proxy config and client helpers in phenotype-py-infra.
 
 **Implementation guidance (library research)**:
+
 - LiteLLM proxy is Phase A (very low complexity, config change only).
 - Run as a shared sidecar; both thegent and portage point to the same proxy endpoint.
 
@@ -48,19 +50,21 @@ Publish thegent-infra internals to `phenotype-py-infra` shared repo. Formalize t
 ### T029: Formalize AdapterPort pattern (PydanticAI agent definitions)
 
 **Steps**:
+
 1. Define `AdapterPort` as a `typing.Protocol`, aligning with PydanticAI's agent model:
-   ```python
-   class AdapterPort(Protocol):
-       def name(self) -> str: ...
-       def capabilities(self) -> list[str]: ...
-       def execute(self, request: AdapterRequest) -> AdapterResponse: ...
-       def health(self) -> HealthStatus: ...
-   ```
+    ```python
+    class AdapterPort(Protocol):
+        def name(self) -> str: ...
+        def capabilities(self) -> list[str]: ...
+        def execute(self, request: AdapterRequest) -> AdapterResponse: ...
+        def health(self) -> HealthStatus: ...
+    ```
 2. **Adopt `pydantic/pydantic-ai`**: Replace custom agent classes, tool registration, and OTel wiring with PydanticAI's `Agent` definitions, tool decorators, and built-in observability (~5-8K LOC saved). Use PydanticAI agents as the implementation behind AdapterPort where applicable.
 3. Audit all existing adapters in thegent-agents; ensure they conform to AdapterPort (backed by PydanticAI where appropriate)
 4. Add type checking enforcement (pyright/mypy strict mode on adapter modules)
 
 **Implementation guidance (library research)**:
+
 - `pydantic/pydantic-ai` is Phase B (medium complexity). Note: v0.x API — pin version and track upstream.
 - PydanticAI provides: agent class definitions, typed tool registration via decorators, structured output validation, and OpenTelemetry integration out of the box.
 - AdapterPort remains the contract; PydanticAI is the implementation backbone for agent-type adapters.
@@ -70,12 +74,13 @@ Publish thegent-infra internals to `phenotype-py-infra` shared repo. Formalize t
 ### T030: Tier 1 — entry_points registration
 
 **Steps**:
+
 1. Add `entry_points` configuration in pyproject.toml for each adapter:
-   ```toml
-   [project.entry-points."thegent.adapters"]
-   codex = "thegent_agents.adapters.codex:CodexAdapter"
-   cursor = "thegent_agents.adapters.cursor:CursorAdapter"
-   ```
+    ```toml
+    [project.entry-points."thegent.adapters"]
+    codex = "thegent_agents.adapters.codex:CodexAdapter"
+    cursor = "thegent_agents.adapters.cursor:CursorAdapter"
+    ```
 2. Create adapter registry that discovers via `importlib.metadata.entry_points()`
 3. Wire registry into agent orchestration path
 
@@ -84,11 +89,12 @@ Publish thegent-infra internals to `phenotype-py-infra` shared repo. Formalize t
 ### T031: Tier 2 — Extism host for user skills
 
 **Steps**:
+
 1. Add `extism` Python SDK dependency
 2. Create `thegent-skills/plugin_host.py`:
-   - Load .wasm skill plugins from `~/.thegent/plugins/`
-   - Validate plugin exports match AdapterPort contract
-   - Sandbox: memory limit, timeout, no fs access
+    - Load .wasm skill plugins from `~/.thegent/plugins/`
+    - Validate plugin exports match AdapterPort contract
+    - Sandbox: memory limit, timeout, no fs access
 3. Register WASM skills alongside native entry_points
 4. Create test .wasm skill
 
@@ -97,13 +103,14 @@ Publish thegent-infra internals to `phenotype-py-infra` shared repo. Formalize t
 ### T033: Make src/thegent/ a thin re-export layer
 
 **Steps**:
+
 1. Replace all business logic in `src/thegent/` with re-exports from packages:
-   ```python
-   # src/thegent/__init__.py
-   from thegent_core import *
-   from thegent_config import *
-   # etc.
-   ```
+    ```python
+    # src/thegent/__init__.py
+    from thegent_core import *
+    from thegent_config import *
+    # etc.
+    ```
 2. Preserve backward compatibility — existing `from thegent import X` must still work
 3. Add deprecation warnings for direct `src/thegent/` imports if desired
 

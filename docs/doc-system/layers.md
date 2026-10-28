@@ -26,51 +26,51 @@ graph TD
 
 Scratch notes, conversation dumps, agent work logs. Not published. Retained for 48–90 days, then promoted or discarded.
 
-| Type | Path | Retention |
-|------|------|-----------|
-| Conversation dump | `docs/research/CONVERSATION_DUMP_*.md` | 90 days |
-| Scratch note | `docs/scratch/YYYYMMDD-*.md` | 48 hours |
-| Agent work log | `docs/reference/WORK_STREAM.md` | Permanent |
+| Type              | Path                                   | Retention |
+| ----------------- | -------------------------------------- | --------- |
+| Conversation dump | `docs/research/CONVERSATION_DUMP_*.md` | 90 days   |
+| Scratch note      | `docs/scratch/YYYYMMDD-*.md`           | 48 hours  |
+| Agent work log    | `docs/reference/WORK_STREAM.md`        | Permanent |
 
 ### <span class="layer-badge layer-1">Layer 1</span> Working / Lab
 
 Ideas, research docs, debug logs. Published under `/lab/`. Working documents that may be promoted to formal specs.
 
-| Type | Path | Promotes To |
-|------|------|-------------|
-| Idea note | `docs/ideas/YYYY-MM-DD-{slug}.md` | Research doc |
-| Research doc | `docs/research/{TOPIC}.md` | Design doc / FR |
-| Debug log | `docs/debug/YYYY-MM-DD-{issue}.md` | Incident retro |
+| Type         | Path                               | Promotes To     |
+| ------------ | ---------------------------------- | --------------- |
+| Idea note    | `docs/ideas/YYYY-MM-DD-{slug}.md`  | Research doc    |
+| Research doc | `docs/research/{TOPIC}.md`         | Design doc / FR |
+| Debug log    | `docs/debug/YYYY-MM-DD-{issue}.md` | Incident retro  |
 
 ### <span class="layer-badge layer-2">Layer 2</span> Formal / Spec
 
 Source-of-truth documents: PRDs, ADRs, functional requirements, architecture docs. Published under `/docs/`.
 
-| Type | Path | ID System |
-|------|------|-----------|
+| Type | Path                               | ID System      |
+| ---- | ---------------------------------- | -------------- |
 | Spec | `kitty-specs/{NNN}-{slug}/spec.md` | Feature number |
 | Plan | `kitty-specs/{NNN}-{slug}/plan.md` | Feature number |
-| ADR | `docs/adr/ADR-{NNN}-{slug}.md` | ADR-{NNN} |
+| ADR  | `docs/adr/ADR-{NNN}-{slug}.md`     | ADR-{NNN}      |
 
 ### <span class="layer-badge layer-3">Layer 3</span> Delivery / Audit
 
 Changelogs, completion reports, sprint plans. Published under `/audit/`. Created automatically from lifecycle events.
 
-| Type | Path | Trigger |
-|------|------|---------|
-| Changelog | `CHANGELOG.md` | Git tag |
-| Completion report | `docs/reports/*-complete.md` | Feature shipped |
-| Sprint plan | `docs/sprints/SPRINT-{NN}.md` | Sprint planning |
+| Type              | Path                          | Trigger         |
+| ----------------- | ----------------------------- | --------------- |
+| Changelog         | `CHANGELOG.md`                | Git tag         |
+| Completion report | `docs/reports/*-complete.md`  | Feature shipped |
+| Sprint plan       | `docs/sprints/SPRINT-{NN}.md` | Sprint planning |
 
 ### <span class="layer-badge layer-4">Layer 4</span> Retrospective / Knowledge
 
 Retrospectives, knowledge extracts, lessons learned. Published under `/kb/`. Created after feature completion.
 
-| Type | Path | Trigger |
-|------|------|---------|
-| Feature retro | `kitty-specs/{NNN}-{slug}/retrospective.md` | Feature shipped |
-| Sprint retro | `docs/retros/SPRINT-{NN}-retro.md` | Sprint end |
-| Knowledge extract | `docs/kb/{topic}/{slug}.md` | Semantic indexer |
+| Type              | Path                                        | Trigger          |
+| ----------------- | ------------------------------------------- | ---------------- |
+| Feature retro     | `kitty-specs/{NNN}-{slug}/retrospective.md` | Feature shipped  |
+| Sprint retro      | `docs/retros/SPRINT-{NN}-retro.md`          | Sprint end       |
+| Knowledge extract | `docs/kb/{topic}/{slug}.md`                 | Semantic indexer |
 
 ## Layer Progression
 
@@ -178,6 +178,7 @@ alice: Let's check existing code for patterns
 ## Existing Code Analysis
 
 Found session middleware in `src/middleware/session.rs`:
+
 - Validates JWT tokens
 - Manages session lifecycle
 - Can extend for OAuth
@@ -185,6 +186,7 @@ Found session middleware in `src/middleware/session.rs`:
 ## Framework Support
 
 Actix-web 4.4:
+
 - Middleware support ✓
 - Route handlers ✓
 - Error handling ✓
@@ -217,11 +219,13 @@ Recommendation: Use openidconnect (includes OIDC extensions)
 # Specification: OAuth2 Authentication
 
 ## Overview
+
 Add Google and GitHub OAuth2 login flows to the web application.
 
 ## Functional Requirements
 
 FR-1: Users can sign up via Google OAuth
+
 - Users click "Sign in with Google"
 - Redirected to Google login
 - Authorization granted → returned to app
@@ -290,6 +294,7 @@ Test coverage: 87% (target: 85%) ✓
 ## Release Notes
 
 Version 0.2.0 — OAuth2 Authentication
+
 - Add Google and GitHub login
 - Persistent sessions (30-day tokens)
 - Improved security with OAuth2 standards
@@ -314,21 +319,21 @@ Specification → Shipped: 9 days (on estimate)
 ## What Worked
 
 ✓ Specification-first approach: 95% accuracy
-  No major changes during implementation
+No major changes during implementation
 
 ✓ Parallelization: WP02 & WP03 ran in parallel
-  Saved 1 day vs. sequential
+Saved 1 day vs. sequential
 
 ✓ Agent quality: 100% pass rate (4 WPs approved first review)
 
 ## What Could Improve
 
 ⚠ WP02 rework: Error handling for failed OAuth
-  Root cause: Spec lacked explicit failure paths
-  Fix: Add to specification checklist
+Root cause: Spec lacked explicit failure paths
+Fix: Add to specification checklist
 
 ⚠ Review cycle time: 4 hours average
-  Action: Add automated linting gate in CI
+Action: Add automated linting gate in CI
 
 ## Constitution Updates
 
@@ -361,14 +366,14 @@ Documents reference each other across layers:
 ---
 title: "OAuth2 Error Handling"
 relates_to:
-  - "kitty-specs/001-oauth-auth/spec.md"          # Layer 2
-  - "docs/reports/001-oauth-auth-complete.md"    # Layer 3
-  - "kitty-specs/001-oauth-auth/retrospective.md" # Layer 4
-  - "docs/kb/auth/oauth2-patterns.md"             # Layer 4
+    - "kitty-specs/001-oauth-auth/spec.md" # Layer 2
+    - "docs/reports/001-oauth-auth-complete.md" # Layer 3
+    - "kitty-specs/001-oauth-auth/retrospective.md" # Layer 4
+    - "docs/kb/auth/oauth2-patterns.md" # Layer 4
 traces_to:
-  - "FR-1"    # Functional requirement
-  - "WP02"    # Work package
-  - "ADR-005" # Architectural decision
+    - "FR-1" # Functional requirement
+    - "WP02" # Work package
+    - "ADR-005" # Architectural decision
 ---
 ```
 
@@ -376,35 +381,35 @@ traces_to:
 
 Each layer documents its metadata to enable automation:
 
-| Layer | Status | Author | Creation | Expiry | Audience | Searchable |
-|-------|--------|--------|----------|--------|----------|------------|
-| 0 | Draft | Agent | Auto | 90d | Individual | No |
-| 1 | Active | Human | Manual | 90d | Team | Yes |
-| 2 | Published | Human | Manual | ∞ | All | Yes |
-| 3 | Archived | Auto | Auto | ∞ | Auditors | Yes |
-| 4 | Canonical | Human | Manual | ∞ | All | Yes |
+| Layer | Status    | Author | Creation | Expiry | Audience   | Searchable |
+| ----- | --------- | ------ | -------- | ------ | ---------- | ---------- |
+| 0     | Draft     | Agent  | Auto     | 90d    | Individual | No         |
+| 1     | Active    | Human  | Manual   | 90d    | Team       | Yes        |
+| 2     | Published | Human  | Manual   | ∞      | All        | Yes        |
+| 3     | Archived  | Auto   | Auto     | ∞      | Auditors   | Yes        |
+| 4     | Canonical | Human  | Manual   | ∞      | All        | Yes        |
 
 ## Using Layers in Your Workflow
 
 1. **Specification Phase** (Layer 2)
-   - Write formal spec in layer 2
-   - Pass through spec checklist
-   - Share with team
+    - Write formal spec in layer 2
+    - Pass through spec checklist
+    - Share with team
 
 2. **Implementation Phase** (Layers 1–2)
-   - Reference layer 2 spec constantly
-   - Layer 1 docs: debug logs, design decisions
-   - Archive layer 1 after feature ships
+    - Reference layer 2 spec constantly
+    - Layer 1 docs: debug logs, design decisions
+    - Archive layer 1 after feature ships
 
 3. **Delivery Phase** (Layer 3)
-   - System auto-generates completion report
-   - Release manager uses for changelog
-   - Archived for audit/compliance
+    - System auto-generates completion report
+    - Release manager uses for changelog
+    - Archived for audit/compliance
 
 4. **Learning Phase** (Layer 4)
-   - Create retrospective (automatic)
-   - Extract knowledge to knowledge base
-   - Update constitution with learnings
+    - Create retrospective (automatic)
+    - Extract knowledge to knowledge base
+    - Update constitution with learnings
 
 ## Benefits
 

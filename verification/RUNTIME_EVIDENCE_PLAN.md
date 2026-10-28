@@ -6,6 +6,7 @@
 ## Evidence identity
 
 Every runtime witness binds:
+
 - AP requirement/case IDs;
 - exact repository candidate;
 - Development/SpecRevision/WP/Assignment/Attempt/Candidate/Evaluation identities as applicable;
@@ -17,6 +18,7 @@ Every runtime witness binds:
 ## Track A1 — evaluator convergence
 
 Execute differential tests between legacy CLI semantics and shared evaluator for:
+
 - matching required evidence;
 - wrong evidence type;
 - one-of-two requirement evidence missing;
@@ -31,6 +33,7 @@ Do not delete/switch the legacy evaluator until equivalence or explicitly accept
 ## Track A2 — durable execution identities
 
 Prove:
+
 - SpecRevision survives restart;
 - Assignment is immutable/superseded explicitly;
 - Attempt A remains after replacement Attempt B;
@@ -41,6 +44,7 @@ Prove:
 ## Track A3 — acceptance boundary
 
 Execute adversarial cases:
+
 - zero criteria;
 - review+CI green while criterion fails;
 - policy pass while correctness fails;
@@ -55,6 +59,7 @@ AcceptedWork requires correctness grade + governance permission.
 ## Track A4 — audit integrity
 
 Verify:
+
 - historical audit-hash-v1 fixture;
 - documented non-covered-field mutation behavior;
 - v2 canonical serialization;
@@ -67,6 +72,7 @@ Never rewrite historical v1 hashes.
 ## Track A5 — worker replacement
 
 End-to-end witness:
+
 1. accepted Development/SpecRevision/WP/Assignment;
 2. Attempt A obtains claim/worktree and produces partial result;
 3. A expires/dies;
@@ -80,6 +86,7 @@ End-to-end witness:
 ## Track A6 — interface parity
 
 For supported CLI/HTTP/MCP surfaces, query/mutate the same fixture and compare:
+
 - canonical IDs;
 - revisions;
 - evaluation status;
@@ -89,6 +96,7 @@ For supported CLI/HTTP/MCP surfaces, query/mutate the same fixture and compare:
 ## Track A7 — Tracera federation
 
 With and without Tracera available:
+
 - export exact work/evaluation receipt;
 - preserve standalone AgilePlus truth;
 - Tracera independently admits/rejects applicability;
@@ -104,6 +112,7 @@ Optional Plane/NATS/Neo4j/MinIO/P2P failure must not redefine core local work tr
 ## CI debt classification
 
 Keep three classes separate:
+
 1. branch-introduced semantic/build regression;
 2. pre-existing repository/workflow debt;
 3. optional-profile/infrastructure unavailable.

@@ -6,15 +6,15 @@ Add to Cursor's `~/.cursor/mcp.json` or project-level `.cursor/mcp.json`:
 
 ```json
 {
-  "mcpServers": {
-    "agileplus": {
-      "command": "npx",
-      "args": ["-y", "@agileplus/mcp"],
-      "env": {
-        "AGILEPLUS_HOME": "/Users/<REDACTED>/CodeProjects/Phenotype/repos/AgilePlus"
-      }
+    "mcpServers": {
+        "agileplus": {
+            "command": "npx",
+            "args": ["-y", "@agileplus/mcp"],
+            "env": {
+                "AGILEPLUS_HOME": "/Users/<REDACTED>/CodeProjects/Phenotype/repos/AgilePlus"
+            }
+        }
     }
-  }
 }
 ```
 
@@ -43,11 +43,11 @@ Add to `.cursor/commands.json`:
 
 ```json
 {
-  "specify": "agileplus specify {selection}",
-  "research": "agileplus research {selection}",
-  "plan": "agileplus plan {selection}",
-  "validate": "agileplus validate {selection}",
-  "ship": "agileplus ship {selection}"
+    "specify": "agileplus specify {selection}",
+    "research": "agileplus research {selection}",
+    "plan": "agileplus plan {selection}",
+    "validate": "agileplus validate {selection}",
+    "ship": "agileplus ship {selection}"
 }
 ```
 
@@ -78,8 +78,8 @@ Add to Cursor keybindings:
 
 ```json
 {
-  "key": "cmd+shift+a",
-  "command": "agileplus specify",
-  "when": "editorTextFocus"
+    "key": "cmd+shift+a",
+    "command": "agileplus specify",
+    "when": "editorTextFocus"
 }
 ```

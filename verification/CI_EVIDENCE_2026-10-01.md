@@ -21,6 +21,7 @@ These are supporting evidence. They do not close the runtime evidence plan by th
 #### Rust job — branch-local formatting failure
 
 The Rust matrix fails `cargo fmt --check` on branch-modified execution/governance surfaces, including:
+
 - API governance route;
 - CLI implement path;
 - CLI governance differential tests;
@@ -39,6 +40,7 @@ The green aggregate `ci / test` therefore must not be interpreted as proof that 
 #### Python job — repository-wide hygiene debt
 
 Ruff reports approximately **180 errors**, dominated by:
+
 - unsorted/unformatted imports;
 - unused imports;
 - unused `noqa`;
@@ -62,6 +64,7 @@ Separate security scanners on this candidate report success/no new PR alerts.
 #### Cargo Deny — dependency-policy debt
 
 Observed:
+
 - multiple unmaintained crates;
 - advisory findings including rustls/webpki-related vulnerabilities;
 - bans/licenses failures.
@@ -79,6 +82,7 @@ Performance and coverage jobs fail/skip independently of the semantic contract.
 The aggregate `ci / test` check is green on this candidate. This is the first native evidence in this pass that the branch is not generically test-broken.
 
 It does **not** yet prove:
+
 - evaluator differential semantics;
 - worker replacement;
 - exact-candidate acceptance;
@@ -93,13 +97,13 @@ Those remain explicit tracks in `RUNTIME_EVIDENCE_PLAN.md`.
 **Not promotable from this evidence.**
 
 Reason:
+
 - required runtime witnesses remain;
 - security/dependency policy debt exists;
 - lint aggregate is red;
 - performance/coverage evidence incomplete.
 
 No semantic criterion is weakened because CI is red.
-
 
 ## Exact-candidate acceptance recovery checkpoint
 

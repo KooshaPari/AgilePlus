@@ -9,14 +9,17 @@ This document provides concrete research findings for establishing a local-first
 ## 1. NATS with JetStream
 
 ### Overview
+
 NATS is a cloud-native messaging system optimized for distributed systems. JetStream adds persistent, ordered message delivery with exactly-once guarantees. The Rust client (`async-nats`) provides a fully async, non-blocking API using Tokio.
 
 ### Crate Information
+
 - **Primary Crate**: `async-nats` v0.35+ (latest stable as of March 2026)
 - **Alternative**: `nats` v0.24+ (blocking client, not recommended for Rust async platforms)
 - **Dependency Chain**: Requires `tokio` v1.x, `serde` for message serialization
 
 ### Key Capabilities
+
 1. **JetStream Persistent Messaging**: Streams persist messages to disk or memory with configurable retention policies
 2. **Exactly-Once Delivery**: Pull consumers with deduplication windows and acknowledgment semantics
 3. **Consumer Patterns**: Durable consumers, ephemeral consumers, push vs. pull subscriptions
@@ -28,11 +31,13 @@ NATS is a cloud-native messaging system optimized for distributed systems. JetSt
 **Docker Image**: `nats:latest` (Alpine-based, ~20MB)
 
 **Standalone NATS with JetStream:**
+
 ```bash
 nats-server -js -m 8222  # -js enables JetStream, -m opens monitoring port
 ```
 
 **Advanced Config (nats.conf):**
+
 ```conf
 jetstream {
   # 1GB store for persistent data
@@ -162,6 +167,7 @@ async fn process_wp_events(jetstream: &jetstream::Context) -> Result<()> {
 ```
 
 ### Key Advantages for Local-First Platform
+
 - **No external dependencies**: Single binary, embeddable or containerized
 - **Exactly-once guarantees**: Perfect for feature state transitions and WP event ordering
 - **Stream ordering**: Messages published to a subject maintain global order
@@ -174,27 +180,29 @@ async fn process_wp_events(jetstream: &jetstream::Context) -> Result<()> {
 
 ### Comparative Analysis
 
-| Criterion | Redis | Dragonfly | Valkey |
-|-----------|-------|-----------|--------|
-| **Single Binary** | No (C/Tcl) | Yes (C++20) | No (C/Tcl) |
-| **Memory Model** | String/Hash/List/Set/ZSet | Unified (modern data structures) | String/Hash/List/Set/ZSet |
-| **Startup Time** | ~100-500ms | ~50-200ms | ~100-500ms |
-| **Memory Efficiency** | Standard | 20-50% better on large datasets | Standard |
-| **API Compatibility** | Baseline | Redis Protocol 100% | Redis Protocol 100% (fork) |
-| **License** | SSPLv1 (or older) | BSL (Business Source) → open after 4 years | Open Source (Redis fork under LGPL) |
-| **Thread Model** | Single-threaded | Multi-threaded (async I/O) | Single-threaded |
-| **Clustering** | Redis Cluster (complex) | Native (built-in) | Redis Cluster compatible |
-| **Cloud Ready** | Yes | Growing (GCP, K8s) | Emerging (fork state) |
+| Criterion             | Redis                     | Dragonfly                                  | Valkey                              |
+| --------------------- | ------------------------- | ------------------------------------------ | ----------------------------------- |
+| **Single Binary**     | No (C/Tcl)                | Yes (C++20)                                | No (C/Tcl)                          |
+| **Memory Model**      | String/Hash/List/Set/ZSet | Unified (modern data structures)           | String/Hash/List/Set/ZSet           |
+| **Startup Time**      | ~100-500ms                | ~50-200ms                                  | ~100-500ms                          |
+| **Memory Efficiency** | Standard                  | 20-50% better on large datasets            | Standard                            |
+| **API Compatibility** | Baseline                  | Redis Protocol 100%                        | Redis Protocol 100% (fork)          |
+| **License**           | SSPLv1 (or older)         | BSL (Business Source) → open after 4 years | Open Source (Redis fork under LGPL) |
+| **Thread Model**      | Single-threaded           | Multi-threaded (async I/O)                 | Single-threaded                     |
+| **Clustering**        | Redis Cluster (complex)   | Native (built-in)                          | Redis Cluster compatible            |
+| **Cloud Ready**       | Yes                       | Growing (GCP, K8s)                         | Emerging (fork state)               |
 
 ### Detailed Comparison
 
 #### Redis (7.x)
+
 - **Pros**: Industry standard, massive ecosystem, battle-tested in production for 15+ years
 - **Cons**: Single-threaded event loop (bottleneck on multi-core), licensing change to SSPL concerns many organizations
 - **Best for**: Established codebases, maximum compatibility, rate limiting, session state
 - **Memory**: ~1:1 with data on simple keys, higher on complex structures
 
 #### Dragonfly (1.3+)
+
 - **Pros**: Modern C++20 implementation, multi-threaded design, 50% faster on benchmarks, Kubernetes-native
 - **Cons**: Newer (risk of undiscovered issues), BSL license (commercial model), fewer integrations
 - **Best for**: High throughput requirements, memory-constrained environments, greenfield projects
@@ -202,6 +210,7 @@ async fn process_wp_events(jetstream: &jetstream::Context) -> Result<()> {
 - **Startup**: ~50ms (vs Redis ~200ms)
 
 #### Valkey (8.0+)
+
 - **Pros**: Redis fork, open source (LGPL), maintained by Linux Foundation backed effort, 100% Redis compatible
 - **Cons**: Still establishing ecosystem, newer than Redis, fewer production case studies
 - **Best for**: Organizations wanting Redis compatibility with open source licensing, future hedge
@@ -229,17 +238,18 @@ Reasoning:
 
 ### Use Cases and Recommendations
 
-| Use Case | Recommendation | Rationale |
-|----------|---|---|
-| **Snapshot Caching** | Dragonfly with `SET` + TTL | Fast retrieval, automatic expiry |
-| **Rate Limiting** | Dragonfly with `INCR` + time windows | Atomic increment, millisecond latency |
-| **Session State** | Dragonfly with `HSET` | Flexible field structure, fast lookups |
-| **Feature Flag Cache** | Dragonfly with `HGETALL` bulk operations | Single call for all flags |
-| **Dependency Graph Cache** | Dragonfly with `ZSET` (sorted by version) | Efficient range queries |
+| Use Case                   | Recommendation                            | Rationale                              |
+| -------------------------- | ----------------------------------------- | -------------------------------------- |
+| **Snapshot Caching**       | Dragonfly with `SET` + TTL                | Fast retrieval, automatic expiry       |
+| **Rate Limiting**          | Dragonfly with `INCR` + time windows      | Atomic increment, millisecond latency  |
+| **Session State**          | Dragonfly with `HSET`                     | Flexible field structure, fast lookups |
+| **Feature Flag Cache**     | Dragonfly with `HGETALL` bulk operations  | Single call for all flags              |
+| **Dependency Graph Cache** | Dragonfly with `ZSET` (sorted by version) | Efficient range queries                |
 
 ### Rust Client Crate
 
 **Crate**: `redis` v0.25+ (works with all three)
+
 ```
 redis = { version = "0.25", features = ["aio", "tokio-comp", "json"] }
 ```
@@ -305,6 +315,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Docker/Container Configuration
 
 **Dragonfly**:
+
 ```dockerfile
 FROM ghcr.io/dragonflydb/dragonfly:v1.3-alpine
 EXPOSE 6379 6380
@@ -312,6 +323,7 @@ CMD ["dragonfly", "--bind=0.0.0.0", "--requirepass=localdev"]
 ```
 
 **Valkey** (fallback):
+
 ```dockerfile
 FROM valkey/valkey:8-alpine
 EXPOSE 6379
@@ -323,15 +335,18 @@ CMD ["valkey-server", "--bind=0.0.0.0"]
 ## 3. Neo4j Community Edition
 
 ### Overview
+
 Neo4j is the leading property graph database. It models complex relationships efficiently through first-class edge support. The Rust driver (`neo4rs`) provides async, Bolt protocol access with full transaction support.
 
 ### Crate Information
+
 - **Primary Crate**: `neo4rs` v0.7+ (latest stable March 2026)
 - **Protocol**: Bolt v4.4 (Bolt v5.x supported)
 - **Async Runtime**: Tokio-based
 - **Features**: Connection pooling, query streaming, transactions, full ACID support
 
 ### Key Capabilities
+
 1. **Graph Modeling**: Nodes with properties, relationships with directionality and properties
 2. **Cypher Query Language**: Powerful, expressive graph query language
 3. **Relationship Indexing**: O(1) relationship traversal (core advantage vs. relational)
@@ -343,6 +358,7 @@ Neo4j is the leading property graph database. It models complex relationships ef
 ### Use Cases for AgilePlus Platform
 
 #### 1. Feature → WP Relationship Graph
+
 ```
 (Feature) -[DEFINES]-> (WorkPackage)
 (WorkPackage) -[DEPENDS_ON]-> (WorkPackage)
@@ -351,6 +367,7 @@ Neo4j is the leading property graph database. It models complex relationships ef
 ```
 
 #### 2. Cross-Project Dependency Tracking
+
 ```
 (Project:A/WP1) -[BLOCKS]-> (Project:B/WP2)
 (Feature:X) -[IMPLEMENTED_BY]-> (WP:Y)
@@ -358,6 +375,7 @@ Neo4j is the leading property graph database. It models complex relationships ef
 ```
 
 #### 3. Artifact Dependency Graph
+
 ```
 (Artifact) -[DEPENDS_ON]-> (Artifact)
 (Artifact) -[CREATED_BY]-> (Process)
@@ -379,26 +397,27 @@ docker run -d \
 ```
 
 **Process Compose Config**:
+
 ```yaml
 services:
-  neo4j:
-    command: bin/neo4j console
-    working_dir: /var/lib/neo4j
-    environment:
-      - NEO4J_AUTH=neo4j/password
-      - NEO4J_server_memory_heap_initial__size=512m
-      - NEO4J_server_memory_heap_max__size=1g
-      - NEO4J_server_default__database=neo4j
-    ports:
-      - "7687:7687"  # Bolt
-      - "7474:7474"  # HTTP (browser UI)
-    depends_on:
-      - "neo4j-startup"
-    health_check:
-      test: ["CMD", "curl", "-f", "http://localhost:7474/browser/"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    neo4j:
+        command: bin/neo4j console
+        working_dir: /var/lib/neo4j
+        environment:
+            - NEO4J_AUTH=neo4j/password
+            - NEO4J_server_memory_heap_initial__size=512m
+            - NEO4J_server_memory_heap_max__size=1g
+            - NEO4J_server_default__database=neo4j
+        ports:
+            - "7687:7687" # Bolt
+            - "7474:7474" # HTTP (browser UI)
+        depends_on:
+            - "neo4j-startup"
+        health_check:
+            test: ["CMD", "curl", "-f", "http://localhost:7474/browser/"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
 ```
 
 ### Rust API Patterns
@@ -537,13 +556,13 @@ async fn create_wp_with_dependency(
 
 ### Alternatives Considered
 
-| Alternative | Verdict | Reason |
-|---|---|---|
-| **SurrealDB** | Not recommended | Still alpha/beta, graph support limited, smaller ecosystem |
-| **EdgeDB** | Not recommended | Graph support via traversals, but weaker than Neo4j; PostgreSQL-based overhead |
+| Alternative                 | Verdict                    | Reason                                                                                                 |
+| --------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **SurrealDB**               | Not recommended            | Still alpha/beta, graph support limited, smaller ecosystem                                             |
+| **EdgeDB**                  | Not recommended            | Graph support via traversals, but weaker than Neo4j; PostgreSQL-based overhead                         |
 | **SQLite + Recursive CTEs** | Not recommended (fallback) | File-based limits scale; complex relationship queries require multiple JOINs; no native graph indexing |
-| **TigerGraph** | Not recommended | Enterprise-focused, not Community Edition suitable |
-| **JanusGraph** | Not recommended | Requires HBase/Cassandra backend; too heavyweight for local-first |
+| **TigerGraph**              | Not recommended            | Enterprise-focused, not Community Edition suitable                                                     |
+| **JanusGraph**              | Not recommended            | Requires HBase/Cassandra backend; too heavyweight for local-first                                      |
 
 ### Recommendation
 
@@ -554,9 +573,11 @@ async fn create_wp_with_dependency(
 ## 4. MinIO Standalone (S3 Storage)
 
 ### Overview
+
 MinIO is an S3-compatible object storage system written in Go. Standalone mode requires no external dependencies; it's a single binary. Rust clients (`minio-rs` or `rust-s3`) provide S3 API access.
 
 ### Crate Information
+
 - **Recommended**: `minio-rs` v0.1+ or `aws-sdk-s3` (high-level wrapper)
 - **Alternative**: `rust-s3` v0.33+ (community-maintained, simpler API)
 - **Alternative**: `s3` v0.33+ (older name, avoid)
@@ -564,6 +585,7 @@ MinIO is an S3-compatible object storage system written in Go. Standalone mode r
 **Preferred**: `minio-rs` (officially maintained by MinIO team) or `aws-sdk-s3` (AWS SDK, works with MinIO via endpoint override)
 
 ### Key Capabilities
+
 1. **S3 API Compliance**: 100% compatible with AWS S3 APIs
 2. **Metadata Storage**: Object metadata, versioning, tagging
 3. **Multipart Upload**: Large file uploads with resume capability
@@ -680,22 +702,23 @@ For simplicity and wider compatibility, **use `aws-sdk-s3`** even with MinIO. Mi
 
 ```yaml
 services:
-  minio:
-    image: minio/minio:latest
-    command: server /minio_data --console-address ":9001"
-    ports:
-      - "9000:9000"  # S3 API
-      - "9001:9001"  # Console UI
-    environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
-    volumes:
-      - minio_data:/minio_data
-    health_check:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    minio:
+        image: minio/minio:latest
+        command: server /minio_data --console-address ":9001"
+        ports:
+            - "9000:9000" # S3 API
+            - "9001:9001" # Console UI
+        environment:
+            - MINIO_ROOT_USER=minioadmin
+            - MINIO_ROOT_PASSWORD=minioadmin
+        volumes:
+            - minio_data:/minio_data
+        health_check:
+            test:
+                ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
 ```
 
 ---
@@ -703,29 +726,31 @@ services:
 ## 5. Process Compose
 
 ### Overview
+
 Process Compose is a process manager for local development environments. It orchestrates multiple services with dependency ordering, health checks, readiness probes, and restart policies. It's designed as a lightweight Docker Compose alternative for local-first development.
 
 ### Configuration Format (process-compose.yml)
 
 **Basic Structure**:
+
 ```yaml
-version: "0.5"  # Process Compose version
+version: "0.5" # Process Compose version
 
 processes:
-  service_name:
-    command: "command to run"
-    working_dir: "/path"
-    environment:
-      - KEY=value
-    depends_on:
-      - other_service: complete  # or "started", "healthy"
-    ports:
-      - "8080:8080"
-    health_check:
-      test: ["CMD", "curl", "http://localhost:8080/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+    service_name:
+        command: "command to run"
+        working_dir: "/path"
+        environment:
+            - KEY=value
+        depends_on:
+            - other_service: complete # or "started", "healthy"
+        ports:
+            - "8080:8080"
+        health_check:
+            test: ["CMD", "curl", "http://localhost:8080/health"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
 ```
 
 ### Key Features
@@ -745,175 +770,176 @@ version: "0.5"
 
 # Global environment variables
 environment:
-  - LOG_LEVEL=debug
-  - RUST_LOG=info,agileplus=debug
-  - LOCAL_DEV=true
+    - LOG_LEVEL=debug
+    - RUST_LOG=info,agileplus=debug
+    - LOCAL_DEV=true
 
 processes:
-  # ===== INFRASTRUCTURE TIER =====
+    # ===== INFRASTRUCTURE TIER =====
 
-  nats:
-    command: "nats-server -c nats.conf"
-    working_dir: "/config"
-    ports:
-      - "4222:4222"
-      - "8222:8222"  # Monitoring
-    health_check:
-      test: ["CMD", "curl", "-f", "http://localhost:8222/varz"]
-      interval: 5s
-      timeout: 2s
-      retries: 3
-    is_daemon: true
+    nats:
+        command: "nats-server -c nats.conf"
+        working_dir: "/config"
+        ports:
+            - "4222:4222"
+            - "8222:8222" # Monitoring
+        health_check:
+            test: ["CMD", "curl", "-f", "http://localhost:8222/varz"]
+            interval: 5s
+            timeout: 2s
+            retries: 3
+        is_daemon: true
 
-  dragonfly:
-    command: "dragonfly --bind=0.0.0.0 --port=6379"
-    ports:
-      - "6379:6379"
-    depends_on:
-      nats: complete
-    health_check:
-      test: ["CMD", "redis-cli", "PING"]
-      interval: 5s
-      timeout: 2s
-      retries: 3
-    is_daemon: true
-    restart_policy:
-      backoff: 1s
-      max_restarts: 5
+    dragonfly:
+        command: "dragonfly --bind=0.0.0.0 --port=6379"
+        ports:
+            - "6379:6379"
+        depends_on:
+            nats: complete
+        health_check:
+            test: ["CMD", "redis-cli", "PING"]
+            interval: 5s
+            timeout: 2s
+            retries: 3
+        is_daemon: true
+        restart_policy:
+            backoff: 1s
+            max_restarts: 5
 
-  neo4j:
-    command: "neo4j console"
-    working_dir: "/var/lib/neo4j"
-    environment:
-      - NEO4J_AUTH=neo4j/password
-      - NEO4J_server_memory_heap_initial__size=512m
-      - NEO4J_server_memory_heap_max__size=1g
-    ports:
-      - "7687:7687"   # Bolt
-      - "7474:7474"   # HTTP
-    depends_on:
-      dragonfly: complete
-    health_check:
-      test: ["CMD", "curl", "-f", "http://localhost:7474/browser/"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    is_daemon: true
+    neo4j:
+        command: "neo4j console"
+        working_dir: "/var/lib/neo4j"
+        environment:
+            - NEO4J_AUTH=neo4j/password
+            - NEO4J_server_memory_heap_initial__size=512m
+            - NEO4J_server_memory_heap_max__size=1g
+        ports:
+            - "7687:7687" # Bolt
+            - "7474:7474" # HTTP
+        depends_on:
+            dragonfly: complete
+        health_check:
+            test: ["CMD", "curl", "-f", "http://localhost:7474/browser/"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        is_daemon: true
 
-  minio:
-    command: "minio server /minio_data --console-address :9001"
-    environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
-    ports:
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # Console
-    depends_on:
-      neo4j: complete
-    health_check:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    is_daemon: true
+    minio:
+        command: "minio server /minio_data --console-address :9001"
+        environment:
+            - MINIO_ROOT_USER=minioadmin
+            - MINIO_ROOT_PASSWORD=minioadmin
+        ports:
+            - "9000:9000" # S3 API
+            - "9001:9001" # Console
+        depends_on:
+            neo4j: complete
+        health_check:
+            test:
+                ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+        is_daemon: true
 
-  # ===== APPLICATION TIER =====
+    # ===== APPLICATION TIER =====
 
-  agileplus-api:
-    command: "cargo run --release -p agileplus-api"
-    working_dir: "/workspace"
-    environment:
-      - NATS_URL=nats://nats:4222
-      - REDIS_URL=redis://dragonfly:6379
-      - NEO4J_URL=bolt://neo4j:7687
-      - NEO4J_USER=neo4j
-      - NEO4J_PASSWORD=password
-      - S3_ENDPOINT=http://minio:9000
-      - S3_ACCESS_KEY=minioadmin
-      - S3_SECRET_KEY=minioadmin
-      - S3_BUCKET=artifacts
-    ports:
-      - "8080:8080"
-    depends_on:
-      nats: healthy
-      dragonfly: healthy
-      neo4j: healthy
-      minio: healthy
-    health_check:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    readiness_probe:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/ready"]
-      interval: 5s
-      timeout: 2s
-      retries: 3
-    # Rebuilds on file changes (watch mode)
-    file_watch:
-      enabled: true
-      paths:
-        - "crates/agileplus-api/src"
-        - "crates/agileplus-domain/src"
+    agileplus-api:
+        command: "cargo run --release -p agileplus-api"
+        working_dir: "/workspace"
+        environment:
+            - NATS_URL=nats://nats:4222
+            - REDIS_URL=redis://dragonfly:6379
+            - NEO4J_URL=bolt://neo4j:7687
+            - NEO4J_USER=neo4j
+            - NEO4J_PASSWORD=password
+            - S3_ENDPOINT=http://minio:9000
+            - S3_ACCESS_KEY=minioadmin
+            - S3_SECRET_KEY=minioadmin
+            - S3_BUCKET=artifacts
+        ports:
+            - "8080:8080"
+        depends_on:
+            nats: healthy
+            dragonfly: healthy
+            neo4j: healthy
+            minio: healthy
+        health_check:
+            test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        readiness_probe:
+            test: ["CMD", "curl", "-f", "http://localhost:8080/ready"]
+            interval: 5s
+            timeout: 2s
+            retries: 3
+        # Rebuilds on file changes (watch mode)
+        file_watch:
+            enabled: true
+            paths:
+                - "crates/agileplus-api/src"
+                - "crates/agileplus-domain/src"
 
-  python-mcp-server:
-    command: "python -m agileplus_mcp.server"
-    working_dir: "/workspace/agileplus-mcp"
-    environment:
-      - PYTHONUNBUFFERED=1
-      - NATS_URL=nats://nats:4222
-      - NEO4J_URL=bolt://neo4j:7687
-      - REDIS_URL=redis://dragonfly:6379
-    ports:
-      - "5000:5000"
-    depends_on:
-      agileplus-api: healthy
-    health_check:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+    python-mcp-server:
+        command: "python -m agileplus_mcp.server"
+        working_dir: "/workspace/agileplus-mcp"
+        environment:
+            - PYTHONUNBUFFERED=1
+            - NATS_URL=nats://nats:4222
+            - NEO4J_URL=bolt://neo4j:7687
+            - REDIS_URL=redis://dragonfly:6379
+        ports:
+            - "5000:5000"
+        depends_on:
+            agileplus-api: healthy
+        health_check:
+            test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
 
-  # ===== MONITORING & OBSERVABILITY =====
+    # ===== MONITORING & OBSERVABILITY =====
 
-  jaeger:
-    command: "jaeger-all-in-one"
-    ports:
-      - "16686:16686"  # UI
-      - "4317:4317"    # OTLP receiver
-    depends_on:
-      agileplus-api: started
-    is_daemon: true
-    # Optional: only start if explicit flag
+    jaeger:
+        command: "jaeger-all-in-one"
+        ports:
+            - "16686:16686" # UI
+            - "4317:4317" # OTLP receiver
+        depends_on:
+            agileplus-api: started
+        is_daemon: true
+        # Optional: only start if explicit flag
 
-  prometheus:
-    command: "prometheus --config.file=/etc/prometheus/prometheus.yml"
-    ports:
-      - "9090:9090"
-    depends_on:
-      agileplus-api: started
-    is_daemon: true
+    prometheus:
+        command: "prometheus --config.file=/etc/prometheus/prometheus.yml"
+        ports:
+            - "9090:9090"
+        depends_on:
+            agileplus-api: started
+        is_daemon: true
 
-  # ===== UTILITIES =====
+    # ===== UTILITIES =====
 
-  seed-database:
-    command: "cargo run -p agileplus-cli -- seed --sample-data"
-    working_dir: "/workspace"
-    depends_on:
-      neo4j: healthy
-      agileplus-api: healthy
-    is_daemon: false  # One-shot task
-    restart_policy:
-      max_restarts: 0
+    seed-database:
+        command: "cargo run -p agileplus-cli -- seed --sample-data"
+        working_dir: "/workspace"
+        depends_on:
+            neo4j: healthy
+            agileplus-api: healthy
+        is_daemon: false # One-shot task
+        restart_policy:
+            max_restarts: 0
 ```
 
 ### Dependency Ordering Semantics
 
-| Depends On State | Behavior | Use Case |
-|---|---|---|
-| `started` | Waiting process launched (no check) | Lightweight services, initial bootstrap |
-| `complete` | Health check passes (recommended) | Critical dependencies requiring readiness |
-| `healthy` | (Alias for complete) | Infrastructure services |
+| Depends On State | Behavior                            | Use Case                                  |
+| ---------------- | ----------------------------------- | ----------------------------------------- |
+| `started`        | Waiting process launched (no check) | Lightweight services, initial bootstrap   |
+| `complete`       | Health check passes (recommended)   | Critical dependencies requiring readiness |
+| `healthy`        | (Alias for complete)                | Infrastructure services                   |
 
 ### Installation and Usage
 
@@ -1127,13 +1153,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Summary Table: Technology Recommendations
 
-| Layer | Technology | Crate | Version | Rationale |
-|-------|-----------|-------|---------|-----------|
-| **Message Queue** | NATS JetStream | `async-nats` | 0.35+ | Exactly-once delivery, ordering, standalone mode |
-| **Cache Layer** | Dragonfly | (Docker) | 1.3+ | Superior memory efficiency, multi-threaded |
-| **Graph DB** | Neo4j Community | `neo4rs` | 0.7+ | Purpose-built for relationships, browser UI |
-| **Object Storage** | MinIO | `aws-sdk-s3` | 1.15+ | S3-compatible, single-binary, artifact storage |
-| **Orchestration** | Process Compose | (CLI) | 1.7+ | Lightweight, file-watch, dependency ordering |
+| Layer              | Technology      | Crate        | Version | Rationale                                        |
+| ------------------ | --------------- | ------------ | ------- | ------------------------------------------------ |
+| **Message Queue**  | NATS JetStream  | `async-nats` | 0.35+   | Exactly-once delivery, ordering, standalone mode |
+| **Cache Layer**    | Dragonfly       | (Docker)     | 1.3+    | Superior memory efficiency, multi-threaded       |
+| **Graph DB**       | Neo4j Community | `neo4rs`     | 0.7+    | Purpose-built for relationships, browser UI      |
+| **Object Storage** | MinIO           | `aws-sdk-s3` | 1.15+   | S3-compatible, single-binary, artifact storage   |
+| **Orchestration**  | Process Compose | (CLI)        | 1.7+    | Lightweight, file-watch, dependency ordering     |
 
 ---
 

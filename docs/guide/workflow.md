@@ -24,16 +24,16 @@ graph LR
 
 Each stage produces artifacts and preconditions for the next stage:
 
-| # | Stage | Command | Input | Output | Duration |
-|---|-------|---------|-------|--------|----------|
-| 1 | **Specify** | `specify` | Natural language description | spec.md, meta.json | 2-5 min |
-| 2 | **Clarify** | `clarify` | Spec with ambiguities | Updated spec | 1-2 min |
-| 3 | **Research** | `research` | Spec | codebase-scan.md, feasibility.md | 2-5 min |
-| 4 | **Plan** | `plan` | Spec + research | plan.md, architecture decisions | 3-10 min |
-| 5 | **Tasks** | `tasks` | Plan | WP01, WP02, ... (work packages) | 1-2 min |
-| 6 | **Implement** | `implement` | Work package | Code changes, commits | hours/days |
-| 7 | **Review** | `review` | Implementation | Approve or request changes | 5-15 min/WP |
-| 8 | **Accept + Merge** | `accept`, `merge` | All WPs done | Shipped to main | 1-2 min |
+| #   | Stage              | Command           | Input                        | Output                           | Duration    |
+| --- | ------------------ | ----------------- | ---------------------------- | -------------------------------- | ----------- |
+| 1   | **Specify**        | `specify`         | Natural language description | spec.md, meta.json               | 2-5 min     |
+| 2   | **Clarify**        | `clarify`         | Spec with ambiguities        | Updated spec                     | 1-2 min     |
+| 3   | **Research**       | `research`        | Spec                         | codebase-scan.md, feasibility.md | 2-5 min     |
+| 4   | **Plan**           | `plan`            | Spec + research              | plan.md, architecture decisions  | 3-10 min    |
+| 5   | **Tasks**          | `tasks`           | Plan                         | WP01, WP02, ... (work packages)  | 1-2 min     |
+| 6   | **Implement**      | `implement`       | Work package                 | Code changes, commits            | hours/days  |
+| 7   | **Review**         | `review`          | Implementation               | Approve or request changes       | 5-15 min/WP |
+| 8   | **Accept + Merge** | `accept`, `merge` | All WPs done                 | Shipped to main                  | 1-2 min     |
 
 ## State Machine
 
@@ -86,6 +86,7 @@ agileplus specify "Add two-factor authentication"
 **Specification interview:**
 
 The tool asks targeted questions to capture:
+
 - What problem does this solve?
 - Who will use it?
 - What are the key scenarios?
@@ -106,20 +107,24 @@ kitty-specs/001-two-factor-auth/
 # Two-Factor Authentication
 
 ## Overview
+
 Users can enable 2FA on their account using TOTP apps.
 
 ## User Scenarios
+
 - User enables 2FA from account settings
 - User logs in with password + TOTP code
 - User recovers account with backup codes
 
 ## Functional Requirements
+
 - Support TOTP (Time-based One-Time Password)
 - Generate backup codes during setup
 - Enforce 2FA on login
 - Allow disabling 2FA
 
 ## Success Criteria
+
 - 2FA can be enabled in <1 minute
 - Login with 2FA works reliably
 - Backup codes work when TOTP fails
@@ -188,23 +193,28 @@ kitty-specs/001-two-factor-auth/research/
 ## Existing Auth Code
 
 ### User Model
+
 - `src/models/user.rs` — User entity with email, password_hash
 - Supports custom fields (good for 2FA)
 
 ### Session Management
+
 - JWT tokens in `src/auth/jwt.rs`
 - Token lifespan: 24 hours
 
 ### Dependencies Available
+
 - `totp-rs` — TOTP implementation (in Cargo.lock)
 - `sqlx` — Database access
 
 ## Integration Points
+
 - Login flow: `src/handlers/login.rs`
 - Account settings: `src/handlers/account.rs`
 - Middleware: `src/auth/middleware.rs`
 
 ## Risks
+
 - Performance: TOTP validation on every login adds ~5ms
 - Recovery: Backup code storage requires safe encryption
 ```
@@ -231,21 +241,24 @@ kitty-specs/001-two-factor-auth/plan.md
 # Implementation Plan: Two-Factor Authentication
 
 ## Architecture Decisions
+
 1. **TOTP Storage**: Store secret in users table, encrypted at rest
 2. **Backup Codes**: Generate 10 codes, one-time use, hashed
 3. **Login Flow**: Check 2FA status before issuing JWT
 4. **Recovery**: Email backup codes to user during setup
 
 ## File Changes
-| File | Action | Purpose |
-|------|--------|---------|
-| src/models/user.rs | MODIFY | Add 2fa_secret, 2fa_enabled fields |
-| src/models/totp.rs | CREATE | TOTP setup/validation logic |
-| src/handlers/account.rs | MODIFY | Add /account/2fa endpoint |
-| src/handlers/login.rs | MODIFY | Add TOTP verification step |
-| migrations/001_2fa.sql | CREATE | Database schema |
+
+| File                    | Action | Purpose                            |
+| ----------------------- | ------ | ---------------------------------- |
+| src/models/user.rs      | MODIFY | Add 2fa_secret, 2fa_enabled fields |
+| src/models/totp.rs      | CREATE | TOTP setup/validation logic        |
+| src/handlers/account.rs | MODIFY | Add /account/2fa endpoint          |
+| src/handlers/login.rs   | MODIFY | Add TOTP verification step         |
+| migrations/001_2fa.sql  | CREATE | Database schema                    |
 
 ## Build Sequence
+
 1. Add database columns
 2. Create TOTP models and logic
 3. Update login flow
@@ -254,6 +267,7 @@ kitty-specs/001-two-factor-auth/plan.md
 6. Add frontend (if applicable)
 
 ## Dependencies
+
 - External: totp-rs (already available)
 - Internal: User model, JWT token logic
 ```
@@ -285,22 +299,27 @@ kitty-specs/001-two-factor-auth/tasks/
 # WP01: Database Schema
 
 ## Description
+
 Create database tables and columns for 2FA support.
 
 ## Subtasks
+
 - [ ] Add 2fa_secret column to users table
 - [ ] Add 2fa_enabled column to users table
 - [ ] Create 2fa_backup_codes table
 - [ ] Write migration up/down scripts
 
 ## Dependencies
+
 None (can run first)
 
 ## Deliverables
+
 - migrations/001_2fa.sql (up migration)
 - migrations/001_2fa.sql.down (down migration)
 
 ## Lane
+
 planned → doing → for_review → done
 ```
 
@@ -655,6 +674,7 @@ project/
 ```
 
 This means:
+
 - WP01 and WP02 agents can run simultaneously without conflicting
 - Branches are isolated (`feature/auth/WP01` vs `feature/auth/WP02`)
 - Merging is dependency-ordered (WP01 merges before WP02)

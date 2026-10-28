@@ -23,20 +23,20 @@ Approach: extend the existing hexagonal Rust workspace (11 crates) with 7 new cr
 
 ## Constitution Check
 
-*GATE: Checked against `.kittify/memory/constitution.md`*
+_GATE: Checked against `.kittify/memory/constitution.md`_
 
-| Gate | Status | Notes |
-|------|--------|-------|
-| Rust nightly 2024 edition | PASS | All new crates follow workspace edition |
-| Python 3.14+ for MCP | PASS | No Python changes in this spec |
-| Protobuf contracts via buf | PASS | Existing gRPC crate already uses tonic+prost |
-| ≥80% coverage, 100% critical paths | PASS | Must cover FSM, audit chain, event store, hash verification |
-| Mutation testing for critical paths | PASS | cargo-mutants for event store and sync engine |
-| Contract tests for gRPC boundaries | PASS | Existing pact setup extends to new crate boundaries |
-| Process Compose (not Docker) for orchestration | PASS | Spec explicitly requires Process Compose |
-| Cross-platform (macOS, Linux, Windows) | PASS | All crates must compile on 3 targets |
-| Local-only, no cloud deps | PASS | All services run locally |
-| Conventional commits, WP branch naming | PASS | `003-agileplus-platform-completion-WP##` |
+| Gate                                           | Status | Notes                                                       |
+| ---------------------------------------------- | ------ | ----------------------------------------------------------- |
+| Rust nightly 2024 edition                      | PASS   | All new crates follow workspace edition                     |
+| Python 3.14+ for MCP                           | PASS   | No Python changes in this spec                              |
+| Protobuf contracts via buf                     | PASS   | Existing gRPC crate already uses tonic+prost                |
+| ≥80% coverage, 100% critical paths             | PASS   | Must cover FSM, audit chain, event store, hash verification |
+| Mutation testing for critical paths            | PASS   | cargo-mutants for event store and sync engine               |
+| Contract tests for gRPC boundaries             | PASS   | Existing pact setup extends to new crate boundaries         |
+| Process Compose (not Docker) for orchestration | PASS   | Spec explicitly requires Process Compose                    |
+| Cross-platform (macOS, Linux, Windows)         | PASS   | All crates must compile on 3 targets                        |
+| Local-only, no cloud deps                      | PASS   | All services run locally                                    |
+| Conventional commits, WP branch naming         | PASS   | `003-agileplus-platform-completion-WP##`                    |
 
 **Constitution deviation**: Constitution says "Docker Compose test harness" for integration tests, but spec requires Process Compose for orchestration. Resolution: Use Process Compose for dev/prod orchestration; Docker Compose remains available for CI integration tests where container isolation is needed.
 
@@ -159,49 +159,56 @@ Plane.so webhook → Webhook endpoint → Sync Engine
 These groups guide `/spec-kitty.tasks` decomposition:
 
 ### Group 1: Foundation (P1, sequential)
+
 - **WP01**: Domain model extensions — Event, Snapshot, SyncMapping, ServiceHealth, DeviceNode, ApiKey entities in `agileplus-domain`
 - **WP02**: Event store engine — `agileplus-events` crate (append, replay, snapshot, hash chain, queries)
 - **WP03**: SQLite schema extensions — event tables, snapshots, sync_mappings, api_keys, device_nodes in `agileplus-sqlite`
 
 ### Group 2: Infrastructure (P1, parallelizable after Group 1)
+
 - **WP04**: Cache layer — `agileplus-cache` crate (Dragonfly connection pool, typed get/set/invalidate)
 - **WP05**: Graph layer — `agileplus-graph` crate (Neo4j CRUD, relationship queries, index management)
 - **WP06**: Artifact storage — `agileplus-artifacts` crate (MinIO S3 operations, bucket management)
 - **WP07**: Process Compose config — `process-compose.yml` with dependency ordering, health checks
 
 ### Group 3: Sync Engine (P1, depends on Groups 1-2)
+
 - **WP08**: Plane.so extension — bidirectional sync, state mapping, webhook ingestion, label CRUD in `agileplus-plane`
 - **WP09**: Sync orchestrator — `agileplus-sync` crate (conflict detection, resolution, retry queue, content hashing)
 - **WP10**: CLI sync commands — `agileplus sync [push|pull|auto]` in `agileplus-subcmds`
 
 ### Group 4: API & Dashboard (P2, depends on Groups 1-3)
+
 - **WP11**: API extensions — REST endpoints, SSE streams, API key auth middleware in `agileplus-api`
 - **WP12**: Dashboard templates — `agileplus-dashboard` crate + `templates/` (Askama, htmx, Alpine.js)
 - **WP13**: Dashboard interactivity — kanban drag-drop, state transitions, agent activity, audit timeline
 - **WP14**: CLI platform commands — `agileplus platform [up|down|status|logs]`, `agileplus events`, `agileplus dashboard`
 
 ### Group 5: Observability & Telemetry (P2, parallelizable)
+
 - **WP15**: OpenTelemetry OTLP — extend `agileplus-telemetry` with OTLP traces+metrics, axum middleware
 
 ### Group 6: Multi-Device Sync (P3, depends on Groups 1-3)
+
 - **WP16**: P2P sync — `agileplus-p2p` crate (Tailscale peer discovery, NATS over Tailscale, event replication)
 - **WP17**: Git-backed state — serialize SQLite state to deterministic files for git sync
 - **WP18**: CLI device commands — `agileplus device [discover|sync|status]`
 
 ### Group 7: Integration Testing & Hardening (P3, depends on all)
+
 - **WP19**: End-to-end integration tests — full pipeline test with all services
 - **WP20**: Contract tests — pact tests for new crate boundaries
 - **WP21**: Performance benchmarks — verify constitution performance gates
 
 ## Risk Register
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Neo4j JVM memory (500MB+) | High memory on dev machines | Process Compose memory limits; graph is optional (degrade to SQLite-only) |
-| Plane.so rate limit (60/min) | Throttled bulk sync | Batch API calls, exponential backoff, sync queue with rate limiter |
-| NATS JetStream file corruption | Lost events | Snapshots as recovery points; MinIO archive for old events |
-| htmx+Alpine.js complexity boundary | Unclear responsibilities | Convention doc: Alpine for client state, htmx for server communication |
-| Cross-device SQLite WAL | WAL doesn't work over network FS | P2P replicates events (not DB file); git serializes to JSON |
+| Risk                               | Impact                           | Mitigation                                                                |
+| ---------------------------------- | -------------------------------- | ------------------------------------------------------------------------- |
+| Neo4j JVM memory (500MB+)          | High memory on dev machines      | Process Compose memory limits; graph is optional (degrade to SQLite-only) |
+| Plane.so rate limit (60/min)       | Throttled bulk sync              | Batch API calls, exponential backoff, sync queue with rate limiter        |
+| NATS JetStream file corruption     | Lost events                      | Snapshots as recovery points; MinIO archive for old events                |
+| htmx+Alpine.js complexity boundary | Unclear responsibilities         | Convention doc: Alpine for client state, htmx for server communication    |
+| Cross-device SQLite WAL            | WAL doesn't work over network FS | P2P replicates events (not DB file); git serializes to JSON               |
 
 ## Complexity Tracking
 

@@ -75,6 +75,7 @@ snapshot date.
 ### 7. `docs/sessions/20260714-isolated-recovery/` (7 files)
 
 The full session documentation explaining the recovery procedure:
+
 - `00_SESSION_OVERVIEW.md` — Goal, boundaries, baseline SHA, evidence archive
 - `01_RESEARCH.md` — Investigation of the dirty checkout state
 - `02_SPECIFICATIONS.md` — Recovery procedure specification

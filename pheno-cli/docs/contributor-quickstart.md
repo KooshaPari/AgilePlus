@@ -129,6 +129,7 @@ Register the adapter in the orchestrator (`internal/publish/orchestrator.go`) so
 ### Step 4: Add tests
 
 Create `internal/adapters/<registry>_test.go` covering at minimum:
+
 - `Detect` — returns expected packages for a sample manifest
 - `Version` — correct pre-release strings per channel
 - `Publish` — mocked HTTP/CLI calls verify correct arguments

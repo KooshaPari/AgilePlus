@@ -7,8 +7,8 @@ description: DEPRECATED — use `ap plan --checklist` instead. See docs/design/S
 
 ## Migration
 
-| SpecKitty | AgilePlus (`ap`) |
-|-----------|-------------------|
+| SpecKitty               | AgilePlus (`ap`)                   |
+| ----------------------- | ---------------------------------- |
 | `/spec-kitty.checklist` | `ap plan --checklist <feature-id>` |
 
 ```bash

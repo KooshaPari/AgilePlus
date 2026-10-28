@@ -1,17 +1,17 @@
 ---
 work_package_id: WP07
-title: 'cliproxyapi++: Shared Package Extraction (authkit + httpkit)'
+title: "cliproxyapi++: Shared Package Extraction (authkit + httpkit)"
 lane: planned
 dependencies: []
 subtasks: [T017, T018]
 history:
-- date: '2026-03-03'
-  event: created
-  by: spec-kitty.tasks
-- date: '2026-03-03'
-  event: revised
-  by: agent
-  note: 'Incorporate external-library-leverage research: x/oauth2, markbates/goth for auth consolidation'
+    - date: "2026-03-03"
+      event: created
+      by: spec-kitty.tasks
+    - date: "2026-03-03"
+      event: revised
+      by: agent
+      note: "Incorporate external-library-leverage research: x/oauth2, markbates/goth for auth consolidation"
 ---
 
 # WP07: cliproxyapi++ — Shared Package Extraction
@@ -35,27 +35,29 @@ Extract auth logic to `phenotype-go-authkit` and HTTP helpers to `phenotype-go-h
 ### T017: Extract auth logic to phenotype-go-authkit (backed by x/oauth2 + Goth)
 
 **Library guidance**:
+
 - **golang.org/x/oauth2** — use as the foundation for all token management. The 3 parallel auth systems in cliproxyapi++ (OAuth2 flows, API key rotation, session-based) should collapse to a single `oauth2.TokenSource` registry. Each provider gets a `TokenSource` implementation; `RefreshWithRetry` becomes a thin wrapper around `oauth2.ReuseTokenSource`. Estimated LOC savings: 3-8K.
 - **markbates/goth** — use for web OAuth callback handlers (75+ providers supported out of the box). This replaces custom OAuth callback routes and provider-specific redirect logic. Estimated LOC savings: 3-6K. Note: Goth covers browser-based flows only; machine-to-machine flows still need custom `oauth2.TokenSource` implementations.
 
 **Steps**:
+
 1. Identify all auth-related types in cliproxyapi++ `internal/auth/`:
-   - `TokenStore`, `BaseTokenStorage`, `RefreshWithRetry`
-   - Provider-specific auth (OAuth2, API key, session-based)
+    - `TokenStore`, `BaseTokenStorage`, `RefreshWithRetry`
+    - Provider-specific auth (OAuth2, API key, session-based)
 2. Add dependencies to `phenotype-go-authkit`:
-   - `golang.org/x/oauth2`
-   - `github.com/markbates/goth`
+    - `golang.org/x/oauth2`
+    - `github.com/markbates/goth`
 3. Implement `phenotype-go-authkit/` with x/oauth2 as core:
-   - `tokenregistry.go` — `TokenSourceRegistry` mapping provider name to `oauth2.TokenSource`; replaces `TokenStore` + `BaseTokenStorage`
-   - `refresh.go` — thin wrapper around `oauth2.ReuseTokenSource` with logging; replaces `RefreshWithRetry`
-   - `oauth2_web.go` — Goth-backed web OAuth callback handlers (provider init, callback route, session extraction)
-   - `apikey.go` — API key management (simple `TokenSource` that returns static keys)
-   - `m2m.go` — machine-to-machine `TokenSource` implementations for providers without browser flows
+    - `tokenregistry.go` — `TokenSourceRegistry` mapping provider name to `oauth2.TokenSource`; replaces `TokenStore` + `BaseTokenStorage`
+    - `refresh.go` — thin wrapper around `oauth2.ReuseTokenSource` with logging; replaces `RefreshWithRetry`
+    - `oauth2_web.go` — Goth-backed web OAuth callback handlers (provider init, callback route, session extraction)
+    - `apikey.go` — API key management (simple `TokenSource` that returns static keys)
+    - `m2m.go` — machine-to-machine `TokenSource` implementations for providers without browser flows
 4. Ensure no cliproxyapi++-internal imports in extracted code
 5. In cliproxyapi++, replace `internal/auth` imports with `phenotype-go-authkit`:
-   ```go
-   import authkit "github.com/KooshaPari/phenotype-go-authkit"
-   ```
+    ```go
+    import authkit "github.com/KooshaPari/phenotype-go-authkit"
+    ```
 6. Collapse the 3 parallel auth systems to the single `TokenSourceRegistry`
 7. Update `go.mod` with new dependency
 8. Run `go mod tidy` and verify all imports resolve
@@ -65,15 +67,16 @@ Extract auth logic to `phenotype-go-authkit` and HTTP helpers to `phenotype-go-h
 ### T018: Extract HTTP helpers to phenotype-go-httpkit
 
 **Steps**:
+
 1. Identify HTTP helper code:
-   - `defaultHttpRequest` function (extracted during code reduction)
-   - Proxy request construction helpers
-   - Response parsing utilities
-   - Cache helpers
+    - `defaultHttpRequest` function (extracted during code reduction)
+    - Proxy request construction helpers
+    - Response parsing utilities
+    - Cache helpers
 2. Copy to `phenotype-go-httpkit/`:
-   - `request.go` — defaultHttpRequest, request builders
-   - `response.go` — response parsing, error extraction
-   - `cache.go` — cache helpers
+    - `request.go` — defaultHttpRequest, request builders
+    - `response.go` — response parsing, error extraction
+    - `cache.go` — cache helpers
 3. In cliproxyapi++, replace local helpers with httpkit imports
 4. Update `go.mod`
 

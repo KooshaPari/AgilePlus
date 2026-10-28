@@ -1,12 +1,15 @@
 # Plan
 
 ## Objective
+
 Codify an autograder contract binding FR → spec → docs → test → lint → journey.
 
 ## Scope
+
 All kitty-specs, doc sites, test suites, and CI gates.
 
 ## Implementation Steps
+
 1. Define FR metadata schema.
 2. Define test↔spec citation contract.
 3. Define docs↔FR/test reference contract.

@@ -9,25 +9,25 @@ This makes Planify viable as **frontend candidate #1** for AgilePlus.
 
 ## Why a shim
 
-| Planify (`apps/web`) expects | AgilePlus provides |
-| --- | --- |
-| Plane REST at `VITE_API_BASE_URL` (default `:8000`) | Rust Axum API on `:4000` |
+| Planify (`apps/web`) expects                                                           | AgilePlus provides                                                                  |
+| -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Plane REST at `VITE_API_BASE_URL` (default `:8000`)                                    | Rust Axum API on `:4000`                                                            |
 | `/api/workspaces/`, `/api/.../projects/`, `/api/.../issues/`, CSRF+session cookie auth | `/api/v1/features`, `/api/v1/features/:slug/work-packages`, `X-API-Key`/Bearer auth |
-| Plane object model (workspace / project / issue / state) | AgilePlus model (feature / work-package / state-machine) |
+| Plane object model (workspace / project / issue / state)                               | AgilePlus model (feature / work-package / state-machine)                            |
 
 The shim sits on `:8000`, speaks Plane's dialect to the browser, and translates
 to AgilePlus's REST + auth on the backend.
 
 ## Mapping
 
-| Plane concept | AgilePlus source |
-| --- | --- |
-| Workspace (single, slug `agileplus`) | the AgilePlus root |
-| Project | `Feature` (`GET /api/v1/features`) |
-| Project states (board columns) | fixed set derived from `FeatureState` (Created → Planned → Implementing → Validated → Shipped), grouped into Plane groups (backlog/unstarted/started/completed) |
-| Issue | `WorkPackage` (`GET /api/v1/features/:slug/work-packages`) |
-| Issue state group | `WorkPackage.state` snapped onto the nearest column group |
-| `me` user / members / labels | local stubs (read-only review) |
+| Plane concept                        | AgilePlus source                                                                                                                                                |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Workspace (single, slug `agileplus`) | the AgilePlus root                                                                                                                                              |
+| Project                              | `Feature` (`GET /api/v1/features`)                                                                                                                              |
+| Project states (board columns)       | fixed set derived from `FeatureState` (Created → Planned → Implementing → Validated → Shipped), grouped into Plane groups (backlog/unstarted/started/completed) |
+| Issue                                | `WorkPackage` (`GET /api/v1/features/:slug/work-packages`)                                                                                                      |
+| Issue state group                    | `WorkPackage.state` snapped onto the nearest column group                                                                                                       |
+| `me` user / members / labels         | local stubs (read-only review)                                                                                                                                  |
 
 UUIDs required by Plane are derived deterministically (SHA-256 of a namespaced
 key) so the same feature/work-package always maps to the same id.
@@ -75,12 +75,12 @@ state columns.
 
 ## Config (env)
 
-| Var | Default | Meaning |
-| --- | --- | --- |
-| `PORT` | `8000` | shim listen port (must match `VITE_API_BASE_URL`) |
-| `AGILEPLUS_API_URL` | `http://localhost:4000` | AgilePlus Axum base URL |
-| `AGILEPLUS_API_KEY` | `dev-api-key` | key sent as `X-API-Key` to AgilePlus |
-| `WEB_ORIGIN` | `http://localhost:4400` | allowed credentialed CORS origin |
+| Var                 | Default                 | Meaning                                           |
+| ------------------- | ----------------------- | ------------------------------------------------- |
+| `PORT`              | `8000`                  | shim listen port (must match `VITE_API_BASE_URL`) |
+| `AGILEPLUS_API_URL` | `http://localhost:4000` | AgilePlus Axum base URL                           |
+| `AGILEPLUS_API_KEY` | `dev-api-key`           | key sent as `X-API-Key` to AgilePlus              |
+| `WEB_ORIGIN`        | `http://localhost:4400` | allowed credentialed CORS origin                  |
 
 ## What renders / what doesn't
 
@@ -90,6 +90,7 @@ fixtured AgilePlus (features → projects, work-packages → issues, correct
 Plane state groups).
 
 **Gaps (intentional, read-only candidate review):**
+
 - Writes (create/update/transition) are not mapped — board is read-only.
 - Labels, cycles, modules, members beyond `me`, comments, attachments return
   empty stubs.

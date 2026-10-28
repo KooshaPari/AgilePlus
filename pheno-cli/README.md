@@ -240,33 +240,33 @@ pheno publish --config /path/to/custom-config.toml --channel alpha --version 1.0
 
 All configuration values can be overridden with environment variables using the `PHENO_` prefix:
 
-| Variable              | Description                        |
-|-----------------------|------------------------------------|
-| `PHENO_NPM_TOKEN`     | npm registry authentication token |
-| `PHENO_PYPI_TOKEN`    | PyPI API token                     |
-| `PHENO_CRATES_TOKEN`  | crates.io API token                |
-| `PHENO_GO_PROXY`      | Go module proxy URL                |
-| `PHENO_HEX_API_KEY`   | Hex.pm API key                     |
-| `PHENO_DRY_RUN`       | Set to `true` to enable dry-run globally |
+| Variable             | Description                              |
+| -------------------- | ---------------------------------------- |
+| `PHENO_NPM_TOKEN`    | npm registry authentication token        |
+| `PHENO_PYPI_TOKEN`   | PyPI API token                           |
+| `PHENO_CRATES_TOKEN` | crates.io API token                      |
+| `PHENO_GO_PROXY`     | Go module proxy URL                      |
+| `PHENO_HEX_API_KEY`  | Hex.pm API key                           |
+| `PHENO_DRY_RUN`      | Set to `true` to enable dry-run globally |
 
 ## Adapter Status
 
-| Registry    | Status  | Languages          | Notes                              |
-|-------------|---------|--------------------|------------------------------------|
-| npm         | ✓       | TypeScript, JS     | Full publish, promote, verify      |
-| PyPI        | ✓       | Python             | Full publish, promote, verify      |
-| crates.io   | ✓       | Rust               | Full publish, promote, verify      |
-| Go          | ✓       | Go                 | Tag-based, proxy propagation check |
-| Hex.pm      | stub    | Elixir             | Detect only, publish pending       |
-| Zig         | stub    | Zig                | Detect only, publish pending       |
-| Mojo        | stub    | Mojo               | Detect only, publish pending       |
+| Registry  | Status | Languages      | Notes                              |
+| --------- | ------ | -------------- | ---------------------------------- |
+| npm       | ✓      | TypeScript, JS | Full publish, promote, verify      |
+| PyPI      | ✓      | Python         | Full publish, promote, verify      |
+| crates.io | ✓      | Rust           | Full publish, promote, verify      |
+| Go        | ✓      | Go             | Tag-based, proxy propagation check |
+| Hex.pm    | stub   | Elixir         | Detect only, publish pending       |
+| Zig       | stub   | Zig            | Detect only, publish pending       |
+| Mojo      | stub   | Mojo           | Detect only, publish pending       |
 
 ## Global Flags
 
 The following flags are available on all commands:
 
-| Flag        | Description                                      |
-|-------------|--------------------------------------------------|
+| Flag        | Description                                                |
+| ----------- | ---------------------------------------------------------- |
 | `--config`  | Path to config file (default: ~/.config/pheno/config.toml) |
-| `--verbose` | Enable verbose output                            |
-| `--help`    | Show help for any command                        |
+| `--verbose` | Enable verbose output                                      |
+| `--help`    | Show help for any command                                  |

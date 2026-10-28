@@ -13,64 +13,64 @@
 name: Quality Gate Check
 
 on:
-  workflow_call:
-    inputs:
-      language:
-        required: true
-        type: string
-        description: 'Programming language'
-      channel:
-        required: true
-        type: string
-        description: 'Release channel (alpha, beta, stable)'
-      risk_profile:
-        required: true
-        type: string
-        description: 'Risk profile (low, medium, high)'
+    workflow_call:
+        inputs:
+            language:
+                required: true
+                type: string
+                description: "Programming language"
+            channel:
+                required: true
+                type: string
+                description: "Release channel (alpha, beta, stable)"
+            risk_profile:
+                required: true
+                type: string
+                description: "Risk profile (low, medium, high)"
 
 permissions:
-  contents: read
+    contents: read
 
 jobs:
-  lint:
-    name: Lint (${{ inputs.language }})
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v7
-      - name: Set up toolchain
-        uses: dtolnay/rust-toolchain@stable
-      - name: cargo fmt --check
-        run: cargo fmt --all -- --check
-      - name: cargo clippy
-        run: cargo clippy --workspace --all-targets --locked -- -D warnings
-        continue-on-error: false
+    lint:
+        name: Lint (${{ inputs.language }})
+        runs-on: ubuntu-24.04
+        timeout-minutes: 20
+        steps:
+            - uses: actions/checkout@v7
+            - name: Set up toolchain
+              uses: dtolnay/rust-toolchain@stable
+            - name: cargo fmt --check
+              run: cargo fmt --all -- --check
+            - name: cargo clippy
+              run: cargo clippy --workspace --all-targets --locked -- -D warnings
+              continue-on-error: false
 
-  test:
-    name: Test (${{ inputs.language }})
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v7
-      - name: Set up toolchain
-        uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - name: cargo test
-        run: cargo test --workspace --locked --all-targets --no-fail-fast
+    test:
+        name: Test (${{ inputs.language }})
+        runs-on: ubuntu-24.04
+        timeout-minutes: 45
+        steps:
+            - uses: actions/checkout@v7
+            - name: Set up toolchain
+              uses: dtolnay/rust-toolchain@stable
+            - uses: Swatinem/rust-cache@v2
+            - name: cargo test
+              run: cargo test --workspace --locked --all-targets --no-fail-fast
 
-  audit:
-    name: Security audit
-    if: ${{ inputs.channel == 'stable' || inputs.risk_profile == 'high' }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-      - name: cargo-deny
-        uses: EmbarkStudios/cargo-deny-action@v2
-        with:
-          command: check
-          arguments: --hide-inclusion-graph
-      - name: cargo audit
-        run: |
-          cargo install --locked cargo-audit
-          cargo audit --deny warnings
+    audit:
+        name: Security audit
+        if: ${{ inputs.channel == 'stable' || inputs.risk_profile == 'high' }}
+        runs-on: ubuntu-24.04
+        timeout-minutes: 30
+        steps:
+            - uses: actions/checkout@v7
+            - name: cargo-deny
+              uses: EmbarkStudios/cargo-deny-action@v2
+              with:
+                  command: check
+                  arguments: --hide-inclusion-graph
+            - name: cargo audit
+              run: |
+                  cargo install --locked cargo-audit
+                  cargo audit --deny warnings

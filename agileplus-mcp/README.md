@@ -91,13 +91,19 @@ Register it with an MCP-aware client (example: Claude Desktop
 
 ```json
 {
-  "mcpServers": {
-    "agileplus": {
-      "command": "uv",
-      "args": ["run", "--directory", "/path/to/agileplus-mcp",
-               "python", "-m", "agileplus_mcp"]
+    "mcpServers": {
+        "agileplus": {
+            "command": "uv",
+            "args": [
+                "run",
+                "--directory",
+                "/path/to/agileplus-mcp",
+                "python",
+                "-m",
+                "agileplus_mcp"
+            ]
+        }
     }
-  }
 }
 ```
 
@@ -108,13 +114,13 @@ A connected agent can invoke any registered tool by name. Example MCP
 
 ```json
 {
-  "jsonrpc": "2.0",
-  "id": 1,
-  "method": "tools/call",
-  "params": {
-    "name": "health_check",
-    "arguments": {}
-  }
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+        "name": "health_check",
+        "arguments": {}
+    }
 }
 ```
 
@@ -122,10 +128,10 @@ Response (current scaffold output):
 
 ```json
 {
-  "status": "healthy",
-  "mcp_server": "ok",
-  "grpc_core": "unreachable",
-  "version": "0.1.0"
+    "status": "healthy",
+    "mcp_server": "ok",
+    "grpc_core": "unreachable",
+    "version": "0.1.0"
 }
 ```
 
@@ -133,11 +139,11 @@ A feature lookup looks like:
 
 ```json
 {
-  "method": "tools/call",
-  "params": {
-    "name": "get_feature",
-    "arguments": { "slug": "001-spec-engine" }
-  }
+    "method": "tools/call",
+    "params": {
+        "name": "get_feature",
+        "arguments": { "slug": "001-spec-engine" }
+    }
 }
 ```
 

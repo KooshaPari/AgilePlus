@@ -7,8 +7,8 @@ description: DEPRECATED — use `ap plan --tasks` instead. See docs/design/SPECK
 
 ## Migration
 
-| SpecKitty | AgilePlus (`ap`) |
-|-----------|-------------------|
+| SpecKitty           | AgilePlus (`ap`)               |
+| ------------------- | ------------------------------ |
 | `/spec-kitty.tasks` | `ap plan --tasks <feature-id>` |
 
 ```bash

@@ -11,6 +11,7 @@
 - `agileplus-cli`: 21 (cascade + `crate::builder`/command wiring)
 
 Dominant domain clusters:
+
 - **9× E0195** in `ports.rs` — `#[async_trait]` blanket impls (`impl<T: StoragePort> StoryRepository/EpicRepository/ProjectRepository for T`) have lifetime/sig drift vs the trait defs in `ports/{story,epic,project}.rs`.
 - **DomainError** missing `Other` + `NoOpTransition` variants (`error.rs:27`).
 - **Story.requirement_id** field dropped (`domain/story.rs:71`) but still used by `ports/story.rs:28-40` (E0609 ×2).
@@ -30,20 +31,20 @@ Dominant domain clusters:
 
 ## Work-packages (WBS)
 
-| WP | title | crate | file_scope | error codes | fix | depends_on | eff |
-|----|-------|-------|-----------|-------------|-----|-----------|-----|
-| U1 | DomainError variants | domain | `src/error.rs` | E0599 (Other, NoOpTransition) | add 2 enum variants + Display arms | — | S |
-| U2 | Restore Story.requirement_id | domain | `src/domain/story.rs`, `src/ports/story.rs` | E0609 ×2 | add `requirement_id: Option<String>` field + constructor/serde | — | S |
-| U3 | backlog dedup + exhaustive | domain | `src/domain/backlog.rs` | E0592, E0004, E0034 | remove duplicate `default_priority` (keep one), add `Intent::Docs` match arm | — | S |
-| U4 | ports trait/impl align | domain | `src/ports.rs`, `src/ports/{story,epic,project}.rs` | E0195 ×9 | align trait method sigs with `#[async_trait]` blanket impls (lifetimes) | U1 | M |
-| U5 | builder/feature import repoint | domain | `src/intent_graph.rs`, `src/domain/api_key.rs`, `src/lib.rs` | E0432 (crate::builder, hex_bytes) | re-point to traceability_core / retained module; restore `hex_bytes` vis | U1 | M |
-| U6 | cycle DomainError refs | domain | `src/domain/cycle/{entity,state}.rs` | E0599 ×3 | use restored DomainError variants (from U1) | U1 | S |
-| U7 | state_machine LifecycleError map | domain | `src/domain/state_machine.rs` | E0308 ×2, E0428 (dup tests) | map to LifecycleError; remove duplicate `tests` mod | U1 | S |
-| U8 | credentials cfg/deps verify | domain | `src/credentials/*` | (resolves w/ deps) | confirm zeroize/keychain compile now deps wired; gate keychain behind cfg | — | S |
-| U9 | domain green gate | domain | (whole crate) | — | `cargo check -p agileplus-domain` == 0 | U1–U8 | S |
-| U10 | application reconcile | application | (triage on green domain) | ~21 | re-run check; fix cascade + own drift | U9 | M |
-| U11 | cli reconcile + builder cmd | cli | `src/commands/*`, `src/main.rs` | ~21 | fix cascade; wire `specify`/`plan`/`gate-run` command paths | U10 | M |
-| U12 | full engine green gate | all | — | — | `cargo build -p agileplus-cli` == 0 | U11 | S |
+| WP  | title                            | crate       | file_scope                                                   | error codes                       | fix                                                                          | depends_on | eff |
+| --- | -------------------------------- | ----------- | ------------------------------------------------------------ | --------------------------------- | ---------------------------------------------------------------------------- | ---------- | --- |
+| U1  | DomainError variants             | domain      | `src/error.rs`                                               | E0599 (Other, NoOpTransition)     | add 2 enum variants + Display arms                                           | —          | S   |
+| U2  | Restore Story.requirement_id     | domain      | `src/domain/story.rs`, `src/ports/story.rs`                  | E0609 ×2                          | add `requirement_id: Option<String>` field + constructor/serde               | —          | S   |
+| U3  | backlog dedup + exhaustive       | domain      | `src/domain/backlog.rs`                                      | E0592, E0004, E0034               | remove duplicate `default_priority` (keep one), add `Intent::Docs` match arm | —          | S   |
+| U4  | ports trait/impl align           | domain      | `src/ports.rs`, `src/ports/{story,epic,project}.rs`          | E0195 ×9                          | align trait method sigs with `#[async_trait]` blanket impls (lifetimes)      | U1         | M   |
+| U5  | builder/feature import repoint   | domain      | `src/intent_graph.rs`, `src/domain/api_key.rs`, `src/lib.rs` | E0432 (crate::builder, hex_bytes) | re-point to traceability_core / retained module; restore `hex_bytes` vis     | U1         | M   |
+| U6  | cycle DomainError refs           | domain      | `src/domain/cycle/{entity,state}.rs`                         | E0599 ×3                          | use restored DomainError variants (from U1)                                  | U1         | S   |
+| U7  | state_machine LifecycleError map | domain      | `src/domain/state_machine.rs`                                | E0308 ×2, E0428 (dup tests)       | map to LifecycleError; remove duplicate `tests` mod                          | U1         | S   |
+| U8  | credentials cfg/deps verify      | domain      | `src/credentials/*`                                          | (resolves w/ deps)                | confirm zeroize/keychain compile now deps wired; gate keychain behind cfg    | —          | S   |
+| U9  | domain green gate                | domain      | (whole crate)                                                | —                                 | `cargo check -p agileplus-domain` == 0                                       | U1–U8      | S   |
+| U10 | application reconcile            | application | (triage on green domain)                                     | ~21                               | re-run check; fix cascade + own drift                                        | U9         | M   |
+| U11 | cli reconcile + builder cmd      | cli         | `src/commands/*`, `src/main.rs`                              | ~21                               | fix cascade; wire `specify`/`plan`/`gate-run` command paths                  | U10        | M   |
+| U12 | full engine green gate           | all         | —                                                            | —                                 | `cargo build -p agileplus-cli` == 0                                          | U11        | S   |
 
 ## PR grouping (dependency-ordered, each independently mergeable)
 

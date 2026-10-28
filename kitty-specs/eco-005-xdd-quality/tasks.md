@@ -155,11 +155,11 @@ Create `docs/guides/xdd-onboarding.md` so every contributor (human or agent) und
 ### Acceptance Criteria
 
 - [ ] `docs/guides/xdd-onboarding.md` exists with:
-  - Explanation of why XDD matters for AgilePlus
-  - List of all quality gates and what they check
-  - Step-by-step setup instructions (tool installation, pre-commit enablement)
-  - How to handle false positives and add accepted-violation comments
-  - Links to relevant governance docs (CLAUDE.md, QA_GOVERNANCE.md)
+    - Explanation of why XDD matters for AgilePlus
+    - List of all quality gates and what they check
+    - Step-by-step setup instructions (tool installation, pre-commit enablement)
+    - How to handle false positives and add accepted-violation comments
+    - Links to relevant governance docs (CLAUDE.md, QA_GOVERNANCE.md)
 - [ ] `AGENTS.md` references the onboarding doc for agent contributors
 - [ ] Onboarding doc is tested by a new contributor (human or agent walkthrough)
 

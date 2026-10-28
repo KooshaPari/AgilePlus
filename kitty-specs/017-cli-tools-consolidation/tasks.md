@@ -14,18 +14,19 @@
 - Read: [cliproxyapi-plusplus repository (src/, tests/, docs/)]
 - Write: [cliproxyapi-plusplus repository (src/, tests/, docs/)]
 - **Acceptance Criteria:**
-  - LLM proxy supporting 8+ providers (OpenAI, Anthropic, Google, Mistral, Cohere, Groq, Ollama, local)
-  - Request routing, rate limiting, and retry logic per provider
-  - Response streaming support for all providers
-  - Provider-agnostic API with consistent error handling
-  - Integration hooks for agentapi-plusplus
-  - ≥80% test coverage on proxy core
-  - All quality checks passing
+    - LLM proxy supporting 8+ providers (OpenAI, Anthropic, Google, Mistral, Cohere, Groq, Ollama, local)
+    - Request routing, rate limiting, and retry logic per provider
+    - Response streaming support for all providers
+    - Provider-agnostic API with consistent error handling
+    - Integration hooks for agentapi-plusplus
+    - ≥80% test coverage on proxy core
+    - All quality checks passing
 - **Estimated Effort:** L
 
 Complete cliproxyapi-plusplus as the LLM proxy with support for 8+ providers. This serves as the unified interface for all LLM API calls, handling provider-specific quirks, rate limiting, retries, and streaming. It integrates with agentapi-plusplus for agent-facing API access.
 
 ### Subtasks
+
 - [x] T001 Audit current cliproxyapi-plusplus: existing providers, gaps, architecture
 - [x] T002 Design provider abstraction: unified request/response types, provider-specific adapters
 - [ ] T003 Implement OpenAI provider adapter (chat completions, embeddings, streaming)
@@ -43,9 +44,11 @@ Complete cliproxyapi-plusplus as the LLM proxy with support for 8+ providers. Th
 - [ ] T015 Run quality checks: `cargo test` / `npm test`, linter, formatter
 
 ### Dependencies
+
 - None (can start independently)
 
 ### Risks & Mitigations
+
 - Provider API changes: Abstract provider interfaces, test against provider SDKs
 - Rate limit complexity: Use well-tested rate limiting library, document limits per provider
 
@@ -59,18 +62,19 @@ Complete cliproxyapi-plusplus as the LLM proxy with support for 8+ providers. Th
 - Read: [agentapi-plusplus repository (src/, tests/, docs/)]
 - Write: [agentapi-plusplus repository (src/, tests/, docs/)]
 - **Acceptance Criteria:**
-  - Complete HTTP API for CLI agent interactions (dispatch, status, results)
-  - No functionality duplication with cliproxyapi-plusplus (clear boundary: proxy vs. agent API)
-  - Authentication and authorization for API endpoints
-  - WebSocket support for real-time agent status updates
-  - Integration with cliproxyapi-plusplus for LLM calls
-  - ≥80% test coverage on API handlers
-  - All quality checks passing
+    - Complete HTTP API for CLI agent interactions (dispatch, status, results)
+    - No functionality duplication with cliproxyapi-plusplus (clear boundary: proxy vs. agent API)
+    - Authentication and authorization for API endpoints
+    - WebSocket support for real-time agent status updates
+    - Integration with cliproxyapi-plusplus for LLM calls
+    - ≥80% test coverage on API handlers
+    - All quality checks passing
 - **Estimated Effort:** M
 
 Complete agentapi-plusplus as the HTTP API for CLI agent interactions. This API handles agent dispatch, status queries, and result retrieval — distinct from cliproxyapi-plusplus which handles LLM proxying. The two components integrate but have clear boundaries.
 
 ### Subtasks
+
 - [ ] T016 Audit current agentapi-plusplus: existing endpoints, gaps, overlap with cliproxyapi
 - [ ] T017 Define API boundary: what belongs in agent API vs. LLM proxy
 - [ ] T018 Implement agent dispatch endpoint: create agent task, assign to cliproxyapi
@@ -85,9 +89,11 @@ Complete agentapi-plusplus as the HTTP API for CLI agent interactions. This API 
 - [ ] T027 Run quality checks: `cargo test` / `npm test`, linter, formatter
 
 ### Dependencies
+
 - WP-001 (cliproxyapi-plusplus integration API defined)
 
 ### Risks & Mitigations
+
 - API boundary confusion: Clear documentation, separate codebases, integration tests verify boundaries
 - WebSocket scalability: Document connection limits, implement connection pooling
 
@@ -101,17 +107,18 @@ Complete agentapi-plusplus as the HTTP API for CLI agent interactions. This API 
 - Read: [Cmdra repository (src/, tests/, docs/)]
 - Write: [Cmdra repository (src/, tests/, docs/)]
 - **Acceptance Criteria:**
-  - Complete CLI framework with command registration, argument parsing, and help generation
-  - Plugin system for CLI extensions
-  - Consistent command patterns: subcommands, flags, positional args
-  - Adoption by all other CLI tools in this spec (cliproxyapi, agentapi, forgecode)
-  - ≥80% test coverage on framework core
-  - All quality checks passing
+    - Complete CLI framework with command registration, argument parsing, and help generation
+    - Plugin system for CLI extensions
+    - Consistent command patterns: subcommands, flags, positional args
+    - Adoption by all other CLI tools in this spec (cliproxyapi, agentapi, forgecode)
+    - ≥80% test coverage on framework core
+    - All quality checks passing
 - **Estimated Effort:** L
 
 Complete Cmdra as the universal CLI framework adopted by all CLI tools in this consolidation. Cmdra provides command registration, argument parsing, help generation, and a plugin system for extensions. All other CLI tools migrate to use Cmdra as their framework.
 
 ### Subtasks
+
 - [ ] T028 Audit current Cmdra: existing framework code, gaps, plugin system status
 - [ ] T029 Complete command registration: hierarchical commands, subcommands, aliases
 - [ ] T030 Complete argument parsing: flags, positional args, validation, defaults
@@ -125,9 +132,11 @@ Complete Cmdra as the universal CLI framework adopted by all CLI tools in this c
 - [ ] T038 Run quality checks: `cargo test`, `cargo clippy -- -D warnings`, `cargo fmt`
 
 ### Dependencies
+
 - None (can start in parallel with WP-001)
 
 ### Risks & Mitigations
+
 - Framework adoption resistance: Provide migration guides, backward-compatible adapters
 - Plugin system complexity: Start simple (file-based discovery), add advanced features incrementally
 
@@ -141,17 +150,18 @@ Complete Cmdra as the universal CLI framework adopted by all CLI tools in this c
 - Read: [forgecode repository (src/, tests/, docs/)]
 - Write: [forgecode repository (src/, tests/, docs/)]
 - **Acceptance Criteria:**
-  - Complete git workflow framework: branch management, PR creation, review loops
-  - Integrated with Cmdra CLI framework (forgecode commands use Cmdra)
-  - Conventional commit enforcement
-  - Worktree management for parallel development
-  - ≥80% test coverage on workflow core
-  - All quality checks passing
+    - Complete git workflow framework: branch management, PR creation, review loops
+    - Integrated with Cmdra CLI framework (forgecode commands use Cmdra)
+    - Conventional commit enforcement
+    - Worktree management for parallel development
+    - ≥80% test coverage on workflow core
+    - All quality checks passing
 - **Estimated Effort:** M
 
 Complete forgecode as the git workflow framework, integrated with Cmdra. forgecode handles branch management, PR creation, review loops, and worktree operations — all accessible through Cmdra-based CLI commands.
 
 ### Subtasks
+
 - [ ] T039 Audit current forgecode: existing workflows, gaps, Cmdra integration status
 - [ ] T040 Complete branch workflow: create branch from spec, checkout, merge to target
 - [ ] T041 Complete PR workflow: create PR with structured description, set reviewers
@@ -165,9 +175,11 @@ Complete forgecode as the git workflow framework, integrated with Cmdra. forgeco
 - [ ] T049 Run quality checks: `cargo test`, `cargo clippy -- -D warnings`, `cargo fmt`
 
 ### Dependencies
+
 - WP-003 (Cmdra framework available for integration)
 
 ### Risks & Mitigations
+
 - Git operation complexity: Use git2 crate, test on macOS and Linux
 - Review loop reliability: Implement timeout, max retry count, graceful failure
 
@@ -181,17 +193,18 @@ Complete forgecode as the git workflow framework, integrated with Cmdra. forgeco
 - Read: [thegent-sharecli repository, thegent-cli-share repository]
 - Write: [thegent-sharecli repository, thegent-cli-share repository]
 - **Acceptance Criteria:**
-  - Decision documented: which repo is kept, which is archived, rationale
-  - All functionality from both repos preserved in the kept implementation
-  - Kept implementation integrated with Cmdra CLI framework
-  - Archived repo README documents migration path
-  - No broken references in active tooling
-  - All quality checks passing on merged implementation
+    - Decision documented: which repo is kept, which is archived, rationale
+    - All functionality from both repos preserved in the kept implementation
+    - Kept implementation integrated with Cmdra CLI framework
+    - Archived repo README documents migration path
+    - No broken references in active tooling
+    - All quality checks passing on merged implementation
 - **Estimated Effort:** S
 
 Resolve the duplication between thegent-sharecli and thegent-cli-share by auditing both, deciding which to keep, merging functionality, and archiving the other. The kept implementation is migrated to use Cmdra as its CLI framework.
 
 ### Subtasks
+
 - [ ] T050 Audit thegent-sharecli: features, code quality, dependencies, test coverage
 - [ ] T051 Audit thegent-cli-share: features, code quality, dependencies, test coverage
 - [ ] T052 Compare feature overlap: identify unique features in each, common functionality
@@ -205,9 +218,11 @@ Resolve the duplication between thegent-sharecli and thegent-cli-share by auditi
 - [ ] T060 Run quality checks on merged implementation
 
 ### Dependencies
+
 - WP-003 (Cmdra framework available for migration)
 
 ### Risks & Mitigations
+
 - Functionality loss during merge: Comprehensive feature audit (T050-T052) before decision
 - Broken references: Systematic search across all repos before archival
 
@@ -221,18 +236,19 @@ Resolve the duplication between thegent-sharecli and thegent-cli-share by auditi
 - Read: [thegent-subprocess repository (src/, tests/, docs/), thegent main repository]
 - Write: [thegent-subprocess repository (src/, tests/, docs/), thegent main repository]
 - **Acceptance Criteria:**
-  - Complete subprocess management library: spawn, monitor, communicate, cleanup
-  - Integrated with Cmdra CLI framework (subprocess commands via Cmdra)
-  - Integrated with thegent main application
-  - Stream handling: stdin, stdout, stderr with buffering
-  - Timeout and signal handling
-  - ≥80% test coverage on subprocess core
-  - All quality checks passing
+    - Complete subprocess management library: spawn, monitor, communicate, cleanup
+    - Integrated with Cmdra CLI framework (subprocess commands via Cmdra)
+    - Integrated with thegent main application
+    - Stream handling: stdin, stdout, stderr with buffering
+    - Timeout and signal handling
+    - ≥80% test coverage on subprocess core
+    - All quality checks passing
 - **Estimated Effort:** M
 
 Complete thegent-subprocess as the subprocess management library for thegent. This handles spawning, monitoring, and communicating with subprocesses — essential for agent execution, tool invocation, and CLI command orchestration.
 
 ### Subtasks
+
 - [ ] T061 Audit current thegent-subprocess: existing code, gaps, integration status
 - [ ] T062 Implement subprocess spawning: configurable command, environment, working directory
 - [ ] T063 Implement stream handling: stdin write, stdout/stderr read, buffering
@@ -248,9 +264,11 @@ Complete thegent-subprocess as the subprocess management library for thegent. Th
 - [ ] T073 Run quality checks across all components
 
 ### Dependencies
+
 - WP-003 (Cmdra framework available for integration)
 
 ### Risks & Mitigations
+
 - Subprocess reliability: Test on macOS and Linux, handle platform-specific behaviors
 - Resource leaks: Implement strict cleanup, test parent exit scenarios
 

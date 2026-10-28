@@ -5,16 +5,16 @@ lane: "done"
 dependencies: []
 base_branch: main
 base_commit: 8a8390c6e3d118f4898dfd1fba2fb0b67224c555
-created_at: '2026-03-02T12:17:18.845837+00:00'
+created_at: "2026-03-02T12:17:18.845837+00:00"
 subtasks: [T095, T096, T097, T098, T099]
 shell_pid: "54708"
 agent: "claude-opus"
 reviewed_by: "Koosha Paridehpour"
 review_status: "approved"
 history:
-- date: '2026-03-02'
-  action: created
-  by: spec-kitty
+    - date: "2026-03-02"
+      action: created
+      by: spec-kitty
 ---
 
 # WP16: P2P Sync via Tailscale
@@ -48,6 +48,7 @@ uuid = { version = "1.0", features = ["v4", "serde"] }
 ```
 
 Define error types for P2P operations:
+
 - `PeerDiscoveryError`
 - `SyncError`
 - `ConnectionError`
@@ -57,6 +58,7 @@ Define error types for P2P operations:
 Implement peer discovery by connecting to the Tailscale local API socket:
 
 **Paths by platform:**
+
 - Linux: `/var/run/tailscale/tailscaled.sock`
 - macOS: Use `tailscale` CLI to find socket path or read from environment
 - Windows: Not supported in initial release
@@ -87,6 +89,7 @@ pub enum PeerStatus {
 ```
 
 Peer detection strategy:
+
 1. Query Tailscale local API for peer list
 2. For each peer, attempt to connect to AgilePlus port (default 3000) with short timeout (2 seconds)
 3. If connection succeeds, mark peer as `Online` with AgilePlus detected
@@ -97,23 +100,25 @@ Peer detection strategy:
 Implement device registration in `src/device.rs`:
 
 On first run of the AgilePlus instance:
+
 1. Generate a unique `device_id` as UUID v4
 2. Query Tailscale local API for:
-   - Local hostname
-   - Assigned Tailscale IP address
+    - Local hostname
+    - Assigned Tailscale IP address
 3. Create a `DeviceNode` entity in SQLite:
-   ```rust
-   pub struct DeviceNode {
-       pub device_id: String,
-       pub hostname: String,
-       pub tailscale_ip: String,
-       pub created_at: DateTime<Utc>,
-   }
-   ```
+    ```rust
+    pub struct DeviceNode {
+        pub device_id: String,
+        pub hostname: String,
+        pub tailscale_ip: String,
+        pub created_at: DateTime<Utc>,
+    }
+    ```
 4. Initialize sync vector as empty JSON map: `SyncVector: HashMap<(entity_type, entity_id), u64>`
 5. Store device info persistently in SQLite for recovery
 
 Provide:
+
 - `register_device(db) -> Result<DeviceNode>` — creates or retrieves existing device
 - `get_local_device(db) -> Result<Option<DeviceNode>>` — fetch local device info
 
@@ -122,12 +127,14 @@ Provide:
 Implement event replication in `src/replication.rs`:
 
 When peers are discovered:
+
 1. Establish connection to peer's NATS instance: `nats://{peer_tailscale_ip}:4222`
 2. Subscribe to subject: `agileplus.sync.device.{local_device_id}`
 3. Publish local events to: `agileplus.sync.device.{peer_device_id}` on the peer's NATS
 4. Use NATS JetStream for reliable delivery with message persistence
 
 Provide:
+
 ```rust
 pub async fn replicate_events(
     local_device_id: &str,
@@ -142,6 +149,7 @@ pub async fn replicate_events(
 ```
 
 Handle connection failures gracefully:
+
 - Retry with exponential backoff (max 3 retries, 1s, 2s, 4s)
 - Log failures with peer device_id
 - Continue processing other peers
@@ -153,15 +161,17 @@ Implement vector clock synchronization in `src/vector_clock.rs`:
 Each device maintains a `SyncVector: Map<(entity_type, entity_id), last_sequence>`.
 
 Sync algorithm:
+
 1. **Exchange vectors**: Device A sends its sync vector to Device B
 2. **Identify missing**: For each entity, calculate:
-   - Events A has that B is missing: `A[entity] > B[entity]`
-   - Events B has that A is missing: `B[entity] > A[entity]`
+    - Events A has that B is missing: `A[entity] > B[entity]`
+    - Events B has that A is missing: `B[entity] > A[entity]`
 3. **Transfer missing**: Exchange missing events based on sequence number range
 4. **Apply via sync orchestrator**: Use `SyncOrchestrator::apply_events()` with conflict resolution
 5. **Update vectors**: Advance local sync vector for each entity to max(local, peer)
 
 Provide:
+
 ```rust
 pub struct SyncVector {
     pub device_id: String,

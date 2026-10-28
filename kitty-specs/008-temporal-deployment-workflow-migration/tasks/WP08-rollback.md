@@ -21,6 +21,7 @@ Ensure NATS can be restored as the primary workflow engine within 10 minutes of 
 After WP03/WP04/WP05, all workflow logic has been migrated to Temporal and Hatchet. NATS still runs but is idle for workflow purposes (it's retained as a pure event bus in WP09).
 
 The rollback procedure:
+
 1. Feature flag `WORKFLOW_ENGINE` switches between `temporal`, `hatchet`, and `nats`
 2. All dispatch callers read this env var and route accordingly
 3. NATS workflow logic is preserved in a git branch until the 48-hour observation period confirms success
@@ -103,12 +104,13 @@ echo "Rollback branch: rollback/nats-workflow-logic" >> docs/ROLLBACK.md
 
 ### 4. `docs/ROLLBACK.md`
 
-```markdown
+````markdown
 # Rollback Procedure: NATS JetStream Workflow Restoration
 
 ## When to Roll Back
 
 Trigger rollback if ANY of:
+
 - SC-007 fails: NATS cannot be restored within 10 minutes
 - SC-003 fails: Temporal completion rate < 95% for > 15 minutes
 - Temporal server is down for > 30 minutes with no recovery
@@ -117,13 +119,16 @@ Trigger rollback if ANY of:
 ## Rollback Procedure
 
 ### Step 1: Declare rollback
+
 ```bash
 # Alert the team
 curl -X POST "$SLACK_WEBHOOK_URL" \
   -d '{"text":"🚨 ROLLBACK: Switching WORKFLOW_ENGINE=nats"}'
 ```
+````
 
 ### Step 2: Toggle feature flag
+
 ```bash
 # In process-compose.yml or .env:
 WORKFLOW_ENGINE=nats
@@ -139,6 +144,7 @@ docker compose up -d nats-worker-data-sync
 ```
 
 ### Step 3: Verify NATS is accepting work
+
 ```bash
 # Submit a test dispatch
 nats pub agent.dispatch '{"task_id":"rollback-test-001","agent_type":"code","prompt":"echo rollback-test","context":{}}'
@@ -148,6 +154,7 @@ nats sub agent.dispatch  --count=1
 ```
 
 ### Step 4: Monitor for 1 hour
+
 ```bash
 # Watch NATS consumer lag
 docker logs nats-worker-agent-dispatch --tail=100 | grep -E "received|completed|failed"
@@ -157,6 +164,7 @@ curl -s localhost:8080/metrics | grep nats_dispatch_latency
 ```
 
 ### Step 5: Confirm rollback complete
+
 ```bash
 # Verify all new dispatches go to NATS
 curl -s http://localhost:8080/metrics | grep temporal_workflow_started_total
@@ -168,22 +176,24 @@ curl -s http://localhost:8222/metrics | grep nats_dispatch_total
 
 ## Time Budget
 
-| Step | Target Time |
-|------|-------------|
-| Declare rollback | 1 minute |
-| Toggle env var + restart | 5 minutes |
-| Verify NATS accepting work | 3 minutes |
-| Monitor 1 hour | 60 minutes |
-| **Total** | **< 10 minutes to confirmed recovery** |
+| Step                       | Target Time                            |
+| -------------------------- | -------------------------------------- |
+| Declare rollback           | 1 minute                               |
+| Toggle env var + restart   | 5 minutes                              |
+| Verify NATS accepting work | 3 minutes                              |
+| Monitor 1 hour             | 60 minutes                             |
+| **Total**                  | **< 10 minutes to confirmed recovery** |
 
 ## Post-Rollback Investigation
 
 After rollback is confirmed:
+
 1. Collect Temporal logs: `docker logs temporal --tail=1000 > temporal-crash-$(date +%Y%m%d).log`
 2. Collect Jaeger traces leading up to failure
 3. Open incident report in Plane.so
 4. Do not attempt re-migration until root cause is identified
-```
+
+````
 
 ### 5. Rollback Test (execute before WP09)
 
@@ -224,7 +234,7 @@ docker compose -f infra/temporal/docker-compose.yml up -d
 sleep 30
 
 echo "✅ Rollback test complete. Total time: $SECONDS seconds"
-```
+````
 
 ## Acceptance Criteria
 

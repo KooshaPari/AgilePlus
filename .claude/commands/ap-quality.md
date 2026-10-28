@@ -41,4 +41,3 @@ try {
 
 - This mirrors the repo gates in `AGENTS.md` and CI.
 - It may fail if optional Python tooling is unavailable locally.
-

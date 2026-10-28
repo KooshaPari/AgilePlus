@@ -19,28 +19,28 @@ Classification vocabulary:
 
 ## Generation map
 
-| Surface | Current disposition | Reason |
-|---|---|---|
-| `docs/harmonization/FRAMEWORK_ANALYSIS.md` | **KEEP + REFRESH** | Valuable broad framework decomposition. Needs current-source/version refresh and evidence qualification; should feed SOTA subtree rather than act as architecture authority. |
-| `UNIFIED_PM_MODEL.md` | **ADAPT / PARTIAL SUPERSESSION** | Strong synthesis of artifacts/gates/frameworks; runtime premise that Tracera must embed AgilePlus is superseded by ADR-0018. |
-| ADR-0012 unified artifact set | **ADAPT** | Single durable authority is valuable; hard-coding `kitty-specs/` as sole eternal root may overfit one framework and conflicts with owner preference for OpenSpec velocity. Need artifact-role authority independent of folder brand. |
-| ADR-0013 eight-stage lifecycle | **ADAPT** | A common lifecycle vocabulary is useful, but fixed eight-stage passage is too rigid as universal execution semantics. Preserve adaptive-depth/quick-mode and separate durable state from presentation stages. |
-| ADR-0014 unified traceability | **ADAPT** | Alias mapping and bidirectional evidence are valuable. A single RequirementId namespace is too requirement-centric for the broader Tracera product ontology and cross-projection identities. |
-| ADR-0015 process machine over checklist | **KEEP CORE / PARTIAL SUPERSESSION** | AgilePlus should enforce execution progression with a process machine. Tracera need not be embedded or subordinate. |
-| ADR-0016 five-layer framework stack | **ADAPT** | Useful mental model for outcomes/governance/delivery/execution/evidence. Must not become a mandatory ontology or runtime-ownership hierarchy. |
-| ADR-0017 embedding migration | **SUPERSEDE** | Mandatory Tracera embedding conflicts with current owner intent and three-lifetime model. |
-| ADR-0018 sibling runtimes | **KEEP / CURRENT** | Current ownership boundary: AgilePlus work truth; Tracera product truth; explicit federation. |
-| `handbook/specs/assessment/agent-lab-dossiers-v1.1` | **KEEP + MERGE INTO MACE CORE** | Assignment, epoch, criterion, subject snapshot, claim/lease, grader/evidence concepts directly support the desired autograder architecture. Must reconcile duplicate schema authority with mature contract rather than remain a side dossier. |
-| `crates/agileplus-triage::claim` + SQLite claim store | **KEEP + HARDEN** | Real claim/lease primitive exists. Needs explicit attempt/development identity, authority transfer, restart/multi-process tests, stale lease handling and MACE linkage. |
-| application triage `AppState` | **ADAPT** | Useful orchestration seam, but comments/code still expose temporary in-memory implementations and shadow graph primitives. Must converge on durable ports rather than duplicate future APIs. |
-| worktree isolation | **KEEP AS PROFILED DEFAULT** | Strong agent isolation primitive. Do not assume every read-only/research operation needs a worktree; substantive mutation does. Disk-floor values are environment policy, not universal product ontology. |
-| existing `kitty-specs/` | **KEEP AS CURRENT INGEST/COMPATIBILITY SURFACE** | Large installed base. Do not make folder name equal product ontology. Harmonizer should allow alternate methods without duplicate authority. |
-| old Spec-Kitty command shims | **RETIRE AFTER COMPATIBILITY WINDOW** | Many are already marked deprecated in favor of `ap`. Keep historical/read compatibility until migration evidence closes. |
-| triple/parallel spec roots | **MERGE BY AUTHORITY, NOT JUST PATH** | The true problem is conflicting durable authority, not merely multiple directories. External method artifacts may remain if their authority/derivation is explicit. |
-| FR/NFR-only spine | **ADAPT** | Useful requirement IDs, but assignment/product/work ontology is broader than requirements. Preserve IDs as one entity family, not the universal identity type. |
-| hash-chained worklogs/event evidence | **KEEP + VERIFY** | Strong transactional/evidence primitive. Must bind exact attempt/candidate/evaluator and integrate with Git ledger rather than replace it. |
-| framework-specific personas | **CONDITIONAL** | BMAD role separation may improve depth for complex work; do not impose persona ceremony on small changes. |
-| fixed framework-by-change-type selection | **ADAPT INTO ADAPTIVE COMPILER** | Replace static mapping (bug→GSD, feature→Kitty, epic→BMAD) with measurable rigor dimensions: risk, uncertainty, novelty, blast radius, reversibility, security, migration, scope. |
+| Surface                                               | Current disposition                              | Reason                                                                                                                                                                                                                                        |
+| ----------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/harmonization/FRAMEWORK_ANALYSIS.md`            | **KEEP + REFRESH**                               | Valuable broad framework decomposition. Needs current-source/version refresh and evidence qualification; should feed SOTA subtree rather than act as architecture authority.                                                                  |
+| `UNIFIED_PM_MODEL.md`                                 | **ADAPT / PARTIAL SUPERSESSION**                 | Strong synthesis of artifacts/gates/frameworks; runtime premise that Tracera must embed AgilePlus is superseded by ADR-0018.                                                                                                                  |
+| ADR-0012 unified artifact set                         | **ADAPT**                                        | Single durable authority is valuable; hard-coding `kitty-specs/` as sole eternal root may overfit one framework and conflicts with owner preference for OpenSpec velocity. Need artifact-role authority independent of folder brand.          |
+| ADR-0013 eight-stage lifecycle                        | **ADAPT**                                        | A common lifecycle vocabulary is useful, but fixed eight-stage passage is too rigid as universal execution semantics. Preserve adaptive-depth/quick-mode and separate durable state from presentation stages.                                 |
+| ADR-0014 unified traceability                         | **ADAPT**                                        | Alias mapping and bidirectional evidence are valuable. A single RequirementId namespace is too requirement-centric for the broader Tracera product ontology and cross-projection identities.                                                  |
+| ADR-0015 process machine over checklist               | **KEEP CORE / PARTIAL SUPERSESSION**             | AgilePlus should enforce execution progression with a process machine. Tracera need not be embedded or subordinate.                                                                                                                           |
+| ADR-0016 five-layer framework stack                   | **ADAPT**                                        | Useful mental model for outcomes/governance/delivery/execution/evidence. Must not become a mandatory ontology or runtime-ownership hierarchy.                                                                                                 |
+| ADR-0017 embedding migration                          | **SUPERSEDE**                                    | Mandatory Tracera embedding conflicts with current owner intent and three-lifetime model.                                                                                                                                                     |
+| ADR-0018 sibling runtimes                             | **KEEP / CURRENT**                               | Current ownership boundary: AgilePlus work truth; Tracera product truth; explicit federation.                                                                                                                                                 |
+| `handbook/specs/assessment/agent-lab-dossiers-v1.1`   | **KEEP + MERGE INTO MACE CORE**                  | Assignment, epoch, criterion, subject snapshot, claim/lease, grader/evidence concepts directly support the desired autograder architecture. Must reconcile duplicate schema authority with mature contract rather than remain a side dossier. |
+| `crates/agileplus-triage::claim` + SQLite claim store | **KEEP + HARDEN**                                | Real claim/lease primitive exists. Needs explicit attempt/development identity, authority transfer, restart/multi-process tests, stale lease handling and MACE linkage.                                                                       |
+| application triage `AppState`                         | **ADAPT**                                        | Useful orchestration seam, but comments/code still expose temporary in-memory implementations and shadow graph primitives. Must converge on durable ports rather than duplicate future APIs.                                                  |
+| worktree isolation                                    | **KEEP AS PROFILED DEFAULT**                     | Strong agent isolation primitive. Do not assume every read-only/research operation needs a worktree; substantive mutation does. Disk-floor values are environment policy, not universal product ontology.                                     |
+| existing `kitty-specs/`                               | **KEEP AS CURRENT INGEST/COMPATIBILITY SURFACE** | Large installed base. Do not make folder name equal product ontology. Harmonizer should allow alternate methods without duplicate authority.                                                                                                  |
+| old Spec-Kitty command shims                          | **RETIRE AFTER COMPATIBILITY WINDOW**            | Many are already marked deprecated in favor of `ap`. Keep historical/read compatibility until migration evidence closes.                                                                                                                      |
+| triple/parallel spec roots                            | **MERGE BY AUTHORITY, NOT JUST PATH**            | The true problem is conflicting durable authority, not merely multiple directories. External method artifacts may remain if their authority/derivation is explicit.                                                                           |
+| FR/NFR-only spine                                     | **ADAPT**                                        | Useful requirement IDs, but assignment/product/work ontology is broader than requirements. Preserve IDs as one entity family, not the universal identity type.                                                                                |
+| hash-chained worklogs/event evidence                  | **KEEP + VERIFY**                                | Strong transactional/evidence primitive. Must bind exact attempt/candidate/evaluator and integrate with Git ledger rather than replace it.                                                                                                    |
+| framework-specific personas                           | **CONDITIONAL**                                  | BMAD role separation may improve depth for complex work; do not impose persona ceremony on small changes.                                                                                                                                     |
+| fixed framework-by-change-type selection              | **ADAPT INTO ADAPTIVE COMPILER**                 | Replace static mapping (bug→GSD, feature→Kitty, epic→BMAD) with measurable rigor dimensions: risk, uncertainty, novelty, blast radius, reversibility, security, migration, scope.                                                             |
 
 ## Canonical synthesis direction
 
@@ -122,17 +122,21 @@ Context should be compiled from authority, not folder conventions:
 ## Important current code findings
 
 ### Claim primitive exists
+
 `ClaimKind`, `ClaimState`, TTL/heartbeat, resource uniqueness, transfer and SQLite backing already exist.
 
 This should be extended, not re-created.
 
 ### Temporary duplicate graph implementation exists
+
 Application triage currently carries a self-contained `WpGraph` because the intended graph crate lacks synchronous topology primitives.
 
 Treat this as declared transition debt and either absorb or remove it when the canonical graph API exists.
 
 ### Work-completion semantics need review
+
 `AppState::done` releases a claim and marks a WP done. Mature MACE semantics require a distinction between:
+
 - work execution complete;
 - assignment criteria graded;
 - development accepted;

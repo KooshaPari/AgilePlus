@@ -20,17 +20,18 @@ project-specific conventions for thegent development.
 
 ### Commit Scope
 
-| Scope | Description |
-|-------|-------------|
-| `cli` | Command-line interface changes |
-| `domain` | Domain extraction/refactoring |
-| `atlas` | Codebase atlas generation |
-| `gitops` | GitOps pipeline changes |
-| `models` | MODELS domain |
+| Scope    | Description                    |
+| -------- | ------------------------------ |
+| `cli`    | Command-line interface changes |
+| `domain` | Domain extraction/refactoring  |
+| `atlas`  | Codebase atlas generation      |
+| `gitops` | GitOps pipeline changes        |
+| `models` | MODELS domain                  |
 
 ### Quality Gates
 
 Before calling `gt_done`:
+
 1. `cargo check --all-features` passes
 2. `cargo test --workspace` passes
 3. No new `TODO` or `FIXME` comments introduced

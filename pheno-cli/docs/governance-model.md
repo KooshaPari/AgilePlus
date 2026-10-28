@@ -6,13 +6,13 @@ pheno enforces a 5-tier release channel model for all Phenotype packages. Each c
 
 ## Channels
 
-| Tier | Channel  | Tag Suffix      | Audience           | Purpose                                |
-|------|----------|-----------------|--------------------|----------------------------------------|
-| 0    | `alpha`  | `-alpha.N`      | Internal           | Early integration, all breaking OK     |
-| 1    | `canary` | `-canary.N`     | Internal + partners| Nightly/CI-driven validation           |
-| 2    | `beta`   | `-beta.N`       | Early adopters     | Feature-complete, API stabilizing      |
-| 3    | `rc`     | `-rc.N`         | All users          | Release candidate, only bug fixes      |
-| 4    | `prod`   | (no suffix)     | All users          | Stable production release              |
+| Tier | Channel  | Tag Suffix  | Audience            | Purpose                            |
+| ---- | -------- | ----------- | ------------------- | ---------------------------------- |
+| 0    | `alpha`  | `-alpha.N`  | Internal            | Early integration, all breaking OK |
+| 1    | `canary` | `-canary.N` | Internal + partners | Nightly/CI-driven validation       |
+| 2    | `beta`   | `-beta.N`   | Early adopters      | Feature-complete, API stabilizing  |
+| 3    | `rc`     | `-rc.N`     | All users           | Release candidate, only bug fixes  |
+| 4    | `prod`   | (no suffix) | All users           | Stable production release          |
 
 ### Version Format Examples
 

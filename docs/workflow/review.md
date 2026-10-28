@@ -64,25 +64,27 @@ A thorough review validates:
 
 ```markdown
 ## Deliverables
+
 - [ ] All expected files exist
-  - src/models/email.rs
-  - src/models/email_preference.rs
-  - src/models/email_template.rs
+    - src/models/email.rs
+    - src/models/email_preference.rs
+    - src/models/email_template.rs
 
 - [ ] All expected files modified (if MODIFY action)
-  - src/models/mod.rs — exports added
+    - src/models/mod.rs — exports added
 
 - [ ] No unexpected files modified
-  - git diff main --stat — only listed files changed
+    - git diff main --stat — only listed files changed
 ```
 
 ### Functional Correctness
 
 ```markdown
 ## Functionality
+
 - [ ] Tests pass
-  - cargo test → all tests pass
-  - cargo test --all → including integration tests
+    - cargo test → all tests pass
+    - cargo test --all → including integration tests
 
 - [ ] No panics or unwraps in critical paths
 - [ ] Error handling is present
@@ -94,58 +96,62 @@ A thorough review validates:
 
 ```markdown
 ## Code Quality
+
 - [ ] No compiler warnings
-  - cargo clippy → no warnings
+    - cargo clippy → no warnings
 
 - [ ] Follows project conventions
-  - Naming: snake_case for functions, CamelCase for structs
-  - Error types: custom errors with thiserror
-  - Async: tokio/await patterns
+    - Naming: snake_case for functions, CamelCase for structs
+    - Error types: custom errors with thiserror
+    - Async: tokio/await patterns
 
 - [ ] Well-documented
-  - Public items have doc comments
-  - Complex logic has inline comments
+    - Public items have doc comments
+    - Complex logic has inline comments
 
 - [ ] DRY principle
-  - No significant code duplication
-  - Reuses patterns from codebase
+    - No significant code duplication
+    - Reuses patterns from codebase
 ```
 
 ### Scope & Boundaries
 
 ```markdown
 ## Scope Validation
+
 - [ ] Only files listed in WP modified
-  - git diff main --name-only | wc -l == expected count
+    - git diff main --name-only | wc -l == expected count
 
 - [ ] No out-of-scope changes
-  - No changes to unrelated modules
-  - No database schema changes (if not in WP)
+    - No changes to unrelated modules
+    - No database schema changes (if not in WP)
 
 - [ ] Commit messages reference WP
-  - Each commit includes "WP01" or similar
+    - Each commit includes "WP01" or similar
 ```
 
 ### Plan Adherence
 
 ```markdown
 ## Plan Adherence
+
 - [ ] Implementation matches architecture decisions
-  - Design decision 1: ✓ implemented as specified
-  - Design decision 2: ✓ implemented as specified
+    - Design decision 1: ✓ implemented as specified
+    - Design decision 2: ✓ implemented as specified
 
 - [ ] File changes match plan
-  - Plan listed X files → implemented X files
+    - Plan listed X files → implemented X files
 
 - [ ] Build sequence respected
-  - Dependencies completed before this WP
-  - No blockers on dependencies
+    - Dependencies completed before this WP
+    - No blockers on dependencies
 ```
 
 ### Dependency Validation
 
 ```markdown
 ## Dependencies
+
 - [ ] All dependencies met before this started
 - [ ] No unmet dependencies blocking downstream WPs
 - [ ] Dependent WPs can proceed after approval
@@ -160,6 +166,7 @@ agileplus move WP01 --to done
 ```
 
 Effect:
+
 - WP marked as `done`
 - Dependent WPs unblocked
 - Can proceed to next phase
@@ -191,32 +198,38 @@ Feedback file example:
 ## Issues Found
 
 ### 1. Missing Error Types [CRITICAL]
+
 The Email model uses generic Result types instead of custom error type.
 
 Fix: Create EmailError enum with proper error variants
 
 ### 2. Incomplete Tests [HIGH]
+
 Only 8 tests, but EmailStatus has 4 variants.
 
 Fix: Add tests for status transitions and invalid conversions
 
 ### 3. Code Style [MEDIUM]
+
 Some variable names don't follow convention (use snake_case)
 
 Fix: Rename `emailAddr` → `email_addr`
 
 ### 4. Documentation [LOW]
+
 Some public methods lack doc comments
 
 Fix: Add /// doc comments to public methods
 
 ## Summary
+
 Good work overall. Address the critical and high issues, then resubmit.
 
 Estimated additional work: 2-3 hours
 ```
 
 Effect:
+
 - WP marked as `planned` with feedback
 - Implementer addresses feedback
 - Resubmits for review
@@ -295,6 +308,7 @@ Compare implementation to plan:
 
 ```markdown
 Plan says:
+
 - Create Email struct
 - Add EmailStatus enum
 - Implement sqlx FromRow
@@ -352,12 +366,12 @@ agileplus move WP01 --to planned --review-feedback-file /tmp/feedback-WP01.md
 
 Use these to categorize issues:
 
-| Level | Meaning | Action | Example |
-|-------|---------|--------|---------|
-| **CRITICAL** | Breaks functionality or violates design | MUST fix | Missing error handling, security bug |
-| **HIGH** | Significantly impacts quality | Should fix | Incomplete tests, performance issue |
-| **MEDIUM** | Minor quality issue | Nice to fix | Code style, minor refactoring |
-| **LOW** | Documentation or polish | Optional | Comment clarity, naming consistency |
+| Level        | Meaning                                 | Action      | Example                              |
+| ------------ | --------------------------------------- | ----------- | ------------------------------------ |
+| **CRITICAL** | Breaks functionality or violates design | MUST fix    | Missing error handling, security bug |
+| **HIGH**     | Significantly impacts quality           | Should fix  | Incomplete tests, performance issue  |
+| **MEDIUM**   | Minor quality issue                     | Nice to fix | Code style, minor refactoring        |
+| **LOW**      | Documentation or polish                 | Optional    | Comment clarity, naming consistency  |
 
 ### CRITICAL Example
 
@@ -395,9 +409,11 @@ Impact: Code style consistency
 
 ```markdown
 # ❌ Vague
+
 "This code is bad"
 
 # ✓ Specific
+
 "This function doesn't handle the case where user_id is 0.
 Add a check: if user_id == 0 { return Err(...) }"
 ```
@@ -406,9 +422,11 @@ Add a check: if user_id == 0 { return Err(...) }"
 
 ```markdown
 # ❌ No example
+
 "Function names should be clearer"
 
 # ✓ With example
+
 "Rename `proc_email()` to `process_pending_email()`.
 It's clearer what the function does."
 ```
@@ -417,9 +435,11 @@ It's clearer what the function does."
 
 ```markdown
 # ❌ No rationale
+
 "Add more tests"
 
 # ✓ With rationale
+
 "Add tests for the failure case. Currently only happy path is tested.
 If SendGrid API returns 400, we need to verify error handling works."
 ```
@@ -428,13 +448,17 @@ If SendGrid API returns 400, we need to verify error handling works."
 
 ```markdown
 # ✓ Clear priority
+
 CRITICAL (must fix):
+
 - Error handling missing
 
 HIGH (should fix):
+
 - Tests incomplete
 
 MEDIUM (nice to have):
+
 - Code could be more DRY
 ```
 
@@ -442,6 +466,7 @@ MEDIUM (nice to have):
 
 ```markdown
 # ✓ Balanced feedback
+
 "Good work on the error handling. The retry logic is well-implemented.
 
 One issue: Missing tests for the bounced email scenario. Please add those."

@@ -15,9 +15,9 @@ pull requests should align with these principles.
 ### Languages and Frameworks
 
 - **Rust**: Nightly (2024 edition). Primary language for core, agents, and integrations services.
-  - Key crates: clap (CLI), axum + tokio (API), tonic + prost (gRPC), rusqlite (SQLite), git2 (libgit2), opentelemetry, serde, sha2, thiserror
+    - Key crates: clap (CLI), axum + tokio (API), tonic + prost (gRPC), rusqlite (SQLite), git2 (libgit2), opentelemetry, serde, sha2, thiserror
 - **Python**: 3.14+ (free-threaded mode enabled). MCP server and scripting.
-  - Key packages: fastmcp>=3.0, grpcio, opentelemetry-sdk, pytest, hypothesis
+    - Key packages: fastmcp>=3.0, grpcio, opentelemetry-sdk, pytest, hypothesis
 - **TypeScript**: 7.0+ (native Go compiler). Use where it outperforms Python — web UI components, tooling scripts, or MCP extensions where TS ecosystem is stronger.
 - **Protobuf**: buf-managed `.proto` files as the single source of truth for all inter-service contracts.
 - **Open to**: Zig, Go for specific performance-critical components where Rust FFI overhead is unacceptable. Must justify in ADR.
@@ -100,6 +100,7 @@ All must pass before merge:
 ### Team Conventions
 
 **Rust idioms (non-negotiable):**
+
 - Use `Result<T, E>` for all fallible operations. Never `unwrap()` or `expect()` in production code.
 - `#[must_use]` on all functions returning `Result` or important values.
 - No `unsafe` without an `// SAFETY:` audit comment explaining why it's sound.
@@ -109,11 +110,13 @@ All must pass before merge:
 - Builder pattern for structs with >4 fields or optional configuration.
 
 **Domain crate zero-dependency rule:**
+
 - `agileplus-domain` crate has ZERO external dependencies except `serde`, `sha2`, and `chrono`.
 - All I/O goes through port traits. Domain never touches network, filesystem, or database directly.
 - This is enforced by Cargo.toml — domain crate's `[dependencies]` section is audited in CI.
 
 **Agent-first design:**
+
 - Every feature must be invocable programmatically (MCP tool, gRPC call, or SlashCommand).
 - If an agent can't invoke it, it's not ready for release.
 - Human CLI is a thin wrapper over the same programmatic interface.
@@ -126,11 +129,11 @@ All must pass before merge:
 
 ### Historical Decisions
 
-| Decision | Rationale | Alternative Rejected |
-|----------|-----------|---------------------|
-| Multi-repo (5 repos) over monorepo | Enforces service boundaries at repo level, prevents scope creep, enables independent versioning/deployment/CI | Monorepo — coupled releases, single CI bottleneck, scope creep |
-| SQLite over PostgreSQL | Local-first simplicity, single-file database, rebuild from git if corrupted, no server dependency | PostgreSQL — requires server process, cloud dependency, overkill for single-dev/small-team |
-| Python FastMCP over Rust MCP | MCP SDK is Python-first (FastMCP 3.0). Separate process over FFI/PyO3 for reliability and debuggability | PyO3 embedding — fragile, complicates deployment, harder to debug |
+| Decision                           | Rationale                                                                                                     | Alternative Rejected                                                                       |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Multi-repo (5 repos) over monorepo | Enforces service boundaries at repo level, prevents scope creep, enables independent versioning/deployment/CI | Monorepo — coupled releases, single CI bottleneck, scope creep                             |
+| SQLite over PostgreSQL             | Local-first simplicity, single-file database, rebuild from git if corrupted, no server dependency             | PostgreSQL — requires server process, cloud dependency, overkill for single-dev/small-team |
+| Python FastMCP over Rust MCP       | MCP SDK is Python-first (FastMCP 3.0). Separate process over FFI/PyO3 for reliability and debuggability       | PyO3 embedding — fragile, complicates deployment, harder to debug                          |
 
 ## Governance
 

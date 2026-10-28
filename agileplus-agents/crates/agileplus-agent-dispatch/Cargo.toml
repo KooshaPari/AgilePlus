@@ -1,4 +1,5 @@
 [package]
+workspace = "../../.."
 name = "agileplus-agent-dispatch"
 version.workspace = true
 edition.workspace = true

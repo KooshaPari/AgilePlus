@@ -391,6 +391,7 @@ agileplus agent test cursor --prompt "Write hello world"
 ```
 
 This runs a minimal test through your harness and validates:
+
 - Harness starts without error
 - Prompt is delivered correctly
 - Output is collected successfully
@@ -426,15 +427,13 @@ All harnesses must produce consistent output. The orchestrator expects:
 
 ```json
 {
-  "job_id": "uuid-here",
-  "wp_id": "WP01",
-  "success": true,
-  "status": "completed",
-  "summary": "Implemented component with tests",
-  "commits": [
-    { "sha": "abc123...", "message": "WP01: Implement component" }
-  ],
-  "pr_url": "https://github.com/org/repo/pull/42"
+    "job_id": "uuid-here",
+    "wp_id": "WP01",
+    "success": true,
+    "status": "completed",
+    "summary": "Implemented component with tests",
+    "commits": [{ "sha": "abc123...", "message": "WP01: Implement component" }],
+    "pr_url": "https://github.com/org/repo/pull/42"
 }
 ```
 
@@ -442,12 +441,12 @@ All harnesses must produce consistent output. The orchestrator expects:
 
 ```json
 {
-  "job_id": "uuid-here",
-  "wp_id": "WP01",
-  "success": false,
-  "status": "failed",
-  "error": "Tests failed: 3 failures",
-  "exit_code": 1
+    "job_id": "uuid-here",
+    "wp_id": "WP01",
+    "success": false,
+    "status": "failed",
+    "error": "Tests failed: 3 failures",
+    "exit_code": 1
 }
 ```
 
@@ -466,40 +465,44 @@ All harnesses must produce consistent output. The orchestrator expects:
 ## Common Pitfalls
 
 1. **Forgetting to set working directory:** Agent can't find files
-   ```rust
-   // ✗ WRONG: Runs in current directory
-   cmd.spawn()
 
-   // ✓ RIGHT: Runs in worktree
-   cmd.current_dir(&task.worktree_path);
-   ```
+    ```rust
+    // ✗ WRONG: Runs in current directory
+    cmd.spawn()
+
+    // ✓ RIGHT: Runs in worktree
+    cmd.current_dir(&task.worktree_path);
+    ```
 
 2. **Not handling timeouts:** Process hangs indefinitely
-   ```rust
-   // ✗ WRONG: No timeout
-   let output = child.wait_with_output().await?;
 
-   // ✓ RIGHT: With timeout
-   let output = timeout(Duration::from_secs(1800), child.wait_with_output()).await??;
-   ```
+    ```rust
+    // ✗ WRONG: No timeout
+    let output = child.wait_with_output().await?;
+
+    // ✓ RIGHT: With timeout
+    let output = timeout(Duration::from_secs(1800), child.wait_with_output()).await??;
+    ```
 
 3. **Not extracting commits:** Orchestrator can't track work
-   ```rust
-   // ✗ WRONG: Returns empty commit list
-   commits: vec![],
 
-   // ✓ RIGHT: Extract from git history
-   commits: extract_commits_from_worktree(&task.worktree_path).await?,
-   ```
+    ```rust
+    // ✗ WRONG: Returns empty commit list
+    commits: vec![],
+
+    // ✓ RIGHT: Extract from git history
+    commits: extract_commits_from_worktree(&task.worktree_path).await?,
+    ```
 
 4. **Hardcoding paths:** Breaks in CI/Docker
-   ```rust
-   // ✗ WRONG: Hardcoded path
-   let binary = "/usr/local/bin/claude";
 
-   // ✓ RIGHT: Configurable or from PATH
-   let binary = env::var("CLAUDE_CODE_PATH").unwrap_or("claude".to_string());
-   ```
+    ```rust
+    // ✗ WRONG: Hardcoded path
+    let binary = "/usr/local/bin/claude";
+
+    // ✓ RIGHT: Configurable or from PATH
+    let binary = env::var("CLAUDE_CODE_PATH").unwrap_or("claude".to_string());
+    ```
 
 ## Deployment Checklist
 
@@ -580,7 +583,21 @@ pub fn register_all(registry: &mut SubcmdRegistry) {
 The subcommand audit logger (`SubcmdAudit`) automatically appends JSONL entries for every command. The format is:
 
 ```jsonl
-{"ts":"2026-03-01T10:15:34Z","actor":"agent:claude-code","job":"3a6b8c9d","command":"my_command","wp_id":"WP01","args":{"custom_param":"value"},"pre_state":{"git_status":"clean"},"exit_code":0,"duration_ms":45}
+{
+    "ts": "2026-03-01T10:15:34Z",
+    "actor": "agent:claude-code",
+    "job": "3a6b8c9d",
+    "command": "my_command",
+    "wp_id": "WP01",
+    "args": {
+        "custom_param": "value"
+    },
+    "pre_state": {
+        "git_status": "clean"
+    },
+    "exit_code": 0,
+    "duration_ms": 45
+}
 ```
 
 ### 4. Expose via CLI

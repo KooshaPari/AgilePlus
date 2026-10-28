@@ -14,6 +14,7 @@ Lifecycle: rigid Created→Specified→Researched→Planned→Implementing→Val
 ### Mature finding
 
 Feature is a real durable aggregate, but:
+
 - it is feature-shaped rather than a general Development identity;
 - `spec_hash` is current-state binding, not an explicit historical SpecRevision record;
 - lifecycle is strictly linear and conflicts with proposed adaptive/fluid methodology.
@@ -24,6 +25,7 @@ Disposition: KEEP aggregate for compatibility; introduce general Development/Spe
 
 Runtime: `agileplus-domain::WorkPackage`.
 Persisted fields include:
+
 - feature_id;
 - state;
 - sequence;
@@ -39,6 +41,7 @@ Persisted fields include:
 WP already carries much of an assignment/candidate envelope, but mutably on the durable WP row.
 
 This conflates:
+
 - durable planned work;
 - current assigned worker;
 - current execution location;
@@ -52,6 +55,7 @@ Disposition: KEEP WP as durable plan/DAG object; move attempt-specific worker/wo
 
 Runtime: versioned contract bound to Feature.
 Contains transition-oriented GovernanceRules:
+
 - transition;
 - required evidence labels;
 - policy refs.
@@ -67,6 +71,7 @@ Disposition: ADAPT as policy projection. Do not build a second evaluator before 
 ## Evidence
 
 Current fields:
+
 - id;
 - wp_id;
 - fr_id;
@@ -78,6 +83,7 @@ Current fields:
 ### Mature finding
 
 Useful work evidence receipt but lacks explicit:
+
 - candidate identity;
 - evaluator/verifier identity+version;
 - assignment/spec revision;
@@ -92,6 +98,7 @@ Hash chain is real and tested.
 
 Important integrity-boundary finding:
 `hash_entry` covers:
+
 - feature_id;
 - wp_id;
 - timestamp;
@@ -100,6 +107,7 @@ Important integrity-boundary finding:
 - prev_hash.
 
 It does **not** cover:
+
 - id;
 - evidence_refs;
 - event_id;
@@ -128,6 +136,7 @@ A separate triage application path also defines a narrower `WpRepository` and ha
 ### Mature finding
 
 There are overlapping application/storage generations:
+
 - canonical domain `StoragePort`;
 - triage `WpRepository`;
 - ClaimStoreTrait;
@@ -138,6 +147,7 @@ Need consolidation at application composition, not another storage abstraction.
 ## Smallest additive identities for worker-replacement witness
 
 Add/derive only:
+
 - DevelopmentId — initially may reference Feature id for feature work;
 - SpecRevisionId — immutable spec hash + accepted metadata;
 - AssignmentId — exact WP/spec/criterion binding handed to worker;
@@ -146,6 +156,7 @@ Add/derive only:
 - CandidateRef — commit/tree/artifact identity.
 
 Reuse:
+
 - WorkPackage;
 - Claim/lease;
 - worktree;

@@ -8,17 +8,17 @@
 
 ## Members in Scope
 
-| Repo | Default | Branches | Last Push | Local Clone |
-|---|---|---|---|---|
-| `substrate` | main | **100** | 2026-07-29 | ❌ |
-| `substrate-adapters-bundle` | main | 7 | 2026-07-29 | ❌ |
+| Repo                        | Default | Branches | Last Push  | Local Clone |
+| --------------------------- | ------- | -------- | ---------- | ----------- |
+| `substrate`                 | main    | **100**  | 2026-07-29 | ❌          |
+| `substrate-adapters-bundle` | main    | 7        | 2026-07-29 | ❌          |
 
 ## MIGRATE — semantic content mapping
 
-| Source | Target | Rule | Notes |
-|---|---|---|---|
-| `substrate` | canonical | n/a | 100 branches; public; canonical substrate ecosystem repo |
-| `substrate-adapters-bundle` | canonical | n/a | 7 branches; meta-repo of substrate adapter crates (git-submodule pointers); review/ownership branches indicate recent governance work |
+| Source                      | Target    | Rule | Notes                                                                                                                                 |
+| --------------------------- | --------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `substrate`                 | canonical | n/a  | 100 branches; public; canonical substrate ecosystem repo                                                                              |
+| `substrate-adapters-bundle` | canonical | n/a  | 7 branches; meta-repo of substrate adapter crates (git-submodule pointers); review/ownership branches indicate recent governance work |
 
 **Cross-branch collision scan result: ZERO common branch names.**
 `substrate` and `substrate-adapters-bundle` are **independent repos** — neither duplicates the other.
@@ -58,6 +58,7 @@ feat/{audit-phase0,audit-phase1-temp,audit-phase1,cbor-minimal,cli-cloud-codex,c
 ```
 
 **Heaviest repo in scope.** 100 branches include:
+
 - 2 `airlock-archive/wave4/*` tarball snapshots
 - 3 `archive/thegent-dispatch/*` absorbed sub-repo branches
 - `chore/release-v0.3.*` release branches
@@ -98,6 +99,7 @@ Neither repo is an archive of the other. Both retain full history independently.
 2. `substrate-adapters-bundle` → squash to 1 commit on `main`.
 
 **WARNING — HIGHEST branch count in scope**:
+
 - 100 branches on `substrate`, including 2 tarball snapshots, 3 archive branches, 30+ gateway features, dependabot, cursor session branches, etc.
 - A naive `git reset --soft` to 1 commit will **flatten ALL** of these into the single commit body. Branch metadata will be retained as text content; commit content may miss details.
 - **Recommendation**: Before squash, run `git for-each-ref refs/heads/ --format='%(refname:short) %(objectname:short) %(committerdate:short) %(subject)' > branches-pre-squash.txt` and stash that file in `AgilePlus/docs/airlock/substrate-branches-manifest-pre-squash-2026-07-29.txt`. This is the receipt.
@@ -111,12 +113,14 @@ Neither repo is an archive of the other. Both retain full history independently.
 ## RISK CLASS
 
 **Low (for collision), HIGH (for squash complexity).**
+
 - Branch-collision scan: clean.
 - Squash complexity: 100-branch manifest + tarball snapshots requires careful receipt-keeping before merge.
 
 ## NEXT CHECKPOINT
 
 User must approve:
+
 - (a) shallow-clone of both repos for receipt-keeping
 - (b) branches-manifest export before squash
 - (c) final squash of each to 1 commit on `main`

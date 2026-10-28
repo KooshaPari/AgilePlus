@@ -20,12 +20,14 @@ FastMCP-convention Python surface for PhenoMCP. It provides `Server`, `ServerCon
 `py.typed` marker for static-analysis compatibility.
 
 **Acceptance criteria:**
+
 - `from pheno_mcp import Server, Tool, Resource, Prompt, Client` succeeds after `uv sync`.
 - `pyproject.toml` declares the package and its entry points; `uv.lock` is committed.
 - `py.typed` is present and `mypy` resolves types without `--ignore-missing-imports`.
 - CI (`ubuntu-24.04`, SHA-pinned) runs `uv run pytest` and all tests pass.
 
 **Traceability:**
+
 - PR #76 (pheno_mcp Python package + workflow hygiene ubuntu-24.04 + SHA pins)
 - Tests: `python/tests/test_init.py`
 
@@ -42,12 +44,14 @@ return serialised dicts suitable for a JSON-RPC `tools/list` response. Each obje
 `to_dict()` maps to the MCP wire format (`inputSchema`, `mimeType`, etc.).
 
 **Acceptance criteria:**
+
 - `register_tool(t)` followed by `list_tools()` returns exactly one entry with matching name.
 - Re-registering the same key replaces the prior entry (no duplicates).
 - `list_resources()` / `list_prompts()` follow the same contract.
 - All three `to_dict()` methods serialise correctly to expected MCP field names.
 
 **Traceability:**
+
 - PR #76, PR #78 (registration wiring)
 - Tests: `python/tests/test_server.py`, `python/tests/test_server_comprehensive.py`
 
@@ -64,6 +68,7 @@ MCP wire requests. It routes `tools/list`, `resources/list`, `prompts/list`, and
 via `inspect.iscoroutinefunction`.
 
 **Acceptance criteria:**
+
 - `handle_request("tools/list", {})` returns `{"tools": [...]}`.
 - `handle_request("resources/list", {})` returns `{"resources": [...]}`.
 - `handle_request("prompts/list", {})` returns `{"prompts": [...]}`.
@@ -72,6 +77,7 @@ via `inspect.iscoroutinefunction`.
 - Both sync and async handlers execute correctly.
 
 **Traceability:**
+
 - PR #76, PR #80 (request validation hardening)
 - Tests: `python/tests/test_server.py`, `python/tests/test_server_comprehensive.py`, `python/tests/test_integration.py`
 
@@ -89,6 +95,7 @@ return `-32603 Internal error` (defensive guard). Every error response carries t
 canonical `{"jsonrpc": "2.0", "error": {"code": N, "message": "...", "data": {...}}, "id": null}` shape.
 
 **Acceptance criteria:**
+
 - `handle_request(None, {})` → code `-32600`.
 - `handle_request("tools/call", {"name": "", "arguments": {}})` → code `-32602`.
 - `handle_request("tools/call", {"name": "x", "arguments": "bad"})` → code `-32602`.
@@ -97,6 +104,7 @@ canonical `{"jsonrpc": "2.0", "error": {"code": N, "message": "...", "data": {..
 - A tool handler that raises still returns an error dict (no exception propagated to caller).
 
 **Traceability:**
+
 - PR #80 (`[codex] harden MCP request validation`)
 - Tests: `python/tests/test_server_comprehensive.py`, `python/tests/test_server.py`
 
@@ -115,6 +123,7 @@ HTTP errors are caught and returned as `{"error": ..., "status_code": ...}` — 
 `register_governance_tools(server)` wires both tools onto any `Server` instance.
 
 **Acceptance criteria:**
+
 - `ledger_query` input schema has zero required fields; all six filter fields are optional.
 - `ledger_verify` input schema requires exactly `from_entry` and `to_entry`.
 - `handle_ledger_query` issues `GET /api/v1/governance/ledger` and returns parsed JSON.
@@ -123,6 +132,7 @@ HTTP errors are caught and returned as `{"error": ..., "status_code": ...}` — 
 - `register_governance_tools(server)` makes both tools visible in `server.list_tools()`.
 
 **Traceability:**
+
 - PR #77 (wire ledger_query governance tool end-to-end)
 - Tests: `python/tests/test_governance_tools.py`
 
@@ -139,6 +149,7 @@ Both read `PARPOURA_BASE_URL`. HTTP errors are caught and returned as
 `{"error": ..., "status_code": ...}`.
 
 **Acceptance criteria:**
+
 - `session_suspend` requires exactly `session_id`.
 - `session_resume` requires exactly `bundle_ref`.
 - `handle_session_suspend` issues `POST /api/v1/sessions/{session_id}/suspend`.
@@ -147,6 +158,7 @@ Both read `PARPOURA_BASE_URL`. HTTP errors are caught and returned as
 - `register_session_tools(server)` makes both tools visible in `server.list_tools()`.
 
 **Traceability:**
+
 - PR #78 (wire all tool bundles + `create_configured_server`)
 - Tests: `python/tests/test_session_tools.py`
 
@@ -166,6 +178,7 @@ Both read `PARPOURA_BASE_URL`. HTTP errors are caught and returned as
 HTTP errors are caught and returned as `{"error": ..., "status_code": ...}`.
 
 **Acceptance criteria:**
+
 - `workflow_execute` requires `workflow_id`; `workflow_type` is optional.
 - `workflow_status` and `workflow_cancel` each require exactly `workflow_id`.
 - `workflow_list` requires no arguments.
@@ -174,6 +187,7 @@ HTTP errors are caught and returned as `{"error": ..., "status_code": ...}`.
 - `register_workflow_tools(server)` makes all four tools visible in `server.list_tools()`.
 
 **Traceability:**
+
 - PR #78
 - Tests: `python/tests/test_workflow_tools.py`
 
@@ -191,12 +205,14 @@ all 8 tools (`ledger_query`, `ledger_verify`, `session_suspend`, `session_resume
 importing individual bundle modules.
 
 **Acceptance criteria:**
+
 - `create_configured_server()` returns a `Server` with exactly 8 tools registered.
 - `create_configured_server(ServerConfig(name="test"))` propagates the config to the server.
 - Returned server handles `tools/list` and returns all 8 tool names.
 - No exception raised on construction with default config.
 
 **Traceability:**
+
 - PR #78 (`feat(tools): wire all tool bundles + create_configured_server factory`)
 - Tests: `python/tests/test_configured_server.py`
 
@@ -214,6 +230,7 @@ object-safe Rust trait (`Box<dyn SearchPort>` compiles). Methods: `ensure_index(
 `SearchPortError` variants: `Index`, `Search`, `Delete`, `Transport`.
 
 **Acceptance criteria:**
+
 - `Box<dyn SearchPort>` compiles (object-safety smoke test passes).
 - `InMemorySearchStore` in `doubles` module fully implements the trait.
 - `ensure_index` is idempotent — calling twice on the same index name succeeds.
@@ -222,6 +239,7 @@ object-safe Rust trait (`Box<dyn SearchPort>` compiles). Methods: `ensure_index(
 - `SearchResults.estimated_total_hits` matches the actual hit count.
 
 **Traceability:**
+
 - PR #81 (`feat: hexagonal port traits — SearchPort + SkillStoragePort (audit #4)`)
 - Tests: `crates/pheno-ports/src/doubles.rs` (test series `search_double_*`)
 
@@ -238,6 +256,7 @@ object-safe trait. `SkillEntry` fields: `id`, `name`, `version`, `code`, `runtim
 `Serialise`, `Backend`.
 
 **Acceptance criteria:**
+
 - `Box<dyn SkillStoragePort>` compiles (object-safety smoke test passes).
 - `InMemorySkillStore` in `doubles` module fully implements the trait.
 - `put` then `get` returns bit-identical entry.
@@ -247,6 +266,7 @@ object-safe trait. `SkillEntry` fields: `id`, `name`, `version`, `code`, `runtim
 - `delete` removes the entry; subsequent `get` returns `NotFound`.
 
 **Traceability:**
+
 - PR #81
 - Tests: `crates/pheno-ports/src/doubles.rs` (test series `skill_store_*`),
   `crates/phenotype-surrealdb/src/lib.rs` (test series `test_port_*`, `test_pheno_surreal_*`)
@@ -265,6 +285,7 @@ pre-date the port trait. A `TODO(surreal)` comment marks the delegation site for
 real SurrealDB driver swap.
 
 **Acceptance criteria:**
+
 - `PhenoSurreal::new(path).await` succeeds without a running SurrealDB instance.
 - `Box<dyn SkillStoragePort> = Box::new(PhenoSurreal::new(...).await.unwrap())` compiles.
 - Legacy `store_skill` round-trips correctly via `store_skill` → `query_skills`.
@@ -272,6 +293,7 @@ real SurrealDB driver swap.
 - `store_embedding` returns an `EmbeddingRecord` with a prefixed id (stub).
 
 **Traceability:**
+
 - PR #81 (SurrealDB stub introduced alongside port traits)
 - Tests: `crates/phenotype-surrealdb/src/lib.rs` (all `#[tokio::test]` functions)
 
@@ -365,32 +387,32 @@ are required CI steps.
 
 ## Test-ID to Catalog Mapping
 
-| Test file / series | Catalog FR/NFR |
-|---|---|
-| `test_init.py` | FR-MCP-001 |
-| `test_server.py`, `test_server_comprehensive.py` | FR-MCP-002, FR-MCP-003, FR-MCP-004, NFR-MCP-003 |
-| `test_integration.py` | FR-MCP-003 |
-| `test_governance_tools.py` | FR-MCP-005 |
-| `test_session_tools.py` | FR-MCP-006 |
-| `test_workflow_tools.py` | FR-MCP-007 |
-| `test_configured_server.py` | FR-MCP-008 |
-| `test_client.py`, `test_client_connected.py` | FR-MCP-001 (Client symbol) |
-| `test_models.py`, `test_models_edge_cases.py` | FR-MCP-002 (domain types) |
-| `doubles.rs :: search_double_*` | FR-MCP-009, NFR-MCP-001 |
-| `doubles.rs :: skill_store_*` | FR-MCP-010, NFR-MCP-001 |
-| `phenotype-surrealdb :: test_*` | FR-MCP-010, FR-MCP-011, NFR-MCP-001, NFR-MCP-005 |
+| Test file / series                               | Catalog FR/NFR                                   |
+| ------------------------------------------------ | ------------------------------------------------ |
+| `test_init.py`                                   | FR-MCP-001                                       |
+| `test_server.py`, `test_server_comprehensive.py` | FR-MCP-002, FR-MCP-003, FR-MCP-004, NFR-MCP-003  |
+| `test_integration.py`                            | FR-MCP-003                                       |
+| `test_governance_tools.py`                       | FR-MCP-005                                       |
+| `test_session_tools.py`                          | FR-MCP-006                                       |
+| `test_workflow_tools.py`                         | FR-MCP-007                                       |
+| `test_configured_server.py`                      | FR-MCP-008                                       |
+| `test_client.py`, `test_client_connected.py`     | FR-MCP-001 (Client symbol)                       |
+| `test_models.py`, `test_models_edge_cases.py`    | FR-MCP-002 (domain types)                        |
+| `doubles.rs :: search_double_*`                  | FR-MCP-009, NFR-MCP-001                          |
+| `doubles.rs :: skill_store_*`                    | FR-MCP-010, NFR-MCP-001                          |
+| `phenotype-surrealdb :: test_*`                  | FR-MCP-010, FR-MCP-011, NFR-MCP-001, NFR-MCP-005 |
 
 ---
 
 ## Gaps / PLANNED
 
-| ID | Title | Notes |
-|---|---|---|
-| PLAN-MCP-001 | Real SurrealDB client wiring | `TODO(surreal)` in `phenotype-surrealdb/src/lib.rs`; `surrealdb` crate already in `Cargo.toml`; only source swap needed |
-| PLAN-MCP-002 | pheno-qdrant SearchPort adapter | `crates/pheno-qdrant/` exists (stub); needs `SearchPort` impl backed by `qdrant_client` |
-| PLAN-MCP-003 | pheno-meilisearch SearchPort adapter | `crates/pheno-meilisearch/` exists (stub); needs `SearchPort` impl backed by `meilisearch-sdk` |
-| PLAN-MCP-004 | Additional Parpoura tool bundles | Only governance/session/workflow wired; agent, knowledge, policy tool groups are PLANNED epics |
-| PLAN-MCP-005 | MCP ↔ Claude SDK contract hardening | No schema-level validation between MCP request shape and SDK client expectations; property-based tests needed |
-| PLAN-MCP-006 | Transport layer (stdio / HTTP / WS) | `Server.handle_request` has no transport binding yet; wire to FastMCP transport adapters |
-| PLAN-MCP-007 | Resource + Prompt handler end-to-end | Registration is wired; no Parpoura-backed handlers exist for `resources/read` or `prompts/get` |
-| PLAN-MCP-008 | FR coverage matrix auto-update | `docs/reference/fr_coverage_matrix.md` is empty; auto-population from test annotations needed |
+| ID           | Title                                | Notes                                                                                                                   |
+| ------------ | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| PLAN-MCP-001 | Real SurrealDB client wiring         | `TODO(surreal)` in `phenotype-surrealdb/src/lib.rs`; `surrealdb` crate already in `Cargo.toml`; only source swap needed |
+| PLAN-MCP-002 | pheno-qdrant SearchPort adapter      | `crates/pheno-qdrant/` exists (stub); needs `SearchPort` impl backed by `qdrant_client`                                 |
+| PLAN-MCP-003 | pheno-meilisearch SearchPort adapter | `crates/pheno-meilisearch/` exists (stub); needs `SearchPort` impl backed by `meilisearch-sdk`                          |
+| PLAN-MCP-004 | Additional Parpoura tool bundles     | Only governance/session/workflow wired; agent, knowledge, policy tool groups are PLANNED epics                          |
+| PLAN-MCP-005 | MCP ↔ Claude SDK contract hardening | No schema-level validation between MCP request shape and SDK client expectations; property-based tests needed           |
+| PLAN-MCP-006 | Transport layer (stdio / HTTP / WS)  | `Server.handle_request` has no transport binding yet; wire to FastMCP transport adapters                                |
+| PLAN-MCP-007 | Resource + Prompt handler end-to-end | Registration is wired; no Parpoura-backed handlers exist for `resources/read` or `prompts/get`                          |
+| PLAN-MCP-008 | FR coverage matrix auto-update       | `docs/reference/fr_coverage_matrix.md` is empty; auto-population from test annotations needed                           |

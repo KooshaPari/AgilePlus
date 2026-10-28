@@ -1,12 +1,12 @@
 # Specifications
 
 - Add Just targets:
-  - `test`: aggregate target for supported workspace-wide test execution.
-  - `test-unit`: Rust workspace tests.
-  - `test-integration`: dedicated integration suite.
+    - `test`: aggregate target for supported workspace-wide test execution.
+    - `test-unit`: Rust workspace tests.
+    - `test-integration`: dedicated integration suite.
 - Preserve existing repo behavior where possible:
-  - keep current workspace unit command unchanged;
-  - keep integration invocation aligned with the integration crate's documented feature/ignored-test behavior.
+    - keep current workspace unit command unchanged;
+    - keep integration invocation aligned with the integration crate's documented feature/ignored-test behavior.
 - Ensure the integration crate is part of the root Cargo workspace so the new Just target is executable from the repo root.
 
 # ARUs

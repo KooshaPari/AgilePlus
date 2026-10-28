@@ -9,10 +9,12 @@ Accepted for the mature-product recovery program on 2026-09-30.
 AgilePlus currently contains two partially overlapping acceptance systems.
 
 ### Runtime governance validation
+
 `GovernanceContract` rules declare required evidence/policies. The CLI `validate`
 command evaluates these records and may transition a Feature to `Validated`.
 
 ### Traceability acceptance model
+
 `traceability-core::AcceptanceContract` contains criterion-level test/evidence
 references and a `ProgressionGate` model. Its implementation correctly rejects empty
 criterion sets and requires every criterion to be Covered.
@@ -21,6 +23,7 @@ Repository search shows the latter is currently used primarily in the shared cra
 tests, and architecture documents rather than as the live terminal-state authority.
 
 Meanwhile:
+
 - implementation workflow can move WP `Review -> Done` on review-loop approval;
 - audit entries can contain no evidence refs;
 - historical CLI flags could bypass validation/policies;
@@ -38,6 +41,7 @@ answers:
 > Did this candidate satisfy the accepted assignment criteria?
 
 It owns:
+
 - criterion identity/revision;
 - candidate/subject snapshot;
 - evaluator/oracle identity;
@@ -52,6 +56,7 @@ answers:
 > Given the accepted grade/evidence, is this lifecycle transition permitted under policy?
 
 It owns:
+
 - policy requirements;
 - required evidence classes;
 - approvals/authority;
@@ -63,6 +68,7 @@ Neither substitutes for the other.
 ### 2. Terminal work states require both
 
 Authoritative transition to a terminal accepted work state requires:
+
 1. non-empty acceptance criteria;
 2. an evaluation/grade bound to the exact candidate and criterion revision;
 3. every mandatory criterion accepted;
@@ -84,6 +90,7 @@ no canonical acceptance grade.
 ### 4. Feature validation aggregates accepted work plus feature-level policy
 
 A Feature may transition to `Validated` only when:
+
 - all required WPs have authoritative accepted grades;
 - feature-level acceptance criteria are satisfied where defined;
 - governance/policy checks pass.
@@ -91,6 +98,7 @@ A Feature may transition to `Validated` only when:
 ### 5. Ship must fail closed
 
 Shipping requires an authoritative `Validated` state and must fail on:
+
 - skipped validation;
 - merge errors/conflicts;
 - stale/invalid acceptance receipts where policy requires current evidence.
@@ -138,11 +146,13 @@ The mature runtime should bind these to DevelopmentId / AttemptId / WorkPackageI
 ## Immediate implementation consequences
 
 Already closed:
+
 - `validate --force` and `--skip-policies` may no longer authorize state promotion;
 - `ship --skip-validate` may no longer authorize shipping;
 - merge transport errors fail shipping closed.
 
 Still open:
+
 - remove Review->Done self-award from implementation loop;
 - persist canonical grade/evaluation receipts;
 - bind WP state transition to accepted grade;
@@ -155,6 +165,7 @@ Still open:
 This ADR refines ADR-0009 and ADR-0010.
 
 It supersedes any interpretation that:
+
 - review approval alone makes a WP Done;
 - governance evidence presence alone is equivalent to criterion acceptance;
 - a live Tracera-owned CoverageMatrix is required for AgilePlus to grade its own work.

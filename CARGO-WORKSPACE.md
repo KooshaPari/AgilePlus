@@ -6,12 +6,12 @@ tooling for the `agileplus` CLI and companion services.
 
 ## Workspace Map
 
-| Area | Crates | Role |
-| --- | --- | --- |
-| Domain and application | `agileplus-domain`, `agileplus-application`, `agileplus-config`, `agileplus-events`, `agileplus-proto`, `agileplus-fixtures` | Pure domain types, use cases, configuration, event sourcing, generated protobuf types, and deterministic test data. |
-| Infrastructure adapters | `agileplus-sqlite`, `agileplus-cache`, `agileplus-git`, `agileplus-nats`, `agileplus-telemetry`, `agileplus-import` | Persistence, cache, VCS, pub/sub, observability, and import/reporting adapters. |
-| Interfaces | `agileplus-api`, `agileplus-grpc`, `agileplus-dashboard`, `agileplus-github`, `agileplus-plane`, `agileplus-p2p`, `agileplus-triage` | HTTP, gRPC, dashboard, external sync, peer replication, and triage surfaces. |
-| Operations and DX | `agileplus-cli`, `agileplus-governance`, `xtask-anti-patterns` | CLI entrypoint, governance policy/audit tooling, and workspace linting. |
+| Area                    | Crates                                                                                                                               | Role                                                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| Domain and application  | `agileplus-domain`, `agileplus-application`, `agileplus-config`, `agileplus-events`, `agileplus-proto`, `agileplus-fixtures`         | Pure domain types, use cases, configuration, event sourcing, generated protobuf types, and deterministic test data. |
+| Infrastructure adapters | `agileplus-sqlite`, `agileplus-cache`, `agileplus-git`, `agileplus-nats`, `agileplus-telemetry`, `agileplus-import`                  | Persistence, cache, VCS, pub/sub, observability, and import/reporting adapters.                                     |
+| Interfaces              | `agileplus-api`, `agileplus-grpc`, `agileplus-dashboard`, `agileplus-github`, `agileplus-plane`, `agileplus-p2p`, `agileplus-triage` | HTTP, gRPC, dashboard, external sync, peer replication, and triage surfaces.                                        |
+| Operations and DX       | `agileplus-cli`, `agileplus-governance`, `xtask-anti-patterns`                                                                       | CLI entrypoint, governance policy/audit tooling, and workspace linting.                                             |
 
 ## Public API Index
 
@@ -48,4 +48,3 @@ cargo run -p xtask-anti-patterns
 ```
 
 Run crate-specific tests with `cargo test -p <crate-name>`.
-

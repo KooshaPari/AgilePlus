@@ -1,0 +1,567 @@
+api_error_paths.rs
+api_integration
+api_integration.rs
+atomic_acceptance_http.rs
+atomic_acceptance_sqlite.rs
+binary_contract.rs
+binary_lifecycle.rs
+health_probes.rs
+otel_middleware_tests.rs
+atomic_acceptance_rpc.rs
+conversion_edge_cases.rs
+event_bus_comprehensive.rs
+grpc_integration.rs
+pact_schema.rs
+proxy_comprehensive.rs
+rpc_dispatch_command.rs
+rpc_event_stream.rs
+rpc_feature_queries.rs
+rpc_governance_audit.rs
+runtime_comprehensive.rs
+runtime_config.rs
+server_logic_comprehensive.rs
+server_process_lifecycle.rs
+streaming_comprehensive.rs
+support
+crates/agileplus-grpc/src/acceptance.rs
+crates/agileplus-api/src/routes/work_packages.rs
+     415 crates/agileplus-api/tests/atomic_acceptance_http.rs
+     309 crates/agileplus-grpc/tests/atomic_acceptance_rpc.rs
+     724 total
+30:pub(crate) async fn seed(db: &SqliteStorageAdapter) -> i64 {
+136:    fn start_span(&self, _: &str, _: Option<&SpanContext>) -> SpanContext {
+154:async fn server(configured: bool) -> (TestServer, Arc<SqliteStorageAdapter>, i64) {
+160:fn mounted_server(db: Arc<SqliteStorageAdapter>, configured: bool) -> TestServer {
+175:fn request() -> Value {
+178:fn count(db: &SqliteStorageAdapter, table: &str) -> i64 {
+185:#[tokio::test]
+186:async fn receipt_lookup_requires_auth_and_never_awards_acceptance() {
+217:#[tokio::test]
+218:async fn mounted_receipt_survives_database_reopen_without_regrading() {
+244:#[tokio::test]
+245:async fn receipt_lookup_redacts_storage_failures() {
+259:#[tokio::test]
+260:async fn authenticated_http_acceptance_commits_and_replays_one_receipt() {
+298:#[tokio::test]
+299:async fn unauthorized_http_cannot_reach_acceptance() {
+316:#[tokio::test]
+317:async fn missing_feature_returns_404_without_acceptance_side_effects() {
+329:#[tokio::test]
+330:async fn stale_governance_expectation_cannot_accept_over_http() {
+352:#[tokio::test]
+353:async fn client_cannot_supply_a_pass_or_actor_override() {
+375:#[tokio::test]
+376:async fn persistence_failure_over_http_leaves_no_terminal_state_or_receipt() {
+406:#[tokio::test]
+407:async fn unsupported_embedder_returns_501_not_an_optimistic_success() {
+30:async fn setup() -> (Server, Arc<SqliteStorageAdapter>, i64) {
+133:#[tokio::test]
+134:async fn grpc_commits_and_replays_canonical_acceptance() {
+168:#[tokio::test]
+169:async fn grpc_requires_auth_and_rejects_grading_overrides_without_mutation() {
+196:#[tokio::test]
+197:async fn grpc_rejects_foreign_scope() {
+218:#[tokio::test]
+219:async fn grpc_storage_failure_rolls_back_and_redacts_details() {
+245:#[tokio::test]
+246:async fn grpc_rejects_stale_governance_version_without_mutation() {
+268:#[tokio::test]
+269:async fn grpc_same_request_id_with_changed_command_conflicts_instead_of_regrading() {
+total 24
+drwxr-xr-x@   5 kooshapari  staff   160 Sep 16 20:30 .
+drwxr-xr-x@ 244 kooshapari  staff  7808 Oct 18 12:30 ..
+-rw-r--r--@   1 kooshapari  staff    48 Sep  1 18:26 .gitignore
+-rw-r--r--@   1 kooshapari  staff  3135 Sep  1 18:26 evidence_ledger.jsonl
+-rw-r--r--@   1 kooshapari  staff  3637 Sep 16 20:30 README.md
+agileplus-api
+agileplus-api-types
+agileplus-application
+agileplus-benchmarks
+agileplus-cache
+agileplus-cli
+agileplus-config
+agileplus-contract-tests
+agileplus-dashboard
+agileplus-domain
+agileplus-error-core
+agileplus-events
+agileplus-fixtures
+agileplus-git
+agileplus-github
+agileplus-governance
+agileplus-graph
+agileplus-grpc
+agileplus-import
+agileplus-integration-tests
+agileplus-nats
+agileplus-p2p
+agileplus-plane
+agileplus-proto
+agileplus-sqlite
+agileplus-subcmds
+agileplus-sync
+agileplus-telemetry
+agileplus-triage
+traceability-core
+[workspace]
+resolver = "2"
+# Active members — only crates/libs with actual source files.
+# Remaining scaffolding (44 crates, 19 libs) tracked but excluded from
+# workspace until source is implemented. See: kitty-specs/003-agileplus-platform-completion.
+members = [
+  "tests/e2e", # installed-CLI round-trip; workflow runs this crate from its manifest directory
+  "tests/e2e-desktop", # E2E tests for the Tauri desktop app (DB, CLI bridge, tray, config)
+  "tests/transport", # Transport-layer integration tests (gRPC, CLI, IPC)
+  "tests/bdd", # fixture and Cucumber acceptance tests
+  "crates/agileplus-proto", # canonical tonic/prost gRPC contract
+  "crates/agileplus-grpc", # loopback Rust core consumed by the MCP bridge
+  "crates/agileplus-cli", # agileplus: spec-first CLI binary
+  "crates/agileplus-subcmds", # platform/dashboard CLI subcommands (platform health)
+  "crates/agileplus-api", # HTTP API binary (default port 3000)
+  "crates/agileplus-application",
+  "crates/agileplus-domain",
+  "crates/agileplus-governance", # SpecKitty scorecard enforcement (rubric + scoring)
+  "crates/traceability-core", # unified PM/traceability spine (un-park 2026-07-04)
+  "crates/agileplus-git",
+  "crates/agileplus-github",
+  "crates/agileplus-graph",
+  "crates/agileplus-plane",
+  "crates/agileplus-sqlite",
+  "crates/agileplus-triage",
+  "crates/agileplus-telemetry",
+  "crates/agileplus-dashboard",
+  "crates/agileplus-events",
+  "crates/agileplus-benchmarks",
+  "crates/agileplus-api-types",
+  "crates/agileplus-cache",
+  "crates/agileplus-contract-tests",
+  "crates/agileplus-error-core",
+  "crates/agileplus-import",
+  "crates/agileplus-integration-tests",
+  "crates/agileplus-nats",
+  "crates/agileplus-config",
+  "crates/agileplus-p2p",
+  "crates/agileplus-sync",
+  "agileplus-agents/crates/agileplus-agent-dispatch",
+  "agileplus-agents/crates/agileplus-agent-review",
+  "agileplus-agents/crates/agileplus-agent-service",
+  "desktop/src-tauri", # Tauri desktop app
+  # NOTE: clap-ext temporarily excluded — incompatible clap version constraint (4.3.x vs 4.6.x). Tracked in PR #924.
+]
+
+[workspace.package]
+version = "0.2.4"
+edition = "2024"
+license = "MIT"
+?? docs/sessions/20261017-state-forward-docket/dependabot_bumps_2026-10-18-stingray.log
+   Compiling agileplus-cli v0.2.4 (/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/crates/agileplus-cli)
+   Compiling agileplus-desktop v0.2.0 (/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/desktop/src-tauri)
+   Compiling agileplus-agent-service v0.2.4 (/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/agileplus-agents/crates/agileplus-agent-service)
+   Compiling agileplus-benchmarks v0.2.4 (/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/crates/agileplus-benchmarks)
+   Compiling agileplus-sqlite v0.2.4 (/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/crates/agileplus-sqlite)
+ATOMIC_ACCEPTANCE_BOUNDARY_2026-10-02.md
+ATOMIC_ACCEPTANCE_GATE_2026-10-03.md
+AUTOGRADER_CONTRACT.md
+CASE_BINDING_2026-10-17.md
+check_intent_reconciliation.py
+CI_EVIDENCE_2026-10-01.md
+EXECUTION_QUEUE.md
+FORWARD_DELTA_2026-10-04.md
+FORWARD_WBS_2026-10-04.md
+INTENT_RECONCILIATION_2026-10-14.md
+NEXT_DEPLOYABLE_RELEASE_2026-10-04.md
+OPERATOR_DASHBOARD_2026-10-08.md
+PROMOTION_RECOVERY_2026-10-08.md
+RELEASE_EVIDENCE_LEDGER_2026-10-07.md
+RUNTIME_CONVERGENCE_2026-10-04.md
+RUNTIME_EVIDENCE_PLAN.md
+semantic-verification-cases.v1.json
+SPECIFICATION_ACCEPTANCE_CONTRACT.md
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 12.72s
+grep: crates/agileplus-domain/src/state_machine.rs: No such file or directory
+crates/agileplus-domain/src/domain/state_machine.rs
+crates/agileplus-domain/src/domain/feature.rs
+crates/agileplus-domain/src/domain/cycle/tests.rs
+crates/agileplus-domain/src/domain/cycle/with_features.rs
+grep: crates/agileplus-domain/src/state_machine/: No such file or directory
+crates/agileplus-domain/src/ports/execution.rs:60:/// Focused, all-or-nothing acceptance capability; separate from generic StoragePort.
+3:pub use traceability_core::lifecycle::{FeatureState, Transition, TransitionResult};
+9:    state: FeatureState,
+10:    target: FeatureState,
+28:            transition(FeatureState::Created, FeatureState::Specified).expect("domain operation");
+29:        assert_eq!(result.transition.from, FeatureState::Created);
+30:        assert_eq!(result.transition.to, FeatureState::Specified);
+35:        let err = transition(FeatureState::Created, FeatureState::Shipped).unwrap_err();
+41:        let err = transition(FeatureState::Specified, FeatureState::Created).unwrap_err();
+48:            FeatureState::Created,
+49:            FeatureState::Specified,
+50:            FeatureState::Researched,
+51:            FeatureState::Planned,
+52:            FeatureState::Implementing,
+53:            FeatureState::Validated,
+54:            FeatureState::Shipped,
+55:            FeatureState::Retrospected,
+81:            let state: FeatureState = s.parse().expect("domain operation");
+88:        assert!("bogus".parse::<FeatureState>().is_err());
+101:    fn arb_state() -> impl Strategy<Value = FeatureState> {
+103:            Just(FeatureState::Created),
+104:            Just(FeatureState::Specified),
+105:            Just(FeatureState::Researched),
+106:            Just(FeatureState::Planned),
+107:            Just(FeatureState::Implementing),
+108:            Just(FeatureState::Validated),
+109:            Just(FeatureState::Shipped),
+110:            Just(FeatureState::Retrospected),
+153:            let r: Result<FeatureState, _> = s.parse();
+159:                    FeatureState::Created
+160:                        | FeatureState::Specified
+161:                        | FeatureState::Researched
+162:                        | FeatureState::Planned
+163:                        | FeatureState::Implementing
+164:                        | FeatureState::Validated
+165:                        | FeatureState::Shipped
+166:                        | FeatureState::Retrospected
+178:    const ALL: [FeatureState; 8] = [
+179:        FeatureState::Created,
+180:        FeatureState::Specified,
+181:        FeatureState::Researched,
+182:        FeatureState::Planned,
+183:        FeatureState::Implementing,
+184:        FeatureState::Validated,
+185:        FeatureState::Shipped,
+186:        FeatureState::Retrospected,
+189:    fn is_allowed(a: FeatureState, b: FeatureState) -> bool {
+192:            (FeatureState::Created, FeatureState::Specified)
+193:                | (FeatureState::Specified, FeatureState::Researched)
+194:                | (FeatureState::Researched, FeatureState::Planned)
+195:                | (FeatureState::Planned, FeatureState::Implementing)
+196:                | (FeatureState::Implementing, FeatureState::Validated)
+197:                | (FeatureState::Validated, FeatureState::Shipped)
+198:                | (FeatureState::Shipped, FeatureState::Retrospected)
+232:            assert_eq!(st.to_string().parse::<FeatureState>().unwrap(), st);
+235:            serde_json::to_string(&FeatureState::Created).unwrap(),
+239:            serde_json::to_string(&FeatureState::Retrospected).unwrap(),
+247:            assert!(s.parse::<FeatureState>().is_err(), "input {s:?}");
+254:            assert!(!is_allowed(FeatureState::Retrospected, to));
+255:            assert!(transition(FeatureState::Retrospected, to).is_err());
+262:            let r = transition(FeatureState::Created, to);
+263:            if to == FeatureState::Specified {
+274:        let st = FeatureState::Planned;
+282:        assert_eq!(format!("{:?}", FeatureState::Shipped), "Shipped");
+288:            let back: FeatureState =
+crates/agileplus-api/tests/api_integration/module_cycle.rs:702:/// a conflict (409), not a generic bad request: the handler treats any failed
+crates/agileplus-api/src/routes/features.rs:392:    fn terminal_feature_states_are_not_generic_transition_targets() {
+crates/agileplus-subcmds/src/events.rs:27:    /// Filter events for a specific feature (by slug or id).
+crates/agileplus-sqlite/src/repository/execution.rs:428:                "producing worker cannot self-award terminal evaluation".into(),
+crates/agileplus-cache/tests/cache_tests.rs:427:// Mock store via concrete type (trait not dyn-compatible due to generics)
+crates/agileplus-domain/src/ports/execution.rs:60:/// Focused, all-or-nothing acceptance capability; separate from generic StoragePort.
+crates/agileplus-application/src/test_cases/story_lifecycle.rs:310:/// The rejection carries the transition it refused, not just a generic error.
+crates/agileplus-api/src/error.rs:136:    fn internal_error_display_is_generic() {
+crates/agileplus-api/src/error.rs:257:    async fn template_error_body_is_generic_and_hides_details() {
+crates/agileplus-api/src/error.rs:270:    async fn internal_error_body_is_generic_and_hides_details() {
+crates/agileplus-api/tests/atomic_acceptance_sqlite.rs
+crates/agileplus-api/tests/atomic_acceptance_http.rs
+crates/agileplus-api/examples/operator_fixture.rs
+crates/agileplus-api/src/state.rs
+crates/agileplus-api/src/main.rs
+crates/agileplus-api/src/routes/acceptance.rs
+crates/agileplus-sqlite/tests/atomic_acceptance.rs
+crates/agileplus-sqlite/src/migrations/mod.rs
+crates/agileplus-sqlite/src/repository/acceptance/mod.rs
+crates/agileplus-grpc/tests/rpc_dispatch_command.rs
+crates/agileplus-grpc/src/acceptance.rs
+crates/agileplus-cli/src/commands/ship.rs
+crates/agileplus-cli/src/commands/validate.rs
+crates/agileplus-domain/src/ports/execution.rs
+crates/agileplus-domain/src/domain/acceptance.rs
+crates/agileplus-application/src/use_cases/promotion.rs
+crates/agileplus-application/src/use_cases/accept_feature.rs
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.79s
+     Running tests/atomic_acceptance_http.rs (target/debug/build/agileplus-api/70173d3d94d5e26e/out/atomic_acceptance_http-70173d3d94d5e26e)
+
+running 10 tests
+test unauthorized_http_cannot_reach_acceptance ... ok
+test receipt_lookup_redacts_storage_failures ... ok
+test missing_feature_returns_404_without_acceptance_side_effects ... ok
+test unsupported_embedder_returns_501_not_an_optimistic_success ... ok
+test client_cannot_supply_a_pass_or_actor_override ... ok
+test receipt_lookup_requires_auth_and_never_awards_acceptance ... ok
+test stale_governance_expectation_cannot_accept_over_http ... ok
+test persistence_failure_over_http_leaves_no_terminal_state_or_receipt ... ok
+test authenticated_http_acceptance_commits_and_replays_one_receipt ... ok
+test mounted_receipt_survives_database_reopen_without_regrading ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s
+
+===EXIT 0===
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+     Running tests/atomic_acceptance_rpc.rs (target/debug/build/agileplus-grpc/8862bf7a81073df0/out/atomic_acceptance_rpc-8862bf7a81073df0)
+
+running 6 tests
+test grpc_requires_auth_and_rejects_grading_overrides_without_mutation ... ok
+test grpc_rejects_foreign_scope ... ok
+test grpc_rejects_stale_governance_version_without_mutation ... ok
+test grpc_storage_failure_rolls_back_and_redacts_details ... ok
+test grpc_commits_and_replays_canonical_acceptance ... ok
+test grpc_same_request_id_with_changed_command_conflicts_instead_of_regrading ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+===EXIT 0===
+crates/agileplus-api/src/routes/acceptance.rs:148:        // not in a shape the acceptance use case can accept. 422 is the
+crates/agileplus-api/src/routes/acceptance.rs:153:            StatusCode::UNPROCESSABLE_ENTITY,
+crates/agileplus-application/src/use_cases/accept_feature.rs:3://! Callers cannot supply a boolean governance pass or separately write terminal state.
+crates/agileplus-domain/src/domain/feature.rs:201:        // Retrospected is a terminal state; no outgoing transitions.
+crates/agileplus-domain/src/domain/feature.rs:467:    fn retrospected_is_terminal() {
+      17 crates/agileplus-application/src/use_cases/accept_feature.rs
+     570 crates/agileplus-domain/src/domain/feature.rs
+     587 total
+crates/agileplus-api/src/routes/features.rs:392:    fn terminal_feature_states_are_not_generic_transition_targets() {
+crates/agileplus-api/src/routes/work_packages.rs:248:    if !wp.state.can_transition_to(target) {
+crates/agileplus-cli/src/commands/mvp.rs:364:            if !wp.state.can_transition_to(target) {
+crates/agileplus-cli/src/commands/mvp.rs:765:        .expect_err("generic MVP transition must not self-award Done");
+crates/agileplus-domain/tests/epic_lifecycle_tests.rs:71:fn transition_matrix_matches_can_transition_to() {
+crates/agileplus-domain/tests/epic_lifecycle_tests.rs:82:            assert_eq!(from.can_transition_to(to), permitted, "{from:?} -> {to:?}");
+crates/agileplus-domain/tests/user_account_tests.rs:70:fn status_matrix_matches_can_transition_to_and_keeps_state_on_error() {
+crates/agileplus-domain/tests/user_account_tests.rs:80:            assert_eq!(from.can_transition_to(to), permitted, "{from:?} -> {to:?}");
+crates/agileplus-domain/src/domain/work_package/mod.rs:21:    pub fn can_transition_to(&self, target: WpState) -> bool {
+crates/agileplus-domain/src/domain/work_package/mod.rs:93:        if !self.state.can_transition_to(target) {
+crates/agileplus-domain/src/domain/work_package/tests.rs:239:fn can_transition_to_valid_transitions() {
+crates/agileplus-domain/src/domain/work_package/tests.rs:240:    assert!(WpState::Planned.can_transition_to(WpState::Doing));
+crates/agileplus-domain/src/domain/work_package/tests.rs:241:    assert!(WpState::Planned.can_transition_to(WpState::Blocked));
+crates/agileplus-domain/src/domain/work_package/tests.rs:242:    assert!(WpState::Doing.can_transition_to(WpState::Review));
+crates/agileplus-domain/src/domain/work_package/tests.rs:243:    assert!(WpState::Doing.can_transition_to(WpState::Blocked));
+crates/agileplus-domain/src/domain/work_package/tests.rs:244:    assert!(WpState::Review.can_transition_to(WpState::Done));
+crates/agileplus-domain/src/domain/work_package/tests.rs:245:    assert!(WpState::Review.can_transition_to(WpState::Doing));
+crates/agileplus-domain/src/domain/work_package/tests.rs:246:    assert!(WpState::Blocked.can_transition_to(WpState::Planned));
+crates/agileplus-domain/src/domain/work_package/tests.rs:247:    assert!(WpState::Blocked.can_transition_to(WpState::Doing));
+crates/agileplus-domain/src/domain/work_package/tests.rs:251:fn can_transition_to_invalid_transitions() {
+crates/agileplus-domain/src/domain/work_package/tests.rs:253:    assert!(!WpState::Planned.can_transition_to(WpState::Planned));
+crates/agileplus-domain/src/domain/work_package/tests.rs:254:    assert!(!WpState::Planned.can_transition_to(WpState::Review));
+crates/agileplus-domain/src/domain/work_package/tests.rs:255:    assert!(!WpState::Planned.can_transition_to(WpState::Done));
+crates/agileplus-domain/src/domain/work_package/tests.rs:257:    assert!(!WpState::Doing.can_transition_to(WpState::Doing));
+crates/agileplus-domain/src/domain/work_package/tests.rs:258:    assert!(!WpState::Doing.can_transition_to(WpState::Planned));
+crates/agileplus-domain/src/domain/work_package/tests.rs:259:    assert!(!WpState::Doing.can_transition_to(WpState::Done));
+crates/agileplus-domain/src/domain/work_package/tests.rs:261:    assert!(!WpState::Review.can_transition_to(WpState::Review));
+crates/agileplus-domain/src/domain/work_package/tests.rs:262:    assert!(!WpState::Review.can_transition_to(WpState::Planned));
+crates/agileplus-domain/src/domain/work_package/tests.rs:263:    assert!(!WpState::Review.can_transition_to(WpState::Blocked));
+crates/agileplus-domain/src/domain/work_package/tests.rs:265:    assert!(!WpState::Done.can_transition_to(WpState::Planned));
+crates/agileplus-domain/src/domain/work_package/tests.rs:266:    assert!(!WpState::Done.can_transition_to(WpState::Doing));
+crates/agileplus-domain/src/domain/work_package/tests.rs:267:    assert!(!WpState::Done.can_transition_to(WpState::Review));
+crates/agileplus-domain/src/domain/work_package/tests.rs:268:    assert!(!WpState::Done.can_transition_to(WpState::Done));
+crates/agileplus-domain/src/domain/work_package/tests.rs:269:    assert!(!WpState::Done.can_transition_to(WpState::Blocked));
+crates/agileplus-domain/src/domain/work_package/tests.rs:271:    assert!(!WpState::Blocked.can_transition_to(WpState::Blocked));
+crates/agileplus-domain/src/domain/work_package/tests.rs:272:    assert!(!WpState::Blocked.can_transition_to(WpState::Review));
+crates/agileplus-domain/src/domain/work_package/tests.rs:273:    assert!(!WpState::Blocked.can_transition_to(WpState::Done));
+crates/agileplus-domain/src/domain/work_package/tests.rs:350:                    from.can_transition_to(to),
+crates/agileplus-domain/src/domain/epic.rs:50:    pub fn can_transition_to(self, target: EpicStatus) -> bool {
+crates/agileplus-domain/src/domain/epic.rs:108:        if !self.status.can_transition_to(target) {
+crates/agileplus-domain/src/domain/epic.rs:187:    fn can_transition_to_full_matrix() {
+crates/agileplus-domain/src/domain/epic.rs:191:                    from.can_transition_to(to),
+crates/agileplus-domain/src/domain/user.rs:76:    pub fn can_transition_to(self, target: UserStatus) -> bool {
+crates/agileplus-domain/src/domain/user.rs:134:        if !self.status.can_transition_to(target) {
+crates/agileplus-domain/src/domain/user.rs:267:    fn can_transition_to_full_matrix() {
+crates/agileplus-domain/src/domain/user.rs:271:                    from.can_transition_to(to),
+crates/agileplus-domain/src/domain/story.rs:53:    pub fn can_transition_to(self, target: StoryStatus) -> bool {
+crates/agileplus-domain/src/domain/story.rs:132:        if !self.status.can_transition_to(target) {
+crates/agileplus-domain/src/domain/story.rs:279:    fn can_transition_to_full_matrix() {
+crates/agileplus-domain/src/domain/story.rs:283:                    from.can_transition_to(to),
+crates/agileplus-domain/src/domain/story.rs:292:    fn transition_status_matrix_matches_can_transition() {
+crates/agileplus-domain/src/domain/story.rs:328:            assert!(!st.can_transition_to(st), "{st:?} self");
+crates/agileplus-api/src/error.rs:136:    fn internal_error_display_is_generic() {
+crates/agileplus-api/src/error.rs:257:    async fn template_error_body_is_generic_and_hides_details() {
+crates/agileplus-api/src/error.rs:270:    async fn internal_error_body_is_generic_and_hides_details() {
+crates/traceability-core/src/artifact.rs:65:    pub kind: ArtifactKind,
+crates/traceability-core/src/artifact.rs:82:    pub fn new(project_id: Uuid, kind: ArtifactKind, title: impl Into<String>) -> Self {
+crates/traceability-core/src/requirement.rs:201:            kind: ArtifactKind::Requirement,
+crates/traceability-core/src/impact.rs:72:    pub by_kind: HashMap<String, f32>,
+crates/traceability-core/src/impact.rs:199:    let mut by_kind: HashMap<String, f32> = HashMap::new();
+crates/traceability-core/src/tracelink.rs:208:    pub fn node_label_for(kind: ArtifactKind) -> &'static str {
+crates/traceability-core/src/contract.rs:331:            kind: ArtifactKind::Requirement,
+crates/traceability-core/src/contract.rs:544:            kind: ArtifactKind::Requirement,
+crates/agileplus-config/src/lib.rs:37:                ($kind:tt)
+crates/agileplus-git/src/claim_bound.rs:7://! 1. The [`Claim`] must be `kind == ClaimKind::Worktree` and `state
+crates/agileplus-git/src/claim_bound.rs:72:            kind: claim.kind,
+crates/agileplus-git/src/claim_bound.rs:175:        kind: ClaimKind::Worktree,
+crates/agileplus-git/src/claim_bound.rs:251:            kind: ClaimKind::Branch,
+crates/agileplus-git/src/claim_bound.rs:271:            kind: ClaimKind::Worktree,
+crates/agileplus-git/src/claim_bound.rs:335:            kind: ClaimKind::Branch,
+crates/agileplus-subcmds/tests/sync_tests.rs:106:        entity_kind: "feature".into(),
+crates/agileplus-subcmds/tests/sync_tests.rs:121:        entity_kind: "wp".into(),
+crates/agileplus-subcmds/tests/sync_tests.rs:181:        entity_kind: "Feature".into(),
+crates/agileplus-subcmds/tests/sync_tests.rs:203:        entity_kind: "feature".into(),
+crates/agileplus-subcmds/src/sync/types.rs:27:    pub entity_kind: String,
+crates/agileplus-subcmds/src/sync/types.rs:58:    pub entity_kind: String,
+crates/agileplus-subcmds/src/sync/types.rs:70:    pub entity_kind: String,
+crates/agileplus-subcmds/src/sync/resolve.rs:83:        entity_kind: entity_type.to_string(),
+crates/agileplus-subcmds/src/sync/pull.rs:25:            entity_kind: "feature".to_string(),
+crates/agileplus-subcmds/src/sync/pull.rs:37:            entity_kind: "feature".to_string(),
+crates/agileplus-subcmds/src/sync/pull.rs:44:            entity_kind: "feature".to_string(),
+crates/agileplus-subcmds/src/sync/pull.rs:51:            entity_kind: "feature".to_string(),
+crates/agileplus-subcmds/src/sync/push.rs:27:            entity_kind: "feature".to_string(),
+crates/agileplus-subcmds/src/sync/push.rs:42:            entity_kind: "wp".to_string(),
+crates/agileplus-subcmds/src/sync/push.rs:53:            entity_kind: "wp".to_string(),
+crates/agileplus-subcmds/src/sync/push.rs:68:        entity_kind: "feature".to_string(),
+crates/agileplus-subcmds/src/sync/status.rs:10:            entity_kind: "Feature".to_string(),
+crates/agileplus-subcmds/src/sync/status.rs:19:            entity_kind: "Feature".to_string(),
+crates/agileplus-subcmds/src/sync/status.rs:28:            entity_kind: "WP".to_string(),
+crates/agileplus-subcmds/src/sync/tests.rs:104:        entity_kind: "feature".to_string(),
+crates/agileplus-plane/tests/sync_queue.rs:59:        kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/sync_queue.rs:72:        kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/sync_queue.rs:87:        kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/sync_queue.rs:100:        kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/sync_queue.rs:113:        kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/sync_queue.rs:128:        kind: SyncOpKind::UpdateIssue,
+crates/agileplus-plane/tests/sync_queue.rs:146:        kind: SyncOpKind::DeleteIssue,
+crates/agileplus-plane/tests/sync_queue.rs:160:        kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/sync_queue.rs:290:            kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/sync_queue.rs:348:        kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/sync_queue.rs:442:        kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/sync_queue.rs:521:            kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/sync_queue.rs:529:            kind: SyncOpKind::DeleteIssue,
+crates/agileplus-plane/tests/sync_queue.rs:550:            kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/sync_queue.rs:560:            kind: SyncOpKind::CreateLabel,
+crates/agileplus-plane/tests/sync_queue.rs:585:            kind: SyncOpKind::UpdateIssue,
+crates/agileplus-plane/tests/sync_queue.rs:604:            kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/sync_queue.rs:628:                kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/sync_queue.rs:651:        kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/coverage_primitives.rs:363:        kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/coverage_primitives.rs:399:            kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/coverage_primitives.rs:414:        kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/coverage_primitives.rs:427:        kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/coverage_primitives.rs:440:        kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/tests/coverage_primitives.rs:459:        kind: SyncOpKind::CreateLabel,
+crates/agileplus-plane/tests/coverage_primitives.rs:477:        kind: SyncOpKind::DeleteIssue,
+crates/agileplus-plane/src/sync_queue.rs:47:    pub kind: SyncOpKind,
+crates/agileplus-plane/src/sync_queue.rs:93:    pub kind: SyncOpKind,
+crates/agileplus-plane/src/sync_queue.rs:102:    pub fn new(id: u64, kind: SyncOpKind, payload: String, content_hash: Option<String>) -> Self {
+crates/agileplus-plane/src/sync_queue.rs:156:    pub fn enqueue(&mut self, kind: SyncOpKind, payload: String) -> Result<u64, QueueError> {
+crates/agileplus-plane/src/sync_queue.rs:292:                let kind: SyncOpKind = serde_json::from_str(&kind_str).ok()?;
+crates/agileplus-plane/src/sync_queue.rs:437:    fn insert_raw_row(store: &SyncQueueStore, id: i64, kind: &str, next: &str, created: &str) {
+crates/agileplus-plane/src/extended_tests.rs:46:        kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/src/extended_tests.rs:59:        kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/src/extended_tests.rs:72:        kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/src/extended_tests.rs:85:        kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/src/extended_tests.rs:98:        kind: SyncOpKind::UpdateIssue,
+crates/agileplus-plane/src/extended_tests.rs:184:            kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/src/extended_tests.rs:258:            kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/src/extended_tests.rs:266:            kind: SyncOpKind::DeleteIssue,
+crates/agileplus-plane/src/extended_tests.rs:287:            kind: SyncOpKind::CreateIssue,
+crates/agileplus-plane/src/extended_tests.rs:297:            kind: SyncOpKind::CreateLabel,
+crates/agileplus-triage/tests/coverage_claim.rs:16:fn make_claim(id: &str, resource: &str, kind: ClaimKind, ttl: i64) -> Claim {
+crates/agileplus-triage/src/claim_watcher.rs:80:        kind: ClaimKind,
+crates/agileplus-triage/src/claim_watcher.rs:150:    pub fn lookup(&self, kind: ClaimKind, resource: &str) -> Option<Claim> {
+crates/agileplus-triage/src/claim_store_sqlite.rs:50:    #[error("unknown claim kind: {0}")]
+crates/agileplus-triage/src/claim_store_sqlite.rs:189:        let reason_kind: Option<String> = row.get("reason_kind")?;
+crates/agileplus-triage/src/claim_store_sqlite.rs:222:        kind: ClaimKind,
+crates/agileplus-triage/src/claim_store_sqlite.rs:350:    fn lookup(&self, kind: ClaimKind, resource: &str) -> Option<Claim> {
+crates/agileplus-triage/src/claim_store_sqlite.rs:398:            kind: old.kind,
+crates/agileplus-triage/src/claim.rs:124:    pub kind: ClaimKind,
+crates/agileplus-triage/src/claim.rs:181:        kind: ClaimKind,
+crates/agileplus-triage/src/claim.rs:203:    fn lookup(&self, kind: ClaimKind, resource: &str) -> Option<Claim>;
+crates/agileplus-triage/src/claim.rs:250:        kind: ClaimKind,
+crates/agileplus-triage/src/claim.rs:325:    pub fn lookup(&self, kind: ClaimKind, resource: &str) -> Option<Claim> {
+crates/agileplus-triage/src/claim.rs:400:        kind: ClaimKind,
+crates/agileplus-triage/src/claim.rs:422:    fn lookup(&self, kind: ClaimKind, resource: &str) -> Option<Claim> {
+crates/agileplus-triage/src/claim.rs:483:            kind: ClaimKind::Repo,
+crates/agileplus-triage/src/claim.rs:609:            kind: ClaimKind::Repo,
+crates/agileplus-triage/src/claim.rs:627:            kind: ClaimKind::Repo,
+crates/agileplus-triage/src/claim.rs:644:            kind: ClaimKind::Repo,
+crates/agileplus-governance/tests/code_scanner_tests.rs:25:        kind: "file_presence".into(),
+crates/agileplus-governance/tests/code_scanner_tests.rs:36:        kind: "count".into(),
+crates/agileplus-governance/tests/code_scanner_tests.rs:80:        kind: "file_presence".into(),
+crates/agileplus-governance/tests/code_scanner_tests.rs:91:        kind: "count".into(),
+crates/agileplus-governance/src/code_scanner.rs:20:    pub kind: String,
+crates/agileplus-governance/src/code_scanner.rs:35:            kind: "file_presence".into(),
+crates/agileplus-governance/src/code_scanner.rs:46:            kind: "count".into(),
+crates/agileplus-governance/src/code_scanner.rs:396:            if item.kind == "file_presence" {
+crates/agileplus-governance/src/code_scanner.rs:497:            kind: "count".into(),
+crates/agileplus-governance/src/code_scanner.rs:620:            kind: "file_presence".into(),
+crates/agileplus-governance/src/code_scanner.rs:633:            kind: "count".into(),
+crates/agileplus-governance/src/code_scanner.rs:685:            if item.kind == "file_presence" {
+crates/agileplus-governance/src/lib.rs:132:            kind: "file_presence".into(),
+crates/agileplus-governance/src/lib.rs:147:            kind: "count".into(),
+crates/agileplus-governance/src/lib.rs:162:            kind: "x".into(),
+crates/agileplus-governance/src/lib.rs:218:            kind: "file_presence".into(),
+crates/agileplus-governance/src/lib.rs:229:            kind: "count".into(),
+crates/agileplus-grpc/tests/support/mod.rs:224:    pub async fn seed_dependency(&self, wp_id: i64, depends_on: i64, kind: DependencyType) {
+crates/agileplus-grpc/tests/support/mod.rs:236:    pub async fn seed_evidence(&self, wp_id: i64, fr_id: &str, kind: EvidenceType) -> i64 {
+crates/agileplus-grpc/src/server/tests.rs:16:fn evidence(id: i64, wp_id: i64, fr_id: &str, kind: EvidenceType) -> Evidence {
+crates/agileplus-telemetry/tests/metrics_emission_tests.rs:51:    kind: Kind,
+crates/agileplus-graph/src/neo4j_store.rs:56:                         MERGE (a)-[r:LINK {id: $rid, kind: $kind}]->(b)",
+crates/agileplus-cli/tests/support/dag.rs:92:pub fn claim_kind(agent: &str, resource: &str, kind: &str) -> DagArgs {
+crates/agileplus-cli/tests/support/dag.rs:97:pub fn claim_as(agent: &str, resource: &str, kind: &str, claim_id: Option<&str>) -> DagArgs {
+crates/agileplus-cli/tests/support/dag.rs:102:            kind: kind.to_string(),
+crates/agileplus-cli/tests/support/review_loop.rs:34:        kind: AgentKind::ClaudeCode,
+crates/agileplus-cli/tests/support/trace.rs:84:    pub from_kind: String,
+crates/agileplus-cli/tests/support/trace.rs:86:    pub to_kind: String,
+crates/agileplus-cli/tests/support/trace.rs:123:            from_kind: r.get(1)?,
+crates/agileplus-cli/tests/support/trace.rs:125:            to_kind: r.get(3)?,
+crates/agileplus-cli/tests/dag_command_flow.rs:70:    // Unknown kind: rejected up front with the offending value in the message.
+crates/agileplus-cli/tests/dag_command_flow.rs:73:    assert!(msg.contains("unknown claim kind: vehicle"), "got: {msg}");
+crates/agileplus-cli/tests/dag_command_flow.rs:178:    assert!(err.contains("unknown claim kind: vehicle"), "stderr: {err}");
+crates/agileplus-cli/src/agent_adapter/mod.rs:349:            kind: agileplus_domain::ports::agent::AgentKind::ClaudeCode,
+crates/agileplus-cli/src/agent_adapter/mod.rs:380:            kind: agileplus_domain::ports::agent::AgentKind::ClaudeCode,
+crates/agileplus-cli/src/agent_adapter/mod.rs:413:            kind: agileplus_domain::ports::agent::AgentKind::ClaudeCode,
+crates/agileplus-cli/src/agent_adapter/mod.rs:447:            kind: agileplus_domain::ports::agent::AgentKind::ClaudeCode,
+crates/agileplus-cli/src/commands/dag.rs:117:    pub kind: String,
+crates/agileplus-cli/src/commands/dag.rs:521:        other => Err(anyhow!("unknown claim kind: {other}")),
+crates/agileplus-cli/src/commands/trace.rs:191:    if from_kind == to_kind && from_id == to_id {
+crates/agileplus-cli/src/commands/trace.rs:266:                from_kind: r.get(1)?,
+crates/agileplus-cli/src/commands/trace.rs:268:                to_kind: r.get(3)?,
+crates/agileplus-cli/src/commands/trace.rs:316:                from_kind: r.get(1)?,
+crates/agileplus-cli/src/commands/trace.rs:318:                to_kind: r.get(3)?,
+crates/agileplus-cli/src/commands/trace.rs:335:        let direction = if r.from_kind == kind && r.from_id == id {
+crates/agileplus-cli/src/commands/trace.rs:411:    pub from_kind: String,
+crates/agileplus-cli/src/commands/trace.rs:413:    pub to_kind: String,
+crates/agileplus-cli/src/commands/trace.rs:422:    pub from_kind: String,
+crates/agileplus-cli/src/commands/trace.rs:424:    pub to_kind: String,
+crates/agileplus-cli/src/commands/trace.rs:818:        let (k, i) = parse_ref("kind:id:extra", "from").unwrap();
+crates/agileplus-cli/src/commands/implement.rs:201:        kind: AgentKind::ClaudeCode,
+crates/agileplus-cache/tests/common/mod.rs:97:    fn failure(kind: FailureKind) -> CacheError {
+crates/agileplus-domain/tests/ports_wire_contract_test.rs:89:        kind: AgentKind::Codex,
+crates/agileplus-domain/src/ports/agent.rs:22:    pub kind: AgentKind,
+crates/agileplus-domain/src/domain/governance_evaluator.rs:138:    kind: EvidenceType,
+crates/agileplus-dashboard/tests/handler_units.rs:655:            kind: "system".into(),
+crates/agileplus-dashboard/tests/handler_units.rs:800:            kind: "image".into(),
+crates/agileplus-dashboard/src/templates.rs:195:    pub kind: String,
+crates/agileplus-dashboard/src/templates.rs:356:    pub kind: String,
+crates/agileplus-dashboard/src/routes/features.rs:85:        kind: "system".into(),
+crates/agileplus-dashboard/src/routes/features.rs:101:            kind: "agent_action".into(),
+crates/agileplus-dashboard/src/routes/features.rs:154:                kind: "state_change".into(),
+crates/agileplus-dashboard/src/routes/features.rs:170:            kind: "system".into(),
+crates/agileplus-dashboard/src/routes/features.rs:274:        kind: "image".into(),
+crates/agileplus-dashboard/src/routes/features.rs:286:            kind: "screenshot".into(),
+crates/agileplus-dashboard/src/routes/helpers.rs:170:    kind: impl Into<String>,
+crates/agileplus-dashboard/src/routes/helpers.rs:176:        kind: kind.into(),
+crates/agileplus-dashboard/src/routes/dashboard.rs:168:        kind: "image".into(),
+crates/agileplus-dashboard/src/routes/dashboard.rs:180:            kind: "screenshot".into(),
+crates/agileplus-dashboard/src/_routes_wip/helpers.rs:167:            kind: "system".into(),
+crates/agileplus-dashboard/src/_routes_wip/helpers.rs:173:            kind: "agent_action".into(),
+crates/agileplus-dashboard/src/_routes_wip/helpers.rs:179:            kind: "state_change".into(),
+crates/agileplus-dashboard/src/_routes_wip/dashboard.rs:30:        kind: "system".into(),
+crates/agileplus-dashboard/src/_routes_wip/dashboard.rs:38:            kind: "agent_action".into(),
+crates/agileplus-dashboard/src/_routes_wip/dashboard.rs:46:                kind: "state_change".into(),
+crates/agileplus-dashboard/src/_routes_wip/dashboard.rs:54:            kind: "system".into(),
+crates/agileplus-dashboard/src/_routes_wip/dashboard.rs:134:        kind: "image".into(),
+crates/agileplus-dashboard/src/_routes_wip/dashboard.rs:146:            kind: "screenshot".into(),
+crates/agileplus-application/tests/triage_app_state_tests.rs:36:        kind: ClaimKind::Worktree,
+crates/agileplus-application/tests/dto_serialization.rs:105:        kind: ClaimKind::Worktree,
+crates/agileplus-application/tests/dto_serialization.rs:152:        kind: ClaimKind::Worktree,
+crates/agileplus-application/src/dto/mod.rs:50:    pub kind: ClaimKind,
+crates/agileplus-application/src/dto/mod.rs:285:            kind: ClaimKind::Worktree,
+crates/agileplus-application/src/test_cases/triage.rs:23:fn claim_req(claim_id: &str, resource: &str, kind: ClaimKind) -> ClaimRequest {
+crates/agileplus-application/src/use_cases/triage.rs:602:            kind: ClaimKind::Worktree,
+crates/agileplus-application/src/use_cases/triage.rs:618:            kind: ClaimKind::Worktree,
+crates/agileplus-application/src/use_cases/triage.rs:628:            kind: ClaimKind::Worktree,
+crates/agileplus-application/src/use_cases/triage.rs:643:            kind: ClaimKind::Worktree,
+crates/agileplus-application/src/use_cases/triage.rs:672:            kind: ClaimKind::Worktree,
+crates/agileplus-application/src/use_cases/triage.rs:843:            kind: ClaimKind::Worktree,
+crates/agileplus-application/src/use_cases/triage.rs:870:            kind: ClaimKind::Worktree,
+crates/agileplus-application/src/use_cases/triage.rs:886:            kind: ClaimKind::Worktree,
+JSON skipped; using text tail below
+?? docs/sessions/20261017-state-forward-docket/dependabot_bumps_2026-10-18-stingray.log
+?? docs/sessions/20261017-state-forward-docket/dependabot_bumps_2026-10-18-stingray.log
+     233 /tmp/e2_e5_p1p2_val_2026-10-18-result.md
+     564 /tmp/e2_e5_p1p2_val_2026-10-18.log
+     797 total

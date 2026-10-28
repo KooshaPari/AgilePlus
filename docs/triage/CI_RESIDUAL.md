@@ -4,7 +4,7 @@
 **Target PR observed:** <REDACTED>/AgilePlus#808
 **Date:** 2026-06-25
 **Method:** Read each still-failing job's log via `gh run view <id> --log-failed`, identify
-the *real* error, and apply the smallest possible fix in `.github/workflows/`.
+the _real_ error, and apply the smallest possible fix in `.github/workflows/`.
 
 > Scope: ANTI-WIPE — only `.github/workflows/**`, `.pre-commit-config.yaml`,
 > `sonar-project.properties`, and this document were edited.
@@ -14,12 +14,12 @@ the *real* error, and apply the smallest possible fix in `.github/workflows/`.
 
 ## Summary Table
 
-| Gate | Run ID | Job ID | Root cause (verbatim from log) | Fix | File |
-|---|---|---|---|---|---|
-| Workspace Path Dependency Audit | 28164216491 | 83411991578 | `MISSING: rust # agileplus-proto: tonic/prost gRPC stubs (buf-generated)` — `awk` in `scripts/workspace-audit.sh` doesn't strip TOML `#` comments on member lines | Replace bash+awk with Python `tomllib` parser in the workflow step | `.github/workflows/workspace-audit.yml` |
-| guard | 28164216557 | 83411991781 | pre-commit `legacy-tooling-scan` hook fails because `tooling/legacy-enforcement/scanner/legacy_tooling_scanner.py` and `policy/rules.yaml` are not vendored in-repo | Pass `--skip legacy-tooling-scan` to pre-commit (the same scan is enforced by `legacy-tooling-gate.yml` which gracefully degrades) | `.github/workflows/security-guard.yml` |
-| sonar | 28164216506 | 83411991844 | `You are running CI analysis while Automatic Analysis is enabled. Please consider disabling one or the other.` | Add projectKey+org to `sonar-project.properties`; `-Dsonar.autoAnalysis.disable=true` already set on main | `sonar-project.properties` (verified: `.github/workflows/sonarcloud.yml` already correct on main) |
-| spec-first | 28164216507 | 83411991525 | `Process completed with exit code 1.` — PR body lacked `spec: eco-XXX-name` line | Out of scope for workflow fix; this PR's body will include `spec: eco-044-gate-triage` | n/a |
+| Gate                            | Run ID      | Job ID      | Root cause (verbatim from log)                                                                                                                                      | Fix                                                                                                                                | File                                                                                              |
+| ------------------------------- | ----------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Workspace Path Dependency Audit | 28164216491 | 83411991578 | `MISSING: rust # agileplus-proto: tonic/prost gRPC stubs (buf-generated)` — `awk` in `scripts/workspace-audit.sh` doesn't strip TOML `#` comments on member lines   | Replace bash+awk with Python `tomllib` parser in the workflow step                                                                 | `.github/workflows/workspace-audit.yml`                                                           |
+| guard                           | 28164216557 | 83411991781 | pre-commit `legacy-tooling-scan` hook fails because `tooling/legacy-enforcement/scanner/legacy_tooling_scanner.py` and `policy/rules.yaml` are not vendored in-repo | Pass `--skip legacy-tooling-scan` to pre-commit (the same scan is enforced by `legacy-tooling-gate.yml` which gracefully degrades) | `.github/workflows/security-guard.yml`                                                            |
+| sonar                           | 28164216506 | 83411991844 | `You are running CI analysis while Automatic Analysis is enabled. Please consider disabling one or the other.`                                                      | Add projectKey+org to `sonar-project.properties`; `-Dsonar.autoAnalysis.disable=true` already set on main                          | `sonar-project.properties` (verified: `.github/workflows/sonarcloud.yml` already correct on main) |
+| spec-first                      | 28164216507 | 83411991525 | `Process completed with exit code 1.` — PR body lacked `spec: eco-XXX-name` line                                                                                    | Out of scope for workflow fix; this PR's body will include `spec: eco-044-gate-triage`                                             | n/a                                                                                               |
 
 ---
 
@@ -61,45 +61,45 @@ real TOML parser and correctly handles inline comments:
 - name: Setup Python (for tomllib workspace audit)
   uses: actions/setup-python@v6
   with:
-    python-version: '3.12'
+      python-version: "3.12"
 
 - name: Run workspace audit
   run: |
-    python3 - <<'PY'
-    import pathlib, sys, tomllib
+      python3 - <<'PY'
+      import pathlib, sys, tomllib
 
-    cargo_toml = pathlib.Path("Cargo.toml")
-    with cargo_toml.open("rb") as fh:
-        data = tomllib.load(fh)
+      cargo_toml = pathlib.Path("Cargo.toml")
+      with cargo_toml.open("rb") as fh:
+          data = tomllib.load(fh)
 
-    workspace = data.get("workspace") or {}
-    members = workspace.get("members") or []
-    if not members:
-        print("No workspace members found.")
-        sys.exit(0)
+      workspace = data.get("workspace") or {}
+      members = workspace.get("members") or []
+      if not members:
+          print("No workspace members found.")
+          sys.exit(0)
 
-    print("=== Workspace Members Check ===")
-    repo_root = pathlib.Path(".").resolve()
-    missing = []
-    for member in members:
-        if isinstance(member, str):
-            member_path = (repo_root / member).resolve()
-            if not member_path.is_dir():
-                print(f"MISSING: {member} (path: {member_path})")
-                missing.append(member)
-            else:
-                print(f"OK:    {member}")
+      print("=== Workspace Members Check ===")
+      repo_root = pathlib.Path(".").resolve()
+      missing = []
+      for member in members:
+          if isinstance(member, str):
+              member_path = (repo_root / member).resolve()
+              if not member_path.is_dir():
+                  print(f"MISSING: {member} (path: {member_path})")
+                  missing.append(member)
+              else:
+                  print(f"OK:    {member}")
 
-    if missing:
-        print("")
-        print("error: workspace audit found missing path dependencies. Fix before merging.")
-        sys.exit(1)
+      if missing:
+          print("")
+          print("error: workspace audit found missing path dependencies. Fix before merging.")
+          sys.exit(1)
 
-    print("")
-    print("ok: all workspace members and path dependencies are present.")
-    PY
+      print("")
+      print("ok: all workspace members and path dependencies are present.")
+      PY
   env:
-    RUSTFLAGS: "-D warnings"
+      RUSTFLAGS: "-D warnings"
 ```
 
 `scripts/workspace-audit.sh` is intentionally untouched (anti-wipe); the workflow
@@ -137,9 +137,9 @@ minimal local policy when the shared policy cannot be downloaded:
 
 ```yaml
 - name: Run pre-commit guard checks
-  uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd  # v3.0.1
+  uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
   with:
-    extra_args: --hook-stage pre-commit --config .pre-commit-config.yaml --show-diff-on-failure --skip legacy-tooling-scan
+      extra_args: --hook-stage pre-commit --config .pre-commit-config.yaml --show-diff-on-failure --skip legacy-tooling-scan
 ```
 
 `--skip` is pre-commit's documented mechanism for excluding a single hook

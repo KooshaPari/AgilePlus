@@ -37,4 +37,3 @@ if ($argsText -contains "--json") {
 /ap-status us-agileplus-epic-1
 /ap-status us-agileplus-epic-1 --wp wp-3 --json
 ```
-

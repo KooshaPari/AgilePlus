@@ -13,4 +13,3 @@ SQLite persistence adapter for AgilePlus storage ports.
 ```bash
 cargo test -p agileplus-sqlite
 ```
-

@@ -12,18 +12,18 @@ Establish a deterministic, machine-verified check that every repo flagged as dep
 ## Implementation Steps
 
 1. **Discovery (DAG: none)**
-   - Reuse the deployable-repo list produced by `eco-009` (`worklogs/DEPLOYMENT.md` index).
-   - Confirm each candidate has `docs/deployment.md` with a parseable URL and `last_deploy` field.
+    - Reuse the deployable-repo list produced by `eco-009` (`worklogs/DEPLOYMENT.md` index).
+    - Confirm each candidate has `docs/deployment.md` with a parseable URL and `last_deploy` field.
 2. **Probe (DAG: → 1)**
-   - For each candidate, HTTP GET the URL with a 30s timeout.
-   - Capture status code, response time, redirect target.
+    - For each candidate, HTTP GET the URL with a 30s timeout.
+    - Capture status code, response time, redirect target.
 3. **Classify (DAG: → 2)**
-   - Apply FR-2..FR-5: `live | stale | broken | unknown`.
-   - Record skipped repos (FR-6) with reasons.
+    - Apply FR-2..FR-5: `live | stale | broken | unknown`.
+    - Record skipped repos (FR-6) with reasons.
 4. **Emit (DAG: → 3)**
-   - Write `worklogs/deploy-status-<YYYY-MM-DD>.json` atomically.
-   - Append a pointer line to `worklogs/DEPLOYMENT.md` (idempotent overwrite per AC-4).
+    - Write `worklogs/deploy-status-<YYYY-MM-DD>.json` atomically.
+    - Append a pointer line to `worklogs/DEPLOYMENT.md` (idempotent overwrite per AC-4).
 5. **Triage (DAG: → 4)**
-   - For every `broken` / `unknown`, append an `INTEGRATION.md` entry with owner, repo, URL, failure mode.
+    - For every `broken` / `unknown`, append an `INTEGRATION.md` entry with owner, repo, URL, failure mode.
 6. **Verify (DAG: → 5)**
-   - Confirm AC-1..AC-4 hold; capture sample run in `worklogs/DEPLOYMENT.md` history.
+    - Confirm AC-1..AC-4 hold; capture sample run in `worklogs/DEPLOYMENT.md` history.

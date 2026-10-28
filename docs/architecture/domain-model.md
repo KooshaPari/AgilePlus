@@ -58,6 +58,7 @@ pub enum FeatureState {
 ```
 
 **Key methods**:
+
 ```rust
 impl Feature {
     pub fn new(slug: &str, friendly_name: &str, spec_hash: [u8; 32],
@@ -68,6 +69,7 @@ impl Feature {
 ```
 
 **Lifecycle**:
+
 1. Created via `Feature::new()`
 2. State transitions via `Feature::transition()` (enforced by preconditions)
 3. Persisted via `StoragePort::create_feature()` and `update_feature_state()`
@@ -124,6 +126,7 @@ Planned → Doing → Review → Done
 WPs can move backward (e.g., from `Blocked` to `Planned`) but features cannot.
 
 **Key methods**:
+
 ```rust
 impl WorkPackage {
     pub fn new(feature_id: i64, title: &str, sequence: i32,
@@ -158,6 +161,7 @@ pub struct DependencyGraph {
 ```
 
 **Key methods**:
+
 ```rust
 impl DependencyGraph {
     pub fn new() -> Self
@@ -215,6 +219,7 @@ pub struct AuditChain {
 **Hash Chain Integrity**:
 
 Each entry is hashed from:
+
 ```
 hash = SHA-256(
     feature_id ||
@@ -229,6 +234,7 @@ hash = SHA-256(
 If any field is modified, the hash changes. If the `prev_hash` doesn't match the previous entry's computed hash, verification fails.
 
 **Key methods**:
+
 ```rust
 pub fn hash_entry(entry: &AuditEntry) -> [u8; 32]
 
@@ -238,6 +244,7 @@ impl AuditChain {
 ```
 
 **Example chain**:
+
 ```
 Entry 0:
   feature_id: 123
@@ -298,20 +305,25 @@ pub enum EvidenceType {
 ```
 
 **Example contract**:
+
 ```json
 {
-  "feature_id": 123,
-  "version": 1,
-  "rules": [
-    {
-      "transition": "implementing->validated",
-      "required_evidence": [
-        { "fr_id": "FR-004", "evidence_type": "TestResult" },
-        { "fr_id": "FR-005", "evidence_type": "SecurityScan", "threshold": { "max_cves": 0 } }
-      ],
-      "policy_refs": ["POLICY-001", "POLICY-003"]
-    }
-  ]
+    "feature_id": 123,
+    "version": 1,
+    "rules": [
+        {
+            "transition": "implementing->validated",
+            "required_evidence": [
+                { "fr_id": "FR-004", "evidence_type": "TestResult" },
+                {
+                    "fr_id": "FR-005",
+                    "evidence_type": "SecurityScan",
+                    "threshold": { "max_cves": 0 }
+                }
+            ],
+            "policy_refs": ["POLICY-001", "POLICY-003"]
+        }
+    ]
 }
 ```
 
@@ -334,18 +346,19 @@ pub struct Evidence {
 ```
 
 **Example**:
+
 ```json
 {
-  "id": 42,
-  "wp_id": 5,
-  "fr_id": "FR-004",
-  "evidence_type": "TestResult",
-  "artifact_path": "target/test-results.json",
-  "metadata": {
-    "passed": 456,
-    "failed": 0,
-    "coverage": 94.2
-  }
+    "id": 42,
+    "wp_id": 5,
+    "fr_id": "FR-004",
+    "evidence_type": "TestResult",
+    "artifact_path": "target/test-results.json",
+    "metadata": {
+        "passed": 456,
+        "failed": 0,
+        "coverage": 94.2
+    }
 }
 ```
 
@@ -387,17 +400,18 @@ pub enum PolicyCheck {
 ```
 
 **Example**:
+
 ```json
 {
-  "id": 1,
-  "domain": "Security",
-  "description": "All features must pass security scan with zero CVEs",
-  "check": {
-    "EvidencePresent": {
-      "evidence_type": "SecurityScan"
-    }
-  },
-  "active": true
+    "id": 1,
+    "domain": "Security",
+    "description": "All features must pass security scan with zero CVEs",
+    "check": {
+        "EvidencePresent": {
+            "evidence_type": "SecurityScan"
+        }
+    },
+    "active": true
 }
 ```
 
@@ -583,6 +597,7 @@ pub enum SyncDirection {
 ```
 
 The sync orchestrator uses `SyncMapping` to:
+
 - Look up the external issue when a WP state changes (to push updates)
 - Identify which local WP to update when a webhook arrives (to pull changes)
 - Detect conflicts (both systems changed since last sync)

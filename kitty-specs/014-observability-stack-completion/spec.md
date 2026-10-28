@@ -19,6 +19,7 @@ This spec completes the observability stack by implementing distributed tracing,
 ## Problem Statement
 
 Observability in the Phenotype ecosystem is fragmented:
+
 - **Distributed tracing** — incomplete implementation, no trace context propagation
 - **Metrics collection** — isolated metrics, no correlation with traces
 - **Structured logging** — no trace ID injection, inconsistent log formats
@@ -44,38 +45,42 @@ Observability in the Phenotype ecosystem is fragmented:
 
 ## Repositories Affected
 
-| Repo | Language | Current State | Action |
-|------|----------|---------------|--------|
-| tracely | Rust | Partial tracing implementation | Complete distributed tracing, add W3C Trace Context |
-| thegent-metrics | Rust | Metrics collection | Integrate with tracing, add consistent labeling |
-| thegent-shm | Rust | Shared memory metrics | Integrate with tracing, optimize performance |
-| helix-logging | Rust | Structured logging | Add trace ID injection, unify log format |
-| helix-tracing | Rust | Archived | Document archival, migrate functionality to tracely |
-| Tracera | Rust | Profiling prototype | Complete profiling, integrate with tracing |
-| Profila | Rust | Benchmarking prototype | Complete benchmarking, correlate with metrics |
-| Phench | Rust | Benchmarking framework | Integrate with observability pipeline |
+| Repo            | Language | Current State                  | Action                                              |
+| --------------- | -------- | ------------------------------ | --------------------------------------------------- |
+| tracely         | Rust     | Partial tracing implementation | Complete distributed tracing, add W3C Trace Context |
+| thegent-metrics | Rust     | Metrics collection             | Integrate with tracing, add consistent labeling     |
+| thegent-shm     | Rust     | Shared memory metrics          | Integrate with tracing, optimize performance        |
+| helix-logging   | Rust     | Structured logging             | Add trace ID injection, unify log format            |
+| helix-tracing   | Rust     | Archived                       | Document archival, migrate functionality to tracely |
+| Tracera         | Rust     | Profiling prototype            | Complete profiling, integrate with tracing          |
+| Profila         | Rust     | Benchmarking prototype         | Complete benchmarking, correlate with metrics       |
+| Phench          | Rust     | Benchmarking framework         | Integrate with observability pipeline               |
 
 ## Technical Approach
 
 ### Phase 1: Architecture Design (Week 1-2)
+
 1. Design unified observability architecture
 2. Define interfaces between tracing, metrics, logging, profiling
 3. Choose W3C Trace Context for trace propagation
 4. Design consistent labeling scheme for metrics
 
 ### Phase 2: Distributed Tracing (Week 2-4)
+
 1. Complete tracely distributed tracing implementation
 2. Implement W3C Trace Context propagation
 3. Add trace context extraction/injection for HTTP, gRPC, message queues
 4. Integrate tracing with thegent-metrics and thegent-shm
 
 ### Phase 3: Logging and Metrics Integration (Week 4-6)
+
 1. Add automatic trace ID injection to helix-logging
 2. Unify log format across all services
 3. Integrate thegent-metrics with tracing pipeline
 4. Optimize thegent-shm shared memory performance
 
 ### Phase 4: Profiling and Benchmarking (Week 6-8)
+
 1. Complete Tracera profiling implementation
 2. Integrate profiling with tracing pipeline
 3. Complete Profila benchmarking framework
@@ -83,6 +88,7 @@ Observability in the Phenotype ecosystem is fragmented:
 5. Correlate benchmarking results with production metrics
 
 ### Phase 5: Dashboard and Alerting (Week 8-10)
+
 1. Design unified observability dashboard
 2. Implement alerting rules based on observability data
 3. Create runbooks for common observability scenarios
@@ -101,25 +107,25 @@ Observability in the Phenotype ecosystem is fragmented:
 
 ## Risks
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Performance overhead from observability | High | Benchmark observability overhead, optimize hot paths |
-| Breaking changes to existing APIs | Medium | Careful API design, deprecation periods |
-| Integration complexity between components | Medium | Clear interfaces, integration tests |
-| helix-tracing archival migration | Low | Document thoroughly, ensure tracely covers all functionality |
-| Scope creep from additional observability features | Medium | Strict scope enforcement, defer to future specs |
+| Risk                                               | Impact | Mitigation                                                   |
+| -------------------------------------------------- | ------ | ------------------------------------------------------------ |
+| Performance overhead from observability            | High   | Benchmark observability overhead, optimize hot paths         |
+| Breaking changes to existing APIs                  | Medium | Careful API design, deprecation periods                      |
+| Integration complexity between components          | Medium | Clear interfaces, integration tests                          |
+| helix-tracing archival migration                   | Low    | Document thoroughly, ensure tracely covers all functionality |
+| Scope creep from additional observability features | Medium | Strict scope enforcement, defer to future specs              |
 
 ## Work Packages
 
-| ID | Description | State |
-|----|-------------|-------|
-| WP001 | Architecture design | specified |
-| WP002 | Distributed tracing completion | specified |
+| ID    | Description                     | State     |
+| ----- | ------------------------------- | --------- |
+| WP001 | Architecture design             | specified |
+| WP002 | Distributed tracing completion  | specified |
 | WP003 | Logging and metrics integration | specified |
-| WP004 | Profiling completion | specified |
-| WP005 | Benchmarking integration | specified |
-| WP006 | Dashboard and alerting | specified |
-| WP007 | Documentation and runbooks | specified |
+| WP004 | Profiling completion            | specified |
+| WP005 | Benchmarking integration        | specified |
+| WP006 | Dashboard and alerting          | specified |
+| WP007 | Documentation and runbooks      | specified |
 
 ## Traces
 

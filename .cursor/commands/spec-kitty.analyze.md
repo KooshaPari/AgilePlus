@@ -7,8 +7,8 @@ description: DEPRECATED — use `ap validate` instead. See docs/design/SPECKITTY
 
 ## Migration
 
-| SpecKitty | AgilePlus (`ap`) |
-|-----------|-------------------|
+| SpecKitty             | AgilePlus (`ap`)           |
+| --------------------- | -------------------------- |
 | `/spec-kitty.analyze` | `ap validate <feature-id>` |
 
 ```bash

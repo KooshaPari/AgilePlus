@@ -19,6 +19,7 @@ This spec catalogs all 19 private repos, maps their relationships to public repo
 ## Problem Statement
 
 Private repositories are unmanaged and undocumented:
+
 - **No catalog** — no comprehensive list of private repos and their purposes
 - **Unknown relationships** — unclear how private repos relate to public repos
 - **Potential duplicates** — private repos may duplicate public repo functionality
@@ -44,55 +45,60 @@ Private repositories are unmanaged and undocumented:
 
 ## Repositories Affected
 
-| Repo | Language | Purpose | Public Equivalent | Action |
-|------|----------|---------|-------------------|--------|
-| template-lang-go | Go | Private Go templates | template-lang-go (public) | Evaluate duplicate, merge or archive |
-| template-commons | Shared | Private shared templates | template-lang-commons (public) | Evaluate duplicate, merge or archive |
-| Schemaforge | Rust | Schema generation | None | Document, maintain as private |
-| Flagward | TypeScript | Feature flag service | None | Document, maintain as private |
-| phenotype-docs-engine | Rust | Documentation engine | phenotype-docs-engine (public) | Evaluate duplicate, merge or archive |
-| phenotype-evaluation | Python | Evaluation framework | None | Document, maintain as private |
-| phenotype-skills | TypeScript | Agent skills | None | Document, maintain as private |
-| Prismal | Rust | Database utilities | None | Document, maintain as private |
-| Cursora | TypeScript | Cursor integration | None | Document, maintain as private |
-| phenotype-patch | Rust | Patch management | None | Document, maintain as private |
-| phenotype-sentinel | Rust | Security monitoring | None | Document, maintain as private |
-| phenotype-agent-core | Rust | Agent core | phenotype-agent-core (public) | Evaluate duplicate, merge or archive |
-| phenotype-vessel | Rust | Container utilities | None | Document, maintain as private |
-| phenotype-config | Rust | Configuration | phenotype-config (public) | Evaluate duplicate, merge or archive |
-| Parpoura | TypeScript | Data pipeline | None | Document, maintain as private |
-| Civis | Go | Civic data tools | None | Document, maintain as private |
-| phenotype-agents | Rust | Agent framework | phenotype-agents (public) | Evaluate duplicate, merge or archive |
-| Holdr | Rust | Data holding | None | Document, maintain as private |
-| Flowra | TypeScript | Workflow engine | None | Document, maintain as private |
+| Repo                  | Language   | Purpose                  | Public Equivalent              | Action                               |
+| --------------------- | ---------- | ------------------------ | ------------------------------ | ------------------------------------ |
+| template-lang-go      | Go         | Private Go templates     | template-lang-go (public)      | Evaluate duplicate, merge or archive |
+| template-commons      | Shared     | Private shared templates | template-lang-commons (public) | Evaluate duplicate, merge or archive |
+| Schemaforge           | Rust       | Schema generation        | None                           | Document, maintain as private        |
+| Flagward              | TypeScript | Feature flag service     | None                           | Document, maintain as private        |
+| phenotype-docs-engine | Rust       | Documentation engine     | phenotype-docs-engine (public) | Evaluate duplicate, merge or archive |
+| phenotype-evaluation  | Python     | Evaluation framework     | None                           | Document, maintain as private        |
+| phenotype-skills      | TypeScript | Agent skills             | None                           | Document, maintain as private        |
+| Prismal               | Rust       | Database utilities       | None                           | Document, maintain as private        |
+| Cursora               | TypeScript | Cursor integration       | None                           | Document, maintain as private        |
+| phenotype-patch       | Rust       | Patch management         | None                           | Document, maintain as private        |
+| phenotype-sentinel    | Rust       | Security monitoring      | None                           | Document, maintain as private        |
+| phenotype-agent-core  | Rust       | Agent core               | phenotype-agent-core (public)  | Evaluate duplicate, merge or archive |
+| phenotype-vessel      | Rust       | Container utilities      | None                           | Document, maintain as private        |
+| phenotype-config      | Rust       | Configuration            | phenotype-config (public)      | Evaluate duplicate, merge or archive |
+| Parpoura              | TypeScript | Data pipeline            | None                           | Document, maintain as private        |
+| Civis                 | Go         | Civic data tools         | None                           | Document, maintain as private        |
+| phenotype-agents      | Rust       | Agent framework          | phenotype-agents (public)      | Evaluate duplicate, merge or archive |
+| Holdr                 | Rust       | Data holding             | None                           | Document, maintain as private        |
+| Flowra                | TypeScript | Workflow engine          | None                           | Document, maintain as private        |
 
 ## Technical Approach
 
 ### Phase 1: Discovery and Catalog (Week 1-2)
+
 1. Query GitHub API for all private repos with metadata
 2. Document each repo's purpose, ownership, and access controls
 3. Map dependencies between private repos
 4. Identify sensitive content requiring special handling
 
 ### Phase 2: Public-Private Mapping (Week 2-3)
+
 1. Compare private repos with public repos
 2. Identify duplicates between private and public repos
 3. Document relationships and dependencies
 4. Assess which private repos should remain private
 
 ### Phase 3: Duplicate Resolution (Week 3-4)
+
 1. Evaluate each duplicate pair for merge or archive
 2. Plan migration for repos to be merged
 3. Archive repos that are superseded
 4. Update references to archived repos
 
 ### Phase 4: Governance Model (Week 4-5)
+
 1. Define private repo lifecycle management
 2. Establish access control procedures
 3. Create security requirements documentation
 4. Define maintenance schedules for private repos
 
 ### Phase 5: Documentation and Verification (Week 5-6)
+
 1. Document all private repos with purpose and ownership
 2. Create comprehensive private repo catalog
 3. Verify all access controls are correct
@@ -110,22 +116,22 @@ Private repositories are unmanaged and undocumented:
 
 ## Risks
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Accidental exposure of sensitive code | High | Careful handling, security review |
-| Breaking dependencies during duplicate resolution | Medium | Thorough dependency mapping, testing |
-| Access control misconfiguration | High | Careful review, stakeholder approval |
-| Stakeholder disagreement on private/public status | Medium | Clear criteria, appeal process |
-| Scope creep from additional private repos | Low | Strict scope enforcement, defer to future specs |
+| Risk                                              | Impact | Mitigation                                      |
+| ------------------------------------------------- | ------ | ----------------------------------------------- |
+| Accidental exposure of sensitive code             | High   | Careful handling, security review               |
+| Breaking dependencies during duplicate resolution | Medium | Thorough dependency mapping, testing            |
+| Access control misconfiguration                   | High   | Careful review, stakeholder approval            |
+| Stakeholder disagreement on private/public status | Medium | Clear criteria, appeal process                  |
+| Scope creep from additional private repos         | Low    | Strict scope enforcement, defer to future specs |
 
 ## Work Packages
 
-| ID | Description | State |
-|----|-------------|-------|
-| WP001 | Discovery and catalog | specified |
-| WP002 | Public-private mapping | specified |
-| WP003 | Duplicate resolution | specified |
-| WP004 | Governance model | specified |
+| ID    | Description                    | State     |
+| ----- | ------------------------------ | --------- |
+| WP001 | Discovery and catalog          | specified |
+| WP002 | Public-private mapping         | specified |
+| WP003 | Duplicate resolution           | specified |
+| WP004 | Governance model               | specified |
 | WP005 | Documentation and verification | specified |
 
 ## Traces

@@ -2,18 +2,18 @@
 
 ## Drift Summary
 
-| # | Repo | Claim | Reality | Severity |
-|---|------|-------|---------|----------|
-| 1 | AgilePlus | Rust workspace at `rust/` with hexagonal core, event sourcing, gRPC stubs | `rust/Cargo.toml` exists but **fails to build** -- empty `members = []`, broken `tonic` workspace dependency inheritance. 24 crates + 19 libs directories exist on disk but contain **zero `.rs` files**. Python layer directory empty (no `.py` files). Proto files and openapi.yaml exist. Landing app is Astro-based. | HIGH |
-| 2 | AgilePlus-wtrees | Should be worktree staging area | Contains 16 branch-name directories (e.g. `cargo-deny-fix-tonic`, `journey-impl`, `quality-gate`). Includes full copy of AgilePlus with its own `Cargo.toml`, `apps/`, `proto/`, etc. Not a worktree directory -- it appears to be a container repo for feature branches. No README. | LOW |
-| 3 | heliosApp | "ElectroBun-based UI", "stable", 4 apps, 5 packages, 33 CI workflows, full runtime+desktop+renderer+colab | All 4 apps exist with full TypeScript source (~470 `.ts` files). All 5 packages present. 33 CI workflows confirmed. Desktop tests: 21 unit test files. Runtime modules (protocol, sessions, pty, providers, audit, secrets, etc.) all exist with source files. **But: Zero references to "ElectroBun" in package.json** -- runtime uses Bun directly, desktop shell is custom TypeScript, not ElectroBun framework. LocalBus V1, state machines, audit log all present. | MEDIUM |
-| 4 | helios-cli | "Multi-model coding agent CLI with Bazel + Rust + TypeScript", "OpenAI Codex fork" | Is a fork of OpenAI Codex CLI (`codex-rs/` has 1456 `.rs` files across ~70 sub-crates). Bazel BUILD files present. `codex-cli/` has `package.json` but **zero `.ts` files** -- TS CLI layer does not exist. `helios-rs/` has exactly **1 `.rs` file** (Cargo.toml workspace root placeholder). README duplicates build badge sections. Claims "Supported Models: OpenAI, Claude, Gemini, Cursor, GitHub Copilot" but actual CLI only implements upstream Codex. Go tooling slots claimed in AgilePlus README -- none here. | HIGH |
-| 5 | agileplus-agents | 3 Rust crates: dispatch, review, gRPC service with proto definitions | All 3 crates exist. 24 `.rs` source files. Proto definitions (4 `.proto` files: core, agents, integrations, common). 4 test files in review crate. `build.rs` with tonic-build confirmed. `cargo check` passes. Structure matches README almost exactly. Minor: README says "3 primary crates" which is accurate. | LOW |
-| 6 | BytePort | "Self-hosted IaC deployment + portfolio platform", claims Go 1.25 backend + SvelteKit 2 + Tauri 2 frontend | Backend: Go source files exist (2731 `.go` files). Frontend: SvelteKit source (5277 `.files`). Tauri referenced in scripts. README has **contradictory claims**: top section says Go/SvelteKit/Tauri (current), but massive outdated manifesto section still describes Rust/Loco.rs/NanoVMS stack. The old narrative occupies ~80% of the README. `./start dev` script exists. No Rust workspace with meaningful code -- `Cargo.toml` only has `src-tauri` member. Go tests: 3 test files in backend. | HIGH |
-| 7 | thegent | "100+ Python modules", "28 Rust crates", "10+ language stack templates", "platform bootstrap", "agent orchestration" | Python: 1748 `.py` files in src, 989 modules in `src/thegent/`. Rust: 205 `.rs` files in crates, **32 Cargo.toml files** (not 28 -- 4 more than claimed). 20+ test files found. 10 template directories confirmed (bash, cpp, go, java, php, python, ruby, rust, typescript, zig). Apps include `byteport`, `landing`. However: `bun run build` fails (no build script in package.json). The README mentions "shim wrappers: clode/dex/roid/droid" -- actual shim implementation files exist under `crates/thegent-shims/`. Architecture diagram shows 12 Rust crates, 12 assets; actual is 32 crates. Minor version drift. | MEDIUM |
-| 8 | HexaKit | "Rust workspace with 16+ specialized infrastructure libraries", "phenotype-infrakit" | `Cargo.toml` has `members = []` -- **zero crates are workspace members**. However, 33 crate directories exist on disk. Of those, ~30 have actual `.rs` source (648 `.rs` files total). Top crates by file count: `phenotype-port-traits` (11), `phenotype-policy-engine` (11), `phenotype-xdd-lib` (10). Also contains **sub-repos**: agileplus, agileplus-agents, agileplus-mcp, BytePort, helios-cli (copies/symlinks of those repos). README architecture diagram shows `repos/` shelf layout: apps/, tooling/, infra/, libs/, platforms/ -- **none of these directories exist** at shelf level. | HIGH |
-| 9 | phenoShared | "16 crates" listed, event sourcing, cache, policy engine, adapters | `Cargo.toml` declares exactly **16 crate members** -- count matches README table (which lists 16). 148 `.rs` source files. Test files: 3 test files across different crates. Packages/types has TS source + tests. `cargo check` passes. Source structure aligns README architecture diagram (domain -> application -> ports -> infrastructure). README code examples are extensive and match crate names. Fidelity is high. | LOW |
-| 10 | Tokn | "Enterprise-grade token management", "80% test coverage", "SQLite + PostgreSQL", "CLI: report, costs, optimize" | Workspace: 2 crates (`pareto-rs`, `tokenledger`). 35 `.rs` source files. CLI has commands: Monthly, Daily, Coverage, PricingCheck/Apply/Reconcile/Lint/Audit, Ingest, Bench, Orchestrate, Benchmarks -- exceeds README claim of just "report, costs, optimize". **However**: Cargo.toml has **zero database dependencies** (no sqlx, sqlite, postgres). Claims SQLite+PostgreSQL but no DB code exists. Test files: 3 (smoke, integration, additional). Benchmarks: 1 file. Coverage claim (>=80%) unverified and unlikely with only 3 test files / 35 source files. `analytics.rs` at repo root references nonexistent `phenotype_analytics` crate. `sentry_config.rs` at root with no corresponding Cargo dep. `cargo check` passes. | HIGH |
+| #   | Repo             | Claim                                                                                                                | Reality                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Severity |
+| --- | ---------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| 1   | AgilePlus        | Rust workspace at `rust/` with hexagonal core, event sourcing, gRPC stubs                                            | `rust/Cargo.toml` exists but **fails to build** -- empty `members = []`, broken `tonic` workspace dependency inheritance. 24 crates + 19 libs directories exist on disk but contain **zero `.rs` files**. Python layer directory empty (no `.py` files). Proto files and openapi.yaml exist. Landing app is Astro-based.                                                                                                                                                                                                                                                                                                                                                                                                               | HIGH     |
+| 2   | AgilePlus-wtrees | Should be worktree staging area                                                                                      | Contains 16 branch-name directories (e.g. `cargo-deny-fix-tonic`, `journey-impl`, `quality-gate`). Includes full copy of AgilePlus with its own `Cargo.toml`, `apps/`, `proto/`, etc. Not a worktree directory -- it appears to be a container repo for feature branches. No README.                                                                                                                                                                                                                                                                                                                                                                                                                                                   | LOW      |
+| 3   | heliosApp        | "ElectroBun-based UI", "stable", 4 apps, 5 packages, 33 CI workflows, full runtime+desktop+renderer+colab            | All 4 apps exist with full TypeScript source (~470 `.ts` files). All 5 packages present. 33 CI workflows confirmed. Desktop tests: 21 unit test files. Runtime modules (protocol, sessions, pty, providers, audit, secrets, etc.) all exist with source files. **But: Zero references to "ElectroBun" in package.json** -- runtime uses Bun directly, desktop shell is custom TypeScript, not ElectroBun framework. LocalBus V1, state machines, audit log all present.                                                                                                                                                                                                                                                                | MEDIUM   |
+| 4   | helios-cli       | "Multi-model coding agent CLI with Bazel + Rust + TypeScript", "OpenAI Codex fork"                                   | Is a fork of OpenAI Codex CLI (`codex-rs/` has 1456 `.rs` files across ~70 sub-crates). Bazel BUILD files present. `codex-cli/` has `package.json` but **zero `.ts` files** -- TS CLI layer does not exist. `helios-rs/` has exactly **1 `.rs` file** (Cargo.toml workspace root placeholder). README duplicates build badge sections. Claims "Supported Models: OpenAI, Claude, Gemini, Cursor, GitHub Copilot" but actual CLI only implements upstream Codex. Go tooling slots claimed in AgilePlus README -- none here.                                                                                                                                                                                                             | HIGH     |
+| 5   | agileplus-agents | 3 Rust crates: dispatch, review, gRPC service with proto definitions                                                 | All 3 crates exist. 24 `.rs` source files. Proto definitions (4 `.proto` files: core, agents, integrations, common). 4 test files in review crate. `build.rs` with tonic-build confirmed. `cargo check` passes. Structure matches README almost exactly. Minor: README says "3 primary crates" which is accurate.                                                                                                                                                                                                                                                                                                                                                                                                                      | LOW      |
+| 6   | BytePort         | "Self-hosted IaC deployment + portfolio platform", claims Go 1.25 backend + SvelteKit 2 + Tauri 2 frontend           | Backend: Go source files exist (2731 `.go` files). Frontend: SvelteKit source (5277 `.files`). Tauri referenced in scripts. README has **contradictory claims**: top section says Go/SvelteKit/Tauri (current), but massive outdated manifesto section still describes Rust/Loco.rs/NanoVMS stack. The old narrative occupies ~80% of the README. `./start dev` script exists. No Rust workspace with meaningful code -- `Cargo.toml` only has `src-tauri` member. Go tests: 3 test files in backend.                                                                                                                                                                                                                                  | HIGH     |
+| 7   | thegent          | "100+ Python modules", "28 Rust crates", "10+ language stack templates", "platform bootstrap", "agent orchestration" | Python: 1748 `.py` files in src, 989 modules in `src/thegent/`. Rust: 205 `.rs` files in crates, **32 Cargo.toml files** (not 28 -- 4 more than claimed). 20+ test files found. 10 template directories confirmed (bash, cpp, go, java, php, python, ruby, rust, typescript, zig). Apps include `byteport`, `landing`. However: `bun run build` fails (no build script in package.json). The README mentions "shim wrappers: clode/dex/roid/droid" -- actual shim implementation files exist under `crates/thegent-shims/`. Architecture diagram shows 12 Rust crates, 12 assets; actual is 32 crates. Minor version drift.                                                                                                            | MEDIUM   |
+| 8   | HexaKit          | "Rust workspace with 16+ specialized infrastructure libraries", "phenotype-infrakit"                                 | `Cargo.toml` has `members = []` -- **zero crates are workspace members**. However, 33 crate directories exist on disk. Of those, ~30 have actual `.rs` source (648 `.rs` files total). Top crates by file count: `phenotype-port-traits` (11), `phenotype-policy-engine` (11), `phenotype-xdd-lib` (10). Also contains **sub-repos**: agileplus, agileplus-agents, agileplus-mcp, BytePort, helios-cli (copies/symlinks of those repos). README architecture diagram shows `repos/` shelf layout: apps/, tooling/, infra/, libs/, platforms/ -- **none of these directories exist** at shelf level.                                                                                                                                    | HIGH     |
+| 9   | phenoShared      | "16 crates" listed, event sourcing, cache, policy engine, adapters                                                   | `Cargo.toml` declares exactly **16 crate members** -- count matches README table (which lists 16). 148 `.rs` source files. Test files: 3 test files across different crates. Packages/types has TS source + tests. `cargo check` passes. Source structure aligns README architecture diagram (domain -> application -> ports -> infrastructure). README code examples are extensive and match crate names. Fidelity is high.                                                                                                                                                                                                                                                                                                           | LOW      |
+| 10  | Tokn             | "Enterprise-grade token management", "80% test coverage", "SQLite + PostgreSQL", "CLI: report, costs, optimize"      | Workspace: 2 crates (`pareto-rs`, `tokenledger`). 35 `.rs` source files. CLI has commands: Monthly, Daily, Coverage, PricingCheck/Apply/Reconcile/Lint/Audit, Ingest, Bench, Orchestrate, Benchmarks -- exceeds README claim of just "report, costs, optimize". **However**: Cargo.toml has **zero database dependencies** (no sqlx, sqlite, postgres). Claims SQLite+PostgreSQL but no DB code exists. Test files: 3 (smoke, integration, additional). Benchmarks: 1 file. Coverage claim (>=80%) unverified and unlikely with only 3 test files / 35 source files. `analytics.rs` at repo root references nonexistent `phenotype_analytics` crate. `sentry_config.rs` at root with no corresponding Cargo dep. `cargo check` passes. | HIGH     |
 
 ---
 
@@ -22,6 +22,7 @@
 ### 1. AgilePlus
 
 **README Claims:**
+
 - Rust workspace at `rust/` with hexagonal architecture, event sourcing, gRPC stubs
 - 24 crates + 19 libs (inferred from directory names)
 - Python MCP server layer
@@ -30,6 +31,7 @@
 - Quick start: `cd rust && cargo build`
 
 **Reality:**
+
 - `rust/` directory exists with `Cargo.toml`, `clippy.toml`, `deny.toml`, `rustfmt.toml`
 - `rust/Cargo.toml` has `members = []` -- workspace declares no members
 - Caching `agileplus-proto` is referenced in buf gen config but doesn't exist in rust/
@@ -51,6 +53,7 @@
 **README Claims:** N/A (no README)
 
 **Reality:**
+
 - Contains 16 top-level directories named after feature branches
 - `agile-main/` subdirectory contains a near-complete AgilePlus clone with its own `Cargo.toml`, `apps/`, `proto/`, etc.
 - No `README.md`, no `package.json`, no `Cargo.toml` at root
@@ -63,6 +66,7 @@
 ### 3. heliosApp
 
 **README Claims:**
+
 - Status: stable, Version 2026.03A.0
 - ElectroBun-based desktop shell
 - LocalBus V1 with 26 methods, 40 topics
@@ -74,6 +78,7 @@
 - Test commands: `bun run test`, `test:integration`, `test:e2e`, `test:coverage`
 
 **Reality:**
+
 - All 4 apps present with TypeScript source: `apps/runtime/src/` has 18 subdirectories matching README
 - Desktop: `apps/desktop/src/` has all claimed modules (tabs/, panels/, settings/, stores/, etc.)
 - Packages: all 5 exist (`runtime-core`, `ids`, `errors`, `logger`, `types`)
@@ -92,6 +97,7 @@
 ### 4. helios-cli
 
 **README Claims:**
+
 - Multi-model coding agent CLI framework
 - Bazel + Rust + TypeScript
 - Helios-specific extensions in `helios-rs/`
@@ -100,6 +106,7 @@
 - Security sandboxing with Docker/orbstack/podman
 
 **Reality:**
+
 - This is a fork of **OpenAI Codex CLI** (upstream `openai/codex`)
 - `codex-rs/` has 1456 `.rs` files -- this is the upstream Rust Codex codebase
 - Bazel BUILD files present at root and in subdirectories
@@ -121,6 +128,7 @@
 ### 5. agileplus-agents
 
 **README Claims:**
+
 - 3 crates: dispatch, review, gRPC service
 - Dispatch: spawns/coordinates Claude Code/Codex subprocesses
 - Review: polls GitHub/Coderabbit
@@ -130,6 +138,7 @@
 - Build: `cargo build --workspace --release`
 
 **Reality:**
+
 - All 3 crates confirmed: `agileplus-agent-dispatch`, `agileplus-agent-review`, `agileplus-agent-service`
 - 24 `.rs` total source files across crates
 - Proto: 4 `.proto` files (core, agents, integrations, common) -- more than README implies
@@ -148,6 +157,7 @@
 ### 6. BytePort
 
 **README Claims:**
+
 - Self-hosted IaC deployment + portfolio platform
 - Go 1.25 backend (Gin + GORM + SQLite, PASETO auth)
 - SvelteKit 2 + Svelte 5 + Tailwind 4 + Tauri 2 frontend
@@ -157,6 +167,7 @@
 - MicroVM runtime: Spin / nvms
 
 **Reality:**
+
 - Backend: Go source files present (2731 `.go` files in `backend/`)
 - Frontend: SvelteKit source (5277 `.svelte` files)
 - `./start` script exists with dev/prod modes using tmux
@@ -176,6 +187,7 @@
 ### 7. thegent
 
 **README Claims:**
+
 - Platform bootstrap tool + AI agent orchestration + dotfiles manager
 - Python CLI (989 modules) with Rust extensions (32 crates)
 - 28 Rust crates (actual count: 32)
@@ -185,6 +197,7 @@
 - Two thegents: Python CLI (this repo) + Rust dispatch (separate repo)
 
 **Reality:**
+
 - Python: 989 `.py` files in `src/thegent/` -- claim of "100+ modules" is met
 - Rust: 32 `Cargo.toml` files in crates (4 more than claimed 28)
 - Rust source: 205 `.rs` files
@@ -205,6 +218,7 @@
 ### 8. HexaKit
 
 **README Claims:**
+
 - "Phenotype Infrastructure Kit" -- Rust workspace with 16+ specialized libraries
 - Organized into shelf: apps/, tooling/, infra/, libs/, platforms/
 - Hexagonal architecture, error handling, caching, health checks, policy, contracts
@@ -212,6 +226,7 @@
 - "Shelf" organizational model
 
 **Reality:**
+
 - `Cargo.toml` declares `members = []` -- workspace has zero members
 - 33 crate directories exist under `crates/`
 - ~30 of 33 crates have actual Rust source (648 `.rs` files total)
@@ -231,6 +246,7 @@
 ### 9. phenoShared
 
 **README Claims:**
+
 - 16 Rust crates with hexagonal/clean architecture layers
 - Domain: value objects, entities, aggregates
 - Application: CQRS, commands, queries, DTOs
@@ -239,6 +255,7 @@
 - Each crate documented in table with link
 
 **Reality:**
+
 - Exactly 16 crate members in Cargo.toml -- matches README table count
 - All 16 crate directories exist with `Cargo.toml` files
 - 148 `.rs` source files total across all crates
@@ -258,6 +275,7 @@
 ### 10. Tokn
 
 **README Claims:**
+
 - Enterprise-grade token management and pricing governance
 - 2 crates: tokenledger + ParetoRs
 - 80% test coverage (cargo-tarpaulin)
@@ -268,6 +286,7 @@
 - Integrates with thegent and agentapi
 
 **Reality:**
+
 - 2 crates confirmed: `pareto-rs` (6 `.rs` files) and `tokenledger` (11 `.rs` files)
 - 35 total `.rs` source files across workspace
 - Test files: 3 found (`smoke_test.rs`, `integration_test.rs`, `tests_fr_additional.rs`)
@@ -287,13 +306,14 @@
 
 ## Summary Statistics
 
-| Severity | Count | Repos |
-|----------|-------|-------|
-| HIGH | 5 | AgilePlus, helios-cli, BytePort, HexaKit, Tokn |
-| MEDIUM | 2 | heliosApp, thegent |
-| LOW | 3 | AgilePlus-wtrees, agileplus-agents, phenoShared |
+| Severity | Count | Repos                                           |
+| -------- | ----- | ----------------------------------------------- |
+| HIGH     | 5     | AgilePlus, helios-cli, BytePort, HexaKit, Tokn  |
+| MEDIUM   | 2     | heliosApp, thegent                              |
+| LOW      | 3     | AgilePlus-wtrees, agileplus-agents, phenoShared |
 
 **Key Cross-Cutting Findings:**
+
 1. **Buildability**: 8/10 repos pass their nominal build check. AgilePlus fails (broken workspace). thegent fails (no "build" script in package.json).
 2. **Empty scaffolding pattern**: AgilePlus and HexaKit both have directory structures and config files but missing actual Rust source (AgilePlus) or missing workspace member declarations (HexaKit).
 3. **Duplicate/phantom dependencies**: Tokn references `phenotype_analytics` crate that doesn't exist. AgilePlus rust workspace can't resolve `tonic` from workspace deps.

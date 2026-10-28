@@ -57,26 +57,26 @@ Confirm the published version is available on the registry.
 
 ## Adapter Registry
 
-| Adapter | Manifest | Status | Registry |
-|---------|----------|--------|----------|
-| `CratesAdapter` | `Cargo.toml` | Active | crates.io |
-| `PyPIAdapter` | `pyproject.toml` | Active | PyPI |
-| `NpmAdapter` | `package.json` | Active | npm |
-| `GoProxyAdapter` | `go.mod` | Active | proxy.golang.org |
-| `HexAdapter` | `mix.exs` | Pre-wired | hex.pm |
-| `ZigAdapter` | `build.zig.zon` | Pre-wired | Git tags |
-| `MojoAdapter` | `mojoproject.toml` | Pre-wired (stub) | N/A |
+| Adapter          | Manifest           | Status           | Registry         |
+| ---------------- | ------------------ | ---------------- | ---------------- |
+| `CratesAdapter`  | `Cargo.toml`       | Active           | crates.io        |
+| `PyPIAdapter`    | `pyproject.toml`   | Active           | PyPI             |
+| `NpmAdapter`     | `package.json`     | Active           | npm              |
+| `GoProxyAdapter` | `go.mod`           | Active           | proxy.golang.org |
+| `HexAdapter`     | `mix.exs`          | Pre-wired        | hex.pm           |
+| `ZigAdapter`     | `build.zig.zon`    | Pre-wired        | Git tags         |
+| `MojoAdapter`    | `mojoproject.toml` | Pre-wired (stub) | N/A              |
 
 ## Error Handling
 
 All adapters return structured errors:
 
-| Error Type | Behavior |
-|------------|----------|
-| `RateLimited` | Retry with exponential backoff (1s, 2s, 4s, 8s, 16s). Max 5 retries. |
-| `AuthError` | Fail immediately. Log credential hint. |
-| `NetworkError` | Retry 3x with 5s delay. |
-| `AlreadyPublished` | Skip (idempotent). Log as info. |
-| `PrivatePackage` | Skip (expected). Log as debug. |
-| `BuildError` | Fail immediately. Show build output. |
-| `DirtyWorkTree` | Fail immediately. Never publish from dirty state. |
+| Error Type         | Behavior                                                             |
+| ------------------ | -------------------------------------------------------------------- |
+| `RateLimited`      | Retry with exponential backoff (1s, 2s, 4s, 8s, 16s). Max 5 retries. |
+| `AuthError`        | Fail immediately. Log credential hint.                               |
+| `NetworkError`     | Retry 3x with 5s delay.                                              |
+| `AlreadyPublished` | Skip (idempotent). Log as info.                                      |
+| `PrivatePackage`   | Skip (expected). Log as debug.                                       |
+| `BuildError`       | Fail immediately. Show build output.                                 |
+| `DirtyWorkTree`    | Fail immediately. Never publish from dirty state.                    |

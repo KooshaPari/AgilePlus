@@ -35,18 +35,18 @@ dashboard's green/yellow/red indicators during incidents.
 
 ## Traceability
 
-| AC  | Criterion | Test / Evidence |
-|-----|-----------|-----------------|
-| AC1 | `HealthChecker::check` returns `(bool, Option<u64>)` | `health_integration.rs::healthchecker_port_contract` |
-| AC2 | `SqliteChecker` healthy + latency | `health_integration.rs::sqlite_checker_healthy_and_latency` |
-| AC3 | `MemoryStoreChecker` healthy + latency | `health_integration.rs::memory_store_checker_healthy_and_latency` |
-| AC4 | `ProcessChecker` healthy + latency | `health_integration.rs::process_checker_healthy_and_latency` |
-| AC5 | `BuildInfoChecker` healthy + latency | `health_integration.rs::build_info_checker_healthy_and_latency` |
-| AC6 | `run_health_checks` returns 4 healthy entries | `health_integration.rs::run_health_checks_returns_four_healthy_services` |
-| AC7 | At least one service reports measurable latency | `health_integration.rs::at_least_one_service_reports_measurable_latency` |
-| AC8 | `ServiceHealth` shape stable | `health_integration.rs::service_health_shape_is_stable` |
-| AC9 | No silent error swallowing | `health_integration.rs::checker_failures_surface_as_healthy_false` |
-| AC10 | Integration tests cover all ACs | this file + `health_integration.rs` |
+| AC   | Criterion                                            | Test / Evidence                                                          |
+| ---- | ---------------------------------------------------- | ------------------------------------------------------------------------ |
+| AC1  | `HealthChecker::check` returns `(bool, Option<u64>)` | `health_integration.rs::healthchecker_port_contract`                     |
+| AC2  | `SqliteChecker` healthy + latency                    | `health_integration.rs::sqlite_checker_healthy_and_latency`              |
+| AC3  | `MemoryStoreChecker` healthy + latency               | `health_integration.rs::memory_store_checker_healthy_and_latency`        |
+| AC4  | `ProcessChecker` healthy + latency                   | `health_integration.rs::process_checker_healthy_and_latency`             |
+| AC5  | `BuildInfoChecker` healthy + latency                 | `health_integration.rs::build_info_checker_healthy_and_latency`          |
+| AC6  | `run_health_checks` returns 4 healthy entries        | `health_integration.rs::run_health_checks_returns_four_healthy_services` |
+| AC7  | At least one service reports measurable latency      | `health_integration.rs::at_least_one_service_reports_measurable_latency` |
+| AC8  | `ServiceHealth` shape stable                         | `health_integration.rs::service_health_shape_is_stable`                  |
+| AC9  | No silent error swallowing                           | `health_integration.rs::checker_failures_surface_as_healthy_false`       |
+| AC10 | Integration tests cover all ACs                      | this file + `health_integration.rs`                                      |
 
 ## Eval checklist
 

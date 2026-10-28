@@ -13,6 +13,7 @@ AgilePlus is substantially scaffolded with 20+ crates. Core domain + SQLite adap
 ## API (agileplus-api)
 
 Routes implemented in crates/agileplus-api/src/routes/:
+
 - audit, backlog, branch, cycle, events, features, governance, import, module, stream, work_packages, worktree
 
 No `todo!` or `unimplemented!` stubs found.
@@ -26,6 +27,7 @@ Full adapter implementation with migrations.
 Files present: server/{bootstrap,commands,core,features,governance,integrations}.rs
 
 **Gaps (need investigation):**
+
 - P1: CI fails on `Domain Zero-Dep Lint` — domain crate may have introduced a framework dep
 - P1: `Buf Lint & Breaking` fails — proto file may have breaking changes
 - P1: `Autograder Gate 1` — agileplus-cache fails to load due to workspace dep inheritance issue (agileplus-validate)
@@ -36,6 +38,7 @@ Files present: server/{bootstrap,commands,core,features,governance,integrations}
 ## CI Status (after latest fixes)
 
 Fixes pushed (dc9eadb1):
+
 - ✅ workspace-audit path parsing bug
 - ✅ phenoShared sparse-checkout in CI
 - ✅ agileplus-validate + toml added to workspace.dependencies
@@ -46,6 +49,7 @@ Fixes pushed (dc9eadb1):
 - ✅ PR body updated with spec reference
 
 Remaining failures (pre-fix, will re-run):
+
 - Snyk — needs API key rotation (external)
 - SonarCloud — user-scope token (known non-blocking)
 - Domain Zero-Dep Lint — investigating

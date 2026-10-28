@@ -20,11 +20,11 @@ agileplus-governance = { path = "crates/agileplus-governance" }
 
 ### Feature Flags
 
-| Feature | Description |
-|---------|-------------|
-| `sync` | Enable remote synchronization |
+| Feature  | Description                     |
+| -------- | ------------------------------- |
+| `sync`   | Enable remote synchronization   |
 | `remote` | Enable remote governance client |
-| `cli` | Build CLI binary |
+| `cli`    | Build CLI binary                |
 
 ## Quick Start
 
@@ -58,13 +58,13 @@ The system enforces a strict promotion order:
 alpha → canary → beta → rc → stable
 ```
 
-| Channel | Purpose |
-|---------|---------|
-| `alpha` | Initial development releases |
+| Channel  | Purpose                       |
+| -------- | ----------------------------- |
+| `alpha`  | Initial development releases  |
 | `canary` | Early testing with real users |
-| `beta` | Pre-release testing |
-| `rc` | Release candidate |
-| `stable` | Production-ready |
+| `beta`   | Pre-release testing           |
+| `rc`     | Release candidate             |
+| `stable` | Production-ready              |
 
 ## Policy Engine
 
@@ -107,15 +107,15 @@ cargo build -p agileplus-governance --features cli
 
 ## Configuration
 
-| Environment Variable | Default | Description |
-|----------------------|---------|-------------|
-| `GOVERNANCE_DB_PATH` | `.agileplus/governance.db` | Local database path |
-| `GOVERNANCE_ENABLED` | `true` | Enable governance |
-| `GOVERNANCE_REMOTE_URL` | `http://localhost:8080` | Remote server URL |
-| `GOVERNANCE_REMOTE_ENABLED` | `false` | Enable remote sync |
-| `GOVERNANCE_SYNC_INTERVAL` | `60` | Sync interval in seconds |
-| `GOVERNANCE_RATE_LIMIT` | `100` | Max requests per window |
-| `GOVERNANCE_RATE_WINDOW` | `60` | Rate limit window in seconds |
+| Environment Variable        | Default                    | Description                  |
+| --------------------------- | -------------------------- | ---------------------------- |
+| `GOVERNANCE_DB_PATH`        | `.agileplus/governance.db` | Local database path          |
+| `GOVERNANCE_ENABLED`        | `true`                     | Enable governance            |
+| `GOVERNANCE_REMOTE_URL`     | `http://localhost:8080`    | Remote server URL            |
+| `GOVERNANCE_REMOTE_ENABLED` | `false`                    | Enable remote sync           |
+| `GOVERNANCE_SYNC_INTERVAL`  | `60`                       | Sync interval in seconds     |
+| `GOVERNANCE_RATE_LIMIT`     | `100`                      | Max requests per window      |
+| `GOVERNANCE_RATE_WINDOW`    | `60`                       | Rate limit window in seconds |
 
 ## Architecture
 

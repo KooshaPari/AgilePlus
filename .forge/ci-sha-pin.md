@@ -3,9 +3,11 @@
 ## Rule: `ci_workflow_sha_pin`
 
 ### Severity
+
 FAIL (blocks commit)
 
 ### Trigger
+
 A GitHub Actions workflow file uses an unpinned action reference such as:
 
 - `@v1`
@@ -26,9 +28,9 @@ baseline.
 
 ### Allowed patterns
 
-| Bad | Good |
-|-----|------|
-| `actions/checkout@v4` | `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683` |
+| Bad                             | Good                                                              |
+| ------------------------------- | ----------------------------------------------------------------- |
+| `actions/checkout@v4`           | `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683`       |
 | `dtolnay/rust-toolchain@stable` | `dtolnay/rust-toolchain@56f84321dbaf38e9fdea393709281c1ba838bfa9` |
 
 ### Verification

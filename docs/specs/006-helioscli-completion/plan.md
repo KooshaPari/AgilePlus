@@ -17,13 +17,13 @@ Complete the heliosCLI multi-runtime AI coding CLI by finishing Bazel build opti
 
 ## Phased WBS
 
-| Phase | WP | Description | Depends On |
-|---|---|---|---|
-| Build | WP-010 | Bazel build optimization — caching, remote execution, incremental builds | — |
-| Integration | WP-020 | Multi-runtime integration — Codex, Claude, Gemini, Cursor, Copilot runtimes | WP-010 |
-| Orchestration | WP-021 | thegent orchestration — full integration, agent lifecycle management | WP-020 |
-| Validate | WP-022 | End-to-end runtime dispatch tests across all 5 runtimes | WP-020 |
-| Validate | WP-023 | thegent agent lifecycle validation — spawn, dispatch, collect, retire | WP-021 |
+| Phase         | WP     | Description                                                                 | Depends On |
+| ------------- | ------ | --------------------------------------------------------------------------- | ---------- |
+| Build         | WP-010 | Bazel build optimization — caching, remote execution, incremental builds    | —          |
+| Integration   | WP-020 | Multi-runtime integration — Codex, Claude, Gemini, Cursor, Copilot runtimes | WP-010     |
+| Orchestration | WP-021 | thegent orchestration — full integration, agent lifecycle management        | WP-020     |
+| Validate      | WP-022 | End-to-end runtime dispatch tests across all 5 runtimes                     | WP-020     |
+| Validate      | WP-023 | thegent agent lifecycle validation — spawn, dispatch, collect, retire       | WP-021     |
 
 ## Verification Criteria
 
