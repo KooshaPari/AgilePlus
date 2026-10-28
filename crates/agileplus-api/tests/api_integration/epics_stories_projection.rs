@@ -20,11 +20,7 @@ fn storage_with_requirement_links() -> MockStorage {
     let storage = MockStorage::with_test_data();
     let now = Utc::now();
 
-    storage
-        .epics
-        .lock()
-        .expect("epics lock poisoned")
-        .clear();
+    storage.epics.lock().expect("epics lock poisoned").clear();
     storage
         .epics
         .lock()
@@ -77,9 +73,7 @@ async fn list_project_epics_exposes_requirement_id() {
     resp.assert_status_ok();
 
     let body: serde_json::Value = resp.json();
-    let arr = body
-        .as_array()
-        .expect("epics response should be an array");
+    let arr = body.as_array().expect("epics response should be an array");
     assert_eq!(arr.len(), 1);
     assert_eq!(arr[0]["title"], "Requirement linked epic");
     assert_eq!(arr[0]["requirement_id"], "FR-EPIC-1");
