@@ -608,6 +608,20 @@ mod tests {
         .await
         .unwrap();
         let receipts = tempfile::tempdir().unwrap();
+        // `true` is on PATH on unix-likes (macOS only has /usr/bin/true, so the
+        // old hardcoded /bin/true path failed there), but it is not on the
+        // Windows PATH: Git for Windows keeps coreutils' true.exe under
+        // `C:\Program Files\Git\usr\bin`, which the runner does not expose.
+        // Go through ComSpec there so the test is portable across all three.
+        #[cfg(windows)]
+        let command = vec![
+            std::env::var("ComSpec").expect("ComSpec is required on Windows"),
+            "/C".into(),
+            "exit".into(),
+            "0".into(),
+        ];
+        #[cfg(not(windows))]
+        let command = parse_csv("true");
         crate::commands::evidence::run_evidence(
             crate::commands::evidence::EvidenceArgs {
                 command: crate::commands::evidence::EvidenceCommand::RunTest(
@@ -616,7 +630,7 @@ mod tests {
                         wp: "WP01".into(),
                         fr: "FR-001".into(),
                         artifact: receipts.path().join("fr001.json"),
-                        command: parse_csv("true"),
+                        command,
                     },
                 ),
             },
