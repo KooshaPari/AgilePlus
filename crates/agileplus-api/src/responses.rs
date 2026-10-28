@@ -161,6 +161,7 @@ pub struct EpicResponse {
     pub description: Option<String>,
     pub status: String,
     pub owner_id: Option<i64>,
+    pub requirement_id: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -174,6 +175,7 @@ impl From<Epic> for EpicResponse {
             description: e.description,
             status: e.status.to_string(),
             owner_id: e.owner_id,
+            requirement_id: e.requirement_id,
             created_at: e.created_at.to_rfc3339(),
             updated_at: e.updated_at.to_rfc3339(),
         }
@@ -192,6 +194,7 @@ pub struct StoryResponse {
     pub status: String,
     pub points: Option<u32>,
     pub assignee_id: Option<i64>,
+    pub requirement_id: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -207,6 +210,7 @@ impl From<Story> for StoryResponse {
             status: s.status.to_string(),
             points: s.points,
             assignee_id: s.assignee_id,
+            requirement_id: s.requirement_id,
             created_at: s.created_at.to_rfc3339(),
             updated_at: s.updated_at.to_rfc3339(),
         }

@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
 import { useAgilePlusStore } from './stores/agileplus';
 import {
-  Button, Badge, Card, Pill, Modal, Toast, EmptyState, Skeleton,
+  Button, Badge, Card, Pill, Modal, EmptyState, Skeleton,
   OnboardingTour, SettingsView, DemoMode, TaskChecklist,
 } from './components';
 import { DemoProvider, useDemoMode } from './components/onboarding/DemoContext';
@@ -10,65 +9,30 @@ import type { OnboardingTourStep } from './types';
 import './styles/globals.css';
 import { ThemeProvider, useTheme } from './theme';
 import { LocaleProvider } from './i18n';
+import {
+  describeBackendError,
+  loadDashboard,
+  statusCategory,
+  statusVariant,
+  type Epic,
+  type Story,
+} from './dashboard-api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Epic {
-  id: number;
-  title: string;
-  status: string;
-  requirement_id: string | null;
-}
-
-interface Story {
-  id: number;
-  epic_id: number | null;
-  title: string;
-  status: string;
-  requirement_id: string | null;
-}
 
 type View = 'dashboard' | 'epics' | 'stories' | 'evidence' | 'settings';
 
 // ─── Status helpers ────────────────────────────────────────────────────────────
+//
+// The canonical backend owns the status vocabulary. The dashboard only groups
+// the canonical value for colour and counting; it never invents a status.
 
-function epicBadgeVariant(status: string): 'success' | 'warning' | 'error' | 'info' | 'default' {
-  switch (status.toLowerCase()) {
-    case 'done':
-    case 'completed': return 'success';
-    case 'in_progress':
-    case 'in progress': return 'info';
-    case 'blocked': return 'error';
-    case 'planned': return 'warning';
-    default: return 'default';
-  }
+const IN_FLIGHT_CATEGORIES = ['in_progress', 'review'] as const;
+
+/** Epics and stories that are neither done nor queued are in flight. */
+function isInFlight(status: string): boolean {
+  return (IN_FLIGHT_CATEGORIES as readonly string[]).includes(statusCategory(status));
 }
-
-// ─── Seed / demo data (used when API is unreachable) ─────────────────────────
-
-const SEED_EPICS: Epic[] = [
-  { id: 1, title: 'Core domain entities', status: 'Done', requirement_id: 'FR-AGP-001' },
-  { id: 2, title: 'SQLite persistence layer', status: 'Done', requirement_id: 'FR-AGP-002' },
-  { id: 3, title: 'Axum REST API', status: 'In Progress', requirement_id: 'FR-AGP-003' },
-  { id: 4, title: 'Native dashboard frontend', status: 'In Progress', requirement_id: 'FR-AGP-014' },
-  { id: 5, title: 'GitHub sync adapter', status: 'Planned', requirement_id: 'FR-AGP-008' },
-  { id: 6, title: 'Plane.so integration', status: 'Planned', requirement_id: 'FR-AGP-018' },
-];
-
-const SEED_STORIES: Story[] = [
-  { id: 1, epic_id: 1, title: 'Define Epic/Story/WorkPackage value objects', status: 'Done', requirement_id: null },
-  { id: 2, epic_id: 1, title: 'Add requirement traceability links', status: 'Done', requirement_id: null },
-  { id: 3, epic_id: 2, title: 'SQLite migrations for all domain tables', status: 'Done', requirement_id: null },
-  { id: 4, epic_id: 2, title: 'Repository impls (epics, stories, work_packages)', status: 'Done', requirement_id: null },
-  { id: 5, epic_id: 3, title: 'GET /api/epics + /api/stories endpoints', status: 'Done', requirement_id: null },
-  { id: 6, epic_id: 3, title: 'POST /api/epics + /api/stories endpoints', status: 'In Progress', requirement_id: null },
-  { id: 7, epic_id: 3, title: 'Auth middleware (JWT)', status: 'In Progress', requirement_id: null },
-  { id: 8, epic_id: 4, title: 'Component library (Button/Card/Badge/etc)', status: 'Done', requirement_id: null },
-  { id: 9, epic_id: 4, title: 'Wire components into App views', status: 'In Progress', requirement_id: null },
-  { id: 10, epic_id: 4, title: 'Evidence Gallery view (PHASE2)', status: 'Planned', requirement_id: null },
-  { id: 11, epic_id: 5, title: 'GitHub webhook listener', status: 'Planned', requirement_id: null },
-  { id: 12, epic_id: 6, title: 'Plane API client + sync job', status: 'Planned', requirement_id: null },
-];
 
 // ─── Onboarding tour steps ─────────────────────────────────────────────────
 
@@ -179,10 +143,10 @@ function Nav({ activeView, onNav }: NavProps) {
 // ─── Dashboard view ────────────────────────────────────────────────────────────
 
 function DashboardView({ epics, stories, loading }: { epics: Epic[]; stories: Story[]; loading?: boolean }) {
-  const done = epics.filter((e) => e.status.toLowerCase() === 'done').length;
-  const inProgress = epics.filter((e) => ['in_progress', 'in progress'].includes(e.status.toLowerCase())).length;
-  const planned = epics.filter((e) => e.status.toLowerCase() === 'planned').length;
-  const storiesDone = stories.filter((s) => s.status.toLowerCase() === 'done').length;
+  const done = epics.filter((e) => statusCategory(e.status) === 'completed').length;
+  const inProgress = epics.filter((e) => isInFlight(e.status)).length;
+  const planned = epics.filter((e) => statusCategory(e.status) === 'planned').length;
+  const storiesDone = stories.filter((s) => statusCategory(s.status) === 'completed').length;
 
   const stats = [
     { label: 'Total Epics', value: epics.length, variant: 'default' as const },
@@ -213,27 +177,34 @@ function DashboardView({ epics, stories, loading }: { epics: Epic[]; stories: St
       </div>
 
       <h2 className="text-xl font-bold mb-3">Recent Epics</h2>
-      <div className="space-y-2">
-        {epics.slice(0, 4).map((epic) => {
-          const epicStories = stories.filter((s) => s.epic_id === epic.id);
-          return (
-            <Card key={epic.id}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="font-semibold">{epic.title}</span>
-                  {epic.requirement_id && (
-                    <Pill label={epic.requirement_id} variant="primary" className="ml-2" />
-                  )}
+      {epics.length === 0 ? (
+        <EmptyState
+          title="No epics in this backend."
+          description="The canonical API reported no epics for any project. Nothing is shown in their place."
+        />
+      ) : (
+        <div className="space-y-2">
+          {epics.slice(0, 4).map((epic) => {
+            const epicStories = stories.filter((s) => s.epic_id === epic.id);
+            return (
+              <Card key={epic.id}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-semibold">{epic.title}</span>
+                    {epic.requirement_id && (
+                      <Pill label={epic.requirement_id} variant="primary" className="ml-2" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500">{epicStories.length} stories</span>
+                    <Badge label={epic.status} variant={statusVariant(epic.status)} />
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-500">{epicStories.length} stories</span>
-                  <Badge label={epic.status} variant={epicBadgeVariant(epic.status)} />
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -251,9 +222,15 @@ function EpicsView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
       </div>
 
       <div className="space-y-3">
-        {epics.map((epic) => {
+        {epics.length === 0 ? (
+          <EmptyState
+            title="No epics in this backend."
+            description="The canonical API reported no epics for any project."
+          />
+        ) : (
+          epics.map((epic) => {
           const epicStories = stories.filter((s) => s.epic_id === epic.id);
-          const doneCount = epicStories.filter((s) => s.status.toLowerCase() === 'done').length;
+          const doneCount = epicStories.filter((s) => statusCategory(s.status) === 'completed').length;
           const progress = epicStories.length > 0 ? Math.round((doneCount / epicStories.length) * 100) : 0;
 
           return (
@@ -279,7 +256,7 @@ function EpicsView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <Badge label={epic.status} variant={epicBadgeVariant(epic.status)} />
+                  <Badge label={epic.status} variant={statusVariant(epic.status)} />
                   <Button
                     variant="ghost"
                     size="sm"
@@ -291,7 +268,8 @@ function EpicsView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
               </div>
             </Card>
           );
-        })}
+          })
+        )}
       </div>
 
       <Modal
@@ -303,7 +281,7 @@ function EpicsView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
         {selectedEpic && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Badge label={selectedEpic.status} variant={epicBadgeVariant(selectedEpic.status)} />
+              <Badge label={selectedEpic.status} variant={statusVariant(selectedEpic.status)} />
               {selectedEpic.requirement_id && (
                 <Pill label={selectedEpic.requirement_id} variant="primary" />
               )}
@@ -315,7 +293,7 @@ function EpicsView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
                 .map((s) => (
                   <li key={s.id} className="flex items-center justify-between text-sm py-1 border-b border-gray-100 last:border-0">
                     <span>{s.title}</span>
-                    <Badge label={s.status} variant={epicBadgeVariant(s.status)} />
+                    <Badge label={s.status} variant={statusVariant(s.status)} />
                   </li>
                 ))}
             </ul>
@@ -334,9 +312,14 @@ function StoriesView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
 
   const filtered = stories.filter((s) => {
     const epicMatch = filterEpic === 'all' || s.epic_id === filterEpic;
-    const statusMatch = filterStatus === 'all' || s.status.toLowerCase() === filterStatus;
+    const statusMatch = filterStatus === 'all' || s.status.trim().toLowerCase() === filterStatus;
     return epicMatch && statusMatch;
   });
+
+  // The canonical backend owns the vocabulary; the filter lists what it sent.
+  const statusOptions = Array.from(
+    new Set(stories.map((s) => s.status.trim().toLowerCase())),
+  ).sort();
 
   return (
     <div>
@@ -366,13 +349,15 @@ function StoriesView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500">Status:</span>
-          {['all', 'done', 'in progress', 'planned', 'blocked'].map((s) => (
+          {['all', ...statusOptions].map((s) => (
             <button
               key={s}
               onClick={() => setFilterStatus(s)}
               className={`text-xs px-2 py-1 rounded-full border transition-colors ${filterStatus === s ? 'bg-purple-500 text-white border-purple-500' : 'border-gray-300 hover:border-purple-400'}`}
             >
-              {s.charAt(0).toUpperCase() + s.slice(1)}
+              {s === 'all'
+                ? 'All'
+                : s.replace(/_/g, ' ').charAt(0).toUpperCase() + s.replace(/_/g, ' ').slice(1)}
             </button>
           ))}
         </div>
@@ -392,17 +377,22 @@ function StoriesView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
                     </div>
                   )}
                 </div>
-                <Badge label={story.status} variant={epicBadgeVariant(story.status)} />
+                <Badge label={story.status} variant={statusVariant(story.status)} />
               </div>
             </Card>
           );
         })}
-        {filtered.length === 0 && (
+        {stories.length === 0 ? (
+          <EmptyState
+            title="No stories in this backend."
+            description="The canonical API reported no stories for any epic."
+          />
+        ) : filtered.length === 0 ? (
           <EmptyState
             title="No stories match your filters"
             description="Try adjusting your filter criteria to see more results."
           />
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -452,6 +442,27 @@ function EvidenceGalleryView({ loading }: { loading?: boolean }) {
   );
 }
 
+// ─── Backend unavailable state ─────────────────────────────────────────────────
+
+/**
+ * The canonical API did not answer. This state is deliberately distinct from
+ * the empty state: it never renders anything that could read as a real row.
+ */
+function BackendUnavailable({ error }: { error: string }) {
+  return (
+    <div
+      role="alert"
+      className="mb-6 rounded-lg border-2 border-red-300 bg-red-50 px-4 py-3"
+    >
+      <h2 className="text-sm font-semibold text-red-800">AgilePlus backend unavailable</h2>
+      <p className="mt-1 text-sm text-red-700">{error}</p>
+      <p className="mt-1 text-xs text-red-600">
+        No rows are listed while the canonical API cannot be read.
+      </p>
+    </div>
+  );
+}
+
 // ─── Root App ─────────────────────────────────────────────────────────────────
 
 export function App() {
@@ -485,7 +496,7 @@ function AppContent() {
   const [epics, setEpics] = useState<Epic[]>([]);
   const [stories, setStories] = useState<Story[]>([]);
   const [dataReady, setDataReady] = useState(false);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [backendError, setBackendError] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Check localStorage for onboarding completion on mount
@@ -501,47 +512,37 @@ function AppContent() {
     }
   }, []);
 
-  // Try live API, fall back to seed data
+  // Read the canonical API. A failure is reported as a failure: no row is ever
+  // substituted for backend data.
   useEffect(() => {
+    const controller = new AbortController();
     setLoading(true);
-    axios
-      .get('/api/dashboard/epics-stories.json', { timeout: 3000 })
-      .then((res) => {
-        const data = res.data as { epics: Epic[]; stories: Story[] };
-        if (data.epics?.length) {
-          setEpics(data.epics);
-          setStories(data.stories ?? []);
-        } else {
-          setEpics(SEED_EPICS);
-          setStories(SEED_STORIES);
-        }
+    loadDashboard(controller.signal)
+      .then((snapshot) => {
+        setEpics(snapshot.epics);
+        setStories(snapshot.stories);
+        setWorkPackages(
+          snapshot.workPackages.map((wp) => ({
+            id: String(wp.id),
+            title: wp.title,
+            status: statusCategory(wp.state),
+          })),
+        );
+        setBackendError(null);
       })
-      .catch(() => {
-        setEpics(SEED_EPICS);
-        setStories(SEED_STORIES);
-        setToastMsg('API offline — showing seed data');
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        setEpics([]);
+        setStories([]);
+        setWorkPackages([]);
+        setBackendError(describeBackendError(error));
       })
       .finally(() => {
         setLoading(false);
         setDataReady(true);
       });
 
-    // Also try the work-packages endpoint for the Zustand store
-    axios
-      .get('/api/dashboard/work-packages.json', { timeout: 3000 })
-      .then((res) => {
-        const data = res.data as { work_packages: any[] };
-        setWorkPackages(
-          (data.work_packages ?? []).map((wp: any) => ({
-            id: String(wp.id),
-            title: wp.title ?? '(untitled)',
-            status: wp.status ?? 'planned',
-            priority: wp.priority ?? 'medium',
-            assignee: wp.assignee ?? undefined,
-          }))
-        );
-      })
-      .catch(() => {/* no-op */});
+    return () => controller.abort();
   }, [setWorkPackages, setLoading]);
 
   return (
@@ -558,6 +559,8 @@ function AppContent() {
             </div>
             <Skeleton variant="text" count={4} />
           </div>
+        ) : backendError ? (
+          <BackendUnavailable error={backendError} />
         ) : (
           <>
             {view === 'dashboard' && <DashboardView epics={epics} stories={stories} loading={false} />}
@@ -568,17 +571,6 @@ function AppContent() {
           </>
         )}
       </main>
-
-      {toastMsg && (
-        <div className="fixed top-4 right-4 z-50 w-80">
-          <Toast
-            type="warning"
-            message={toastMsg}
-            duration={4000}
-            onClose={() => setToastMsg(null)}
-          />
-        </div>
-      )}
 
       <OnboardingTour
         isOpen={showOnboarding}

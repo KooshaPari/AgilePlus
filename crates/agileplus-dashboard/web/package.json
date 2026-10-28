@@ -9,7 +9,7 @@
         "typecheck:tsc": "tsc --noEmit",
         "typecheck:tsgo": "tsgo --noEmit -p tsconfig.json",
         "typecheck:experimental": "bun run typecheck:tsgo",
-        "test:operator": "vitest run src/OperatorDashboard.test.tsx",
+        "test:operator": "vitest run src/OperatorDashboard.test.tsx src/App.dashboard.test.tsx",
         "typecheck:operator": "tsgo --noEmit -p tsconfig.operator.json",
         "test:operator:browser": "playwright test --config playwright.operator.config.ts",
         "lint:a11y": "eslint --max-warnings 0 src"

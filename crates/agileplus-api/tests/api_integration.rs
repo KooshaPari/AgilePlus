@@ -21,6 +21,8 @@ mod auth_middleware;
 mod branch;
 #[path = "api_integration/domain_lifecycle.rs"]
 mod domain_lifecycle;
+#[path = "api_integration/epics_stories_projection.rs"]
+mod epics_stories_projection;
 #[path = "api_integration/features_work_packages.rs"]
 mod features_work_packages;
 #[path = "api_integration/governance_audit.rs"]

@@ -32,7 +32,7 @@ fn row_to_story(row: &rusqlite::Row<'_>) -> rusqlite::Result<Story> {
         status: status_str.parse().unwrap_or(StoryStatus::Todo),
         points: points_raw.map(|p| p as u32),
         assignee_id: row.get(6)?,
-        requirement_id: None,
+        requirement_id: row.get(10)?,
         created_at: parse_dt(&created_at),
         updated_at: parse_dt(&updated_at),
     })
@@ -66,7 +66,7 @@ pub fn get_story_by_requirement_id(
 ) -> Result<Option<Story>, DomainError> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description \
+            "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description, requirement_id \
              FROM stories WHERE requirement_id = ?1",
         )
         .map_err(map_err)?;
@@ -122,7 +122,7 @@ pub fn upsert_story_by_requirement_id(
 pub fn get_story_by_id(conn: &Connection, id: i64) -> Result<Option<Story>, DomainError> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description \
+            "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description, requirement_id \
              FROM stories WHERE id = ?1",
         )
         .map_err(map_err)?;
@@ -157,7 +157,7 @@ pub fn update_story_status(
 pub fn list_stories_by_epic(conn: &Connection, epic_id: i64) -> Result<Vec<Story>, DomainError> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description \
+            "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description, requirement_id \
              FROM stories WHERE epic_id = ?1 ORDER BY created_at ASC",
         )
         .map_err(map_err)?;
@@ -177,7 +177,7 @@ pub fn list_stories_by_project(
 ) -> Result<Vec<Story>, DomainError> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description \
+            "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description, requirement_id \
              FROM stories WHERE project_id = ?1 ORDER BY created_at ASC",
         )
         .map_err(map_err)?;
@@ -317,6 +317,24 @@ mod tests {
         let id1 = upsert_story_by_requirement_id(&conn, &s).unwrap();
         let id2 = upsert_story_by_requirement_id(&conn, &s).unwrap();
         assert_eq!(id1, id2);
+    }
+
+    #[test]
+    fn test_get_story_returns_requirement_id() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_project(&conn, 10);
+        seed_epic(&conn, 20, 10);
+        let mut s = make_story(20, 10, "Requirement linked story");
+        s.requirement_id = Some("FR-STORY-1".to_string());
+        let id = upsert_story_by_requirement_id(&conn, &s).unwrap();
+
+        let got = get_story_by_id(&conn, id).unwrap().unwrap();
+        assert_eq!(got.requirement_id.as_deref(), Some("FR-STORY-1"));
+
+        let listed = list_stories_by_epic(&conn, 20).unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].requirement_id.as_deref(), Some("FR-STORY-1"));
     }
 
     #[test]
