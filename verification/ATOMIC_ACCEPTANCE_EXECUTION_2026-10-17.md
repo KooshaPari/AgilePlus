@@ -15,21 +15,21 @@ that the named test targets executed and passed on the exact commit below. It do
 `executed_with_witness`; that transition requires the case-schema bump and
 per-case witness attribution described in section 5. The governing rule from
 `verification/ATOMIC_ACCEPTANCE_GATE_2026-10-03.md` L31-L36 applies:
-*test not executed != test passed*. Here the tests **were** executed, and they passed.
+_test not executed != test passed_. Here the tests **were** executed, and they passed.
 
 ---
 
 ## 1. Environment
 
-| Item | Value |
-| --- | --- |
-| Host | macOS, arm64 (aarch64) |
-| Toolchain | `rustc`/`cargo` from the repo's pinned toolchain (`rust-toolchain.toml`, workspace `rust-version = 1.88`) |
-| Target dir | `$JCODE_SCRATCH_DIR/agileplus-target-1161` (isolated, outside the repo) |
-| `TMPDIR` | `$JCODE_SCRATCH_DIR/isolated-tmp` (isolated, outside the repo) |
-| `SDKROOT` | `/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk` (the Command Line Tools SDK on this host has a corrupt `libSystem.B.tbd` and cannot link any C build script; the Xcode SDK links cleanly) |
-| Working tree | clean at `4e3862f9` |
-| Commands | exactly the ones in `.github/workflows/recovery-acceptance.yml` L65-L83 |
+| Item         | Value                                                                                                                                                                                                                                      |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Host         | macOS, arm64 (aarch64)                                                                                                                                                                                                                     |
+| Toolchain    | `rustc`/`cargo` from the repo's pinned toolchain (`rust-toolchain.toml`, workspace `rust-version = 1.88`)                                                                                                                                  |
+| Target dir   | `$JCODE_SCRATCH_DIR/agileplus-target-1161` (isolated, outside the repo)                                                                                                                                                                    |
+| `TMPDIR`     | `$JCODE_SCRATCH_DIR/isolated-tmp` (isolated, outside the repo)                                                                                                                                                                             |
+| `SDKROOT`    | `/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk` (the Command Line Tools SDK on this host has a corrupt `libSystem.B.tbd` and cannot link any C build script; the Xcode SDK links cleanly) |
+| Working tree | clean at `4e3862f9`                                                                                                                                                                                                                        |
+| Commands     | exactly the ones in `.github/workflows/recovery-acceptance.yml` L65-L83                                                                                                                                                                    |
 
 The `SDKROOT` note is a host-environment fact, not a product deviation: the same
 commands with the default SDK fail to link `libc`'s build script on this machine
@@ -44,36 +44,36 @@ All nine targets from `.github/workflows/recovery-acceptance.yml` were executed.
 Every command below was run as written; the "observed" column is the real
 `test result:` line from the run, not an expectation.
 
-| # | Target | Command | Observed result | Exit |
-| --- | --- | --- | --- | --- |
-| 1 | `agileplus-sqlite` atomic acceptance | `cargo test --locked -p agileplus-sqlite --test atomic_acceptance -- --nocapture` | `ok. 10 passed; 0 failed` | 0 |
-| 2 | `agileplus-api` HTTP acceptance | `cargo test --locked -p agileplus-api --test atomic_acceptance_http -- --nocapture` | `ok. 10 passed; 0 failed` | 0 |
-| 3 | `agileplus-api` SQLite acceptance | `cargo test --locked -p agileplus-api --test atomic_acceptance_sqlite -- --nocapture` | `ok. 3 passed; 0 failed` | 0 |
-| 4 | `agileplus-grpc` RPC acceptance | `cargo test --locked -p agileplus-grpc --test atomic_acceptance_rpc -- --nocapture` | `ok. 6 passed; 0 failed` | 0 |
-| 5 | `agileplus-application` lib | `cargo test --locked -p agileplus-application --lib -- --nocapture` | `ok. 165 passed; 0 failed` | 0 |
-| 6 | `agileplus-sqlite` migrations | `cargo test --locked -p agileplus-sqlite --lib migrations::tests -- --nocapture` | `ok. 15 passed; 0 failed; 319 filtered out` | 0 |
-| 7 | `agileplus-api` CORS policy | `cargo test --locked -p agileplus-api --lib router::compose::cors_policy_tests -- --nocapture` | `ok. 3 passed; 0 failed; 202 filtered out` | 0 |
-| 8 | `agileplus-cli` 5 targets | `cargo test --locked -p agileplus-cli --test validate_command_flow --test ship_command_flow --test implement_command_flow --test promotion_recovery --test ship_side_effects -- --nocapture` | see 2.1 | 0 |
-| 9 | `agileplus-sqlite` atomic acceptance (re-run with `--locked`) | as target 1 with `--locked` | `ok. 10 passed; 0 failed` | 0 |
+| #   | Target                                                        | Command                                                                                                                                                                                      | Observed result                             | Exit |
+| --- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ---- |
+| 1   | `agileplus-sqlite` atomic acceptance                          | `cargo test --locked -p agileplus-sqlite --test atomic_acceptance -- --nocapture`                                                                                                            | `ok. 10 passed; 0 failed`                   | 0    |
+| 2   | `agileplus-api` HTTP acceptance                               | `cargo test --locked -p agileplus-api --test atomic_acceptance_http -- --nocapture`                                                                                                          | `ok. 10 passed; 0 failed`                   | 0    |
+| 3   | `agileplus-api` SQLite acceptance                             | `cargo test --locked -p agileplus-api --test atomic_acceptance_sqlite -- --nocapture`                                                                                                        | `ok. 3 passed; 0 failed`                    | 0    |
+| 4   | `agileplus-grpc` RPC acceptance                               | `cargo test --locked -p agileplus-grpc --test atomic_acceptance_rpc -- --nocapture`                                                                                                          | `ok. 6 passed; 0 failed`                    | 0    |
+| 5   | `agileplus-application` lib                                   | `cargo test --locked -p agileplus-application --lib -- --nocapture`                                                                                                                          | `ok. 165 passed; 0 failed`                  | 0    |
+| 6   | `agileplus-sqlite` migrations                                 | `cargo test --locked -p agileplus-sqlite --lib migrations::tests -- --nocapture`                                                                                                             | `ok. 15 passed; 0 failed; 319 filtered out` | 0    |
+| 7   | `agileplus-api` CORS policy                                   | `cargo test --locked -p agileplus-api --lib router::compose::cors_policy_tests -- --nocapture`                                                                                               | `ok. 3 passed; 0 failed; 202 filtered out`  | 0    |
+| 8   | `agileplus-cli` 5 targets                                     | `cargo test --locked -p agileplus-cli --test validate_command_flow --test ship_command_flow --test implement_command_flow --test promotion_recovery --test ship_side_effects -- --nocapture` | see 2.1                                     | 0    |
+| 9   | `agileplus-sqlite` atomic acceptance (re-run with `--locked`) | as target 1 with `--locked`                                                                                                                                                                  | `ok. 10 passed; 0 failed`                   | 0    |
 
 ### 2.1 Target 8 breakdown
 
-| Sub-target | Observed result | Exit |
-| --- | --- | --- |
-| `tests/validate_command_flow.rs` | `ok. 12 passed; 0 failed` | 0 |
-| `tests/ship_command_flow.rs` | `ok. 14 passed; 0 failed` | 0 |
-| `tests/implement_command_flow.rs` | `ok. 11 passed; 0 failed` | 0 |
-| `tests/promotion_recovery.rs` | `ok. 8 passed; 0 failed` | 0 |
-| `tests/ship_side_effects.rs` | `ok. 10 passed; 0 failed` | 0 |
+| Sub-target                        | Observed result           | Exit |
+| --------------------------------- | ------------------------- | ---- |
+| `tests/validate_command_flow.rs`  | `ok. 12 passed; 0 failed` | 0    |
+| `tests/ship_command_flow.rs`      | `ok. 14 passed; 0 failed` | 0    |
+| `tests/implement_command_flow.rs` | `ok. 11 passed; 0 failed` | 0    |
+| `tests/promotion_recovery.rs`     | `ok. 8 passed; 0 failed`  | 0    |
+| `tests/ship_side_effects.rs`      | `ok. 10 passed; 0 failed` | 0    |
 
 ### 2.2 Totals
 
-| Measure | Count |
-| --- | --- |
-| Distinct test targets executed | 9 |
-| Tests passed | **270** |
-| Tests failed | **0** |
-| Commands with non-zero exit | **0** |
+| Measure                        | Count   |
+| ------------------------------ | ------- |
+| Distinct test targets executed | 9       |
+| Tests passed                   | **270** |
+| Tests failed                   | **0**   |
+| Commands with non-zero exit    | **0**   |
 
 270, not 89: the earlier "89 tests / 9 targets" figure counted only the
 narrowly-filtered invocation set. This receipt ran the same nine targets
@@ -90,13 +90,13 @@ larger, stricter one and names the filter for each row.
 witnesses. Each is exercised by a named test in target 1, observed passing on
 `4e3862f9`:
 
-| Witness | Exercising test (target 1) | Observed |
-| --- | --- | --- |
-| atomic commit | `acceptance_commits_states_audit_event_and_receipt_together` | ok |
-| exact replay | `request_replay_is_idempotent_but_changed_intent_conflicts`, `file_reopen_preserves_atomic_receipt_and_replay`, `concurrent_same_request_commits_once` | ok |
-| same id, different command -> Conflict | `request_replay_is_idempotent_but_changed_intent_conflicts` (changed-actor variant) | ok |
-| invalid pre-existing audit chain -> zero mutation | `failures_at_every_write_boundary_roll_back_everything` (5 injected boundaries) | ok |
-| forced final-receipt INSERT rollback | `failures_at_every_write_boundary_roll_back_everything` (`feature_acceptance_receipts` boundary) | ok |
+| Witness                                           | Exercising test (target 1)                                                                                                                             | Observed |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| atomic commit                                     | `acceptance_commits_states_audit_event_and_receipt_together`                                                                                           | ok       |
+| exact replay                                      | `request_replay_is_idempotent_but_changed_intent_conflicts`, `file_reopen_preserves_atomic_receipt_and_replay`, `concurrent_same_request_commits_once` | ok       |
+| same id, different command -> Conflict            | `request_replay_is_idempotent_but_changed_intent_conflicts` (changed-actor variant)                                                                    | ok       |
+| invalid pre-existing audit chain -> zero mutation | `failures_at_every_write_boundary_roll_back_everything` (5 injected boundaries)                                                                        | ok       |
+| forced final-receipt INSERT rollback              | `failures_at_every_write_boundary_roll_back_everything` (`feature_acceptance_receipts` boundary)                                                       | ok       |
 
 The boundary test loops 5 sub-cases inside one test function; the framework
 counts it as one test, but each sub-case is a separate rollback witness.
@@ -110,15 +110,15 @@ distinct cases: 5 STRONG and 5 ADJACENT. Every bound test is in the executed
 set above, so the binding is now backed by an observed run rather than by a
 citation to a document that did not exist.
 
-| Case | Strength | Bound test | Target | Observed |
-| --- | --- | --- | --- | --- |
-| `AP-RVC-057` Accepted work requires correctness and governance | STRONG | `acceptance_commits_states_audit_event_and_receipt_together` | 1 | ok |
-| `AP-RVC-081` Accepted-state mutations are atomic | STRONG | `failures_at_every_write_boundary_roll_back_everything` | 1 | ok |
-| `AP-VC-028` Accepted-state mutations bind authority and concurrency preconditions | STRONG | `request_replay_is_idempotent_but_changed_intent_conflicts` | 1 | ok |
-| `AP-VC-008` / `AP-VC-009` Evaluation binds exact candidate | STRONG | `current_attempt_or_candidate_drift_prevents_any_acceptance` | 1 | ok |
-| `AP-RVC-056` Material ambiguity blocks acceptance | ADJACENT | `newer_governance_or_empty_placeholder_cannot_authorize_acceptance` | 1 | ok |
-| `AP-VC-002` Missing feature returns 404 | ADJACENT | `missing_feature_returns_404_without_acceptance_side_effects` | 2 | ok |
-| `AP-VC-038` / `AP-RVC-049` Rollback preserves release history | ADJACENT | `file_reopen_preserves_atomic_receipt_and_replay` | 1 | ok |
+| Case                                                                              | Strength | Bound test                                                          | Target | Observed |
+| --------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------- | ------ | -------- |
+| `AP-RVC-057` Accepted work requires correctness and governance                    | STRONG   | `acceptance_commits_states_audit_event_and_receipt_together`        | 1      | ok       |
+| `AP-RVC-081` Accepted-state mutations are atomic                                  | STRONG   | `failures_at_every_write_boundary_roll_back_everything`             | 1      | ok       |
+| `AP-VC-028` Accepted-state mutations bind authority and concurrency preconditions | STRONG   | `request_replay_is_idempotent_but_changed_intent_conflicts`         | 1      | ok       |
+| `AP-VC-008` / `AP-VC-009` Evaluation binds exact candidate                        | STRONG   | `current_attempt_or_candidate_drift_prevents_any_acceptance`        | 1      | ok       |
+| `AP-RVC-056` Material ambiguity blocks acceptance                                 | ADJACENT | `newer_governance_or_empty_placeholder_cannot_authorize_acceptance` | 1      | ok       |
+| `AP-VC-002` Missing feature returns 404                                           | ADJACENT | `missing_feature_returns_404_without_acceptance_side_effects`       | 2      | ok       |
+| `AP-VC-038` / `AP-RVC-049` Rollback preserves release history                     | ADJACENT | `file_reopen_preserves_atomic_receipt_and_replay`                   | 1      | ok       |
 
 **Cases still not witnessable from this run** (unchanged from the binding, and
 explicitly not claimed here): 4 additional no-witness gaps
@@ -177,14 +177,14 @@ cargo test --locked -p agileplus-cli \
 
 Recorded because they are independently measured on the same head, not asserted:
 
-| Gate | Observed |
-| --- | --- |
-| `cargo deny check advisories` (local, PR head) | exit 0, `advisories ok` |
-| CI `Cargo Deny` / `Cargo Deny (Advisories + Licenses)` / `cargo-deny` | success |
-| CI `coverage-gate (>=85% lines)` | success, all three coverage artifacts present |
-| CI `rust-coverage (cargo-llvm-cov)` | success |
-| CI `cargo-semver-checks` | success |
-| CI `qe / test`, `qe / lint`, `CI`, `infra`, `coverage` | success |
+| Gate                                                                  | Observed                                      |
+| --------------------------------------------------------------------- | --------------------------------------------- |
+| `cargo deny check advisories` (local, PR head)                        | exit 0, `advisories ok`                       |
+| CI `Cargo Deny` / `Cargo Deny (Advisories + Licenses)` / `cargo-deny` | success                                       |
+| CI `coverage-gate (>=85% lines)`                                      | success, all three coverage artifacts present |
+| CI `rust-coverage (cargo-llvm-cov)`                                   | success                                       |
+| CI `cargo-semver-checks`                                              | success                                       |
+| CI `qe / test`, `qe / lint`, `CI`, `infra`, `coverage`                | success                                       |
 
 ---
 
