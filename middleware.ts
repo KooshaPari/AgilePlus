@@ -48,8 +48,14 @@ async function getKeys(): Promise<Map<string, CryptoKey>> {
       }
       return map;
     })();
-    keysPromise.catch(() => {
+    // Attach the rejection handler to the promise chain, not to a copy
+    // evaluated after the fact. `keysPromise.catch(...)` registers a handler
+    // on the in-flight promise, so a fetch that rejects BEFORE this line
+    // runs would otherwise leave the rejected promise cached for the whole
+    // hour-long TTL and every later request would fail on it.
+    keysPromise = keysPromise.catch((err) => {
       keysPromise = null;
+      throw err;
     });
   }
   return keysPromise;
@@ -83,7 +89,15 @@ async function hasValidAccessJwt(jwt: string): Promise<boolean> {
   if (payload.iss !== ISSUER) return false;
   const auds = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
   if (!auds.some((a) => a && TRUSTED_AUDS.includes(a))) return false;
-  if (typeof payload.exp !== 'number' || payload.exp < Date.now() / 1000) return false;
+  // Allow a small clock-skew leeway. The Access edge re-issues a token per
+  // request, so a token minted microseconds before the edge's clock reads can
+  // arrive at a node whose clock is slightly behind and be rejected as
+  // already-expired. 30s of leeway is well inside Cloudflare Access's own
+  // token lifetime and does not extend a token's usable window meaningfully.
+  const EXPIRY_LEEWAY_SECONDS = 30;
+  if (typeof payload.exp !== 'number' || payload.exp + EXPIRY_LEEWAY_SECONDS < Date.now() / 1000) {
+    return false;
+  }
   try {
     let keys = await getKeys();
     let key = keys.get(header.kid);
@@ -102,14 +116,47 @@ async function hasValidAccessJwt(jwt: string): Promise<boolean> {
   }
 }
 
+function constantTimeEqual(a: string, b: string): boolean {
+  // Length is not secret (both are fixed-length host env values), but the
+  // CONTENT comparison must not short-circuit on the first differing byte.
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
 export default async function middleware(request: Request): Promise<Response | undefined> {
   // Gate production deployments only. The public <project>.vercel.app production
   // alias is exempt from Vercel Authentication, while preview deployments already
   // require Vercel Authentication and cannot carry a Cloudflare Access JWT, so
   // gating previews would make every preview URL unusable.
   if (process.env.VERCEL_ENV !== 'production') return undefined;
+
+  // Path 1: Cloudflare Access. The edge injects cf-access-jwt-assertion after
+  // authenticating the operator against the Access application.
   const jwt = request.headers.get('cf-access-jwt-assertion');
   if (jwt && (await hasValidAccessJwt(jwt))) return undefined; // continue to the app
+
+  // Path 2: the private/operator tailnet edge (deploy/selfhost/Caddy.operator-alpha.caddy).
+  // That edge authenticates with Tailscale ACL + HTTP Basic and then proxies the
+  // frontend to this deployment, stripping Authorization/Cookie/X-API-Key. It sits
+  // OUTSIDE Cloudflare Access, so no cf-access-jwt-assertion is ever produced and
+  // path 1 can never succeed for it -- without path 2 the operator's own frontend
+  // would 401 against its own deployment.
+  //
+  // The edge attests itself with a shared secret it holds in
+  // AGILEPLUS_EDGE_ATTESTATION (never checked in, host-only env, like the other
+  // AGILEPLUS_* values the Caddy fragment already documents). The header is
+  // stripped from any client-originated request at the edge, and it is compared
+  // in constant time.
+  const attestation = request.headers.get('x-agileplus-edge-attestation');
+  const expected = process.env.AGILEPLUS_EDGE_ATTESTATION;
+  if (attestation && expected && constantTimeEqual(attestation, expected)) {
+    return undefined; // continue to the app
+  }
+
   return new Response('Unauthorized', {
     status: 401,
     headers: { 'content-type': 'text/plain; charset=utf-8' },
