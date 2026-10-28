@@ -84,6 +84,8 @@ install-path = "CARGO_HOME"
 # Which actions to run on pull requests
 pr-run-mode = "plan"
 # Workflows are hand-maintained (persist-credentials hardening); skip dist plan freshness check
+# Also covers the release-lifecycle-v2 R6 ci-gate comment block and the actions/checkout
+# @v7 security bump, which cargo-dist v0.33.0's template pre-dates.
 allow-dirty = ["ci"]
 # Whether to install an updater program
 install-updater = false
