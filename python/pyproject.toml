@@ -75,6 +75,12 @@ addopts = "-q --strict-markers --tb=short"
 
 [tool.coverage.run]
 source = ["src"]
+# Record repo-relative paths instead of absolute runner paths. Without this,
+# `coverage run -m pytest` writes /home/runner/work/... paths into python/.coverage,
+# which the Docker-based python-coverage-comment-action cannot resolve from inside
+# its container (/github/workspace), so `coverage json` aborts with
+# "No source for code: .../python/src/agileplus_mcp/__init__.py".
+relative_files = true
 branch = true
 omit = ["src/agileplus_proto/gen/*"]
 
