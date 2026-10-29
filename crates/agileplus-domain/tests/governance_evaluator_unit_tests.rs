@@ -5,7 +5,7 @@
 use agileplus_domain::domain::governance::{
     GovernanceContract, GovernanceRule,
 };
-use agileplus_domain::domain::governance_evaluator::{EvidenceCheck, GovernanceEvaluation, PolicyEvalResult};
+use agileplus_domain::domain::governance_evaluator::{GovernanceEvaluation, PolicyEvalResult};
 use chrono::Utc;
 
 fn make_contract(rules: Vec<GovernanceRule>) -> GovernanceContract {
