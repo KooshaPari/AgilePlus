@@ -41,9 +41,16 @@ jobs:
         # credentials_file_store_integration_test. The 425/425 artifact is a
         # mid-run snapshot, not a finished campaign. Tail pace is ~38s per
         # mutant, so the ~228 not yet finished need ~144m (324m total).
-        # 360 is the GitHub-hosted job maximum: about 36m of slack at that
-        # pace, and the ceiling if a later mutant runs long.
-        timeout-minutes: 360
+        # Dropping the timeout alone does not help: the full campaign in one job
+        # does not fit the GitHub-hosted runner's reliable lifetime (runners were
+        # lost at 328m, 329m and 348m on this workload). Shard the same campaign
+        # across four independent jobs instead, each finishing in roughly a
+        # quarter of the wall clock.
+        timeout-minutes: 240
+        strategy:
+            fail-fast: false
+            matrix:
+                shard: [1, 2, 3, 4]
         steps:
             - uses: actions/checkout@v7
 
@@ -61,14 +68,14 @@ jobs:
                   tool: cargo-mutants
 
             - name: Run cargo-mutants on agileplus-domain
-              run: cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml --exclude "src/intent_graph.rs" --exclude "src/ports/mod.rs" --timeout 120
+              run: cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml --exclude "src/intent_graph.rs" --exclude "src/ports/mod.rs" --timeout 120 --shard ${{ matrix.shard }}/4
               continue-on-error: true
 
             - name: List mutation results
               if: always()
               run: |
                   if [ -f mutants.out ]; then
-                    echo "=== Mutation Results ==="
+                    echo "=== Mutation Results (shard ${{ matrix.shard }}/4) ==="
                     cat mutants.out
                   fi
                   echo "---"
@@ -79,7 +86,7 @@ jobs:
               if: always()
               uses: actions/upload-artifact@v7
               with:
-                  name: mutation-report
+                  name: mutation-report-shard-${{ matrix.shard }}
                   path: |
                       mutants.out
                       target/mutants/
