@@ -102,8 +102,8 @@ jobs:
             - name: Bring up stack
               run: |
                   set -euo pipefail
-                  docker compose -f compose/docker-compose.yml up -d --wait
-                  process-compose -f compose/process-compose.phase.yml up -d
+                  docker compose -f docker-compose.yml up -d --wait
+                  process-compose -f process-compose.yml up -d
                   bash ./scripts/perf/warmup.sh
 
             - name: Run k6 (smoke + load + stress)
@@ -146,8 +146,8 @@ jobs:
             - name: Bring down stack
               if: always()
               run: |
-                  process-compose -f compose/process-compose.phase.yml down || true
-                  docker compose -f compose/docker-compose.yml down --remove-orphans -v || true
+                  process-compose -f process-compose.yml down || true
+                  docker compose -f docker-compose.yml down --remove-orphans -v || true
 
             - name: Upload perf reports
               if: always()
