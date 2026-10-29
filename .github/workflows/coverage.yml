@@ -23,7 +23,7 @@ jobs:
         name: python-coverage (uv)
         # TODO(#1141): re-enable as a hard gate once the coverage-data branch/artifact infra exists
         continue-on-error: true
-        runs-on: [self-hosted, Linux, X64]
+        runs-on: ubuntu-24.04
         permissions:
             contents: read
             pull-requests: write
@@ -103,7 +103,7 @@ jobs:
 
     coverage-rust:
         name: rust-coverage (cargo-llvm-cov)
-        runs-on: [self-hosted, Linux, X64]
+        runs-on: ubuntu-24.04
         steps:
             - uses: actions/checkout@v7
 
@@ -164,7 +164,7 @@ jobs:
 
     coverage-go:
         name: go-coverage (go test -cover)
-        runs-on: [self-hosted, Linux, X64]
+        runs-on: ubuntu-24.04
         steps:
             - uses: actions/checkout@v7
 
@@ -192,7 +192,7 @@ jobs:
     coverage-gate:
         name: coverage-gate (>=85% lines)
         needs: [coverage-python, coverage-rust, coverage-go]
-        runs-on: [self-hosted, Linux, X64]
+        runs-on: ubuntu-24.04
         steps:
             - uses: actions/checkout@v7
             - name: Verify all coverage artifacts
