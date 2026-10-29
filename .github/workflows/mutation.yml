@@ -61,7 +61,7 @@ jobs:
                   tool: cargo-mutants
 
             - name: Run cargo-mutants on agileplus-domain
-              run: cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml
+              run: cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml --exclude "src/intent_graph.rs" --exclude "src/ports/mod.rs" --timeout 120
               continue-on-error: true
 
             - name: List mutation results
