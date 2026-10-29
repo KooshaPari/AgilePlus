@@ -2,9 +2,7 @@
 //! Unit tests for `GovernanceEvaluation::configured` and `passed` —
 //! kill cargo-mutants true/false/&&/|| mutations.
 
-use agileplus_domain::domain::governance::{
-    GovernanceContract, GovernanceRule,
-};
+use agileplus_domain::domain::governance::{GovernanceContract, GovernanceRule};
 use agileplus_domain::domain::governance_evaluator::{GovernanceEvaluation, PolicyEvalResult};
 use chrono::Utc;
 
@@ -100,13 +98,15 @@ fn passed_false_missing_evidence() {
 fn passed_false_evidence_not_found() {
     let c = make_contract(vec![rule(vec!["FR-001:ci_output".to_string()], vec![])]);
     let ev = GovernanceEvaluation {
-        evidence_results: vec![agileplus_domain::domain::governance_evaluator::EvidenceCheck {
-            fr_id: "FR-001".to_string(),
-            evidence_type: "CiOutput".to_string(),
-            found: false,
-            threshold_met: true,
-            message: "m".to_string(),
-        }],
+        evidence_results: vec![
+            agileplus_domain::domain::governance_evaluator::EvidenceCheck {
+                fr_id: "FR-001".to_string(),
+                evidence_type: "CiOutput".to_string(),
+                found: false,
+                threshold_met: true,
+                message: "m".to_string(),
+            },
+        ],
         policy_results: vec![],
         missing_evidence: vec![],
         rule_results: vec![],
@@ -118,13 +118,15 @@ fn passed_false_evidence_not_found() {
 fn passed_false_threshold_not_met() {
     let c = make_contract(vec![rule(vec!["FR-001:ci_output".to_string()], vec![])]);
     let ev = GovernanceEvaluation {
-        evidence_results: vec![agileplus_domain::domain::governance_evaluator::EvidenceCheck {
-            fr_id: "FR-001".to_string(),
-            evidence_type: "CiOutput".to_string(),
-            found: true,
-            threshold_met: false,
-            message: "m".to_string(),
-        }],
+        evidence_results: vec![
+            agileplus_domain::domain::governance_evaluator::EvidenceCheck {
+                fr_id: "FR-001".to_string(),
+                evidence_type: "CiOutput".to_string(),
+                found: true,
+                threshold_met: false,
+                message: "m".to_string(),
+            },
+        ],
         policy_results: vec![],
         missing_evidence: vec![],
         rule_results: vec![],
@@ -153,13 +155,15 @@ fn passed_false_policy_fails() {
 fn passed_true_all_good() {
     let c = make_contract(vec![rule(vec!["FR-001:ci_output".to_string()], vec![1])]);
     let ev = GovernanceEvaluation {
-        evidence_results: vec![agileplus_domain::domain::governance_evaluator::EvidenceCheck {
-            fr_id: "FR-001".to_string(),
-            evidence_type: "CiOutput".to_string(),
-            found: true,
-            threshold_met: true,
-            message: "OK".to_string(),
-        }],
+        evidence_results: vec![
+            agileplus_domain::domain::governance_evaluator::EvidenceCheck {
+                fr_id: "FR-001".to_string(),
+                evidence_type: "CiOutput".to_string(),
+                found: true,
+                threshold_met: true,
+                message: "OK".to_string(),
+            },
+        ],
         policy_results: vec![PolicyEvalResult {
             policy_id: 1,
             domain: "quality".to_string(),
@@ -176,13 +180,15 @@ fn passed_true_all_good() {
 fn passed_false_when_evidence_found_but_threshold_false_even_if_policy_ok() {
     let c = make_contract(vec![rule(vec!["FR-001:ci_output".to_string()], vec![1])]);
     let ev = GovernanceEvaluation {
-        evidence_results: vec![agileplus_domain::domain::governance_evaluator::EvidenceCheck {
-            fr_id: "FR-001".to_string(),
-            evidence_type: "CiOutput".to_string(),
-            found: true,
-            threshold_met: false,
-            message: "m".to_string(),
-        }],
+        evidence_results: vec![
+            agileplus_domain::domain::governance_evaluator::EvidenceCheck {
+                fr_id: "FR-001".to_string(),
+                evidence_type: "CiOutput".to_string(),
+                found: true,
+                threshold_met: false,
+                message: "m".to_string(),
+            },
+        ],
         policy_results: vec![PolicyEvalResult {
             policy_id: 1,
             domain: "quality".to_string(),
@@ -199,13 +205,15 @@ fn passed_false_when_evidence_found_but_threshold_false_even_if_policy_ok() {
 fn passed_false_when_policy_fails_even_if_evidence_ok() {
     let c = make_contract(vec![rule(vec!["FR-001:ci_output".to_string()], vec![1])]);
     let ev = GovernanceEvaluation {
-        evidence_results: vec![agileplus_domain::domain::governance_evaluator::EvidenceCheck {
-            fr_id: "FR-001".to_string(),
-            evidence_type: "CiOutput".to_string(),
-            found: true,
-            threshold_met: true,
-            message: "OK".to_string(),
-        }],
+        evidence_results: vec![
+            agileplus_domain::domain::governance_evaluator::EvidenceCheck {
+                fr_id: "FR-001".to_string(),
+                evidence_type: "CiOutput".to_string(),
+                found: true,
+                threshold_met: true,
+                message: "OK".to_string(),
+            },
+        ],
         policy_results: vec![PolicyEvalResult {
             policy_id: 1,
             domain: "quality".to_string(),
