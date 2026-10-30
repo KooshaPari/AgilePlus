@@ -126,13 +126,19 @@ jobs:
               # a green shard that tested nothing -- exactly what an out-of-range
               # --shard value does.
               #
-              # mutants.out is a DIRECTORY, so this must test with -e, not -f.
-              # The first version of this guard used -f and therefore failed
-              # every shard that ran correctly (run 40960079326, shards 0/1/2),
-              # while the campaign underneath had actually completed.
-              # outcomes.json is the completion marker: cargo-mutants writes it
-              # only after the whole shard is scored, so its presence
-              # distinguishes "finished" from "started and died".
+              # mutants.out is a DIRECTORY, so presence must be tested with -e,
+              # not -f. File presence alone is NOT completion though:
+              # cargo-mutants rewrites outcomes.json after every single mutant
+              # (output.rs write_lab_outcome is documented as "Called multiple
+              # times as the lab runs, and once at the end"), so the file exists
+              # as soon as the first mutant is scored.
+              #
+              # The real completion marker is LabOutcome.end_time, which is None
+              # until finish() sets it and rewrites the file:
+              #   self.lab_outcome.end_time = Some(Timestamp::now());
+              #   self.write_lab_outcome()?;
+              # Checking end_time therefore separates "finished" from "started
+              # and died", which mere file presence cannot do.
               run: |
                   set -euo pipefail
                   if [ ! -e mutants.out ]; then
@@ -143,7 +149,13 @@ jobs:
                     echo "::error::mutants.out exists but outcomes.json is missing; shard ${{ matrix.shard }}/4 did not finish"
                     exit 1
                   fi
-                  echo "shard ${{ matrix.shard }}/4 finished: $(wc -l < mutants.out/caught.txt) caught, $(wc -l < mutants.out/missed.txt) missed, $(wc -l < mutants.out/timeout.txt) timed out, $(wc -l < mutants.out/unviable.txt) unviable"
+                  end_time="$(jq -r '.end_time // empty' mutants.out/outcomes.json)"
+                  if [ -z "$end_time" ]; then
+                    echo "::error::outcomes.json has no end_time, so shard ${{ matrix.shard }}/4 did not finish"
+                    jq -r '"progress: \(.caught) caught of \(.total_mutants) mutants"' mutants.out/outcomes.json
+                    exit 1
+                  fi
+                  jq -r '"shard ${{ matrix.shard }}/4 finished at \(.end_time): total=\(.total_mutants) caught=\(.caught) missed=\(.missed) timeout=\(.timeout) unviable=\(.unviable)"' mutants.out/outcomes.json
 
             - name: Upload mutation report
               if: always()
