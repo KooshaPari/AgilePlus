@@ -103,9 +103,21 @@ jobs:
               # exit code is the only way to tell "campaign ran, found problems"
               # apart from "tests were already failing" or "internal error".
               # Record it and let the guard decide.
+              #
+              # src/ports/execution.rs is excluded because its only mutants are
+              # AtomicAcceptancePort trait-STUB defaults (`Err(NotImplemented)`).
+              # Replacing them with Ok(None)/Ok(Default::default()) either fails to
+              # compile (no Default on the receipt types -> unviable, zero value) or
+              # makes cargo's type inference blow up. Evidence, run 40983475780
+              # shard 3, both attempts: mutant order is deterministic and ascending,
+              # and both attempts completed exactly 48 mutants then stalled 12-16 min
+              # at the next entry, ports/execution.rs:70:9. Locally the same three
+              # mutants finish in 3m (1 missed, 2 unviable), so the stall is
+              # build-side, not test-side. --build-timeout caps that class of stall
+              # and turns it into a TIMEOUT instead of an unkillable hang.
               run: |
                   set +e
-                  cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml --exclude "src/intent_graph.rs" --exclude "src/ports/mod.rs" --timeout 120 --shard ${{ matrix.shard }}/4
+                  cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml --exclude "src/intent_graph.rs" --exclude "src/ports/mod.rs" --exclude "src/ports/execution.rs" --timeout 120 --build-timeout 300 --shard ${{ matrix.shard }}/4
                   rc=$?
                   echo "cargo-mutants exit code: $rc"
                   echo "rc=$rc" >> "$GITHUB_OUTPUT"
