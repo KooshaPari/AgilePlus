@@ -104,28 +104,46 @@ jobs:
             - name: List mutation results
               if: always()
               run: |
-                  if [ -f mutants.out ]; then
-                    echo "=== Mutation Results (shard ${{ matrix.shard }}/4) ==="
-                    cat mutants.out
+                  # cargo-mutants writes mutants.out as a DIRECTORY containing
+                  # caught.txt, missed.txt, timeout.txt, unviable.txt,
+                  # mutants.json and outcomes.json. `cat mutants.out` on the
+                  # directory (the previous form) never worked.
+                  ls -la mutants.out 2>/dev/null || echo "No mutants.out directory"
+                  for f in missed.txt timeout.txt unviable.txt; do
+                    if [ -f "mutants.out/$f" ]; then
+                      echo "=== $f ($(wc -l < "mutants.out/$f") entries) ==="
+                      cat "mutants.out/$f"
+                    fi
+                  done
+                  if [ -f mutants.out/caught.txt ]; then
+                    echo "=== caught.txt: $(wc -l < mutants.out/caught.txt) entries ==="
                   fi
-                  echo "---"
-                  ls -la mutants.out 2>/dev/null || echo "No mutants.out file"
-                  ls -la target/mutants/ 2>/dev/null || echo "No target/mutants/ directory"
 
             - name: Verify the shard produced results
               # The mutation step is continue-on-error so that genuinely missed
               # mutants do not block. That also swallows a hard cargo-mutants
               # error (rejected arguments, missing manifest), which would report
               # a green shard that tested nothing -- exactly what an out-of-range
-              # --shard value does. mutants.out is written by any completed
-              # campaign, so its absence means this shard did not run.
+              # --shard value does.
+              #
+              # mutants.out is a DIRECTORY, so this must test with -e, not -f.
+              # The first version of this guard used -f and therefore failed
+              # every shard that ran correctly (run 40960079326, shards 0/1/2),
+              # while the campaign underneath had actually completed.
+              # outcomes.json is the completion marker: cargo-mutants writes it
+              # only after the whole shard is scored, so its presence
+              # distinguishes "finished" from "started and died".
               run: |
                   set -euo pipefail
-                  if [ ! -f mutants.out ]; then
+                  if [ ! -e mutants.out ]; then
                     echo "::error::cargo-mutants produced no mutants.out; shard ${{ matrix.shard }}/4 did not run"
                     exit 1
                   fi
-                  echo "mutants.out present for shard ${{ matrix.shard }}/4"
+                  if [ ! -f mutants.out/outcomes.json ]; then
+                    echo "::error::mutants.out exists but outcomes.json is missing; shard ${{ matrix.shard }}/4 did not finish"
+                    exit 1
+                  fi
+                  echo "shard ${{ matrix.shard }}/4 finished: $(wc -l < mutants.out/caught.txt) caught, $(wc -l < mutants.out/missed.txt) missed, $(wc -l < mutants.out/timeout.txt) timed out, $(wc -l < mutants.out/unviable.txt) unviable"
 
             - name: Upload mutation report
               if: always()
