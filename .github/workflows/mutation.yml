@@ -117,7 +117,7 @@ jobs:
               # and turns it into a TIMEOUT instead of an unkillable hang.
               run: |
                   set +e
-                  cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml --exclude "src/intent_graph.rs" --exclude "src/ports/mod.rs" --exclude "src/ports/execution.rs" --timeout 120 --build-timeout 300 --shard ${{ matrix.shard }}/4
+                  cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml --exclude "crates/agileplus-domain/src/intent_graph.rs" --exclude "crates/agileplus-domain/src/ports/mod.rs" --exclude "crates/agileplus-domain/src/ports/execution.rs" --timeout 120 --build-timeout 300 --shard ${{ matrix.shard }}/4
                   rc=$?
                   echo "cargo-mutants exit code: $rc"
                   echo "rc=$rc" >> "$GITHUB_OUTPUT"
