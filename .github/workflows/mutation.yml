@@ -98,8 +98,18 @@ jobs:
                   tool: cargo-mutants
 
             - name: Run cargo-mutants on agileplus-domain
-              run: cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml --exclude "src/intent_graph.rs" --exclude "src/ports/mod.rs" --timeout 120 --shard ${{ matrix.shard }}/4
-              continue-on-error: true
+              id: mutants
+              # Do not use continue-on-error: it discards the exit code, and the
+              # exit code is the only way to tell "campaign ran, found problems"
+              # apart from "tests were already failing" or "internal error".
+              # Record it and let the guard decide.
+              run: |
+                  set +e
+                  cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml --exclude "src/intent_graph.rs" --exclude "src/ports/mod.rs" --timeout 120 --shard ${{ matrix.shard }}/4
+                  rc=$?
+                  echo "cargo-mutants exit code: $rc"
+                  echo "rc=$rc" >> "$GITHUB_OUTPUT"
+                  exit 0
 
             - name: List mutation results
               if: always()
@@ -120,42 +130,66 @@ jobs:
                   fi
 
             - name: Verify the shard produced results
-              # The mutation step is continue-on-error so that genuinely missed
-              # mutants do not block. That also swallows a hard cargo-mutants
-              # error (rejected arguments, missing manifest), which would report
-              # a green shard that tested nothing -- exactly what an out-of-range
-              # --shard value does.
+              # Decides pass/fail from evidence rather than from file presence.
+              # Three independent things must hold:
               #
-              # mutants.out is a DIRECTORY, so presence must be tested with -e,
-              # not -f. File presence alone is NOT completion though:
-              # cargo-mutants rewrites outcomes.json after every single mutant
-              # (output.rs write_lab_outcome is documented as "Called multiple
-              # times as the lab runs, and once at the end"), so the file exists
-              # as soon as the first mutant is scored.
+              # 1. mutants.out exists -- it is a DIRECTORY, so -e not -f. An
+              #    earlier version used -f and failed shards that had completed.
+              # 2. The campaign finished. outcomes.json is NOT a completion
+              #    signal on its own: cargo-mutants rewrites it after every
+              #    mutant (output.rs write_lab_outcome is "Called multiple times
+              #    as the lab runs, and once at the end"). LabOutcome.end_time is
+              #    None until finish() sets it, so end_time is the real marker.
+              # 3. The exit code is one that means "the campaign ran". cargo-
+              #    mutants exit codes: 0 all caught, 1 usage, 2 missed mutants,
+              #    3 test timeout, 4 BASELINE FAILED (tests already red on an
+              #    unmutated tree), 5/6 filter-diff problems, 70 internal error.
+              #    Only 0/2/3 say the campaign executed; 4 and 70 in particular
+              #    mean the numbers are meaningless and must not pass.
               #
-              # The real completion marker is LabOutcome.end_time, which is None
-              # until finish() sets it and rewrites the file:
-              #   self.lab_outcome.end_time = Some(Timestamp::now());
-              #   self.write_lab_outcome()?;
-              # Checking end_time therefore separates "finished" from "started
-              # and died", which mere file presence cannot do.
+              # Missed mutants (2) and per-mutant timeouts (3) are tolerated on
+              # purpose: this crate currently has 52 pre-existing misses outside
+              # this PR's scope (acceptance.rs 33, execution.rs 6, evaluation.rs
+              # 5, keychain.rs 5, memory.rs 2, feature.rs 1) and blocking on them
+              # would make the check permanently red for reasons unrelated to
+              # any given diff. governance_evaluator.rs, the file this PR is
+              # about, has 0 misses.
               run: |
                   set -euo pipefail
+                  rc="${{ steps.mutants.outputs.rc }}"
+                  shard="${{ matrix.shard }}"
+
                   if [ ! -e mutants.out ]; then
-                    echo "::error::cargo-mutants produced no mutants.out; shard ${{ matrix.shard }}/4 did not run"
+                    echo "::error::cargo-mutants produced no mutants.out; shard $shard/4 did not run"
                     exit 1
                   fi
                   if [ ! -f mutants.out/outcomes.json ]; then
-                    echo "::error::mutants.out exists but outcomes.json is missing; shard ${{ matrix.shard }}/4 did not finish"
+                    echo "::error::mutants.out exists but outcomes.json is missing; shard $shard/4 did not finish"
                     exit 1
                   fi
+
                   end_time="$(jq -r '.end_time // empty' mutants.out/outcomes.json)"
                   if [ -z "$end_time" ]; then
-                    echo "::error::outcomes.json has no end_time, so shard ${{ matrix.shard }}/4 did not finish"
+                    echo "::error::outcomes.json has no end_time, so shard $shard/4 did not finish"
                     jq -r '"progress: \(.caught) caught of \(.total_mutants) mutants"' mutants.out/outcomes.json
                     exit 1
                   fi
-                  jq -r '"shard ${{ matrix.shard }}/4 finished at \(.end_time): total=\(.total_mutants) caught=\(.caught) missed=\(.missed) timeout=\(.timeout) unviable=\(.unviable)"' mutants.out/outcomes.json
+
+                  case "$rc" in
+                    0|2|3)
+                      echo "cargo-mutants exit code $rc is an acceptable campaign outcome"
+                      ;;
+                    "")
+                      echo "::error::no cargo-mutants exit code recorded; the run step was cancelled or never completed, so shard $shard/4 is not trustworthy"
+                      exit 1
+                      ;;
+                    *)
+                      echo "::error::cargo-mutants exited $rc (1=usage, 4=baseline tests failed, 5/6=filter-diff, 70=internal error); shard $shard/4 results are not trustworthy"
+                      exit 1
+                      ;;
+                  esac
+
+                  jq -r --arg shard "$shard" '"shard \($shard)/4 finished at \(.end_time) with exit code '"$rc"': total=\(.total_mutants) caught=\(.caught) missed=\(.missed) timeout=\(.timeout) unviable=\(.unviable)"' mutants.out/outcomes.json
 
             - name: Upload mutation report
               if: always()
