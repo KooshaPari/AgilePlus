@@ -16,7 +16,7 @@ carries an observed artifact. Every remaining step is a command that can be run 
 | Branch | `fix/ci-diagnosis-2026-10-18` |
 | HEAD | `1d75fbcd` (falsified fixes reverted; outer `timeout 10200` kept) |
 | PR | [#1181](https://github.com/KooshaPari/AgilePlus/pull/1181) — OPEN, `mergeable=MERGEABLE` |
-| Latest mutation runs | `41154948158`, `41155337359`, `41162022642` — all **failure**, all **shard 7 only** |
+| Latest mutation runs | `41154948158`, `41155337359`, `41162022642`, `41165551694` — all **failure**, all **shard 7 only** |
 | Branch protection on `main` | required status checks **NOT enabled** (`404 Required status checks not enabled`); `enforce_admins=false`; `required_linear_history=true` |
 
 ### 1a. The shard-7 wedge (the live defect)
@@ -78,16 +78,31 @@ and 2 ran until 00:41, ten minutes *after* shard 3 died.
 
 ## 2. Best path
 
+### Final rollup on the PR (verified)
+
+`gh pr checks 1181 --repo KooshaPari/AgilePlus` on the repaired workflow:
+
+| Status | Count |
+|---|---|
+| pass | **50** |
+| fail | **1** (`benchmark thresholds (advisory)` — known false positive) |
+| pending | 2 |
+| skipping | 12 |
+
+All seven non-wedging mutation shards pass on every run. No check other than the two documented
+ones fails.
+
 **Stop patching. The gate is red on a defect the workflow cannot reach.**
 
-Shard 7/8 has now wedged in **three independent configurations**, each completing **zero**
-mutants while its siblings went green:
+Shard 7/8 has now wedged in **four independent runs / three configurations**, each completing
+**zero** mutants while its siblings went green:
 
 | Configuration | Run | Dead time |
 |---|---|---|
 | `--jobs 2`, 8-way | `41154948158` | 20.9 min |
 | `--jobs 2`, 8-way (docs commit) | `41155337359` | 20.3 min |
 | `--jobs 1`, 8-way | `41162022642` | 23.0 min |
+| default jobs, 8-way, post-revert | `41165551694` | confirmed 4th time |
 
 Concurrency is falsified. The nextest route was tested and rejected because it misclassifies
 kills. `--timeout 120` and `--build-timeout 300` provably do not fire, so the tool cannot
