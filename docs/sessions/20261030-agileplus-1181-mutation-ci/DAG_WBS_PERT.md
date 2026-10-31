@@ -3,7 +3,7 @@
 **Purpose:** make this work closable by someone else at any instant. Every claim below
 carries an observed artifact. Every remaining step is a command that can be run blind.
 
-`generated_at_utc`: 2026-10-31T02:54Z
+`generated_at_utc`: 2026-10-31T03:43Z
 
 ---
 
@@ -14,9 +14,9 @@ carries an observed artifact. Every remaining step is a command that can be run 
 | Repo | `KooshaPari/AgilePlus` |
 | Worktree | `/Users/kooshapari/.jcode/scratch/agileplus-1165` |
 | Branch | `fix/ci-diagnosis-2026-10-18` |
-| HEAD | `3f640d39` (`--jobs 1` + outer `timeout 10200`) |
+| HEAD | `1d75fbcd` (falsified fixes reverted; outer `timeout 10200` kept) |
 | PR | [#1181](https://github.com/KooshaPari/AgilePlus/pull/1181) — OPEN, `mergeable=MERGEABLE` |
-| Latest mutation runs | `41154948158` (on `574d8928`) and `41155337359` (on `ca23a013`) — both **failure**, **shard 7 only** |
+| Latest mutation runs | `41154948158`, `41155337359`, `41162022642` — all **failure**, all **shard 7 only** |
 | Branch protection on `main` | required status checks **NOT enabled** (`404 Required status checks not enabled`); `enforce_admins=false`; `required_linear_history=true` |
 
 ### 1a. The shard-7 wedge (the live defect)
@@ -27,6 +27,7 @@ Eight-way split, two independent runs, identical result — 8 of 9 jobs green:
 |---|---|---|---|---|
 | `41154948158` | `574d8928` | `(7)` | **0** | 20.9 min |
 | `41155337359` | `ca23a013` | `(7)` | **0** | 20.3 min |
+| `41162022642` | `3f640d39` (`--jobs 1`) | `(7)` | **0** | 23.0 min |
 
 Both logs, verbatim, are the same three lines apart from timestamps:
 
@@ -48,7 +49,8 @@ ERROR scenario execution internal error err=interrupted phase=Build
 | `module.rs:41:9` (the next entry) hangs | **CLOSED** | 4 mutants, **4 caught in 3 min**. |
 | A single `user.rs` mutant hangs | **CLOSED** | Individually: `user.rs:21` caught in 4m; `user.rs:66` caught in 64s. |
 | The last shard index is cursed | **OPEN but unlikely** | In 4-way it was always `(3)`; in 8-way always `(7)`. Consistent with "last shard runs longest", not with the mutants. |
-| Two concurrent scenarios wedge | **UNDER TEST** | Interruption shows `phase=Build` **and** `phase=Test` both pending, i.e. exactly two scenarios. `--jobs 1` is the falsification test. |
+| Two concurrent scenarios wedge | **CLOSED — falsified** | `--jobs 1` (run `41162022642`) wedged identically: 0 mutants, 23 min, one scenario. |
+| `--test-tool nextest` fixes it | **CLOSED — rejected** | nextest engages, but makes cargo-mutants report **FAILED**, not `CaughtMutant` (`user.rs:66:13`, 34s build + 1s test). A FAILED is not a kill, so it would convert real kills into spurious failures. |
 
 **Critical tool finding:** neither `--timeout 120` nor `--build-timeout 300` fires. A build timeout would emit a `TIMEOUT` result and continue. So cargo-mutants' internal timeouts **cannot be relied on** as the safety net for this crate.
 
@@ -76,28 +78,38 @@ and 2 ran until 00:41, ten minutes *after* shard 3 died.
 
 ## 2. Best path
 
-**Two changes made; if the next run still wedges, merge anyway.**
+**Stop patching. The gate is red on a defect the workflow cannot reach.**
 
-The defect is now precisely characterised and it is not a code defect. On two independent runs
-shard 7/8 completed **zero** mutants in ~20 minutes while its seven siblings went green, and
-the interruption shows `phase=Build` **and** `phase=Test` pending simultaneously. Every
-single-mutant hypothesis has been empirically closed (§1b), and locally those same mutants are
-caught in 64 s to 4 min.
+Shard 7/8 has now wedged in **three independent configurations**, each completing **zero**
+mutants while its siblings went green:
 
-Applied in `3f640d39`:
+| Configuration | Run | Dead time |
+|---|---|---|
+| `--jobs 2`, 8-way | `41154948158` | 20.9 min |
+| `--jobs 2`, 8-way (docs commit) | `41155337359` | 20.3 min |
+| `--jobs 1`, 8-way | `41162022642` | 23.0 min |
 
-1. **`--jobs 1`** — one scenario at a time. The only remaining difference between the shards
-   that pass and the one that wedges is concurrency. This is the falsification test, and it
-   costs wall clock, not coverage.
-2. **`timeout 10200`** around cargo-mutants — because `--timeout` and `--build-timeout`
-   demonstrably do not fire, a wedge currently kills the whole runner. With the outer cap the
-   step ends at 170 min with rc 124 and the guard reports a precise cause.
+Concurrency is falsified. The nextest route was tested and rejected because it misclassifies
+kills. `--timeout 120` and `--build-timeout 300` provably do not fire, so the tool cannot
+interrupt whatever is wedged.
 
-**Decision rule.** If `3f640d39` is green, proceed to merge. If shard 7 wedges a *third* time
-with `--jobs 1`, concurrency is falsified and the remaining explanation is runner-side
-infrastructure. At that point the correct action is **not** a fifth patch: `main` has **no
-required status checks** (verified), 8 of 9 jobs pass, and the failure mode is an
-external-resource kill with no tool error. Merge, and record the flake in the PR body.
+**What survives (`1d75fbcd`):** only `timeout 10200` around cargo-mutants, which converts an
+infrastructure kill into a precise `rc=124` verdict the guard can report.
+
+**Recommendation to the operator:** merge PR #1181. Rationale, all verified:
+
+- `main` has **no required status checks** (`404 Required status checks not enabled`), so the
+  red shard is not gating anything.
+- 8 of 9 mutation jobs pass, and every *other* check passes: rust/go/python coverage,
+  coverage-gate, gitleaks, perf, cargo-fuzz.
+- The failing job is an external-resource kill with **no tool error** and **no missed mutants
+  reported** — it produced no verdict at all, so it neither proves nor disproves code quality.
+- The only remaining advisory failure, `benchmark thresholds (advisory)`, reproduces against an
+  identical baseline and is a false positive.
+
+**Do not** patch a fourth time on speculation. If this must be fixed properly, the next step is
+an investigation of why `cargo-mutants` cannot interrupt a wedged child in this environment —
+that is a tool-level question, not a workflow-configuration one.
 
 ---
 
@@ -118,8 +130,9 @@ Estimates are PERT: `E = (O + 4M + P) / 6`, in minutes.
 | 1.8 | Rule out the post-exclusion stalling mutant (`module.rs:41:9`) | 1.6 | 10 | 20 | 40 | 22 | **DONE — ruled out** | 4 mutants, **4 caught in 3 min** |
 | 1.9 | Re-shard 4→8 | 1.8 | 15 | 25 | 40 | 26 | **DONE** | `574d8928`; split 59×7 + 57 = 470 |
 | 1.10 | Characterise the shard-7 wedge | 1.9 | 30 | 50 | 90 | 53 | **DONE** | 2 runs, 0 mutants, 20 min, Build+Test pending |
-| 1.11 | `--jobs 1` + outer `timeout 10200` | 1.10 | 10 | 15 | 25 | 16 | **DONE** | `3f640d39` |
-| 1.12 | Green all 8 shards on CI | 1.11 | 40 | 70 | 110 | 72 | **IN PROGRESS** | delegated monitor |
+| 1.11 | `--jobs 1` + outer `timeout 10200` | 1.10 | 10 | 15 | 25 | 16 | **DONE — jobs 1 FALSIFIED** | `3f640d39` → reverted in `1d75fbcd` |
+| 1.12 | Green all 8 shards on CI | 1.11 | 40 | 70 | 110 | 72 | **BLOCKED — not reachable from the workflow** | 3 configs, 3 wedges |
+| 1.13 | Revert falsified fixes, keep outer timeout | 1.12 | 10 | 15 | 25 | 16 | **DONE** | `1d75fbcd` |
 | 2.0 | **Phase 2 — Other checks** | — | | | | | | |
 | 2.1 | python-coverage (`COVERAGE_PATH: python`) | — | 10 | 20 | 35 | 21 | **DONE** | `e41cfed8` |
 | 2.2 | rust-coverage (drop unused `EvidenceCheck` import under `-D warnings`) | 2.1 | 10 | 15 | 25 | 16 | **DONE** | `9cea8dcf` |
@@ -130,7 +143,7 @@ Estimates are PERT: `E = (O + 4M + P) / 6`, in minutes.
 | 3.2 | Merge PR #1181 (squash, ledger trailers) | 3.1 | 10 | 15 | 30 | 17 | **PENDING** | no required checks gate the merge |
 | 3.3 | Verify `main` mutation run green post-merge | 3.2 | 40 | 70 | 110 | 72 | **PENDING** | |
 
-**Remaining expected effort:** `1.12 + 3.1 + 3.2 + 3.3 ≈ 72 + 21 + 17 + 72 = 182 min`
+**Remaining:** nothing further is actionable inside this workflow. `1.12` is BLOCKED. Awaiting an operator decision on merge (the operator has stated no-merge without approval).
 (~3.5 h wall clock, dominated by two CI campaign runs).
 
 ---
@@ -280,4 +293,5 @@ Verified: mutant count 161 → 116 only with the full path.
 | `c46bfa4e` | repo-root-relative excludes (**effective**: 161→116) + `--build-timeout 300` |
 | `574d8928` | re-shard 4→8; `--jobs 2`; guard messages report `/8` |
 | `ca23a013` | docs: sync DAG/WBS/PERT |
-| `3f640d39` | **`--jobs 1`** + outer `timeout 10200` |
+| `3f640d39` | `--jobs 1` + outer `timeout 10200` (**jobs 1 later falsified**) |
+| `1d75fbcd` | revert `--jobs 1` and nextest; keep outer `timeout 10200` |
