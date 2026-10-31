@@ -50,6 +50,7 @@ ERROR scenario execution internal error err=interrupted phase=Build
 | A single `user.rs` mutant hangs | **CLOSED** | Individually: `user.rs:21` caught in 4m; `user.rs:66` caught in 64s. |
 | The last shard index is cursed | **OPEN but unlikely** | In 4-way it was always `(3)`; in 8-way always `(7)`. Consistent with "last shard runs longest", not with the mutants. |
 | Two concurrent scenarios wedge | **CLOSED — falsified** | `--jobs 1` (run `41162022642`) wedged identically: 0 mutants, 23 min, one scenario. |
+| An infinite loop in a mutant wedges cargo-mutants | **CLOSED — falsified** | Tested the strongest candidate, `DependencyGraph::has_cycle -> false` (which makes `execution_order` loop forever on a cyclic graph). cargo-mutants reported `*** result: Timeout` at --timeout 120 and continued. So the spinning-test class is handled correctly and cannot explain the wedge. |
 | `--test-tool nextest` fixes it | **CLOSED — rejected** | nextest engages, but makes cargo-mutants report **FAILED**, not `CaughtMutant` (`user.rs:66:13`, 34s build + 1s test). A FAILED is not a kill, so it would convert real kills into spurious failures. |
 
 **Critical tool finding:** neither `--timeout 120` nor `--build-timeout 300` fires. A build timeout would emit a `TIMEOUT` result and continue. So cargo-mutants' internal timeouts **cannot be relied on** as the safety net for this crate.
