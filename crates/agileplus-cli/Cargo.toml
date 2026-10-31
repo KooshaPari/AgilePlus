@@ -32,7 +32,7 @@ agileplus-plane = { version = "0.2.4", path = "../agileplus-plane" }
 agileplus-sqlite = { version = "0.2.4", path = "../agileplus-sqlite" }
 agileplus-triage = { version = "0.2.4", path = "../agileplus-triage" }
 agileplus-events = { version = "0.2.4", path = "../agileplus-events", optional = true }
-rusqlite = { version = "0.40", features = ["bundled"] }
+rusqlite = { version = "0.41", features = ["bundled"] }
 async-trait.workspace = true
 serde.workspace = true
 serde_json.workspace = true
