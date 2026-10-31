@@ -32,3 +32,5 @@ pub mod work_package;
 
 #[cfg(test)]
 mod proptest_enums;
+
+pub mod work_item;

@@ -378,3 +378,5 @@ impl From<DomainError> for TriageError {
         }
     }
 }
+
+pub mod work_item;

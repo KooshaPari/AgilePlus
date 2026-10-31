@@ -34,7 +34,8 @@ async fn main() -> Result<()> {
         .context("AGILEPLUS_API_KEY is required; retain it in the operator secret manager")?;
     import_api_key(credentials.as_ref(), &api_key).map_err(|err| anyhow!(err.to_string()))?;
     let state = AppState::new(storage, vcs, telemetry, Arc::new(config), credentials)
-        .with_atomic_acceptance();
+        .with_atomic_acceptance()
+        .with_work_items();
     agileplus_api::router::start_api(addr, state)
         .await
         .map_err(|err| anyhow!(err.to_string()))?;
