@@ -14,43 +14,50 @@ carries an observed artifact. Every remaining step is a command that can be run 
 | Repo | `KooshaPari/AgilePlus` |
 | Worktree | `/Users/kooshapari/.jcode/scratch/agileplus-1165` |
 | Branch | `fix/ci-diagnosis-2026-10-18` |
-| HEAD | `c46bfa4ee6a8c8d64b6c10e181c82dd5d268aed0` |
+| HEAD | `574d8928` (8-way re-shard) — parent `c46bfa4e` |
 | PR | [#1181](https://github.com/KooshaPari/AgilePlus/pull/1181) — OPEN, `mergeable=MERGEABLE` |
-| Latest mutation run | `41145684435` — **failure** (shard 3 only) |
+| Latest mutation run | `41145684435` — **failure** (shard 3 only, on parent `c46bfa4e`) |
 | Branch protection on `main` | required status checks **NOT enabled** (`404 Required status checks not enabled`); `enforce_admins=false`; `required_linear_history=true` |
 
-Shard outcomes on `41145684435`:
+Shard outcomes on `41145684435` (the last 4-way run, on `c46bfa4e`):
 
-| Shard | Conclusion |
-|---|---|
-| 0 | success |
-| 1 | success |
-| 2 | success |
-| 3 | **failure** — runner shutdown after 39 min silence |
-| cargo-fuzz | success |
+| Shard | Conclusion | Start → End | Duration |
+|---|---|---|---|
+| 0 | success | 23:38:40 → 00:04:44 | 26 min |
+| 1 | success | 23:38:40 → 00:41:05 | 62 min |
+| 2 | success | 23:38:41 → 00:40:54 | 62 min |
+| 3 | **failure** | 23:38:40 → 00:31:24 | 53 min |
+| cargo-fuzz | success | 23:38:40 → 23:41:01 | 2 min |
+
+Shard 3's last logged mutant was `governance_evaluator.rs:431:28` at 23:52:11, i.e.
+**39 minutes of silence** before the job ended. It was not cancelled by a sibling: shards 1
+and 2 ran until 00:41, ten minutes *after* shard 3 died.
 
 ---
 
 ## 2. Best path
 
-**Ship the gate green by bounding the campaign, not by chasing one more mutant.**
+**Bound the campaign; stop hunting mutants one file at a time.**
 
-The campaign has now failed three times on shard 3, each time at a *different* mutant, always
-with the same signature: normal progress, then a long silence, then
-`The runner has received a shutdown signal`. That is not a code defect and not a test failure.
-It is one class of mutant causing an unbounded build, and the identity of that mutant moves
-because each exclusion shifts the shard-3 boundary.
+Three consecutive failures on shard 3, each at a *different* mutant, always the same signature:
+steady progress, a long silence, then `The runner has received a shutdown signal`. No
+`cargo-mutants` error is emitted and `--build-timeout 300` never fires — a build timeout would
+emit a `TIMEOUT` result and continue. So the runner is dying, not the tool reporting.
 
-The correct response is to stop excluding individual paths and instead make the failure mode
-*impossible to hang*:
+Two facts narrow it down:
 
-1. Split the campaign into more, shorter shards so no single leg runs long enough to be evicted.
-2. Keep `--build-timeout` so a runaway build becomes a reported `TIMEOUT`, which
-   `cargo-mutants` exits on normally, instead of an unkillable hang.
-3. Accept `TIMEOUT` outcomes in the guard (already the case: guard accepts rc 0 and 2).
+- `Module::slug_from_name` (the mutant that follows the last logged one) was **ruled out**:
+  all 4 of its mutants are **caught in 3 minutes** locally. The stall is not there.
+- Default `--jobs` is `NCPUS`, so a 4-core runner was running **4 concurrent mutant
+  build+test cycles**. A runner-side death with no tool error is most consistent with resource
+exhaustion under that parallelism.
 
-Anything else — hunting the fourth stalling mutant by hand — repeats the same loop with a new
-file name each round.
+So: **8 legs instead of 4, and `--jobs 2` instead of NCPUS.** That is `574d8928`. It halves
+per-leg exposure and removes the concurrency spike. Both changes are cheap and neither
+narrows coverage of the code under test.
+
+If an 8-way run still dies the same way, the parallelism hypothesis is falsified and the next
+step is a decision for the operator, not a fourth patch (see §6).
 
 ---
 
@@ -68,9 +75,9 @@ Estimates are PERT: `E = (O + 4M + P) / 6`, in minutes.
 | 1.5 | Diagnose shard-3 stall (not a timeout) | 1.3 | 30 | 60 | 120 | 65 | **DONE** | order deterministic; 48 mutants then silent |
 | 1.6 | Exclude `ports/execution.rs` (crate-relative path bug) | 1.5 | 10 | 20 | 35 | 21 | **DONE** | `c46bfa4e`; 161→116 mutants proves it took effect |
 | 1.7 | Add `--build-timeout 300` | 1.5 | 5 | 10 | 15 | 10 | **DONE** | `c46bfa4e` |
-| 1.8 | Confirm the post-exclusion stalling mutant (`module.rs:41:9`) | 1.6 | 10 | 20 | 40 | 22 | **IN PROGRESS** | delegated; run `41145684435` died 39 min after it |
-| 1.9 | Re-shard 4→8 (`--shard k/8`, matrix 0..7) | 1.8 | 15 | 25 | 40 | 26 | **PENDING** | flake is time-in-leg bound, not mutant bound |
-| 1.10 | Green all 8 shards on CI | 1.9 | 40 | 70 | 110 | 72 | **PENDING** | ~116 mutants / 8 legs |
+| 1.8 | Rule out the post-exclusion stalling mutant (`module.rs:41:9`) | 1.6 | 10 | 20 | 40 | 22 | **DONE — ruled out** | 4 mutants, **4 caught in 3 min** |
+| 1.9 | Re-shard 4→8 + cap `--jobs 2` (was NCPUS) | 1.8 | 15 | 25 | 40 | 26 | **DONE** | `574d8928`; split 59×7 + 57 = 470 |
+| 1.10 | Green all 8 shards on CI | 1.9 | 40 | 70 | 110 | 72 | **IN PROGRESS** | delegated monitor, run on `574d8928` |
 | 2.0 | **Phase 2 — Other checks** | — | | | | | | |
 | 2.1 | python-coverage (`COVERAGE_PATH: python`) | — | 10 | 20 | 35 | 21 | **DONE** | `e41cfed8` |
 | 2.2 | rust-coverage (drop unused `EvidenceCheck` import under `-D warnings`) | 2.1 | 10 | 15 | 25 | 16 | **DONE** | `9cea8dcf` |
@@ -119,9 +126,9 @@ graph LR
     A3 --> A5["1.5 diagnose stall<br/>DONE"]
     A5 --> A6["1.6 exclude execution.rs<br/>DONE"]
     A5 --> A7["1.7 build-timeout<br/>DONE"]
-    A6 --> A8["1.8 confirm stall<br/>IN PROGRESS"]
-    A8 --> A9["1.9 re-shard k/8<br/>PENDING"]
-    A9 --> A10["1.10 green 8 shards<br/>PENDING"]
+    A6 --> A8["1.8 rule out module.rs<br/>DONE ruled out"]
+    A8 --> A9["1.9 re-shard k/8 + jobs 2<br/>DONE"]
+    A9 --> A10["1.10 green 8 shards<br/>IN PROGRESS"]
     A10 --> C1
   end
   subgraph P2["Phase 2 — Other checks"]
