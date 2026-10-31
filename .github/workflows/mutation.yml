@@ -124,20 +124,31 @@ jobs:
               # build-side, not test-side. --build-timeout caps that class of stall
               # and turns it into a TIMEOUT instead of an unkillable hang.
               #
-              # --jobs 1: shard 7/8 wedged twice, deterministically, in runs
-              # 41154948158 and 41155337359. Both times: baseline OK, then ZERO
-              # mutants completed for ~20 min, and the interruption came with BOTH
-              # `phase=Build` and `phase=Test` pending -- i.e. two concurrent
-              # scenarios. Neither --timeout 120 nor --build-timeout 300 fired, so
-              # the tool's own timeouts are not a reliable safety net here. One
-              # scenario at a time removes the concurrent-build variable entirely.
-              # It costs wall clock, not coverage.
+              # --test-tool nextest was TRIED and REJECTED. It does work -- argv
+              # becomes `cargo nextest run --verbose` -- and .config/nextest.toml
+              # already enforces test-timeout = "60s", which looked like the right
+              # fix for an unkillable test. But measured locally on
+              # user.rs:66:13, nextest makes cargo-mutants report the mutant as
+              # **FAILED**, not CaughtMutant:
+              #   FAILED user.rs:66:13 delete match arm "active" in 34s build + 1s test
+              # A FAILED outcome is not a kill, so routing the campaign through
+              # nextest would convert real kills into spurious failures and make
+              # the gate worse than the wedge it was meant to fix. Do not
+              # re-introduce it without first reconciling nextest's exit code with
+              # what cargo-mutants maps to CaughtMutant.
+              #
+              # --jobs 1 was also tried and REJECTED as a fix: run 41162022642
+              # wedged identically with it (baseline OK 03:01:13, zero mutants,
+              # shutdown 03:24:10), so concurrency is falsified as the cause. It is
+              # reverted to the default because it only costs wall clock.
               run: |
                   set +e
                   # Outer cap: a wedged cargo-mutants never returns and never
                   # reports, which is what turns one bad mutant into a dead runner.
                   # 170 min leaves room inside timeout-minutes: 240 for the guard.
-                  timeout 10200 cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml --exclude "crates/agileplus-domain/src/intent_graph.rs" --exclude "crates/agileplus-domain/src/ports/mod.rs" --exclude "crates/agileplus-domain/src/ports/execution.rs" --timeout 120 --build-timeout 300 --jobs 1 --shard ${{ matrix.shard }}/8
+                  # This is the one change that survives: it converts an
+                  # infrastructure kill into a precise rc=124 verdict.
+                  timeout 10200 cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml --exclude "crates/agileplus-domain/src/intent_graph.rs" --exclude "crates/agileplus-domain/src/ports/mod.rs" --exclude "crates/agileplus-domain/src/ports/execution.rs" --timeout 120 --build-timeout 300 --shard ${{ matrix.shard }}/8
                   rc=$?
                   echo "cargo-mutants exit code: $rc"
                   echo "rc=$rc" >> "$GITHUB_OUTPUT"
