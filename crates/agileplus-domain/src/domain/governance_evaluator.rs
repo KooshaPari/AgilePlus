@@ -64,6 +64,10 @@ pub struct GovernanceEvaluation {
 }
 impl GovernanceEvaluation {
     pub fn configured(&self, contract: &GovernanceContract) -> bool {
+        // A contract is "configured" when at least one rule carries either
+        // required evidence or policy references. `any` short-circuits on the
+        // first matching rule so an empty contract (no rules at all, or only
+        // vacuous rules) returns false.
         contract
             .rules
             .iter()

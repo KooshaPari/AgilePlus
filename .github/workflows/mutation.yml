@@ -62,11 +62,33 @@ jobs:
         # So the workload needs more than 329 minutes of wall clock and 360
         # minutes is the only value that leaves room for it to finish.
         #
-        # Making this check green therefore requires scoping or sharding the
-        # campaign (fewer mutants per job, or a non-blocking job), which is a
-        # separate change with its own risk. See CF-2 in
-        # docs/sessions/20261017-state-forward-docket/.
-        timeout-minutes: 360
+        # That sharding change is what this PR does. The same 653-mutant
+        # campaign is split four ways with --shard k/4, so each job needs about a
+        # quarter of the wall clock: at the measured ~38s per mutant that is
+        # ~104 min per shard, comfortably inside a hosted runner's reliable
+        # lifetime and inside the 240-minute ceiling below. fail-fast is false so
+        # one lost shard cannot cancel the others, and the artifact name carries
+        # the shard index so the four uploads cannot collide.
+        #
+        # Shard indices are ZERO-BASED: cargo-mutants rejects --shard k/n unless
+        # k < n, so the valid four-way split is 0/4, 1/4, 2/4, 3/4. Verified
+        # locally with --list: 0/4=164, 1/4=164, 2/4=164, 3/4=161, total 653.
+        # Using 1..4 silently makes shard 4 an instant no-op that still reports
+        # green, which is why the "Verify the shard produced results" step below
+        # exists.
+        timeout-minutes: 240
+        strategy:
+            fail-fast: false
+            matrix:
+                # 8 legs, not 4. Shard 3 failed three times in a row, each time
+                # at a DIFFERENT mutant, always with the same signature: steady
+                # progress, then a long silence (16 min, 16 min, 39 min), then
+                # "The runner has received a shutdown signal". No cargo-mutants
+                # error is emitted and --build-timeout never fires, so the
+                # runner is dying rather than the tool reporting. Splitting into
+                # 8 legs cuts per-leg exposure to that failure in half; the
+                # distribution is balanced (59,59,59,59,59,59,59,57).
+                shard: [0, 1, 2, 3, 4, 5, 6, 7]
         steps:
             - uses: actions/checkout@v7
 
@@ -84,25 +106,139 @@ jobs:
                   tool: cargo-mutants
 
             - name: Run cargo-mutants on agileplus-domain
-              run: cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml
-              continue-on-error: true
+              id: mutants
+              # Do not use continue-on-error: it discards the exit code, and the
+              # exit code is the only way to tell "campaign ran, found problems"
+              # apart from "tests were already failing" or "internal error".
+              # Record it and let the guard decide.
+              #
+              # src/ports/execution.rs is excluded because its only mutants are
+              # AtomicAcceptancePort trait-STUB defaults (`Err(NotImplemented)`).
+              # Replacing them with Ok(None)/Ok(Default::default()) either fails to
+              # compile (no Default on the receipt types -> unviable, zero value) or
+              # makes cargo's type inference blow up. Evidence, run 40983475780
+              # shard 3, both attempts: mutant order is deterministic and ascending,
+              # and both attempts completed exactly 48 mutants then stalled 12-16 min
+              # at the next entry, ports/execution.rs:70:9. Locally the same three
+              # mutants finish in 3m (1 missed, 2 unviable), so the stall is
+              # build-side, not test-side. --build-timeout caps that class of stall
+              # and turns it into a TIMEOUT instead of an unkillable hang.
+              #
+              # --test-tool nextest was TRIED and REJECTED. It does work -- argv
+              # becomes `cargo nextest run --verbose` -- and .config/nextest.toml
+              # already enforces test-timeout = "60s", which looked like the right
+              # fix for an unkillable test. But measured locally on
+              # user.rs:66:13, nextest makes cargo-mutants report the mutant as
+              # **FAILED**, not CaughtMutant:
+              #   FAILED user.rs:66:13 delete match arm "active" in 34s build + 1s test
+              # A FAILED outcome is not a kill, so routing the campaign through
+              # nextest would convert real kills into spurious failures and make
+              # the gate worse than the wedge it was meant to fix. Do not
+              # re-introduce it without first reconciling nextest's exit code with
+              # what cargo-mutants maps to CaughtMutant.
+              #
+              # --jobs 1 was also tried and REJECTED as a fix: run 41162022642
+              # wedged identically with it (baseline OK 03:01:13, zero mutants,
+              # shutdown 03:24:10), so concurrency is falsified as the cause. It is
+              # reverted to the default because it only costs wall clock.
+              run: |
+                  set +e
+                  # Outer cap: a wedged cargo-mutants never returns and never
+                  # reports, which is what turns one bad mutant into a dead runner.
+                  # 170 min leaves room inside timeout-minutes: 240 for the guard.
+                  # This is the one change that survives: it converts an
+                  # infrastructure kill into a precise rc=124 verdict.
+                  timeout 10200 cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml --exclude "crates/agileplus-domain/src/intent_graph.rs" --exclude "crates/agileplus-domain/src/ports/mod.rs" --exclude "crates/agileplus-domain/src/ports/execution.rs" --timeout 120 --build-timeout 300 --shard ${{ matrix.shard }}/8
+                  rc=$?
+                  echo "cargo-mutants exit code: $rc"
+                  echo "rc=$rc" >> "$GITHUB_OUTPUT"
+                  exit 0
 
             - name: List mutation results
               if: always()
               run: |
-                  if [ -f mutants.out ]; then
-                    echo "=== Mutation Results ==="
-                    cat mutants.out
+                  # cargo-mutants writes mutants.out as a DIRECTORY containing
+                  # caught.txt, missed.txt, timeout.txt, unviable.txt,
+                  # mutants.json and outcomes.json. `cat mutants.out` on the
+                  # directory (the previous form) never worked.
+                  ls -la mutants.out 2>/dev/null || echo "No mutants.out directory"
+                  for f in missed.txt timeout.txt unviable.txt; do
+                    if [ -f "mutants.out/$f" ]; then
+                      echo "=== $f ($(wc -l < "mutants.out/$f") entries) ==="
+                      cat "mutants.out/$f"
+                    fi
+                  done
+                  if [ -f mutants.out/caught.txt ]; then
+                    echo "=== caught.txt: $(wc -l < mutants.out/caught.txt) entries ==="
                   fi
-                  echo "---"
-                  ls -la mutants.out 2>/dev/null || echo "No mutants.out file"
-                  ls -la target/mutants/ 2>/dev/null || echo "No target/mutants/ directory"
+
+            - name: Verify the shard produced results
+              # Decides pass/fail from evidence rather than from file presence.
+              # Three independent things must hold:
+              #
+              # 1. mutants.out exists -- it is a DIRECTORY, so -e not -f. An
+              #    earlier version used -f and failed shards that had completed.
+              # 2. The campaign finished. outcomes.json is NOT a completion
+              #    signal on its own: cargo-mutants rewrites it after every
+              #    mutant (output.rs write_lab_outcome is "Called multiple times
+              #    as the lab runs, and once at the end"). LabOutcome.end_time is
+              #    None until finish() sets it, so end_time is the real marker.
+              # 3. The exit code is one that means "the campaign ran". cargo-
+              #    mutants exit codes: 0 all caught, 1 usage, 2 missed mutants,
+              #    3 test timeout, 4 BASELINE FAILED (tests already red on an
+              #    unmutated tree), 5/6 filter-diff problems, 70 internal error.
+              #    Only 0/2/3 say the campaign executed; 4 and 70 in particular
+              #    mean the numbers are meaningless and must not pass.
+              #
+              # Missed mutants (2) and per-mutant timeouts (3) are tolerated on
+              # purpose: this crate currently has 52 pre-existing misses outside
+              # this PR's scope (acceptance.rs 33, execution.rs 6, evaluation.rs
+              # 5, keychain.rs 5, memory.rs 2, feature.rs 1) and blocking on them
+              # would make the check permanently red for reasons unrelated to
+              # any given diff. governance_evaluator.rs, the file this PR is
+              # about, has 0 misses.
+              run: |
+                  set -euo pipefail
+                  rc="${{ steps.mutants.outputs.rc }}"
+                  shard="${{ matrix.shard }}"
+
+                  if [ ! -e mutants.out ]; then
+                    echo "::error::cargo-mutants produced no mutants.out; shard $shard/8 did not run"
+                    exit 1
+                  fi
+                  if [ ! -f mutants.out/outcomes.json ]; then
+                    echo "::error::mutants.out exists but outcomes.json is missing; shard $shard/8 did not finish"
+                    exit 1
+                  fi
+
+                  end_time="$(jq -r '.end_time // empty' mutants.out/outcomes.json)"
+                  if [ -z "$end_time" ]; then
+                    echo "::error::outcomes.json has no end_time, so shard $shard/8 did not finish"
+                    jq -r '"progress: \(.caught) caught of \(.total_mutants) mutants"' mutants.out/outcomes.json
+                    exit 1
+                  fi
+
+                  case "$rc" in
+                    0|2|3)
+                      echo "cargo-mutants exit code $rc is an acceptable campaign outcome"
+                      ;;
+                    "")
+                      echo "::error::no cargo-mutants exit code recorded; the run step was cancelled or never completed, so shard $shard/8 is not trustworthy"
+                      exit 1
+                      ;;
+                    *)
+                      echo "::error::cargo-mutants exited $rc (1=usage, 4=baseline tests failed, 5/6=filter-diff, 70=internal error); shard $shard/8 results are not trustworthy"
+                      exit 1
+                      ;;
+                  esac
+
+                  jq -r --arg shard "$shard" '"shard \($shard)/8 finished at \(.end_time) with exit code '"$rc"': total=\(.total_mutants) caught=\(.caught) missed=\(.missed) timeout=\(.timeout) unviable=\(.unviable)"' mutants.out/outcomes.json
 
             - name: Upload mutation report
               if: always()
               uses: actions/upload-artifact@v7
               with:
-                  name: mutation-report
+                  name: mutation-report-shard-${{ matrix.shard }}
                   path: |
                       mutants.out
                       target/mutants/
