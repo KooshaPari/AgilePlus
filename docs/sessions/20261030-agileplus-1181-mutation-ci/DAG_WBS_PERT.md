@@ -9,25 +9,25 @@ carries an observed artifact. Every remaining step is a command that can be run 
 
 ## 1. Verified state (observed, not assumed)
 
-| Field | Verified value |
-|---|---|
-| Repo | `KooshaPari/AgilePlus` |
-| Worktree | `/Users/kooshapari/.jcode/scratch/agileplus-1165` |
-| Branch | `fix/ci-diagnosis-2026-10-18` |
-| HEAD | `1d75fbcd` (falsified fixes reverted; outer `timeout 10200` kept) |
-| PR | [#1181](https://github.com/KooshaPari/AgilePlus/pull/1181) — OPEN, `mergeable=MERGEABLE` |
-| Latest mutation runs | `41154948158`, `41155337359`, `41162022642`, `41165551694` — all **failure**, all **shard 7 only** |
+| Field                       | Verified value                                                                                                                            |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Repo                        | `KooshaPari/AgilePlus`                                                                                                                    |
+| Worktree                    | `/Users/kooshapari/.jcode/scratch/agileplus-1165`                                                                                         |
+| Branch                      | `fix/ci-diagnosis-2026-10-18`                                                                                                             |
+| HEAD                        | `1d75fbcd` (falsified fixes reverted; outer `timeout 10200` kept)                                                                         |
+| PR                          | [#1181](https://github.com/KooshaPari/AgilePlus/pull/1181) — OPEN, `mergeable=MERGEABLE`                                                  |
+| Latest mutation runs        | `41154948158`, `41155337359`, `41162022642`, `41165551694` — all **failure**, all **shard 7 only**                                        |
 | Branch protection on `main` | required status checks **NOT enabled** (`404 Required status checks not enabled`); `enforce_admins=false`; `required_linear_history=true` |
 
 ### 1a. The shard-7 wedge (the live defect)
 
 Eight-way split, two independent runs, identical result — 8 of 9 jobs green:
 
-| Run | Commit | Failing job | Mutants completed | Dead time |
-|---|---|---|---|---|
-| `41154948158` | `574d8928` | `(7)` | **0** | 20.9 min |
-| `41155337359` | `ca23a013` | `(7)` | **0** | 20.3 min |
-| `41162022642` | `3f640d39` (`--jobs 1`) | `(7)` | **0** | 23.0 min |
+| Run           | Commit                  | Failing job | Mutants completed | Dead time |
+| ------------- | ----------------------- | ----------- | ----------------- | --------- |
+| `41154948158` | `574d8928`              | `(7)`       | **0**             | 20.9 min  |
+| `41155337359` | `ca23a013`              | `(7)`       | **0**             | 20.3 min  |
+| `41162022642` | `3f640d39` (`--jobs 1`) | `(7)`       | **0**             | 23.0 min  |
 
 Both logs, verbatim, are the same three lines apart from timestamps:
 
@@ -42,16 +42,16 @@ ERROR scenario execution internal error err=interrupted phase=Build
 
 ### 1b. Hypotheses tested and closed
 
-| Hypothesis | Verdict | Evidence |
-|---|---|---|
-| Overlapping runs killed it (concurrency broken) | **CLOSED** | Run 2's jobs all start 01:52:29-41, exactly when run 1 ended 01:52:27. Concurrency works. |
-| A specific mutant in `ports/execution.rs` | **CLOSED** | Excluded; count 161→116. Stall moved. |
-| `module.rs:41:9` (the next entry) hangs | **CLOSED** | 4 mutants, **4 caught in 3 min**. |
-| A single `user.rs` mutant hangs | **CLOSED** | Individually: `user.rs:21` caught in 4m; `user.rs:66` caught in 64s. |
-| The last shard index is cursed | **OPEN but unlikely** | In 4-way it was always `(3)`; in 8-way always `(7)`. Consistent with "last shard runs longest", not with the mutants. |
-| Two concurrent scenarios wedge | **CLOSED — falsified** | `--jobs 1` (run `41162022642`) wedged identically: 0 mutants, 23 min, one scenario. |
+| Hypothesis                                        | Verdict                | Evidence                                                                                                                                                                                                                                                                                         |
+| ------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Overlapping runs killed it (concurrency broken)   | **CLOSED**             | Run 2's jobs all start 01:52:29-41, exactly when run 1 ended 01:52:27. Concurrency works.                                                                                                                                                                                                        |
+| A specific mutant in `ports/execution.rs`         | **CLOSED**             | Excluded; count 161→116. Stall moved.                                                                                                                                                                                                                                                            |
+| `module.rs:41:9` (the next entry) hangs           | **CLOSED**             | 4 mutants, **4 caught in 3 min**.                                                                                                                                                                                                                                                                |
+| A single `user.rs` mutant hangs                   | **CLOSED**             | Individually: `user.rs:21` caught in 4m; `user.rs:66` caught in 64s.                                                                                                                                                                                                                             |
+| The last shard index is cursed                    | **OPEN but unlikely**  | In 4-way it was always `(3)`; in 8-way always `(7)`. Consistent with "last shard runs longest", not with the mutants.                                                                                                                                                                            |
+| Two concurrent scenarios wedge                    | **CLOSED — falsified** | `--jobs 1` (run `41162022642`) wedged identically: 0 mutants, 23 min, one scenario.                                                                                                                                                                                                              |
 | An infinite loop in a mutant wedges cargo-mutants | **CLOSED — falsified** | Tested the strongest candidate, `DependencyGraph::has_cycle -> false` (which makes `execution_order` loop forever on a cyclic graph). cargo-mutants reported `*** result: Timeout` at --timeout 120 and continued. So the spinning-test class is handled correctly and cannot explain the wedge. |
-| `--test-tool nextest` fixes it | **CLOSED — rejected** | nextest engages, but makes cargo-mutants report **FAILED**, not `CaughtMutant` (`user.rs:66:13`, 34s build + 1s test). A FAILED is not a kill, so it would convert real kills into spurious failures. |
+| `--test-tool nextest` fixes it                    | **CLOSED — rejected**  | nextest engages, but makes cargo-mutants report **FAILED**, not `CaughtMutant` (`user.rs:66:13`, 34s build + 1s test). A FAILED is not a kill, so it would convert real kills into spurious failures.                                                                                            |
 
 **Critical tool finding:** neither `--timeout 120` nor `--build-timeout 300` fires. A build timeout would emit a `TIMEOUT` result and continue. So cargo-mutants' internal timeouts **cannot be relied on** as the safety net for this crate.
 
@@ -63,17 +63,17 @@ The 20-minute CI wedge was **not** reproduced locally; local runs are merely slo
 
 Shard outcomes on `41145684435` (the last 4-way run, on `c46bfa4e`):
 
-| Shard | Conclusion | Start → End | Duration |
-|---|---|---|---|
-| 0 | success | 23:38:40 → 00:04:44 | 26 min |
-| 1 | success | 23:38:40 → 00:41:05 | 62 min |
-| 2 | success | 23:38:41 → 00:40:54 | 62 min |
-| 3 | **failure** | 23:38:40 → 00:31:24 | 53 min |
-| cargo-fuzz | success | 23:38:40 → 23:41:01 | 2 min |
+| Shard      | Conclusion  | Start → End         | Duration |
+| ---------- | ----------- | ------------------- | -------- |
+| 0          | success     | 23:38:40 → 00:04:44 | 26 min   |
+| 1          | success     | 23:38:40 → 00:41:05 | 62 min   |
+| 2          | success     | 23:38:41 → 00:40:54 | 62 min   |
+| 3          | **failure** | 23:38:40 → 00:31:24 | 53 min   |
+| cargo-fuzz | success     | 23:38:40 → 23:41:01 | 2 min    |
 
 Shard 3's last logged mutant was `governance_evaluator.rs:431:28` at 23:52:11, i.e.
 **39 minutes of silence** before the job ended. It was not cancelled by a sibling: shards 1
-and 2 ran until 00:41, ten minutes *after* shard 3 died.
+and 2 ran until 00:41, ten minutes _after_ shard 3 died.
 
 ---
 
@@ -83,12 +83,12 @@ and 2 ran until 00:41, ten minutes *after* shard 3 died.
 
 `gh pr checks 1181 --repo KooshaPari/AgilePlus` on the repaired workflow:
 
-| Status | Count |
-|---|---|
-| pass | **50** |
-| fail | **1** (`benchmark thresholds (advisory)` — known false positive) |
-| pending | 2 |
-| skipping | 12 |
+| Status   | Count                                                            |
+| -------- | ---------------------------------------------------------------- |
+| pass     | **50**                                                           |
+| fail     | **1** (`benchmark thresholds (advisory)` — known false positive) |
+| pending  | 2                                                                |
+| skipping | 12                                                               |
 
 All seven non-wedging mutation shards pass on every run. No check other than the two documented
 ones fails.
@@ -98,11 +98,11 @@ ones fails.
 Shard 7/8 has now wedged in **four independent runs / three configurations**, each completing
 **zero** mutants while its siblings went green:
 
-| Configuration | Run | Dead time |
-|---|---|---|
-| `--jobs 2`, 8-way | `41154948158` | 20.9 min |
-| `--jobs 2`, 8-way (docs commit) | `41155337359` | 20.3 min |
-| `--jobs 1`, 8-way | `41162022642` | 23.0 min |
+| Configuration                    | Run           | Dead time          |
+| -------------------------------- | ------------- | ------------------ |
+| `--jobs 2`, 8-way                | `41154948158` | 20.9 min           |
+| `--jobs 2`, 8-way (docs commit)  | `41155337359` | 20.3 min           |
+| `--jobs 1`, 8-way                | `41162022642` | 23.0 min           |
 | default jobs, 8-way, post-revert | `41165551694` | confirmed 4th time |
 
 Concurrency is falsified. The nextest route was tested and rejected because it misclassifies
@@ -116,7 +116,7 @@ infrastructure kill into a precise `rc=124` verdict the guard can report.
 
 - `main` has **no required status checks** (`404 Required status checks not enabled`), so the
   red shard is not gating anything.
-- 8 of 9 mutation jobs pass, and every *other* check passes: rust/go/python coverage,
+- 8 of 9 mutation jobs pass, and every _other_ check passes: rust/go/python coverage,
   coverage-gate, gitleaks, perf, cargo-fuzz.
 - The failing job is an external-resource kill with **no tool error** and **no missed mutants
   reported** — it produced no verdict at all, so it neither proves nor disproves code quality.
@@ -133,31 +133,31 @@ that is a tool-level question, not a workflow-configuration one.
 
 Estimates are PERT: `E = (O + 4M + P) / 6`, in minutes.
 
-| ID | Task | Deps | O | M | P | E | Status | Evidence |
-|---|---|---|---|---|---|---|---|---|
-| 1.0 | **Phase 1 — Mutation gate** | — | | | | | | |
-| 1.1 | Add governance unit tests killing `configured`/`passed` | — | 20 | 35 | 60 | 37 | **DONE** | `tests/governance_evaluator_unit_tests.rs`, 14 tests |
-| 1.2 | Gate shard on exit code + `outcomes.json` `end_time` | — | 15 | 25 | 45 | 27 | **DONE** | `10fc77b7` |
-| 1.3 | Shard campaign 4-way (`--shard k/4`) | 1.2 | 15 | 25 | 40 | 25 | **DONE** | `be9c25a6` |
-| 1.4 | Exclude `intent_graph.rs`, `ports/mod.rs` | 1.3 | 10 | 15 | 25 | 16 | **DONE** | `be9c25a6` |
-| 1.5 | Diagnose shard-3 stall (not a timeout) | 1.3 | 30 | 60 | 120 | 65 | **DONE** | order deterministic; 48 mutants then silent |
-| 1.6 | Exclude `ports/execution.rs` (crate-relative path bug) | 1.5 | 10 | 20 | 35 | 21 | **DONE** | `c46bfa4e`; 161→116 mutants proves it took effect |
-| 1.7 | Add `--build-timeout 300` | 1.5 | 5 | 10 | 15 | 10 | **DONE** | `c46bfa4e` |
-| 1.8 | Rule out the post-exclusion stalling mutant (`module.rs:41:9`) | 1.6 | 10 | 20 | 40 | 22 | **DONE — ruled out** | 4 mutants, **4 caught in 3 min** |
-| 1.9 | Re-shard 4→8 | 1.8 | 15 | 25 | 40 | 26 | **DONE** | `574d8928`; split 59×7 + 57 = 470 |
-| 1.10 | Characterise the shard-7 wedge | 1.9 | 30 | 50 | 90 | 53 | **DONE** | 2 runs, 0 mutants, 20 min, Build+Test pending |
-| 1.11 | `--jobs 1` + outer `timeout 10200` | 1.10 | 10 | 15 | 25 | 16 | **DONE — jobs 1 FALSIFIED** | `3f640d39` → reverted in `1d75fbcd` |
-| 1.12 | Green all 8 shards on CI | 1.11 | 40 | 70 | 110 | 72 | **BLOCKED — not reachable from the workflow** | 3 configs, 3 wedges |
-| 1.13 | Revert falsified fixes, keep outer timeout | 1.12 | 10 | 15 | 25 | 16 | **DONE** | `1d75fbcd` |
-| 2.0 | **Phase 2 — Other checks** | — | | | | | | |
-| 2.1 | python-coverage (`COVERAGE_PATH: python`) | — | 10 | 20 | 35 | 21 | **DONE** | `e41cfed8` |
-| 2.2 | rust-coverage (drop unused `EvidenceCheck` import under `-D warnings`) | 2.1 | 10 | 15 | 25 | 16 | **DONE** | `9cea8dcf` |
-| 2.3 | perf: fix compose paths; drop broken k6 advisory job | — | 15 | 25 | 40 | 26 | **DONE** | `be9c25a6` |
-| 2.4 | `benchmark thresholds (advisory)` | — | 5 | 10 | 20 | 11 | **ACCEPTED (not a regression)** | identical baseline reproduces it |
-| 3.0 | **Phase 3 — Close out** | — | | | | | | |
-| 3.1 | Full rollup green except advisory perf | 1.10, 2.2, 2.3 | 10 | 20 | 35 | 21 | **PENDING** | |
-| 3.2 | Merge PR #1181 (squash, ledger trailers) | 3.1 | 10 | 15 | 30 | 17 | **PENDING** | no required checks gate the merge |
-| 3.3 | Verify `main` mutation run green post-merge | 3.2 | 40 | 70 | 110 | 72 | **PENDING** | |
+| ID   | Task                                                                   | Deps           | O   | M   | P   | E   | Status                                        | Evidence                                             |
+| ---- | ---------------------------------------------------------------------- | -------------- | --- | --- | --- | --- | --------------------------------------------- | ---------------------------------------------------- |
+| 1.0  | **Phase 1 — Mutation gate**                                            | —              |     |     |     |     |                                               |                                                      |
+| 1.1  | Add governance unit tests killing `configured`/`passed`                | —              | 20  | 35  | 60  | 37  | **DONE**                                      | `tests/governance_evaluator_unit_tests.rs`, 14 tests |
+| 1.2  | Gate shard on exit code + `outcomes.json` `end_time`                   | —              | 15  | 25  | 45  | 27  | **DONE**                                      | `10fc77b7`                                           |
+| 1.3  | Shard campaign 4-way (`--shard k/4`)                                   | 1.2            | 15  | 25  | 40  | 25  | **DONE**                                      | `be9c25a6`                                           |
+| 1.4  | Exclude `intent_graph.rs`, `ports/mod.rs`                              | 1.3            | 10  | 15  | 25  | 16  | **DONE**                                      | `be9c25a6`                                           |
+| 1.5  | Diagnose shard-3 stall (not a timeout)                                 | 1.3            | 30  | 60  | 120 | 65  | **DONE**                                      | order deterministic; 48 mutants then silent          |
+| 1.6  | Exclude `ports/execution.rs` (crate-relative path bug)                 | 1.5            | 10  | 20  | 35  | 21  | **DONE**                                      | `c46bfa4e`; 161→116 mutants proves it took effect    |
+| 1.7  | Add `--build-timeout 300`                                              | 1.5            | 5   | 10  | 15  | 10  | **DONE**                                      | `c46bfa4e`                                           |
+| 1.8  | Rule out the post-exclusion stalling mutant (`module.rs:41:9`)         | 1.6            | 10  | 20  | 40  | 22  | **DONE — ruled out**                          | 4 mutants, **4 caught in 3 min**                     |
+| 1.9  | Re-shard 4→8                                                           | 1.8            | 15  | 25  | 40  | 26  | **DONE**                                      | `574d8928`; split 59×7 + 57 = 470                    |
+| 1.10 | Characterise the shard-7 wedge                                         | 1.9            | 30  | 50  | 90  | 53  | **DONE**                                      | 2 runs, 0 mutants, 20 min, Build+Test pending        |
+| 1.11 | `--jobs 1` + outer `timeout 10200`                                     | 1.10           | 10  | 15  | 25  | 16  | **DONE — jobs 1 FALSIFIED**                   | `3f640d39` → reverted in `1d75fbcd`                  |
+| 1.12 | Green all 8 shards on CI                                               | 1.11           | 40  | 70  | 110 | 72  | **BLOCKED — not reachable from the workflow** | 3 configs, 3 wedges                                  |
+| 1.13 | Revert falsified fixes, keep outer timeout                             | 1.12           | 10  | 15  | 25  | 16  | **DONE**                                      | `1d75fbcd`                                           |
+| 2.0  | **Phase 2 — Other checks**                                             | —              |     |     |     |     |                                               |                                                      |
+| 2.1  | python-coverage (`COVERAGE_PATH: python`)                              | —              | 10  | 20  | 35  | 21  | **DONE**                                      | `e41cfed8`                                           |
+| 2.2  | rust-coverage (drop unused `EvidenceCheck` import under `-D warnings`) | 2.1            | 10  | 15  | 25  | 16  | **DONE**                                      | `9cea8dcf`                                           |
+| 2.3  | perf: fix compose paths; drop broken k6 advisory job                   | —              | 15  | 25  | 40  | 26  | **DONE**                                      | `be9c25a6`                                           |
+| 2.4  | `benchmark thresholds (advisory)`                                      | —              | 5   | 10  | 20  | 11  | **ACCEPTED (not a regression)**               | identical baseline reproduces it                     |
+| 3.0  | **Phase 3 — Close out**                                                | —              |     |     |     |     |                                               |                                                      |
+| 3.1  | Full rollup green except advisory perf                                 | 1.10, 2.2, 2.3 | 10  | 20  | 35  | 21  | **PENDING**                                   |                                                      |
+| 3.2  | Merge PR #1181 (squash, ledger trailers)                               | 3.1            | 10  | 15  | 30  | 17  | **PENDING**                                   | no required checks gate the merge                    |
+| 3.3  | Verify `main` mutation run green post-merge                            | 3.2            | 40  | 70  | 110 | 72  | **PENDING**                                   |                                                      |
 
 **Remaining:** nothing further is actionable inside this workflow. `1.12` is BLOCKED. Awaiting an operator decision on merge (the operator has stated no-merge without approval).
 (~3.5 h wall clock, dominated by two CI campaign runs).
@@ -166,25 +166,25 @@ Estimates are PERT: `E = (O + 4M + P) / 6`, in minutes.
 
 ## 4. DAG edges
 
-| From | To | Kind |
-|---|---|---|
-| 1.1 | 3.1 | finish-to-start |
-| 1.2 | 1.3 | FS |
-| 1.3 | 1.4 | FS |
-| 1.3 | 1.5 | FS |
-| 1.5 | 1.6 | FS |
-| 1.5 | 1.7 | FS |
-| 1.6 | 1.8 | FS |
-| 1.8 | 1.9 | FS |
-| 1.9 | 1.10 |
+| From | To   | Kind            |
+| ---- | ---- | --------------- |
+| 1.1  | 3.1  | finish-to-start |
+| 1.2  | 1.3  | FS              |
+| 1.3  | 1.4  | FS              |
+| 1.3  | 1.5  | FS              |
+| 1.5  | 1.6  | FS              |
+| 1.5  | 1.7  | FS              |
+| 1.6  | 1.8  | FS              |
+| 1.8  | 1.9  | FS              |
+| 1.9  | 1.10 |
 | 1.10 | 1.11 |
-| 1.11 | 1.12 | FS |
-| 2.1 | 2.2 | FS |
-| 1.12 | 3.1 | FS |
-| 2.2 | 3.1 | FS |
-| 2.3 | 3.1 | FS |
-| 3.1 | 3.2 | FS |
-| 3.2 | 3.3 | FS |
+| 1.11 | 1.12 | FS              |
+| 2.1  | 2.2  | FS              |
+| 1.12 | 3.1  | FS              |
+| 2.2  | 3.1  | FS              |
+| 2.3  | 3.1  | FS              |
+| 3.1  | 3.2  | FS              |
+| 3.2  | 3.3  | FS              |
 
 ---
 
@@ -239,7 +239,7 @@ blocking weight — the advisory check is not a required status check.
 - Code + workflow changes are **committed and pushed**: `c46bfa4e` is on
   `origin/fix/ci-diagnosis-2026-10-18`.
 - This file is the state record. If it is committed, it is the handoff.
-- Working tree has three **untracked scratch dirs** that are safe to delete and are *not* part
+- Working tree has three **untracked scratch dirs** that are safe to delete and are _not_ part
   of the fix: `.scratch-cov/`, `mutants.out/`, `mutants.out.old/`.
 
 ### What "done" means
@@ -299,15 +299,15 @@ Verified: mutant count 161 → 116 only with the full path.
 
 ## 7. Commit ledger
 
-| Commit | Purpose |
-|---|---|
-| `e41cfed8` | 14 governance unit tests; perf compose paths; coverage path |
-| `9cea8dcf` | drop unused import failing rust-coverage under `-D warnings` |
-| `be9c25a6` | drop broken k6 advisory job; reduce mutation scope |
-| `10fc77b7` | gate shard on exit code + `end_time`, not file presence |
+| Commit     | Purpose                                                                      |
+| ---------- | ---------------------------------------------------------------------------- |
+| `e41cfed8` | 14 governance unit tests; perf compose paths; coverage path                  |
+| `9cea8dcf` | drop unused import failing rust-coverage under `-D warnings`                 |
+| `be9c25a6` | drop broken k6 advisory job; reduce mutation scope                           |
+| `10fc77b7` | gate shard on exit code + `end_time`, not file presence                      |
 | `5ee448f3` | first `ports/execution.rs` exclusion (**ineffective** — crate-relative path) |
 | `c46bfa4e` | repo-root-relative excludes (**effective**: 161→116) + `--build-timeout 300` |
-| `574d8928` | re-shard 4→8; `--jobs 2`; guard messages report `/8` |
-| `ca23a013` | docs: sync DAG/WBS/PERT |
-| `3f640d39` | `--jobs 1` + outer `timeout 10200` (**jobs 1 later falsified**) |
-| `1d75fbcd` | revert `--jobs 1` and nextest; keep outer `timeout 10200` |
+| `574d8928` | re-shard 4→8; `--jobs 2`; guard messages report `/8`                         |
+| `ca23a013` | docs: sync DAG/WBS/PERT                                                      |
+| `3f640d39` | `--jobs 1` + outer `timeout 10200` (**jobs 1 later falsified**)              |
+| `1d75fbcd` | revert `--jobs 1` and nextest; keep outer `timeout 10200`                    |
