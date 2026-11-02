@@ -367,7 +367,7 @@ async fn client_cannot_supply_a_pass_or_actor_override() {
             .add_header("X-API-Key", KEY)
             .json(&payload)
             .await;
-        assert!(response.status_code().is_client_error());
+        assert_eq!(response.status_code(), StatusCode::UNPROCESSABLE_ENTITY);
     }
     assert_eq!(count(&db, "feature_acceptance_receipts"), 0);
 }
