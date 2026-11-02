@@ -169,13 +169,28 @@ pub fn load_evidence_bundles_from_disk(feature_id: &str) -> Vec<EvidenceBundleVi
 
 // ── HTTP Handlers ──────────────────────────────────────────────────────────
 
+fn snapshot_evidence_unavailable() -> Response {
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        axum::Json(serde_json::json!({
+            "error": "evidence_source_unavailable",
+            "message": "Evidence provenance is unavailable in this project snapshot."
+        })),
+    )
+        .into_response()
+}
+
 /// `GET /api/evidence/{feature_id}/{artifact_id}`
 /// Serves raw evidence artifact content from `.agileplus/evidence/<feature_id>/<artifact_id>`.
 /// HTML-escapes plaintext for safe browser rendering; validates artifact_id to prevent path traversal.
-pub async fn evidence_content(
+async fn evidence_content_in_mode(
     State(_state): State<SharedState>,
     Path((feature_id, artifact_id)): Path<(i64, String)>,
+    demo_mode: bool,
 ) -> Response {
+    if !demo_mode {
+        return snapshot_evidence_unavailable();
+    }
     // Serve from .agileplus/evidence/<feature_id>/<artifact_id>
     let base_path = PathBuf::from(".agileplus")
         .join("evidence")
@@ -209,10 +224,14 @@ pub async fn evidence_content(
 
 /// `GET /api/evidence/{feature_id}/{artifact_id}/preview`
 /// Serves a brief HTML preview of an evidence artifact (for lightbox/modal display).
-pub async fn evidence_preview(
+async fn evidence_preview_in_mode(
     State(_state): State<SharedState>,
     Path((feature_id, artifact_id)): Path<(i64, String)>,
+    demo_mode: bool,
 ) -> Response {
+    if !demo_mode {
+        return snapshot_evidence_unavailable();
+    }
     let artifact_path = PathBuf::from(".agileplus")
         .join("evidence")
         .join(feature_id.to_string())
@@ -231,10 +250,14 @@ pub async fn evidence_preview(
 
 /// `GET /api/features/{id}/evidence`
 /// Returns the evidence gallery partial (HTML template) for the feature detail page.
-pub async fn feature_evidence_list(
+async fn feature_evidence_list_in_mode(
     State(_state): State<SharedState>,
     Path(feature_id): Path<String>,
+    demo_mode: bool,
 ) -> Response {
+    if !demo_mode {
+        return snapshot_evidence_unavailable();
+    }
     let bundles = load_evidence_bundles_from_disk(&feature_id);
     let tmpl = FeatureEvidencePartial {
         evidence_bundles: bundles,
@@ -308,10 +331,14 @@ pub async fn feature_evidence_generate(
 /// `GET /api/dashboard/features/{id}/evidence.json`
 /// Returns evidence gallery metadata as JSON for lightbox/modal integration.
 /// Extracts artifact metadata from loaded bundles and serializes as a structured JSON response.
-pub async fn feature_evidence_json(
+async fn feature_evidence_json_in_mode(
     State(_state): State<SharedState>,
     Path(feature_id): Path<String>,
-) -> impl IntoResponse {
+    demo_mode: bool,
+) -> Response {
+    if !demo_mode {
+        return snapshot_evidence_unavailable();
+    }
     let bundles = load_evidence_bundles_from_disk(&feature_id);
 
     // Extract artifacts from bundles for gallery JSON response
@@ -334,6 +361,7 @@ pub async fn feature_evidence_json(
         artifacts,
         generated_at,
     })
+    .into_response()
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────────
@@ -556,5 +584,118 @@ mod tests {
         assert_eq!(bundles[0].pr_count, 0);
 
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+}
+
+pub async fn evidence_content(
+    State(state): State<SharedState>,
+    Path((feature_id, artifact_id)): Path<(i64, String)>,
+) -> Response {
+    evidence_content_in_mode(State(state), Path((feature_id, artifact_id)), false).await
+}
+
+pub(crate) async fn evidence_content_for_source(
+    State(state): State<SharedState>,
+    Path((feature_id, artifact_id)): Path<(i64, String)>,
+    source: crate::live_store::OptionalSource,
+) -> Response {
+    evidence_content_in_mode(
+        State(state),
+        Path((feature_id, artifact_id)),
+        crate::live_store::source_is_demo(&source),
+    )
+    .await
+}
+
+pub async fn evidence_preview(
+    State(state): State<SharedState>,
+    Path((feature_id, artifact_id)): Path<(i64, String)>,
+) -> Response {
+    evidence_preview_in_mode(State(state), Path((feature_id, artifact_id)), false).await
+}
+
+pub(crate) async fn evidence_preview_for_source(
+    State(state): State<SharedState>,
+    Path((feature_id, artifact_id)): Path<(i64, String)>,
+    source: crate::live_store::OptionalSource,
+) -> Response {
+    evidence_preview_in_mode(
+        State(state),
+        Path((feature_id, artifact_id)),
+        crate::live_store::source_is_demo(&source),
+    )
+    .await
+}
+
+pub async fn feature_evidence_list(
+    State(state): State<SharedState>,
+    Path(feature_id): Path<String>,
+) -> Response {
+    feature_evidence_list_in_mode(State(state), Path(feature_id), false).await
+}
+
+pub(crate) async fn feature_evidence_list_for_source(
+    State(state): State<SharedState>,
+    Path(feature_id): Path<String>,
+    source: crate::live_store::OptionalSource,
+) -> Response {
+    feature_evidence_list_in_mode(
+        State(state),
+        Path(feature_id),
+        crate::live_store::source_is_demo(&source),
+    )
+    .await
+}
+
+pub async fn feature_evidence_json(
+    State(state): State<SharedState>,
+    Path(feature_id): Path<String>,
+) -> impl IntoResponse {
+    feature_evidence_json_in_mode(State(state), Path(feature_id), false).await
+}
+
+pub(crate) async fn feature_evidence_json_for_source(
+    State(state): State<SharedState>,
+    Path(feature_id): Path<String>,
+    source: crate::live_store::OptionalSource,
+) -> Response {
+    feature_evidence_json_in_mode(
+        State(state),
+        Path(feature_id),
+        crate::live_store::source_is_demo(&source),
+    )
+    .await
+}
+
+/// Explicit illustrative disk fixtures; these are not canonical evidence receipts.
+pub mod demo {
+    use super::*;
+    pub use super::{EvidenceArtifactJson, EvidenceGalleryJson, feature_evidence_generate};
+    pub async fn evidence_content(
+        State(state): State<SharedState>,
+        Path((feature_id, artifact_id)): Path<(i64, String)>,
+    ) -> Response {
+        super::evidence_content_in_mode(State(state), Path((feature_id, artifact_id)), true).await
+    }
+
+    pub async fn evidence_preview(
+        State(state): State<SharedState>,
+        Path((feature_id, artifact_id)): Path<(i64, String)>,
+    ) -> Response {
+        super::evidence_preview_in_mode(State(state), Path((feature_id, artifact_id)), true).await
+    }
+
+    pub async fn feature_evidence_list(
+        State(state): State<SharedState>,
+        Path(feature_id): Path<String>,
+    ) -> Response {
+        super::feature_evidence_list_in_mode(State(state), Path(feature_id), true).await
+    }
+
+    pub async fn feature_evidence_json(
+        State(state): State<SharedState>,
+        Path(feature_id): Path<String>,
+    ) -> Response {
+        super::feature_evidence_json_in_mode(State(state), Path(feature_id), true).await
     }
 }

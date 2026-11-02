@@ -1,30 +1,40 @@
 use agileplus_dashboard::app_state::DashboardStore;
+use agileplus_dashboard::live_store;
 use agileplus_dashboard::resolve_dashboard_host;
 use agileplus_dashboard::routes::router;
+use axum::{Extension, middleware, routing::get};
 use std::net::SocketAddr;
 use std::sync::Arc;
 
 #[tokio::main]
 async fn main() {
-    // Initialize tracing/logging
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::INFO)
         .init();
 
-    // Build the dashboard store with seed (kitty-specs -> features -> kanban)
-    let mut store = DashboardStore::seeded();
+    let runtime = live_store::initialize_from_environment();
+    if let Some(diagnostic) = runtime.source.diagnostic.as_deref() {
+        tracing::warn!(%diagnostic, "dashboard started without a live project data source");
+    } else {
+        tracing::info!(
+            mode = ?runtime.source.mode,
+            project = ?runtime.source.project_name,
+            features = runtime.source.feature_count,
+            work_packages = runtime.source.work_package_count,
+            "dashboard data source initialized"
+        );
+    }
+    let source = Arc::new(runtime.source);
+    let mut store: DashboardStore = runtime.store;
 
-    // Try to wire the live governance client (governance audit / rubric scoring)
     store = match agileplus_governance::GovernanceClient::with_defaults().await {
         Ok(client) => store.with_governance(client),
-        Err(e) => {
-            tracing::warn!(error = %e, "GovernanceClient::with_defaults failed; /api/dashboard/governance/status will return not_initialized");
+        Err(error) => {
+            tracing::warn!(%error, "GovernanceClient::with_defaults failed; governance status will return not_initialized");
             store
         }
     };
 
-    // Try to wire the live plane.so sync client (reads projects, issues, cycles)
-    // PlaneClient::new(base_url, api_key, workspace_slug, project_id)
     let plane_args = (
         std::env::var("PLANE_BASE_URL").unwrap_or_else(|_| "https://api.plane.so".to_string()),
         std::env::var("PLANE_API_KEY").ok(),
@@ -32,39 +42,32 @@ async fn main() {
         std::env::var("PLANE_PROJECT").ok(),
     );
     store = match plane_args {
-        (_, Some(api_key), Some(workspace), Some(project)) => {
-            store.with_plane(agileplus_plane::PlaneClient::new(
-                "https://api.plane.so".to_string(),
-                api_key,
-                workspace,
-                project,
-            ))
-        }
+        (base_url, Some(api_key), Some(workspace), Some(project)) => store.with_plane(
+            agileplus_plane::PlaneClient::new(base_url, api_key, workspace, project),
+        ),
         _ => {
             tracing::info!(
-                "PLANE_API_KEY/PLANE_WORKSPACE/PLANE_PROJECT not set; /api/dashboard/plane/sync will return not_initialized"
+                "PLANE_API_KEY/PLANE_WORKSPACE/PLANE_PROJECT not set; Plane projection remains unavailable"
             );
             store
         }
     };
 
     let state = Arc::new(tokio::sync::RwLock::new(store));
-    let app = router(state);
+    let app = router(state)
+        .route("/api/dashboard/source.json", get(live_store::source_status))
+        .layer(middleware::from_fn(live_store::mutation_guard))
+        .layer(Extension(source));
 
     let port: u16 = std::env::var("PORT")
         .ok()
-        .and_then(|p| p.parse().ok())
+        .and_then(|port| port.parse().ok())
         .unwrap_or(8770);
-    // SECURITY (AGILE-100 C-1): bind to loopback by default. Previously bound
-    // 0.0.0.0 with no auth — that placed every dashboard mutation (restart_service,
-    // toggle_service, patch_service_config, feature_transition, plane_daemon_*, etc.)
-    // behind no authentication for any reachable host on the network. Set
-    // DASHBOARD_HOST=0.0.0.0 to explicitly opt-in to a network-exposed deployment.
     let dashboard_host = std::env::var("DASHBOARD_HOST");
     let host = resolve_dashboard_host(dashboard_host.ok().as_deref());
-    let addr = SocketAddr::from((host, port));
-    tracing::info!(%addr, "agileplus-dashboard listening");
+    let address = SocketAddr::from((host, port));
+    tracing::info!(%address, "agileplus-dashboard listening");
 
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(address).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
