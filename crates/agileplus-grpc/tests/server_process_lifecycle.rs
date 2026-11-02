@@ -1,15 +1,15 @@
 //! Process-level tests for the gRPC core server: startup, the real wire
-//! protocol, and graceful shutdown.
+//! protocol, project-writer exclusivity, and graceful shutdown.
 //!
 //! The in-process tests drive the handler bodies directly. This file covers
 //! what only shows up in a real process: `main`, `CoreConfig::from_env` and
-//! `ProjectContext` discovery, `start_server` binding a socket, tonic client /
-//! server serialization, and the SIGTERM shutdown path.
+//! `ProjectContext` discovery, writer-lock ownership, `start_server` binding a
+//! socket, tonic client/server serialization, and the SIGTERM shutdown path.
 //!
 //! The child process receives its configuration through its own environment, so
 //! nothing here mutates the test runner's environment.
 //!
-//! Traceability: WP14-T079, T080
+//! Traceability: WP14-T079, T080 / issue #1119 slice 1
 
 #![cfg(unix)]
 
@@ -206,6 +206,10 @@ async fn server_binary_serves_requests_and_shuts_down_on_sigterm() {
         root.join(".agileplus").join("agileplus.db").exists(),
         "the server should create its SQLite store under the project root"
     );
+    assert!(
+        root.join(".agileplus").join("core-writer.lock").exists(),
+        "the running server should retain project writer ownership"
+    );
 
     // Observed behaviour: `serve_with_shutdown` waits for every open connection,
     // and tonic counts an accepted socket as in-flight until the client closes
@@ -219,6 +223,48 @@ async fn server_binary_serves_requests_and_shuts_down_on_sigterm() {
     assert!(
         status.success(),
         "SIGTERM should produce a graceful exit, got {status:?}"
+    );
+    assert!(
+        !root.join(".agileplus").join("core-writer.lock").exists(),
+        "graceful shutdown should release project writer ownership"
+    );
+
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+#[tokio::test]
+async fn second_core_for_same_project_is_rejected_then_restart_succeeds() {
+    let root = temporary_project_root();
+    let first_port = free_port();
+    let second_port = free_port();
+    let restart_port = free_port();
+    let mut first = ServerProcess::spawn(&root, first_port);
+    await_listening(&mut first, first_port).await;
+
+    let mut second = ServerProcess::spawn(&root, second_port);
+    let rejected = second.wait_for_exit(Duration::from_secs(10));
+    assert!(
+        !rejected.success(),
+        "a second core must not share the project writer boundary"
+    );
+    assert!(
+        tokio::net::TcpStream::connect(("127.0.0.1", first_port))
+            .await
+            .is_ok(),
+        "rejecting the contender must leave the owner healthy"
+    );
+
+    first.terminate();
+    let stopped = first.wait_for_exit(Duration::from_secs(15));
+    assert!(stopped.success(), "the owning core should stop cleanly");
+
+    let mut restarted = ServerProcess::spawn(&root, restart_port);
+    await_listening(&mut restarted, restart_port).await;
+    restarted.terminate();
+    let stopped = restarted.wait_for_exit(Duration::from_secs(15));
+    assert!(
+        stopped.success(),
+        "the project should restart after lock release"
     );
 
     let _ = std::fs::remove_dir_all(&root);
