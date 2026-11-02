@@ -88,8 +88,8 @@ fn migration_tracking_records_names() {
         "first migration should be tracked"
     );
     assert!(
-        names.last().unwrap().contains("031"),
-        "last migration should be 031-related (latest is {})",
+        names.last().unwrap() == "032_work_items",
+        "last migration should be the work-item schema (latest is {})",
         names.last().unwrap()
     );
 }

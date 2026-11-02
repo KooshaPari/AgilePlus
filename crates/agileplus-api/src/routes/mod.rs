@@ -15,3 +15,5 @@ pub mod stream;
 pub mod users;
 pub mod work_packages;
 pub mod worktree;
+
+pub mod work_items;
