@@ -54,7 +54,18 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
     Connection management, retries, and error mapping are handled here.
     """
 
-    def __init__(self, address: str = "localhost:50051", project_root: str | None = None) -> None:
+    def __init__(
+        self,
+        address: str = "localhost:50051",
+        project_root: str | None = None,
+        *,
+        readiness_timeout: float = 1.0,
+        rpc_timeout: float = 5.0,
+    ) -> None:
+        if readiness_timeout <= 0 or rpc_timeout <= 0:
+            raise ValueError("readiness_timeout and rpc_timeout must be positive")
+        self._readiness_timeout = readiness_timeout
+        self._rpc_timeout = rpc_timeout
         self._address = address
         self._project_root = str(Path(project_root).resolve()) if project_root else ""
         self._channel: Any | None = None
@@ -77,10 +88,15 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
                 integrations_pb2_grpc,
             )
 
-            self._channel = grpc.aio.insecure_channel(self._address)
-            await asyncio.wait_for(self._channel.channel_ready(), timeout=5.0)
-            self._stub = core_pb2_grpc.AgilePlusCoreServiceStub(self._channel)
-            self._integrations_stub = integrations_pb2_grpc.IntegrationsServiceStub(self._channel)
+            if self._channel is None:
+                self._channel = grpc.aio.insecure_channel(self._address)
+                # Keep stubs even if readiness times out. grpcio reconnects this
+                # channel when the core appears; MCP need not restart.
+                self._stub = core_pb2_grpc.AgilePlusCoreServiceStub(self._channel)
+                self._integrations_stub = integrations_pb2_grpc.IntegrationsServiceStub(
+                    self._channel
+                )
+            await asyncio.wait_for(self._channel.channel_ready(), timeout=self._readiness_timeout)
             logger.info("Connected to AgilePlus gRPC server at %s", self._address)
         except (ImportError, ModuleNotFoundError) as exc:
             raise GrpcConnectionError(
@@ -130,9 +146,20 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
         delay = self._retry_delay
         last_exc: Exception | None = None
 
+        deadline = asyncio.get_running_loop().time() + self._rpc_timeout
         for attempt in range(self._max_retries):
+            remaining = deadline - asyncio.get_running_loop().time()
+            if remaining <= 0:
+                raise GrpcConnectionError(f"gRPC call exceeded {self._rpc_timeout}s deadline")
             try:
-                return await coro_factory()
+                response = await asyncio.wait_for(coro_factory(), timeout=remaining)
+                if response is None:
+                    raise GrpcCallError(grpc.StatusCode.INTERNAL, "empty or malformed RPC response")
+                return response
+            except TimeoutError as exc:
+                raise GrpcConnectionError(
+                    f"gRPC call exceeded {self._rpc_timeout}s deadline"
+                ) from exc
             except grpc.aio.AioRpcError as exc:
                 code = exc.code()
                 # UNAVAILABLE and DEADLINE_EXCEEDED are transient
@@ -144,8 +171,10 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
                         exc.details(),
                     )
                     last_exc = exc
-                    await asyncio.sleep(delay)
-                    delay *= 2
+                    if attempt + 1 < self._max_retries:
+                        remaining = max(0, deadline - asyncio.get_running_loop().time())
+                        await asyncio.sleep(min(delay, remaining))
+                        delay *= 2
                 else:
                     raise GrpcCallError(code, exc.details()) from exc
 
@@ -164,6 +193,8 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
         stub = self._require_stub()
         request = core_pb2.GetFeatureRequest(slug=slug, project_scope=self._project_scope())
         response = await self._call_with_retry(lambda: stub.GetFeature(request))
+        if not response.HasField("feature"):
+            raise GrpcCallError("INVALID_RESPONSE", "GetFeature response omitted feature")
         return self._feature_to_dict(response.feature)
 
     async def list_features(self, state: str | None = None) -> list[dict[str, Any]]:
@@ -256,8 +287,22 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
             feature_slug=feature_slug, after_id=after_id, project_scope=self._project_scope()
         )
         entries = []
-        async for response in stub.GetAuditTrail(request):
-            entries.append(self._audit_entry_to_dict(response.audit_entry))
+        import grpc
+
+        try:
+            async with asyncio.timeout(self._rpc_timeout):
+                async for response in stub.GetAuditTrail(request, timeout=self._rpc_timeout):
+                    if not response.HasField("audit_entry"):
+                        raise GrpcCallError(
+                            "INVALID_RESPONSE", "audit response omitted audit_entry"
+                        )
+                    entries.append(self._audit_entry_to_dict(response.audit_entry))
+        except TimeoutError as exc:
+            raise GrpcConnectionError("GetAuditTrail exceeded RPC deadline") from exc
+        except grpc.aio.AioRpcError as exc:
+            if exc.code() in (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.DEADLINE_EXCEEDED):
+                raise GrpcConnectionError(f"GetAuditTrail failed: {exc.details()}") from exc
+            raise GrpcCallError(exc.code(), exc.details()) from exc
         return entries
 
     async def verify_audit_chain(self, feature_slug: str) -> dict[str, Any]:
@@ -420,8 +465,8 @@ async def connect_client(
     repo root so every stateful RPC injects ``ProjectScope``.
     """
     client = AgilePlusCoreClient(address, project_root=project_root)
-    await client.connect()
     try:
+        await client.connect()
         yield client
     finally:
         await client.close()
