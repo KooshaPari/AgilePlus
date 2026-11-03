@@ -10,3 +10,4 @@ pub mod proxy;
 pub mod runtime;
 pub mod server;
 pub mod streaming;
+pub mod writer_lock;
