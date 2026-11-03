@@ -47,6 +47,14 @@
     </div>
   </nav>
 
+  <!-- Persistent source/provenance status. Never infer live state from zero rows. -->
+  <div id="dashboard-source-banner"
+       role="status"
+       aria-live="polite"
+       class="border-b border-zinc-700 bg-zinc-950 px-4 md:px-6 py-2 text-xs text-zinc-300">
+    Checking dashboard data source…
+  </div>
+
   <!-- Toast container -->
   <div class="toast-container" aria-live="polite">
     <template x-for="toast in toasts" :key="toast.id">
@@ -112,6 +120,41 @@
 
 
 <script>
+/* Keep source authority visible without exposing local filesystem paths. */
+async function refreshDashboardSource() {
+  const banner = document.getElementById('dashboard-source-banner');
+  if (!banner) return;
+
+  try {
+    const response = await fetch('/api/dashboard/source.json', {
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store',
+    });
+    if (!response.ok) throw new Error('source status ' + response.status);
+    const source = await response.json();
+    const counts = source.connected
+      ? ' · ' + source.feature_count + ' features · ' + source.work_package_count + ' work packages'
+      : '';
+
+    if (source.mode === 'project_database_read_only') {
+      banner.className = 'border-b border-amber-700 bg-amber-950 px-4 md:px-6 py-2 text-xs text-amber-200';
+      banner.textContent = 'Live read-only · ' + source.message + counts;
+    } else if (source.mode === 'demo') {
+      banner.className = 'border-b border-fuchsia-700 bg-fuchsia-950 px-4 md:px-6 py-2 text-xs text-fuchsia-200';
+      banner.textContent = 'Demo fixtures · ' + source.message + counts;
+    } else {
+      banner.className = 'border-b border-red-700 bg-red-950 px-4 md:px-6 py-2 text-xs text-red-200';
+      banner.textContent = 'Disconnected · ' + source.message;
+    }
+  } catch (error) {
+    banner.className = 'border-b border-red-700 bg-red-950 px-4 md:px-6 py-2 text-xs text-red-200';
+    banner.textContent = 'Disconnected · Dashboard source status is unavailable.';
+    console.error('Dashboard source status failed', error);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', refreshDashboardSource);
+
 /* ── T083: Toast Manager Alpine component ─────────────────────── */
 function toastManager() {
   return {
