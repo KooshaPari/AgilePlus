@@ -82,6 +82,24 @@ jobs:
               uses: py-cov-action/python-coverage-comment-action@v4.5
               with:
                   GITHUB_TOKEN: ${{ github.token }}
+                  # The action's declared input is COVERAGE_PATH (underscore).
+                  # `coverage-path` is an undeclared input, so GitHub silently
+                  # ignores it: the run log for this workflow shows
+                  # "##[warning]Unexpected input(s) 'coverage-path'" and
+                  # "COVERAGE_PATH: ." -- the default -- in the action's config
+                  # dump. With the default, the action runs `coverage json` at
+                  # the repo root, where `.coverage` is the *directory* holding
+                  # the exported report rather than the sqlite data file, and
+                  # it dies with "Couldn't use data file '/github/workspace/
+                  # .coverage': unable to open database file".
+                  # `coverage run -m pytest` runs with working-directory:
+                  # python, so the raw data file is python/.coverage. Point
+                  # the action at that directory: it prefixes COVERAGE_PATH
+                  # onto the recorded relative paths, which turns the
+                  # `src/...` entries into repo-root-relative `python/src/...`
+                  # so the PR diff still matches.
+                  # See CF-1 in docs/sessions/20261017-state-forward-docket/.
+                  COVERAGE_PATH: python
 
     coverage-rust:
         name: rust-coverage (cargo-llvm-cov)

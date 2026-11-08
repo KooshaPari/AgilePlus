@@ -6,6 +6,7 @@
 # AGILEPLUS_OPERATOR_USERNAME
 # AGILEPLUS_OPERATOR_PASSWORD_HASH  (generate with caddy hash-password)
 # AGILEPLUS_API_KEY
+# AGILEPLUS_EDGE_ATTESTATION  (shared secret proving this edge reached the deployment)
 # AGILEPLUS_FRONTEND_UPSTREAM_HOST  (the *.vercel.app deployment hostname)
 #
 # Internal split DNS resolves agileplus.pheno.studio to the authorized
@@ -59,6 +60,10 @@ agileplus.pheno.studio {
                 header_up -Authorization
                 header_up -Cookie
                 header_up -X-API-Key
+                # Drop any client-supplied copy of the edge attestation, then
+                # set our own. Without this, a caller could self-assert.
+                header_up -X-Agileplus-Edge-Attestation
+                header_up X-Agileplus-Edge-Attestation {$AGILEPLUS_EDGE_ATTESTATION}
                 header_down -Set-Cookie
             }
         }
