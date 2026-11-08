@@ -1,0 +1,6 @@
+
+# Prettier corrupts this file. Running `--write` turns the audit-ledger key
+# `cheap_closes` into `cheap*closes` and the emphasis `*and*` into `\_and*`,
+# which renders as a literal backslash. Both were observed on 2026-11-08 and
+# both break the document's meaning, so the file is formatted by hand.
+docs/sessions/20261017-state-forward-docket/DOCKET_CLOSE_OUT.md

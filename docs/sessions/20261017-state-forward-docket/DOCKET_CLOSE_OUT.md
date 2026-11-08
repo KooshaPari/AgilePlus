@@ -367,7 +367,7 @@ ap-sfd-2026-10-18T20-07Z@e2-p1-generic-investigation (6125c828) ← FINAL
 
 This DOCKET v1.0 session is **CLOSED** at HEAD `6125c828` on `docs/state-forward-docket-20261017`.
 
-**Open work honestly attributed**: 4 cheap*closes FULLY OPEN (2× A.4/E.9 blocked on PR #1156, 1× F.3 LOWEST, 1× CF-3 deferred to kitty-spec 003) + 4 cheap_closes PARTIAL (A.4/E.20 historical, B.x follow-up CLOSED-PARTIAL, E.2/E.5 Validation, and E.2.P1-GENERIC — which stays PARTIAL, with its transport-path gap, the dashboard transition route and the application-layer `AdvanceFeature::execute` gap all still open until the operator picks Design A/B/C \_and* both unguarded paths are resolved), 8 PRs (6 source-code PRs blocked on the 2 unblocker PRs #1165 + #1166 merging; PR #1156 still needs sloth-v4 contingent), 8 operator-gated items (Vercel, Tailscale, etc.).
+**Open work honestly attributed**: 4 cheap_closes FULLY OPEN (2× A.4/E.9 blocked on PR #1156, 1× F.3 LOWEST, 1× CF-3 deferred to kitty-spec 003) + 4 cheap_closes PARTIAL (A.4/E.20 historical, B.x follow-up CLOSED-PARTIAL, E.2/E.5 Validation, and E.2.P1-GENERIC — which stays PARTIAL, with its transport-path gap, the dashboard transition route and the application-layer `AdvanceFeature::execute` gap all still open until the operator picks Design A/B/C *and* both unguarded paths are resolved), 8 PRs (6 source-code PRs blocked on the 2 unblocker PRs #1165 + #1166 merging; PR #1156 still needs sloth-v4 contingent), 8 operator-gated items (Vercel, Tailscale, etc.).
 
 **No fabricated work**: every PASS has a subagent session, a wall-clock, a self-test result, and a file path. Every PARTIAL has an explanation of what blocks full PASS. Every OPEN has a path to close and a reason it isn't closed.
 
