@@ -138,8 +138,8 @@ gh pr close --repo KooshaPari/AgilePlus <N>
 **The PR head must be frozen for the whole fallback.** Between the check run and the PR closure,
 no commit may land on the PR branch: an updated head means the pushed squash is stale (the newer
 commits never reach `main`), or the PR closes with newer commits still unmerged. The `PR_HEAD`
-comparison above catches a head that moved *before* the squash; it cannot catch one that moves
-*between* the squash and the close. The fallback therefore requires an exclusive merge window in
+comparison above catches a head that moved _before_ the squash; it cannot catch one that moves
+_between_ the squash and the close. The fallback therefore requires an exclusive merge window in
 which the PR branch cannot be updated (announce it, and hold the branch's push access for the
 duration). **If that window cannot be guaranteed, do not use this fallback** — merge through the
 PR with `gh pr merge --squash` instead, where the platform enforces the ordering.
@@ -367,7 +367,7 @@ ap-sfd-2026-10-18T20-07Z@e2-p1-generic-investigation (6125c828) ← FINAL
 
 This DOCKET v1.0 session is **CLOSED** at HEAD `6125c828` on `docs/state-forward-docket-20261017`.
 
-**Open work honestly attributed**: 4 cheap_closes FULLY OPEN (2× A.4/E.9 blocked on PR #1156, 1× F.3 LOWEST, 1× CF-3 deferred to kitty-spec 003) + 4 cheap_closes PARTIAL (A.4/E.20 historical, B.x follow-up CLOSED-PARTIAL, E.2/E.5 Validation, and E.2.P1-GENERIC — which stays PARTIAL, with its transport-path gap, the dashboard transition route and the application-layer `AdvanceFeature::execute` gap all still open until the operator picks Design A/B/C *and* both unguarded paths are resolved), 8 PRs (6 source-code PRs blocked on the 2 unblocker PRs #1165 + #1166 merging; PR #1156 still needs sloth-v4 contingent), 8 operator-gated items (Vercel, Tailscale, etc.).
+**Open work honestly attributed**: 4 cheap*closes FULLY OPEN (2× A.4/E.9 blocked on PR #1156, 1× F.3 LOWEST, 1× CF-3 deferred to kitty-spec 003) + 4 cheap_closes PARTIAL (A.4/E.20 historical, B.x follow-up CLOSED-PARTIAL, E.2/E.5 Validation, and E.2.P1-GENERIC — which stays PARTIAL, with its transport-path gap, the dashboard transition route and the application-layer `AdvanceFeature::execute` gap all still open until the operator picks Design A/B/C \_and* both unguarded paths are resolved), 8 PRs (6 source-code PRs blocked on the 2 unblocker PRs #1165 + #1166 merging; PR #1156 still needs sloth-v4 contingent), 8 operator-gated items (Vercel, Tailscale, etc.).
 
 **No fabricated work**: every PASS has a subagent session, a wall-clock, a self-test result, and a file path. Every PARTIAL has an explanation of what blocks full PASS. Every OPEN has a path to close and a reason it isn't closed.
 
