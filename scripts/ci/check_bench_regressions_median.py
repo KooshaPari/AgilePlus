@@ -2,7 +2,7 @@
 """Compare the MEDIAN of N cargo bench runs against a stored baseline.
 
 Usage:
-    check_bench_regressions_median.py <bench1.txt> <bench2.txt> [<bench3.txt> ...] <baseline.json> [--max-regress N]
+    check_bench_regressions_median.py <bench1.txt> <bench2.txt> [<bench3.txt> ...] <baseline.json> [--noise-budget PCT] [--max-regress N]
 
 This is the noise-tolerant variant of `check_bench_regressions.py`. It takes the
 median of median_ns values per benchmark across N runs and compares that
@@ -18,8 +18,13 @@ against the JSON baseline:
       ...
     }
 
-Fails (exit 1) if any benchmark regressed by more than `--max-regress`
-percent (default 50, the floor of catastrophic-regression signal).
+Fails (exit 1) if any benchmark regressed by more than its own noise budget:
+a RELATIVE budget (percent of the baseline) derived from the baseline entry's
+measured `stddev_ns` when it has one, and from the documented default relative
+noise budget when it does not. The comparison is made against the run's
+common-mode speed factor so that a runner slower than the machine the
+baseline came from is not reported as a regression. See
+`check_bench_regressions.py` for the full rationale and the known limitation.
 
 Traces to: FR-CI-01 (infrastructure), pillar L27 (Infrastructure CI).
 """
@@ -35,7 +40,12 @@ from pathlib import Path
 # Reuse the parsing logic from the single-run script. Keeps the two scripts
 # in lockstep on regex / unit handling.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from check_bench_regressions import parse_bench, safe_read_text
+from check_bench_regressions import (
+    DEFAULT_NOISE_BUDGET_PCT,
+    evaluate,
+    parse_bench,
+    safe_read_text,
+)
 
 
 def load_exclude_names(path: Path | None) -> set[str]:
@@ -55,7 +65,24 @@ def main() -> int:
         nargs="+",
         help="One or more bench.txt files (one per run). The LAST positional is the baseline JSON.",
     )
-    p.add_argument("--max-regress", type=float, default=50.0)
+    p.add_argument(
+        "--noise-budget",
+        type=float,
+        default=DEFAULT_NOISE_BUDGET_PCT,
+        help=(
+            "Default relative noise budget (percent) for benchmarks whose baseline "
+            "entry carries no measured stddev_ns."
+        ),
+    )
+    p.add_argument(
+        "--max-regress",
+        type=float,
+        default=None,
+        help=(
+            "Override every benchmark's noise budget with this flat percentage. "
+            "Normally left unset so each benchmark uses its own noise budget."
+        ),
+    )
     p.add_argument(
         "--exclude-file",
         type=Path,
@@ -106,46 +133,36 @@ def main() -> int:
 
     baseline = json.loads(safe_read_text(Path(baseline_path)))
 
-    regressions: list[dict] = []
-    skipped_excluded: list[str] = []
-    skipped_no_baseline: list[str] = []
-    for name, cur_ns in median_per_bench.items():
-        if name in exclude:
-            skipped_excluded.append(name)
-            continue
-        base = baseline.get(name)
-        if not base:
-            skipped_no_baseline.append(name)
-            continue
-        base_ns = base["median_ns"]
-        if base_ns <= 0:
-            continue
-        delta_pct = (cur_ns - base_ns) / base_ns * 100
-        if delta_pct > args.max_regress:
-            regressions.append(
-                {
-                    "name": name,
-                    "baseline_ns": base_ns,
-                    "current_ns": cur_ns,
-                    "delta_pct": round(delta_pct, 2),
-                }
-            )
+    report = evaluate(
+        median_per_bench,
+        baseline,
+        exclude=exclude,
+        default_budget_pct=args.noise_budget,
+        max_regress=args.max_regress,
+    )
+    report["runs"] = [str(p) for p in run_paths]
+    report["run_count"] = len(run_paths)
+    report["noise_budget_pct"] = args.noise_budget
+    if args.max_regress is not None:
+        report["max_regress_pct"] = args.max_regress
 
-    report = {
-        "max_regress_pct": args.max_regress,
-        "runs": [str(p) for p in run_paths],
-        "run_count": len(run_paths),
-        "regressions": regressions,
-        "ok": not regressions,
-        "checked": len(median_per_bench) - len(skipped_excluded) - len(skipped_no_baseline),
-        "excluded": len(skipped_excluded),
-        "no_baseline": len(skipped_no_baseline),
-        "baseline_size": len(baseline),
-    }
+    # A runner that is materially faster or slower than the machine the
+    # baseline came from is normalised out of the per-benchmark comparison.
+    # Say so loudly: it is the difference between "the code regressed" and
+    # "this box is different".
+    factor = report["runner_factor"]
+    if report["common_mode_applied"] and abs(factor - 1.0) >= 0.10:
+        print(
+            f"NOTE: this run's common-mode speed factor is {factor:.3f}x the baseline "
+            f"machine; per-benchmark deltas are normalised by it before the gate "
+            f"compares them.",
+            file=sys.stderr,
+        )
+
     json.dump(report, sys.stdout, indent=2)
     sys.stdout.write("\n")
 
-    return 0 if not regressions else 1
+    return 0 if report["ok"] else 1
 
 
 if __name__ == "__main__":
