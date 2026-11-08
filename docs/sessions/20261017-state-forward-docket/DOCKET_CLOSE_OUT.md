@@ -46,17 +46,16 @@
 | 11  | E.2 / E.5 Validation                               | PARTIAL              | **t-rex subagent** (95s; P1 10/10, P2 6/6; 1 new carry-forward: E.2.P1-GENERIC)                                                                                                                                                                                                                           | 2026-10-18T19:36Z |
 | 12  | E.2.P1-422 — Pin the 422 status                    | PASS                 | **owl subagent** (60s; PR #1164; 1-line assertion tightening, zero behavior change)                                                                                                                                                                                                                       | 2026-10-18T19:41Z |
 | 13  | CF-1: python-coverage workflow needs COVERAGE_PATH | PASS                 | **badger subagent** (3m 30s; PR #1166; added coverage-path: python to coverage.yml; verified against upstream action.yml)                                                                                                                                                                                 | 2026-10-18T19:57Z |
-| 14  | CF-2: cargo-mutants timeout reduction              | PASS                 | **badger subagent** (3m 30s; PR #1166; timeout-minutes 360→300; 2 observed comms-loss events at 5h28m/5h32m15s)                                                                                                                                                                                           | 2026-10-18T19:57Z |
+| 14  | CF-2: cargo-mutants timeout reduction              | PASS                 | **badger subagent** (3m 30s; PR #1166; timeout-minutes 360→300; 2 observed comms-loss events at 5h28m/5h32m15s; **the 300-minute value itself is unvalidated** — see the CF-2 receipt)                                                                                                                    | 2026-10-18T19:57Z |
 | 15  | E.2.P1-GENERIC — Replace tautology test            | PARTIAL              | **raven subagent** (4m 30s; investigation only; t-rex carry-forward was mis-scoped — production code already enforces the rule at 4 transport-layer locations; recommended fix is **Design A**: 25-min test-only replacement of tautology at features.rs:391-399; awaiting operator pick on Design A/B/C) | 2026-10-18T20:07Z |
 
-### 4 OPEN (E.2.P1-GENERIC moved out → PARTIAL awaiting operator; see Section 5)
+### 4 OPEN (4 cheap_closes across the 3 rows below; E.2.P1-GENERIC moved out → PARTIAL awaiting operator — see Section 4.5 and Section 5)
 
-| #   | Cell                                                           | Why open                                                                                                                                                                                                                     | Path to close                                                                                                                                                                                                                   |
-| --- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 13  | A.4 / E.9 Validation (2 entries)                               | PR #1156 (`fix/mvp-test-true-cmd-portability`) is MERGEABLE but CI is currently FAILING (cargo-deny, cargo-mutants, semver-checks, python-coverage, gate CANCELLED). 1-line portability fix; merge blocked on CI diagnosis.  | Operator: merge PR #1156 via `git -c merge.ff=true merge --squash`; then dispatch sloth-v4 to re-run cargo+llvm-cov WITHOUT `--skip wp_transition_requires_its_contract_evidence_before_mutation` to confirm 93.99% reproduces. |
-| 14  | F.3 doc gaps                                                   | 6 doc files (RISK_REGISTER, COVERAGE_REPORT, DASHBOARD_PROD_OBSERVED, etc.) to be added in 1 PR. **LOWEST priority per "do real work, not more docs" preference.**                                                           | Operator: dispatch subagent (eta 30m) to open 1 docs PR. Or deprioritize entirely.                                                                                                                                              |
-| 15  | E.2.P1-GENERIC — Implement "generic" rule                      | Production gap: "generic feature transition cannot award Validated or Shipped" has no production enforcement and no real test. The only existing test is a tautology. 60m subagent task. **BLOCKING** the P1 exit criterion. | Operator: (1) decide product semantics — is "generic" a `Feature.kind` field or a governance-contract property? (2) implement in `Feature::transition()` or `accept_feature.rs`. (3) replace tautology with behavior test.      |
-| 15  | CF-3: rust/ sub-workspace cleanup (deferred to kitty-spec 003) | The stale `rust/` sub-workspace is currently excluded via root `Cargo.toml` exclude. Full deletion tracked by `kitty-specs/003-agileplus-platform-completion`. 30m, non-blocking.                                            | Operator: when kitty-spec 003 advances, dispatch subagent to delete the `rust/` directory + remove the `exclude` line.                                                                                                          |
+| #   | Cell                                                           | Why open                                                                                                                                                                                                                    | Path to close                                                                                                                                                                                                                   |
+| --- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 13  | A.4 / E.9 Validation (2 entries)                               | PR #1156 (`fix/mvp-test-true-cmd-portability`) is MERGEABLE but CI is currently FAILING (cargo-deny, cargo-mutants, semver-checks, python-coverage, gate CANCELLED). 1-line portability fix; merge blocked on CI diagnosis. | Operator: merge PR #1156 via `git -c merge.ff=true merge --squash`; then dispatch sloth-v4 to re-run cargo+llvm-cov WITHOUT `--skip wp_transition_requires_its_contract_evidence_before_mutation` to confirm 93.99% reproduces. |
+| 14  | F.3 doc gaps                                                   | 6 doc files (RISK_REGISTER, COVERAGE_REPORT, DASHBOARD_PROD_OBSERVED, etc.) to be added in 1 PR. **LOWEST priority per "do real work, not more docs" preference.**                                                          | Operator: dispatch subagent (eta 30m) to open 1 docs PR. Or deprioritize entirely.                                                                                                                                              |
+| 15  | CF-3: rust/ sub-workspace cleanup (deferred to kitty-spec 003) | The stale `rust/` sub-workspace is currently excluded via root `Cargo.toml` exclude. Full deletion tracked by `kitty-specs/003-agileplus-platform-completion`. 30m, non-blocking.                                           | Operator: when kitty-spec 003 advances, dispatch subagent to delete the `rust/` directory + remove the `exclude` line.                                                                                                          |
 
 ---
 
@@ -76,10 +75,22 @@
 **Canonical merge path** (per AGENTS.md "Merge Strategy: Direct-Push When `gh pr merge` Is Fail-Closed"):
 
 ```bash
+git checkout main
+git pull --ff-only origin main
 git -c merge.ff=true merge --squash <branch-name>
 git commit -m "merge(<branch>): <PR title> (#<N>)\n\ntx-agent: jcode\ntx-validated: manual\ntx-intent: close <cheap close id>"
 git push origin main
 gh pr close --repo KooshaPari/AgilePlus <N>
+```
+
+**The squash must run on an up-to-date `main` checkout.** `git merge --squash` stages the
+change in the CURRENT working tree, so running it while on a feature branch leaves the squash
+commit on that branch, while `git push origin main` pushes an unrelated local `main`. The PR
+can then be closed without its changes ever reaching `main`. Switch to `main` and fast-forward
+it first (as above), then verify the squash commit landed before closing the PR:
+
+```bash
+git log --oneline -1 origin/main   # must be the squash commit
 ```
 
 ---
@@ -157,11 +168,11 @@ raven (4m 30s, 45m cap) investigated E.2.P1-GENERIC. Key findings:
 - Test-quality: tighten assertion in `atomic_acceptance_http.rs:370` from `is_client_error()` to `StatusCode::UNPROCESSABLE_ENTITY`
 - Production code already maps correctly; this is a test-only change
 
-### E.2.P1-GENERIC (open, 60m, BLOCKING)
+### E.2.P1-GENERIC (PARTIAL, awaiting operator decision on Design A/B/C)
 
 - Filed 2026-10-18T19:36Z as carry-forward from t-rex's E.2/E.5 Val PARTIAL
-- Production gap: "generic feature transition cannot award Validated or Shipped" has no production enforcement
-- Blocks the P1 exit criterion until product decision lands
+- **Corrected 2026-10-18T20:07Z by raven's investigation (Section 4.5):** production enforcement for "generic feature transition cannot award Validated or Shipped" **already exists** at 4 transport-layer locations (HTTP create, HTTP transition, gRPC dispatch, CLI mvp). The remaining gap is the tautology test at `crates/agileplus-api/src/routes/features.rs:391-399` — not a missing production rule.
+- Still blocks the P1 exit criterion until the operator picks Design A (test-only), B (domain-layer rule) or C (governance contract)
 
 ---
 

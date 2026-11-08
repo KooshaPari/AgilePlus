@@ -34,6 +34,16 @@
 - Cross-check: `SELECT count(*) FROM features WHERE updated_at IS NOT NULL AND updated_at NOT GLOB '*T*'` returned `0` (gecko's 5-row fix is still intact).
 - 16 tables in the current DB have `updated_at` columns: features, work_packages, policy_rules, modules, cycles, projects, backlog_items, users, epics, stories, gate_results, run_records, scope_status, intent_nodes, intent_graph_metadata, channel_iterations. All passed.
 
+**Limitation of this check (important).** The hook's predicate is `updated_at NOT GLOB '*T*'` — it
+verifies only that the value contains a `T` separator, **not** that the value is a valid RFC3339
+timestamp. A value such as `2026-99-99Tgarbage` passes the hook but fails
+`.parse::<chrono::DateTime<Utc>>()` at read time, so the row surfaces as a storage error
+(`Conversion error from type Text at index: N, premature end of input`) rather than as a rejected
+commit. The hook's own PASS output therefore means "no value is missing its `T` separator", not
+"all values are valid RFC3339". **Full timestamp validation is tracked in PR #1161** (this hook's
+PR): the predicate must be tightened to a real RFC3339 parse before the hook can be treated as a
+timestamp-validity gate.
+
 ### End-to-end `git commit` smoke
 
 - Created `.agileplus/test-hook-corrupt.db` (table `features`, one good row + one corrupt row).

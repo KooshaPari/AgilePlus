@@ -5,6 +5,14 @@
 **Wall-clock**: ~95 s (start 19:34:31Z, end 19:36:07Z)
 **Cheap closes filed**: 2
 
+> **SUPERSEDED IN PART (2026-10-18T20:07Z, raven cohort).** t-rex's finding that
+> "generic cannot award Validated or Shipped" has **no production enforcement** is
+> **wrong**: production enforcement already exists at 4 transport-layer locations
+> (HTTP create, HTTP transition, gRPC dispatch, CLI mvp). The one real gap t-rex found —
+> the tautology test at `crates/agileplus-api/src/routes/features.rs:391-399` — stands.
+> See `e2_p1_generic_2026-10-18-raven-result.md` (Section 4.5 of
+> `DOCKET_CLOSE_OUT.md`). Every other finding in this receipt is unchanged.
+
 ## Setup
 
 - Working directory: `/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus`
@@ -129,14 +137,14 @@ test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
 ## Edge cases (FORWARD_WBS P1-3 explicit list)
 
-| Edge case                                                    | Test                                                                                                             | HTTP/code                                                                                      | Verdict                                                                           |
-| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| missing feature → 404                                        | `missing_feature_returns_404_without_acceptance_side_effects`                                                    | `StatusCode::NOT_FOUND` (l. 323)                                                               | PASS                                                                              |
-| stale governance → 409                                       | `stale_governance_expectation_cannot_accept_over_http`                                                           | `StatusCode::CONFLICT` (l. 338)                                                                | PASS                                                                              |
-| bad correctness/governance → 422                             | `client_cannot_supply_a_pass_or_actor_override`                                                                  | `is_client_error()` (l. 370)                                                                   | PASS but assertion is `is_client_error()`, not `StatusCode::UNPROCESSABLE_ENTITY` |
-| storage failure → sanitized 500                              | `persistence_failure_over_http_leaves_no_terminal_state_or_receipt`                                              | `StatusCode::INTERNAL_SERVER_ERROR` (l. 384); body redacted ("private database detail" absent) | PASS                                                                              |
-| exact replay returns original receipt                        | `authenticated_http_acceptance_commits_and_replays_one_receipt`                                                  | `replayed=true`, `first["receipt"] == replay["receipt"]` (l. 286)                              | PASS                                                                              |
-| generic feature transition cannot award Validated or Shipped | `terminal_feature_states_are_not_generic_transition_targets` (`crates/agileplus-api/src/routes/features.rs:392`) | tautology only (asserts variants exist)                                                        | **NO PRODUCTION ENFORCEMENT**                                                     |
+| Edge case                                                    | Test                                                                                                             | HTTP/code                                                                                      | Verdict                                                                                                                                                              |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| missing feature → 404                                        | `missing_feature_returns_404_without_acceptance_side_effects`                                                    | `StatusCode::NOT_FOUND` (l. 323)                                                               | PASS                                                                                                                                                                 |
+| stale governance → 409                                       | `stale_governance_expectation_cannot_accept_over_http`                                                           | `StatusCode::CONFLICT` (l. 338)                                                                | PASS                                                                                                                                                                 |
+| bad correctness/governance → 422                             | `client_cannot_supply_a_pass_or_actor_override`                                                                  | `is_client_error()` (l. 370)                                                                   | PASS but assertion is `is_client_error()`, not `StatusCode::UNPROCESSABLE_ENTITY`                                                                                    |
+| storage failure → sanitized 500                              | `persistence_failure_over_http_leaves_no_terminal_state_or_receipt`                                              | `StatusCode::INTERNAL_SERVER_ERROR` (l. 384); body redacted ("private database detail" absent) | PASS                                                                                                                                                                 |
+| exact replay returns original receipt                        | `authenticated_http_acceptance_commits_and_replays_one_receipt`                                                  | `replayed=true`, `first["receipt"] == replay["receipt"]` (l. 286)                              | PASS                                                                                                                                                                 |
+| generic feature transition cannot award Validated or Shipped | `terminal_feature_states_are_not_generic_transition_targets` (`crates/agileplus-api/src/routes/features.rs:392`) | tautology only (asserts variants exist)                                                        | **NO PRODUCTION ENFORCEMENT** — **SUPERSEDED 2026-10-18T20:07Z by raven: enforcement DOES exist at 4 transport-layer locations; the real gap is the tautology test** |
 
 Production-code evidence for the 422 mapping exists at `crates/agileplus-api/src/routes/acceptance.rs:152-155`:
 
@@ -149,7 +157,7 @@ DomainError::Validation(message) => (
 
 So 422 IS wired. The test simply does not pin it.
 
-Production-code evidence for "generic cannot award Validated or Shipped" does NOT exist:
+Production-code evidence for "generic cannot award Validated or Shipped" does NOT exist **in the feature-level state machine** — but this claim was **SUPERSEDED 2026-10-18T20:07Z by raven**, which found transport-layer enforcement at 4 locations (HTTP create `crates/agileplus-api/src/routes/features.rs:168-176`, HTTP transition `crates/agileplus-api/src/routes/features.rs:282-287`, gRPC dispatch `crates/agileplus-grpc/src/server/mod.rs:712-717`, CLI mvp `crates/agileplus-cli/src/commands/mvp.rs:356`). What is still true from this receipt:
 
 - `crates/agileplus-domain/src/domain/feature.rs:57-74` — `Feature` struct has no `kind`, `type`, or `category` field
 - Workspace-wide grep for `feature_kind`, `FeatureKind`, `is_generic`, `feature_category` over `crates/`: zero hits
@@ -174,12 +182,18 @@ Production-code evidence for "generic cannot award Validated or Shipped" does NO
 
 ### E.2.P1-GENERIC — Implement the "generic feature transition cannot award Validated or Shipped" rule
 
+> **SUPERSEDED 2026-10-18T20:07Z by raven.** The "implement the rule" framing below is wrong:
+> production enforcement already exists at 4 transport-layer locations. What remains is the
+> tautology-test replacement (Design A, 25 min, test-only). The operator decision below
+> (where "generic" lives) is likewise moot under Design A. See
+> `e2_p1_generic_2026-10-18-raven-result.md`.
+
 - **Cell**: E.2 / E.5
 - **Move**:
     1. Decide whether "generic" is a property of the **Feature** (new `kind` field with `Generic`/`Specific`) or of the **governance contract** (e.g. missing acceptance contract ⇒ transitions to Validated/Shipped are rejected). Either is defensible; the WBS does not specify.
     2. Implement the rule in `crates/agileplus-domain/src/domain/feature.rs::Feature::transition()` (lines 95–115) and/or the atomic acceptance port at `crates/agileplus-application/src/use_cases/accept_feature.rs` (currently 17 lines — currently only documents that "callers cannot supply a boolean governance pass or separately write terminal state").
     3. Replace the tautology at `crates/agileplus-api/src/routes/features.rs:392` with a behavior test that attempts `transition(FeatureState::Implementing, FeatureState::Validated)` on a feature whose governance contract is absent (or whose `kind == Generic`) and asserts `Err(...)`.
-- **Why**: the WBS sub-task 3 sixth case is the only P1-3 case without production enforcement and without a real test. Today, any feature (even one without governance) can be transitioned to `Validated`/`Shipped` via the feature-level state machine.
+- **Why**: the WBS sub-task 3 sixth case is the only P1-3 case without a real behavior test. **SUPERSEDED 2026-10-18T20:07Z by raven:** the claim that "today, any feature (even one without governance) can be transitioned to `Validated`/`Shipped` via the feature-level state machine" is wrong for the transport paths — HTTP create, HTTP transition, gRPC dispatch and CLI mvp all reject terminal transitions. The feature-level `Feature::transition()` helper itself is not the guard; the transports are.
 - **eta_min**: 60 (rule design + 2 acceptance-port changes + 2 tests)
 - **Evidence**:
     ```
@@ -221,7 +235,7 @@ Production-code evidence for "generic cannot award Validated or Shipped" does NO
 
 ## Blockers
 
-- **E.2.P1-GENERIC** is the only blocking issue. Without an enforcement decision + production change + behavior test, the P1 exit criterion ("HTTP is a projection of the application acceptance use case, not a parallel lifecycle implementation") is partially unmet for the "generic cannot award Validated or Shipped" sub-case. All other P1+P2 sub-tasks have current evidence and pass.
+- **E.2.P1-GENERIC** is the only blocking issue. Without an enforcement decision + production change + behavior test, the P1 exit criterion ("HTTP is a projection of the application acceptance use case, not a parallel lifecycle implementation") is partially unmet for the "generic cannot award Validated or Shipped" sub-case. All other P1+P2 sub-tasks have current evidence and pass. **Amended 2026-10-18T20:07Z by raven:** the sub-case's production-enforcement half is already satisfied at 4 transport-layer locations; only the behavior test is missing, and the operator decision is Design A/B/C (not a production-rule design).
 - E.2.P1-422 is a test-quality fix; not blocking, but cheap to land.
 
 ## Operator action required

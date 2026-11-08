@@ -15,7 +15,7 @@
 | 3   | #215  | mcp                     | 1.28.1 | 1.30.0 | agileplus-mcp/uv.lock (transitive)                                               | https://github.com/KooshaPari/AgilePlus/pull/1162 |
 | 4   | #214  | postcss-selector-parser | 6.1.4  | 7.1.6  | package-lock.json (transitive dev) + crates/agileplus-dashboard/web/package.json | https://github.com/KooshaPari/AgilePlus/pull/1163 |
 
-The 5th alert (RUSTSEC-2026-\*) was already fixed in main via Tauri upstream PR #16170 — documented-ignore, not touched.
+The 5th alert (#158, RUSTSEC-2024-0429 — glib `VariantStrIter`) was a **documented-ignore** and was not touched. It is **not** already fixed in main: the recorded default-branch lockfile still selects the affected **glib 0.18.5**, and the fix is in **glib 0.20.0**, which is gated behind Tauri upstream PR #16170 (upstream repo — not merged, and not ours to merge). The ignore entry in `deny.toml` records exactly this ("latest resolvable glib is 0.18.5; fixed in 0.20.0 behind tauri PR #16170"). Re-evaluate when #16170 lands.
 
 ## Test results
 

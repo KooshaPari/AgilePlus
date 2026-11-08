@@ -25,14 +25,14 @@ DOCKET v1.0 closed at HEAD `ef83e117` on `docs/state-forward-docket-20261017` (P
     - `cargo-deny` fails on the 6 source PRs because of TWO sub-causes:
         - **a)** Dead `RUSTSEC-2024-0429` ignore entry in `deny.toml` + missing `RUSTSEC-2026-0370/0371/0372` ignores.
         - **b)** `rust-toolchain.toml` pins `nightly-2026-07-31` (no longer in runner image); error: `override toolchain 'nightly-2026-07-31-x86_64-unknown-linux-musl' is not installed`.
-    - **PR #1165 fixes BOTH sub-causes** (verified: `cargo deny --manifest-path Cargo.toml check` shows `advisories ok, bans ok, licenses ok, sources ok`; `Cargo Deny PASS 2m29s` + `cargo-deny PASS 25s` in fox's own checks).
+    - **PR #1165 fixes sub-cause (a)** (verified: `cargo deny --manifest-path Cargo.toml check` shows `advisories ok, bans ok, licenses ok, sources ok`; `Cargo Deny PASS 2m29s` + `cargo-deny PASS 25s` in fox's own checks). It does **not** touch `rust-toolchain.toml`: the `nightly-2026-07-31` pin stays, and the `cargo-deny` job only passes because `dtolnay/rust-toolchain@stable` overrides the pin for that job. **Sub-cause (b) therefore remains unaddressed by #1165**, and a toolchain remediation step (update or remove the pin, or install the pinned nightly) is retained as a follow-up.
     - **PR #1166 is orthogonal** (fixes `python-coverage` and `cargo-mutants`, not `cargo-deny`). Merging #1166 first would NOT clear `ci / lint` + `ci / test`.
 
-2. **After #1165 merges into `main`, the 6 source PRs will re-trigger ci.yml automatically** (they target `main`). The `cargo-deny` job will then PASS (via fox's fix), `ci / lint` aggregate gate will see `cargo-deny: success` and exit 0, and `ci / test` will see `lint: success` and exit 0. **No workflow file changes needed; no new unblocker PR needed.**
+2. **After #1165 merges into `main`, the 6 source PRs must be re-triggered for `ci.yml` to run again.** The `pull_request` trigger does not fire when only the base branch changes, so merging #1165 alone leaves the source PRs' checks stale. Re-trigger each source PR (`gh pr update-branch`, or an empty push to its branch) after the unblocker lands. Once re-triggered, the `cargo-deny` job should PASS (via fox's fix), the `ci / lint` aggregate gate will see `cargo-deny: success` and exit 0, and `ci / test` will see `lint: success` and exit 0 — **subject to the `rust` job also passing** (see the cf-4 note on PR #1157's separate `rust` failure). **No workflow file changes needed; no new unblocker PR needed.**
 
 3. **Then merge #1166 (badger).** This clears `python-coverage` and `cargo-mutants` on the 6 source PRs (after they re-trigger).
 
-4. **Re-trigger the 6 source PRs** if they don't auto-retrigger after both unblockers merge (push a no-op or `gh pr update-branch` to rebase onto updated `main`).
+4. **Re-trigger the 6 source PRs** (`gh pr update-branch` or a push to their branches) — required, not optional: `pull_request` CI does not re-run on a base-branch-only change, so merging the unblockers does not refresh the source PRs' checks on its own.
 
 5. **Run follow-up ci-scout in ~25 minutes** to confirm 4-6 of 6 source PRs have turned green. v3 scout will compare against v2.
 

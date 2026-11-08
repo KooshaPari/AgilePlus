@@ -56,7 +56,26 @@ Parameter verification: confirmed against `py-cov-action/python-coverage-comment
 timeout-minutes: 300
 ```
 
-Why 300 (not lower): cargo-mutants on `agileplus-domain` explores all mutants in that crate, which is one of the slowest jobs in the matrix. 300 minutes (5h) gives the job enough runway but leaves a 1h safety margin before the runner's 6h ceiling. Observed pace (~38s per mutant × ~228 remaining at the 5h mark = ~144m more) leaves ~36m of slack.
+Why 300 (not lower): cargo-mutants on `agileplus-domain` explores all mutants in that crate, which is one of the slowest jobs in the matrix.
+
+**The 300-minute value is NOT validated by the evidence, and is recorded here as unverified.** The primary source is the diff comment badger wrote (`cf12_workflow_fixes_2026-10-18-badger.log:66-70`):
+
+> The 425/425 artifact is a mid-run snapshot, not a finished campaign. Tail pace is ~38s per
+> mutant, so the ~228 not yet finished need ~144m (324m total).
+
+That is a **~180-minute snapshot** with ~144 minutes of tail left — an estimated **~324-minute**
+completion. It is **not** a snapshot taken at the 5h mark. A 300-minute timeout therefore sits
+**~24 minutes short of the estimate**, and the estimate is an extrapolation from a mid-run
+snapshot, so 300 can cancel the campaign before it finishes. The "1h safety margin" and
+"36m of slack" figures in the applied YAML comment do not follow from the arithmetic
+(300 + 144 = 444m, not 324m; 324 − 300 = 24m, not 36m) and are **not** supported by any
+recorded measurement.
+
+**Revised recommendation:** do not reduce the timeout to 300 minutes until a completion strategy
+is validated against a **completed** campaign — e.g. run `cargo mutants` to completion once and
+record the real total runtime. Until then, keep `timeout-minutes: 360` (the pre-change value).
+The 300-minute value is what PR #1166 actually applied, and its YAML comment carries the same
+unsupported margin claim, so PR #1166 needs the same correction before it is relied on.
 
 ---
 
