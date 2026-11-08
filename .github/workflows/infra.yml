@@ -12,7 +12,10 @@
 #   2. Benchmark thresholds
 #      - Runs cargo bench for the `agileplus-benchmarks` crate.
 #      - Compares wall-clock vs the baseline stored in `.bench-baseline.json`.
-#      - Fails the run if any benchmark regresses by more than 15 %.
+#      - Fails the run if any benchmark regresses by more than its own noise
+#        budget (a relative budget, derived from the baseline's measured
+#        stddev where one exists, applied to the run's common-mode factor so
+#        a slow runner is not mistaken for a slow subsystem).
 #
 #   3. Green-button summary
 #      - Aggregates every `needs:` job into a single JSON status.
@@ -102,8 +105,10 @@ jobs:
                   if-no-files-found: warn
 
     bench-thresholds:
-        # Advisory only. Single-run Criterion noise is ±15-25%; a 50% threshold
-        # catches only catastrophic regressions while absorbing normal variance.
+        # Advisory only. The gate compares each benchmark against the run's
+        # common-mode speed factor and then against that benchmark's own noise
+        # budget, so a runner that is simply slower than the baseline machine
+        # does not fail the build while a targeted regression still does.
         # NS-scale benches are excluded via .bench-baseline-excluded.txt.
         name: benchmark thresholds (advisory)
         runs-on: ubuntu-latest
@@ -143,12 +148,14 @@ jobs:
                       cargo bench -p agileplus-benchmarks --bench "$bench" | tee -a bench${run}.txt
                     done
                   done
-            - name: Compare to baseline (median of 3 runs, ≤50% regression, advisory)
+            - name: Unit-test the benchmark gate
+              run: python3 -m unittest discover -s scripts/ci -p 'test_*.py'
+            - name: Compare to baseline (median of 3 runs, per-bench noise budget, advisory)
               run: |
                   python3 scripts/ci/check_bench_regressions_median.py \
                     bench1.txt bench2.txt bench3.txt \
                     .bench-baseline.json \
-                    --max-regress 50 \
+                    --noise-budget 40 \
                     --exclude-file .bench-baseline-excluded.txt
             - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # @v7
               with:
