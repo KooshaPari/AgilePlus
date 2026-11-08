@@ -251,10 +251,17 @@ jobs:
         steps:
             - uses: actions/checkout@v7
 
-            - name: Install Rust (nightly)
-              uses: dtolnay/rust-toolchain@nightly
-              with:
-                  targets: x86_64-unknown-linux-musl
+            # The repo pins a channel in rust-toolchain.toml. Installing a bare
+            # `nightly` here made rustup demand
+            # nightly-2026-07-31-x86_64-unknown-linux-musl, which was never
+            # installed, so this job died at toolchain setup rather than running
+            # any fuzz build. Resolve the pinned channel and add the target to it.
+            - name: Install the pinned Rust channel and the musl target
+              run: |
+                  set -euo pipefail
+                  toolchain="$(rustup show active-toolchain | awk '{print $1}')"
+                  echo "pinned toolchain: ${toolchain}"
+                  rustup target add --toolchain "${toolchain}" x86_64-unknown-linux-musl
 
             - uses: Swatinem/rust-cache@v2
               with:
@@ -268,7 +275,7 @@ jobs:
 
             - name: Build fuzz targets (agileplus-domain)
               run: >-
-                  cargo +nightly fuzz build --target "$(rustc +nightly -vV | sed -n 's/^host: //p')"
+                  cargo fuzz build --target "$(rustc -vV | sed -n 's/^host: //p')"
               working-directory: crates/agileplus-domain
               env:
                   # AddressSanitizer cannot run with musl's statically linked libc.
