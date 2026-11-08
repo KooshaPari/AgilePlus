@@ -20,16 +20,16 @@
 
 **Verdict (session-level)**: PASS-WITH-OPEN-OPERATOR-ITEMS.
 
-- 15 of 19 cheap_closes CLOSED (8 PASS, 2 PARTIAL, 1 CLOSED-PARTIAL, 4 historical).
+- 15 of 19 cheap_closes resolved (11 fully CLOSED, 4 PARTIAL). Taking the table's verdict column as the source of truth: the 11 CLOSED are 4 historical PASS + 6 PASS + 1 PASS (composite); the 4 PARTIAL are 1 historical PARTIAL + 1 CLOSED-PARTIAL + 2 PARTIAL. Partial items are **not** counted as closed.
 - 4 cheap_closes remain FULLY OPEN; all 4 honestly attributed (operator-gated on PR #1156, LOWEST-priority doc work, deferred to kitty-spec 003).
-- 1 cheap_close (E.2.P1-GENERIC) is PARTIAL — investigation complete, design proposed, awaiting operator decision on Design A/B/C (see Section 5).
+- 4 cheap_closes are PARTIAL and are **not** counted as closed: A.4 / E.20 Validation (historical), B.x follow-up (CLOSED-PARTIAL), E.2 / E.5 Validation, and E.2.P1-GENERIC (investigation complete, design proposed, awaiting operator decision on Design A/B/C — see Section 5).
 - No P/F/U verdicts were inflated. No fabricated evidence. All subagent self-tests captured verbatim.
 
 ---
 
 ## 2. Cheap closes (final state)
 
-### 11 CLOSED (this session = 5 new closures + 6 historical carry-ins)
+### 15 cheap-closes (11 fully CLOSED + 4 PARTIAL) — 10 filed this session, 5 historical carry-ins
 
 | #   | Cell                                               | Verdict              | Closed by                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | When              |
 | --- | -------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
@@ -89,6 +89,15 @@ set -euo pipefail
 git checkout main
 git pull --ff-only origin main
 
+# Local `main` must be exactly `origin/main`. `git pull --ff-only` succeeds even
+# when local main carries an unrelated unpushed commit, and the push would then
+# land that commit together with the squash.
+test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+
+# Capture the base the checks were run against, so the push can verify that
+# neither the base nor the PR head moved underneath us.
+BASE_SHA="$(git rev-parse origin/main)"
+
 # Verify the PR's current head before squashing. A stale local branch would
 # otherwise push an older squash and close the PR without its newer changes.
 git fetch origin <branch-name>
@@ -107,6 +116,16 @@ tx-validated: manual
 tx-intent: close <cheap close id>
 MSG
 
+# The PR's `pull_request` checks run against the PR merge tree (PR head + base),
+# which is the same content the squash produces -- so a passing check run
+# covers the squash ONLY while that base is still current. If `origin/main`
+# moved after the checks ran, those checks covered an older merge tree: stop,
+# re-run them on the new tree, and only then push.
+test "$(git rev-parse origin/main)" = "$BASE_SHA" || {
+  echo "origin/main moved since the checks ran; re-run the checks on the new merge tree before pushing" >&2
+  exit 1
+}
+
 git push origin main
 
 # Verification, before the PR is closed.
@@ -115,6 +134,32 @@ test "$(gh pr view <N> --repo KooshaPari/AgilePlus --json headRefOid --jq .headR
 
 gh pr close --repo KooshaPari/AgilePlus <N>
 ```
+
+**The PR head must be frozen for the whole fallback.** Between the check run and the PR closure,
+no commit may land on the PR branch: an updated head means the pushed squash is stale (the newer
+commits never reach `main`), or the PR closes with newer commits still unmerged. The `PR_HEAD`
+comparison above catches a head that moved *before* the squash; it cannot catch one that moves
+*between* the squash and the close. The fallback therefore requires an exclusive merge window in
+which the PR branch cannot be updated (announce it, and hold the branch's push access for the
+duration). **If that window cannot be guaranteed, do not use this fallback** — merge through the
+PR with `gh pr merge --squash` instead, where the platform enforces the ordering.
+
+**Recovery when the push is rejected.** If `origin/main` advances between the squash commit and
+the push, the push fails (non-fast-forward) and the local squash commit stays in place. Do **not**
+re-run `git merge --squash` — that would create a second squash. Reconcile the existing commit
+instead, then resume the verification steps:
+
+```bash
+git fetch origin main
+git rebase origin/main          # replay the EXISTING squash commit on the new base
+```
+
+`git rebase origin/main` replays the single local squash commit onto the new base; resolve any
+conflict by hand. The tree changed, so the earlier green run no longer covers it: re-run the PR's
+checks against the reconciled merge tree, confirm they pass, and reset `BASE_SHA` to the new base
+before continuing. Then resume with `git push origin main`, the `origin/main` log check, the
+`PR_HEAD` comparison, and `gh pr close`. If the rebase cannot be completed cleanly, abandon the
+fallback and merge through the PR.
 
 **The squash must run on an up-to-date `main` checkout.** `git merge --squash` stages the
 change in the CURRENT working tree, so running it while on a feature branch leaves the squash
@@ -180,7 +225,7 @@ raven (4m 30s, 45m cap) investigated E.2.P1-GENERIC. Key findings:
     - Delete the 9-line tautology test at `features.rs:391-399`
     - Add a 25-line HTTP behavior test `coverage_transition_feature_rejects_terminal_states` next to its sibling `coverage_create_feature_rejects_terminal_states` at `route_coverage.rs:254-269`
     - Test shape: POST `/api/v1/features/{slug}/transition` with `target_state ∈ {"validated", "shipped"}`, assert HTTP 400 + message contains "terminal feature states"
-    - Zero behavior change; closes the BLOCKING cheap_close on the transport-path gap (item 3). The two unguarded paths in item 4 remain open and are tracked separately — Design A does not close them.
+    - Zero behavior change; closes the BLOCKING cheap_close on the transport-path gap (item 3). The two unguarded paths in item 4 remain open and are tracked separately — Design A does not close them, and **E.2.P1-GENERIC must stay PARTIAL until the dashboard and application-layer gaps are also resolved** (see §5 and the open-work inventory), so neither gap can disappear from the inventory when Design A lands.
 
 7. **Operator decision required (3 questions)**:
     - **Q1**: Pick Design A (test-only, 25 min), Design B (domain-layer rule, 45-60 min), or Design C (governance contract, 90-120 min)?
@@ -214,7 +259,7 @@ raven (4m 30s, 45m cap) investigated E.2.P1-GENERIC. Key findings:
 
 - Filed 2026-10-18T19:36Z as carry-forward from t-rex's E.2/E.5 Val PARTIAL
 - **Corrected 2026-10-18T20:07Z by raven's investigation (Section 4.5):** production enforcement for "generic feature transition cannot award Validated or Shipped" **already exists** at 3 feature-level transport locations (HTTP create, HTTP transition, gRPC dispatch). The CLI `mvp` guard is a **work-package** guard (rejects `WpState::Done`) and is not a feature-level protection. The remaining transport-path gap is the tautology test at `crates/agileplus-api/src/routes/features.rs:391-399` — not a missing production rule. Two paths outside those transports are still unguarded: the dashboard's generic transition route (`crates/agileplus-dashboard/src/routes/features.rs:536-567`, in-memory store only) and the application-layer `AdvanceFeature::execute` (`crates/agileplus-application/src/use_cases/advance_feature.rs:27-53`, which persists the terminal state) — see Section 4.5 item 4.
-- Still blocks the P1 exit criterion until the operator picks Design A (test-only), B (domain-layer rule) or C (governance contract)
+- Still blocks the P1 exit criterion until the operator picks Design A (test-only), B (domain-layer rule) or C (governance contract), **and** until both unguarded paths (item 4) are resolved — Design A alone closes only the transport-path gap, so E.2.P1-GENERIC stays PARTIAL with the dashboard and application-layer gaps still visible in the open-work inventory
 
 ---
 
@@ -322,7 +367,7 @@ ap-sfd-2026-10-18T20-07Z@e2-p1-generic-investigation (6125c828) ← FINAL
 
 This DOCKET v1.0 session is **CLOSED** at HEAD `6125c828` on `docs/state-forward-docket-20261017`.
 
-**Open work honestly attributed**: 4 cheap_closes FULLY OPEN (2× A.4/E.9 blocked on PR #1156, 1× F.3 LOWEST, 1× CF-3 deferred to kitty-spec 003) + 1 cheap_close PARTIAL (E.2.P1-GENERIC, awaiting operator pick on Design A/B/C), 8 PRs (6 source-code PRs blocked on the 2 unblocker PRs #1165 + #1166 merging; PR #1156 still needs sloth-v4 contingent), 8 operator-gated items (Vercel, Tailscale, etc.).
+**Open work honestly attributed**: 4 cheap_closes FULLY OPEN (2× A.4/E.9 blocked on PR #1156, 1× F.3 LOWEST, 1× CF-3 deferred to kitty-spec 003) + 4 cheap_closes PARTIAL (A.4/E.20 historical, B.x follow-up CLOSED-PARTIAL, E.2/E.5 Validation, and E.2.P1-GENERIC — which stays PARTIAL, with its transport-path gap, the dashboard transition route and the application-layer `AdvanceFeature::execute` gap all still open until the operator picks Design A/B/C *and* both unguarded paths are resolved), 8 PRs (6 source-code PRs blocked on the 2 unblocker PRs #1165 + #1166 merging; PR #1156 still needs sloth-v4 contingent), 8 operator-gated items (Vercel, Tailscale, etc.).
 
 **No fabricated work**: every PASS has a subagent session, a wall-clock, a self-test result, and a file path. Every PARTIAL has an explanation of what blocks full PASS. Every OPEN has a path to close and a reason it isn't closed.
 

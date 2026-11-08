@@ -65,8 +65,9 @@ extracted with `git cat-file blob <index-sha>` into a temporary file and that co
 and that fails closed on a missing `sqlite3`/`grep`/`python3`/validator, on a schema-discovery or
 row-query error, and on a validator error. Its row query is
 `SELECT 'updated_at', updated_at FROM "<table>" WHERE updated_at IS NOT NULL`, so it too ignores
-NULL. In other words, the working-tree-vs-staged-blob and non-NULL-only limitations recorded above
-belong to the checkpoint hook; the PR #1161 head closes both.
+NULL. The PR #1161 head closes the working-tree-vs-staged-blob limitation, but it still does not
+validate NULL timestamps — its row query filters them out with `updated_at IS NOT NULL` — so the
+non-NULL-only limitation recorded above remains open.
 
 ### End-to-end `git commit` smoke
 
