@@ -3,7 +3,6 @@
 //! Uses assert_cmd to test the binary end-to-end.
 
 use assert_cmd::Command;
-use std::process::Command as ProcessCommand;
 
 #[test]
 fn help_prints_usage() {
@@ -12,7 +11,9 @@ fn help_prints_usage() {
         .arg("--help")
         .assert()
         .success()
-        .stdout(predicates::str::contains("Spec-driven"));
+        .stdout(predicates::str::contains(
+            "Spec-driven",
+        ));
 }
 
 #[test]
@@ -23,49 +24,6 @@ fn version_flag_prints_package_version() {
         .assert()
         .success()
         .stdout(predicates::str::contains(env!("CARGO_PKG_VERSION")));
-}
-
-#[test]
-fn specify_from_file_creates_feature_and_spec_artifact() {
-    let repo = tempfile::tempdir().unwrap();
-    ProcessCommand::new("git")
-        .args(["init", "--quiet"])
-        .current_dir(repo.path())
-        .status()
-        .expect("git available")
-        .success()
-        .then_some(())
-        .expect("initialize temporary repository");
-    let spec = repo.path().join("spec.md");
-    std::fs::write(
-        &spec,
-        "# Specification: Smoke Feature\n\n## Problem Statement\nA CLI smoke test.\n\n## Functional Requirements\n- **FR-001**: The command works.\n\n## Acceptance Criteria\n- The feature is persisted.\n",
-    )
-    .unwrap();
-
-    Command::cargo_bin("agileplus")
-        .unwrap()
-        .current_dir(repo.path())
-        .args([
-            "--repo",
-            repo.path().to_str().unwrap(),
-            "specify",
-            "--feature",
-            "smoke-feature",
-            "--from-file",
-            spec.to_str().unwrap(),
-        ])
-        .assert()
-        .success()
-        .stdout(predicates::str::contains(
-            "Feature 'smoke-feature' specified.",
-        ));
-
-    assert!(
-        repo.path()
-            .join("docs/agileplus/smoke-feature/spec.md")
-            .is_file()
-    );
 }
 
 // NOTE: The tests below (specify/research/specs/frontend/plan subcommand

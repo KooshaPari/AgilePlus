@@ -108,3 +108,218 @@ impl PersistSyncedStories {
         Ok(report)
     }
 }
+
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+    use std::sync::Arc;
+
+    use async_trait::async_trait;
+    use tokio::sync::RwLock;
+
+    use agileplus_domain::domain::story::{Story, StoryStatus};
+    use agileplus_domain::error::DomainError;
+    use agileplus_domain::ports::story::StoryRepository;
+
+    use super::{PersistSyncedStories, PersistSyncedStoriesCmd};
+
+    // ── In-memory StoryRepository double ─────────────────────────────────────
+
+    #[derive(Default)]
+    struct InMemRepo {
+        store: RwLock<HashMap<i64, Story>>,
+        next_id: RwLock<i64>,
+    }
+
+    #[async_trait]
+    impl StoryRepository for InMemRepo {
+        async fn create(&self, story: &Story) -> Result<i64, DomainError> {
+            let mut next = self.next_id.write().await;
+            *next += 1;
+            let id = *next;
+            let mut s = story.clone();
+            s.id = id;
+            self.store.write().await.insert(id, s);
+            Ok(id)
+        }
+
+        async fn get_by_id(&self, id: i64) -> Result<Option<Story>, DomainError> {
+            Ok(self.store.read().await.get(&id).cloned())
+        }
+
+        async fn update_status(&self, id: i64, status: StoryStatus) -> Result<(), DomainError> {
+            let mut store = self.store.write().await;
+            if let Some(s) = store.get_mut(&id) {
+                s.status = status;
+                Ok(())
+            } else {
+                Err(DomainError::NotFound(id.to_string()))
+            }
+        }
+
+        async fn list_by_epic(&self, epic_id: i64) -> Result<Vec<Story>, DomainError> {
+            Ok(self
+                .store
+                .read()
+                .await
+                .values()
+                .filter(|s| s.epic_id == epic_id)
+                .cloned()
+                .collect())
+        }
+    }
+
+    // ── helpers ───────────────────────────────────────────────────────────────
+
+    fn make_story(epic: i64, proj: i64, title: &str, req_id: &str) -> Story {
+        let mut s = Story::new(epic, proj, title, None).unwrap();
+        s.requirement_id = Some(req_id.to_string());
+        s
+    }
+
+    // ── tests ─────────────────────────────────────────────────────────────────
+
+    /// N stories are persisted; returned id count matches story count.
+    #[tokio::test]
+    async fn persists_n_stories_to_repo() {
+        let repo = Arc::new(InMemRepo::default());
+        let uc = PersistSyncedStories::new(repo.clone());
+
+        let stories = vec![
+            make_story(1, 10, "Fix login crash", "gh:issue:1"),
+            make_story(1, 10, "Add dark mode", "gh:issue:2"),
+            make_story(1, 10, "feat: dark mode", "gh:pr:10"),
+        ];
+
+        let report = uc
+            .execute(PersistSyncedStoriesCmd { stories })
+            .await
+            .unwrap();
+
+        assert_eq!(report.persisted_ids.len(), 3, "should have 3 persisted ids");
+
+        // Verify all are actually in the repo.
+        for id in &report.persisted_ids {
+            assert!(
+                repo.get_by_id(*id).await.unwrap().is_some(),
+                "story {id} should be retrievable"
+            );
+        }
+    }
+
+    /// Re-syncing the same stories is idempotent — no duplicates.
+    #[tokio::test]
+    async fn resync_is_idempotent_no_duplicates() {
+        let repo = Arc::new(InMemRepo::default());
+        let uc = PersistSyncedStories::new(repo.clone());
+
+        let stories = vec![
+            make_story(2, 20, "Story A", "gh:issue:5"),
+            make_story(2, 20, "Story B", "gh:issue:6"),
+        ];
+
+        // First sync.
+        let r1 = uc
+            .execute(PersistSyncedStoriesCmd {
+                stories: stories.clone(),
+            })
+            .await
+            .unwrap();
+        assert_eq!(r1.persisted_ids.len(), 2);
+
+        // Second sync — same stories.
+        let r2 = uc
+            .execute(PersistSyncedStoriesCmd {
+                stories: stories.clone(),
+            })
+            .await
+            .unwrap();
+        assert_eq!(
+            r2.persisted_ids.len(),
+            2,
+            "second sync must still return 2 ids"
+        );
+
+        // Repo must still have exactly 2 stories for the epic.
+        let all = repo.list_by_epic(2).await.unwrap();
+        assert_eq!(all.len(), 2, "no duplicates after re-sync");
+
+        // The ids from the second sync must be the same rows as the first.
+        assert_eq!(
+            r1.persisted_ids, r2.persisted_ids,
+            "upsert should return same ids"
+        );
+    }
+
+    /// Stories without a requirement_id are rejected, not silently skipped.
+    #[tokio::test]
+    async fn story_without_requirement_id_returns_error() {
+        let repo = Arc::new(InMemRepo::default());
+        let uc = PersistSyncedStories::new(repo);
+
+        // Story with no requirement_id (would come from a broken mapper).
+        let bad_story = Story::new(3, 30, "Orphaned story", None).unwrap();
+        // requirement_id left as None.
+
+        let err = uc
+            .execute(PersistSyncedStoriesCmd {
+                stories: vec![bad_story],
+            })
+            .await
+            .unwrap_err();
+
+        assert!(
+            matches!(
+                err,
+                crate::error::AppError::Domain(agileplus_domain::error::DomainError::Validation(_))
+            ),
+            "expected Validation error, got {err:?}"
+        );
+    }
+
+    /// Empty story list produces an empty report — no error.
+    #[tokio::test]
+    async fn empty_story_list_produces_empty_report() {
+        let repo = Arc::new(InMemRepo::default());
+        let uc = PersistSyncedStories::new(repo);
+
+        let report = uc
+            .execute(PersistSyncedStoriesCmd { stories: vec![] })
+            .await
+            .unwrap();
+
+        assert_eq!(report.persisted_ids.len(), 0);
+        assert_eq!(report.created, 0);
+        assert_eq!(report.updated, 0);
+    }
+
+    /// Skipped items (never in stories vec) do not appear in the repo.
+    #[tokio::test]
+    async fn skipped_items_not_persisted() {
+        let repo = Arc::new(InMemRepo::default());
+        let uc = PersistSyncedStories::new(repo.clone());
+
+        // Only 2 good stories — the "skipped" bad ones from sync_repository
+        // would never reach this use case; simulate by passing only the good ones.
+        let good = vec![
+            make_story(4, 40, "Valid A", "gh:issue:100"),
+            make_story(4, 40, "Valid B", "gh:issue:101"),
+        ];
+
+        let report = uc
+            .execute(PersistSyncedStoriesCmd { stories: good })
+            .await
+            .unwrap();
+        assert_eq!(report.persisted_ids.len(), 2);
+
+        // The repo has no story for issue #999 (skipped upstream).
+        let all = repo.list_by_epic(4).await.unwrap();
+        assert!(
+            !all.iter()
+                .any(|s| s.requirement_id.as_deref() == Some("gh:issue:999")),
+            "skipped item must not be in repo"
+        );
+    }
+}

@@ -5,14 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from phench.service import (
-    init_target,
-    list_targets,
-    load_target_lock,
-    sync_target,
-    target_status,
-)
-from phench.store import read_dual
+from phench.service import init_target, list_targets, load_target_lock, sync_target, target_status
+from phench.store import dual_write, read_dual
 
 
 class ServiceStateTests(unittest.TestCase):

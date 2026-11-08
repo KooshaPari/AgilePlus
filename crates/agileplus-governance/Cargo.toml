@@ -53,6 +53,9 @@ async-trait = "0.1"
 # Regex for pattern matching
 regex = "1"
 
+# Environment variables
+envsubst = "0.2"
+
 [dev-dependencies]
 tempfile = "3"
 tokio-test = "0.4"
@@ -69,6 +72,3 @@ version = "2"
 optional = true
 version = "4"
 features = ["derive"]
-
-[package.metadata.dist]
-dist = false

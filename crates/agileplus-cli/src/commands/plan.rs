@@ -38,7 +38,6 @@ pub struct PlanArgs {
 struct FunctionalRequirement {
     id: String,
     description: String,
-    dependencies: Vec<String>,
 }
 
 /// Run the `plan` command.
@@ -124,63 +123,20 @@ where
         wps.push(wp);
     }
 
-    preflight_fr_dependencies(&frs, &wps)?;
-
-    // Reconcile persisted WPs before inserting. Planning is retry-safe: a
-    // matching sequence reuses its stable row; a mismatch is an explicit
-    // conflict instead of silently creating a second logical plan.
-    let existing_wps = storage
-        .list_wps_by_feature(feature.id)
-        .await
-        .context("listing existing work packages")?;
-    for sequence in duplicate_sequences(&existing_wps) {
-        tracing::warn!(
-            feature_id = feature.id,
-            sequence,
-            "duplicate persisted work-package sequence; preserving records"
-        );
-    }
-    let mut persisted_wps = reconcile_work_packages(wps, existing_wps)?;
-    for wp in &mut persisted_wps {
-        if wp.id == 0 {
-            wp.id = storage
-                .create_work_package(wp)
-                .await
-                .context("creating work package")?;
-        }
+    // Persist WPs to get IDs
+    let mut persisted_wps: Vec<WorkPackage> = Vec::with_capacity(wps.len());
+    for mut wp in wps {
+        let id = storage
+            .create_work_package(&wp)
+            .await
+            .context("creating work package")?;
+        wp.id = id;
+        persisted_wps.push(wp);
     }
 
-    // Build overlap graph and explicit requirement dependencies. A dependency
-    // inside one WP is already ordered by that WP; cross-WP dependencies must
-    // be represented in the scheduler and persisted DAG.
+    // Build overlap graph and add file-overlap dependencies
     let overlap_graph = build_overlap_graph(&persisted_wps);
     let mut deps: Vec<WpDependency> = Vec::new();
-    for fr in &frs {
-        let dependent = persisted_wps.iter().find(|wp| wp_has_fr(wp, &fr.id));
-        for prerequisite_id in &fr.dependencies {
-            let prerequisite = persisted_wps
-                .iter()
-                .find(|wp| wp_has_fr(wp, prerequisite_id));
-            let (Some(dependent), Some(prerequisite)) = (dependent, prerequisite) else {
-                anyhow::bail!(
-                    "FR dependency {} -> {} cannot be mapped to work packages",
-                    fr.id,
-                    prerequisite_id
-                );
-            };
-            if dependent.id != prerequisite.id
-                && !deps
-                    .iter()
-                    .any(|d| d.wp_id == dependent.id && d.depends_on == prerequisite.id)
-            {
-                deps.push(WpDependency {
-                    wp_id: dependent.id,
-                    depends_on: prerequisite.id,
-                    dep_type: DependencyType::Explicit,
-                });
-            }
-        }
-    }
     for (a_id, b_id, _) in &overlap_graph.edges {
         // Lower sequence depends on higher; higher depends on lower
         let a = persisted_wps.iter().find(|w| w.id == *a_id).unwrap();
@@ -195,12 +151,11 @@ where
             depends_on: earlier.id,
             dep_type: DependencyType::FileOverlap,
         };
-        if !deps.iter().any(|d| {
-            (d.wp_id == dep.wp_id && d.depends_on == dep.depends_on)
-                || (d.wp_id == dep.depends_on && d.depends_on == dep.wp_id)
-        }) {
-            deps.push(dep);
-        }
+        storage
+            .add_wp_dependency(&dep)
+            .await
+            .context("adding wp dependency")?;
+        deps.push(dep);
     }
 
     // Build scheduler and compute execution plan
@@ -210,12 +165,6 @@ where
     let waves = scheduler
         .execution_plan()
         .map_err(|e| anyhow::anyhow!("dependency cycle: {e}"))?;
-    for dep in &deps {
-        storage
-            .add_wp_dependency(dep)
-            .await
-            .context("adding wp dependency")?;
-    }
 
     // Generate plan.md
     let plan_content = generate_plan_md(slug, &persisted_wps, &deps, &waves);
@@ -232,36 +181,23 @@ where
             .context("writing WP prompt file")?;
     }
 
-    // Reuse the persisted governance contract on retries so the artifact and
-    // database remain byte-for-byte aligned. Only the first planning run
-    // creates and persists a new contract.
-    let contract = if let Some(existing) = storage
-        .get_latest_governance_contract(feature.id)
-        .await
-        .context("checking existing governance contract")?
-    {
-        existing
-    } else {
-        let contract = build_governance_contract(feature.id, &persisted_wps);
-        storage
-            .create_governance_contract(&contract)
-            .await
-            .context("persisting governance contract")?;
-        contract
-    };
+    // Create governance contract
+    let contract = build_governance_contract(feature.id, &persisted_wps);
     let contract_json =
         serde_json::to_string_pretty(&contract).context("serializing governance contract")?;
     vcs.write_artifact(slug, "contracts/governance-v1.json", &contract_json)
         .await
         .context("writing governance contract artifact")?;
+    storage
+        .create_governance_contract(&contract)
+        .await
+        .context("persisting governance contract")?;
 
     // Transition feature state: Researched -> Planned
-    if feature.state == FeatureState::Researched {
-        storage
-            .update_feature_state(feature.id, FeatureState::Planned)
-            .await
-            .context("transitioning feature to Planned")?;
-    }
+    storage
+        .update_feature_state(feature.id, FeatureState::Planned)
+        .await
+        .context("transitioning feature to Planned")?;
 
     // Append audit entry
     let prev_hash = get_latest_hash(storage, feature.id).await;
@@ -279,12 +215,10 @@ where
         archived_to: None,
     };
     audit.hash = hash_entry(&audit);
-    if feature.state == FeatureState::Researched {
-        storage
-            .append_audit_entry(&audit)
-            .await
-            .context("appending audit entry")?;
-    }
+    storage
+        .append_audit_entry(&audit)
+        .await
+        .context("appending audit entry")?;
 
     let elapsed_ms = start.elapsed().as_millis();
     tracing::info!(command = "plan", slug = %slug, wp_count = persisted_wps.len(), elapsed_ms = %elapsed_ms, "plan completed");
@@ -320,155 +254,48 @@ where
         println!("    Wave {}: [{}]", wave.wave_number, ids.join(", "));
     }
     println!();
-    println!("  Plan written to: docs/agileplus/{slug}/plan.md");
-    println!("  Governance contract: docs/agileplus/{slug}/contracts/governance-v1.json");
-    println!("  State: {}", plan_state_summary(feature.state));
+    println!("  Plan written to: kitty-specs/{slug}/plan.md");
+    println!("  Governance contract: kitty-specs/{slug}/contracts/governance-v1.json");
+    println!("  State: Researched -> Planned");
 
     Ok(())
 }
 
 // --- helpers ---
 
-fn duplicate_sequences(wps: &[WorkPackage]) -> Vec<i32> {
-    let mut counts = std::collections::BTreeMap::new();
-    for wp in wps {
-        *counts.entry(wp.sequence).or_insert(0usize) += 1;
-    }
-    counts
-        .into_iter()
-        .filter_map(|(sequence, count)| (count > 1).then_some(sequence))
-        .collect()
-}
-
-fn plan_state_summary(state: FeatureState) -> &'static str {
-    match state {
-        FeatureState::Researched => "Researched -> Planned",
-        FeatureState::Planned => "Planned (preserved)",
-        FeatureState::Implementing => "Implementing (preserved)",
-        FeatureState::Validated => "Validated (preserved)",
-        FeatureState::Shipped => "Shipped (preserved)",
-        FeatureState::Retrospected => "Retrospected (preserved)",
-        FeatureState::Created => "Created (preserved)",
-        FeatureState::Specified => "Specified (preserved)",
-    }
-}
-
 /// Parse `FR-NNN: description` lines from spec content.
 fn parse_functional_requirements(spec: &str) -> Vec<FunctionalRequirement> {
     let mut frs = Vec::new();
-    let definition =
-        regex::Regex::new(r"^\s*(?:[-*]\s+)?(?:\*\*)?(FR-[0-9]+)(?:\*\*)?\s*:\s*(.+)$")
-            .expect("valid FR definition pattern");
-    let dependency_ids = regex::Regex::new(r"FR-[0-9]+").expect("valid FR pattern");
-    let mut seen = std::collections::HashSet::new();
     for line in spec.lines() {
-        // A scenario can mention an FR before its definition. Only definition
-        // lines may create work packages or governance rules.
-        if let Some(captures) = definition.captures(line) {
-            let id = captures.get(1).expect("FR capture").as_str();
-            let description = captures
-                .get(2)
-                .expect("description capture")
-                .as_str()
-                .trim()
-                .to_string();
-            if seen.insert(id.to_string()) {
-                let dependencies = description
-                    .to_ascii_lowercase()
-                    .find("depends on")
-                    .map(|offset| {
-                        let clause = &description[offset + "depends on".len()..];
-                        dependency_ids
-                            .find_iter(clause)
-                            .map(|m| m.as_str().to_string())
-                            .collect()
-                    })
-                    .unwrap_or_default();
+        // Match patterns like "- **FR-001**: description" or "FR-001: description"
+        if let Some(pos) = line.find("FR-") {
+            let rest = &line[pos..];
+            // Find the ID
+            let id_end = rest[3..]
+                .find(|c: char| !c.is_ascii_digit())
+                .map(|p| p + 3)
+                .unwrap_or(rest.len());
+            let id = &rest[..id_end];
+            // Find description after colon
+            let description = if let Some(colon) = rest.find(':') {
+                rest[colon + 1..]
+                    .trim()
+                    .trim_matches('*')
+                    .trim()
+                    .to_string()
+            } else {
+                rest.to_string()
+            };
+            if !description.is_empty() && id.len() > 3 {
                 frs.push(FunctionalRequirement {
                     id: id.to_string(),
                     description,
-                    dependencies,
                 });
             }
         }
     }
+    frs.dedup_by_key(|fr| fr.id.clone());
     frs
-}
-
-fn wp_has_fr(wp: &WorkPackage, fr_id: &str) -> bool {
-    wp.acceptance_criteria.lines().any(|line| {
-        line.trim_start_matches([' ', '-'])
-            .split_whitespace()
-            .next()
-            == Some(fr_id)
-    })
-}
-
-/// Reject unresolved or cyclic explicit FR dependencies before any WP row is created.
-fn preflight_fr_dependencies(frs: &[FunctionalRequirement], wps: &[WorkPackage]) -> Result<()> {
-    let mut edges = Vec::new();
-    let mut fr_edges = Vec::new();
-    for fr in frs {
-        let dependent = wps
-            .iter()
-            .find(|wp| wp_has_fr(wp, &fr.id))
-            .ok_or_else(|| anyhow::anyhow!("FR {} was not assigned to a work package", fr.id))?;
-        for prerequisite_id in &fr.dependencies {
-            let prerequisite = wps
-                .iter()
-                .find(|wp| wp_has_fr(wp, prerequisite_id))
-                .ok_or_else(|| {
-                    anyhow::anyhow!("FR {} depends on unknown {}", fr.id, prerequisite_id)
-                })?;
-            let dependent_index = frs
-                .iter()
-                .position(|item| item.id == fr.id)
-                .expect("current FR exists");
-            let prerequisite_index = frs
-                .iter()
-                .position(|item| item.id == *prerequisite_id)
-                .ok_or_else(|| {
-                    anyhow::anyhow!("FR {} depends on unknown {}", fr.id, prerequisite_id)
-                })?;
-            fr_edges.push(WpDependency {
-                wp_id: (dependent_index + 1) as i64,
-                depends_on: (prerequisite_index + 1) as i64,
-                dep_type: DependencyType::Explicit,
-            });
-            if dependent.sequence == prerequisite.sequence {
-                continue;
-            }
-            edges.push(WpDependency {
-                wp_id: i64::from(dependent.sequence),
-                depends_on: i64::from(prerequisite.sequence),
-                dep_type: DependencyType::Explicit,
-            });
-        }
-    }
-    let states = wps
-        .iter()
-        .map(|wp| {
-            (
-                i64::from(wp.sequence),
-                agileplus_domain::domain::work_package::WpState::Planned,
-            )
-        })
-        .collect();
-    Scheduler::new(states, edges)
-        .execution_plan()
-        .map_err(|e| anyhow::anyhow!("explicit FR dependency cycle: {e}"))?;
-    let fr_states = (1..=frs.len())
-        .map(|i| {
-            (
-                i as i64,
-                agileplus_domain::domain::work_package::WpState::Planned,
-            )
-        })
-        .collect();
-    Scheduler::new(fr_states, fr_edges)
-        .execution_plan()
-        .map_err(|e| anyhow::anyhow!("explicit FR dependency cycle: {e}"))?;
-    Ok(())
 }
 
 /// Group FRs into logical WP batches (3-7 FRs per WP).
@@ -514,54 +341,6 @@ fn slugify(s: &str) -> String {
         .chars()
         .take(40)
         .collect()
-}
-
-fn reconcile_work_packages(
-    expected: Vec<WorkPackage>,
-    existing: Vec<WorkPackage>,
-) -> Result<Vec<WorkPackage>> {
-    let expected_sequences: std::collections::BTreeSet<i32> =
-        expected.iter().map(|wp| wp.sequence).collect();
-    for existing_wp in &existing {
-        if !expected_sequences.contains(&existing_wp.sequence) {
-            anyhow::bail!(
-                "existing work package for sequence {} is absent from generated plan; explicit replan required",
-                existing_wp.sequence
-            );
-        }
-    }
-
-    let mut reconciled = Vec::with_capacity(expected.len());
-    for generated in expected {
-        let matches: Vec<&WorkPackage> = existing
-            .iter()
-            .filter(|wp| wp.sequence == generated.sequence)
-            .collect();
-        if matches.len() > 1 {
-            anyhow::bail!(
-                "multiple existing work packages for sequence {}; explicit replan required",
-                generated.sequence
-            );
-        }
-        let Some(existing_wp) = matches.first() else {
-            reconciled.push(generated);
-            continue;
-        };
-        if existing_wp.title != generated.title
-            || existing_wp.acceptance_criteria != generated.acceptance_criteria
-            || existing_wp.file_scope != generated.file_scope
-        {
-            anyhow::bail!(
-                "existing work package for sequence {} does not match generated plan; explicit replan required",
-                generated.sequence
-            );
-        }
-        let mut reused = generated;
-        reused.id = existing_wp.id;
-        reused.state = existing_wp.state;
-        reconciled.push(reused);
-    }
-    Ok(reconciled)
 }
 
 /// Generate plan.md content.
@@ -662,10 +441,10 @@ fn generate_wp_prompt(wp: &WorkPackage, feature_name: &str, slug: &str) -> Strin
         "Implement this work package according to the acceptance criteria above.".to_string(),
     );
     lines.push(format!(
-        "Refer to `docs/agileplus/{slug}/spec.md` for the full specification and"
+        "Refer to `kitty-specs/{slug}/spec.md` for the full specification and"
     ));
     lines.push(format!(
-        "`docs/agileplus/{slug}/plan.md` for the implementation plan."
+        "`kitty-specs/{slug}/plan.md` for the implementation plan."
     ));
     lines.join("\n")
 }
@@ -676,20 +455,9 @@ fn build_governance_contract(feature_id: i64, wps: &[WorkPackage]) -> Governance
 
     // Rule: each WP must have CI pass before merge
     for wp in wps {
-        let mut required_evidence = vec![format!("FR-CI:{}", EvidenceType::CiOutput.as_str())];
-        for line in wp.acceptance_criteria.lines() {
-            if let Some(fr) = line
-                .trim_start_matches([' ', '-'])
-                .split_whitespace()
-                .next()
-                && fr.starts_with("FR-")
-            {
-                required_evidence.push(format!("{fr}:{}", EvidenceType::TestResult.as_str()));
-            }
-        }
         rules.push(GovernanceRule {
             transition: format!("WP{:02}: Doing -> Review", wp.sequence),
-            required_evidence,
+            required_evidence: vec![format!("FR-CI:{}", EvidenceType::CiOutput.as_str())],
             policy_refs: vec![],
         });
         rules.push(GovernanceRule {
@@ -724,75 +492,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn duplicate_sequences_are_reported_without_mutating_records() {
-        let first = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
-        let second = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
-        let duplicates = duplicate_sequences(&[first, second]);
-        assert_eq!(duplicates, vec![1]);
-    }
-
-    #[test]
-    fn plan_state_summary_reports_preserved_non_researched_states() {
-        assert_eq!(
-            plan_state_summary(FeatureState::Implementing),
-            "Implementing (preserved)"
-        );
-        assert_eq!(
-            plan_state_summary(FeatureState::Validated),
-            "Validated (preserved)"
-        );
-    }
-
-    #[test]
-    fn reconcile_reuses_existing_work_packages_by_sequence() {
-        let mut expected = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
-        expected.file_scope = vec!["src/api.rs".into()];
-        let mut existing = expected.clone();
-        existing.id = 42;
-        let reconciled = reconcile_work_packages(vec![expected], vec![existing]).unwrap();
-        assert_eq!(reconciled[0].id, 42);
-    }
-
-    #[test]
-    fn reconcile_rejects_mismatched_existing_work_package() {
-        let expected = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
-        let existing = WorkPackage::new(7, "Old API (WP01)", 1, "- FR-001 -- API");
-        let err = reconcile_work_packages(vec![expected], vec![existing]).unwrap_err();
-        assert!(err.to_string().contains("sequence 1"));
-    }
-
-    #[test]
-    fn reconcile_rejects_duplicate_existing_sequences() {
-        let expected = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
-        let duplicate = expected.clone();
-        let err =
-            reconcile_work_packages(vec![expected.clone()], vec![duplicate, expected]).unwrap_err();
-        assert!(err.to_string().contains("multiple existing work packages"));
-    }
-
-    #[test]
-    fn reconcile_rejects_persisted_sequences_absent_from_generated_plan() {
-        let expected = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
-        let stale = WorkPackage::new(7, "Retired UI (WP02)", 2, "- FR-002 -- UI");
-
-        let err = reconcile_work_packages(vec![expected], vec![stale]).unwrap_err();
-
-        assert!(err.to_string().contains("sequence 2"));
-        assert!(err.to_string().contains("explicit replan required"));
-    }
-
-    #[test]
-    fn reconcile_rejects_file_scope_mismatch() {
-        let mut expected = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
-        expected.file_scope = vec!["src/new.rs".into()];
-        let mut existing = expected.clone();
-        existing.id = 42;
-        existing.file_scope = vec!["src/old.rs".into()];
-        let err = reconcile_work_packages(vec![expected], vec![existing]).unwrap_err();
-        assert!(err.to_string().contains("sequence 1"));
-    }
-
-    #[test]
     fn parse_frs_basic() {
         let spec = "## Functional Requirements\n- **FR-001**: Login must work\n- **FR-002**: Logout must work\n";
         let frs = parse_functional_requirements(spec);
@@ -813,7 +512,6 @@ mod tests {
             .map(|i| FunctionalRequirement {
                 id: format!("FR-{i:03}"),
                 description: format!("desc {i}"),
-                dependencies: vec![],
             })
             .collect();
         let groups = group_frs_into_wps(&frs, 20);
@@ -844,435 +542,5 @@ mod tests {
         assert!(plan.contains("# Plan: my-feature"));
         assert!(plan.contains("WP01: Auth Module"));
         assert!(plan.contains("Execution Waves"));
-    }
-
-    // ── duplicate_sequences additional tests ─────────────────────────
-
-    #[test]
-    fn duplicate_sequences_no_duplicates() {
-        let wp1 = WorkPackage::new(1, "A (WP01)", 1, "- FR-001");
-        let wp2 = WorkPackage::new(1, "B (WP02)", 2, "- FR-002");
-        assert!(duplicate_sequences(&[wp1, wp2]).is_empty());
-    }
-
-    #[test]
-    fn duplicate_sequences_empty_list() {
-        assert!(duplicate_sequences(&[]).is_empty());
-    }
-
-    #[test]
-    fn duplicate_sequences_multiple_duplicates() {
-        let wp1 = WorkPackage::new(1, "A (WP01)", 1, "- FR-001");
-        let wp2 = WorkPackage::new(1, "A (WP01)", 1, "- FR-001");
-        let wp3 = WorkPackage::new(1, "B (WP02)", 2, "- FR-002");
-        let wp4 = WorkPackage::new(1, "B (WP02)", 2, "- FR-002");
-        let dups = duplicate_sequences(&[wp1, wp2, wp3, wp4]);
-        assert_eq!(dups, vec![1, 2]);
-    }
-
-    // ── plan_state_summary all states ───────────────────────────────
-
-    #[test]
-    fn plan_state_summary_researched() {
-        assert_eq!(
-            plan_state_summary(FeatureState::Researched),
-            "Researched -> Planned"
-        );
-    }
-
-    #[test]
-    fn plan_state_summary_planned() {
-        assert_eq!(
-            plan_state_summary(FeatureState::Planned),
-            "Planned (preserved)"
-        );
-    }
-
-    #[test]
-    fn plan_state_summary_shipped() {
-        assert_eq!(
-            plan_state_summary(FeatureState::Shipped),
-            "Shipped (preserved)"
-        );
-    }
-
-    #[test]
-    fn plan_state_summary_retrospected() {
-        assert_eq!(
-            plan_state_summary(FeatureState::Retrospected),
-            "Retrospected (preserved)"
-        );
-    }
-
-    #[test]
-    fn plan_state_summary_created() {
-        assert_eq!(
-            plan_state_summary(FeatureState::Created),
-            "Created (preserved)"
-        );
-    }
-
-    #[test]
-    fn plan_state_summary_specified() {
-        assert_eq!(
-            plan_state_summary(FeatureState::Specified),
-            "Specified (preserved)"
-        );
-    }
-
-    // ── reconcile additional tests ──────────────────────────────────
-
-    #[test]
-    fn reconcile_no_existing_works() {
-        let wp = WorkPackage::new(1, "Build API (WP01)", 1, "- FR-001 -- API");
-        let reconciled = reconcile_work_packages(vec![wp], vec![]).unwrap();
-        assert_eq!(reconciled.len(), 1);
-        assert_eq!(reconciled[0].id, 0); // new, not persisted
-    }
-
-    #[test]
-    fn reconcile_reuses_preserves_state() {
-        let mut expected = WorkPackage::new(1, "Build API (WP01)", 1, "- FR-001 -- API");
-        expected.file_scope = vec!["src/api.rs".into()];
-        let mut existing = expected.clone();
-        existing.id = 42;
-        existing.state = agileplus_domain::domain::work_package::WpState::Doing;
-        let reconciled = reconcile_work_packages(vec![expected], vec![existing]).unwrap();
-        assert_eq!(reconciled[0].id, 42);
-        assert_eq!(
-            reconciled[0].state,
-            agileplus_domain::domain::work_package::WpState::Doing
-        );
-    }
-
-    // ── parse_functional_requirements additional tests ───────────────
-
-    #[test]
-    fn parse_frs_plain_text_format() {
-        let spec = "FR-005: plain text requirement\n";
-        let frs = parse_functional_requirements(spec);
-        assert_eq!(frs.len(), 1);
-        assert_eq!(frs[0].id, "FR-005");
-    }
-
-    #[test]
-    fn parse_frs_deduplicates_by_id() {
-        let spec =
-            "- **FR-001**: first mention\n- **FR-002**: second\n- **FR-001**: duplicate mention\n";
-        let frs = parse_functional_requirements(spec);
-        assert_eq!(frs.len(), 2);
-        assert_eq!(frs[0].description, "first mention");
-    }
-
-    #[test]
-    fn parse_frs_ignores_scenario_references_before_definitions() {
-        let spec = "2. **Given** FR-003 has no test evidence, **When** a report is generated, **Then** it references FR-001: missing evidence\n- **FR-001**: System MUST specify a feature\n- **FR-003**: System MUST plan traced work packages";
-        let frs = parse_functional_requirements(spec);
-        assert_eq!(frs.len(), 2);
-        assert_eq!(frs[0].id, "FR-001");
-        assert_eq!(frs[0].description, "System MUST specify a feature");
-        assert_eq!(frs[1].id, "FR-003");
-    }
-
-    #[test]
-    fn parse_frs_skips_id_without_description() {
-        // FR- with no digits after it should not match since id.len() > 3 check
-        let spec = "FR-: empty\n";
-        let frs = parse_functional_requirements(spec);
-        assert_eq!(frs.len(), 0);
-    }
-
-    #[test]
-    fn parse_frs_many_requirements() {
-        let lines: Vec<String> = (1..=20)
-            .map(|i| format!("- **FR-{i:03}**: requirement {i}"))
-            .collect();
-        let spec = lines.join("\n");
-        let frs = parse_functional_requirements(&spec);
-        assert_eq!(frs.len(), 20);
-    }
-
-    // ── group_frs_into_wps additional tests ─────────────────────────
-
-    #[test]
-    fn group_frs_large_set() {
-        let frs: Vec<FunctionalRequirement> = (1..=20)
-            .map(|i| FunctionalRequirement {
-                id: format!("FR-{i:03}"),
-                description: format!("desc {i}"),
-                dependencies: vec![],
-            })
-            .collect();
-        let groups = group_frs_into_wps(&frs, 5);
-        let total: usize = groups.iter().map(|g| g.len()).sum();
-        assert_eq!(total, 20);
-        // Each group should be between 3 and 7 items
-        for g in &groups {
-            assert!(g.len() >= 3 && g.len() <= 7, "group len={}", g.len());
-        }
-    }
-
-    #[test]
-    fn group_frs_fewer_than_min_per_wp() {
-        // 2 FRs with max_wps=1 -> target_per_wp=2, clamped to 3
-        let frs: Vec<FunctionalRequirement> = (1..=2)
-            .map(|i| FunctionalRequirement {
-                id: format!("FR-{i:03}"),
-                description: format!("desc {i}"),
-                dependencies: vec![],
-            })
-            .collect();
-        let groups = group_frs_into_wps(&frs, 1);
-        let total: usize = groups.iter().map(|g| g.len()).sum();
-        assert_eq!(total, 2);
-    }
-
-    // ── slugify additional tests ────────────────────────────────────
-
-    #[test]
-    fn slugify_special_characters() {
-        assert_eq!(slugify("Hello, World! @#$%"), "hello-world");
-    }
-
-    #[test]
-    fn slugify_long_string_truncated() {
-        let long = "a".repeat(60);
-        let result = slugify(&long);
-        assert!(result.len() <= 40);
-    }
-
-    #[test]
-    fn slugify_empty_string() {
-        assert_eq!(slugify(""), "");
-    }
-
-    #[test]
-    fn slugify_consecutive_special_chars() {
-        assert_eq!(slugify("a---b"), "a-b");
-    }
-
-    // ── generate_plan_md additional tests ───────────────────────────
-
-    #[test]
-    fn generate_plan_md_with_dependencies() {
-        let wp1 = WorkPackage::new(1, "Auth (WP01)", 1, "- criteria 1");
-        let wp2 = WorkPackage::new(1, "API (WP02)", 2, "- criteria 2");
-        let deps = vec![agileplus_domain::domain::work_package::WpDependency {
-            wp_id: 2,
-            depends_on: 1,
-            dep_type: agileplus_domain::domain::work_package::DependencyType::FileOverlap,
-        }];
-        let plan = generate_plan_md("feat", &[wp1, wp2], &deps, &[]);
-        assert!(plan.contains("Dependencies"));
-        assert!(plan.contains("1")); // dep reference
-    }
-
-    #[test]
-    fn generate_plan_md_with_waves() {
-        let wp1 = WorkPackage::new(1, "A (WP01)", 1, "- c1");
-        let wp2 = WorkPackage::new(1, "B (WP02)", 2, "- c2");
-        let waves = vec![crate::commands::scheduler::ExecutionWave {
-            wave_number: 1,
-            wp_ids: vec![1],
-        }];
-        let plan = generate_plan_md("feat", &[wp1, wp2], &[], &waves);
-        assert!(plan.contains("Wave 1"));
-        assert!(plan.contains("parallel"));
-    }
-
-    #[test]
-    fn generate_plan_md_with_file_scope() {
-        let mut wp = WorkPackage::new(1, "Scoped (WP01)", 1, "- c1");
-        wp.file_scope = vec!["src/main.rs".into(), "src/lib.rs".into()];
-        let plan = generate_plan_md("feat", &[wp], &[], &[]);
-        assert!(plan.contains("File Scope"));
-        assert!(plan.contains("`src/main.rs`"));
-    }
-
-    #[test]
-    fn generate_plan_md_empty_wps() {
-        let plan = generate_plan_md("feat", &[], &[], &[]);
-        assert!(plan.contains("# Plan: feat"));
-        assert!(plan.contains("WPs**: 0"));
-    }
-
-    // ── derive_wp_title tests ───────────────────────────────────────
-
-    #[test]
-    fn derive_wp_title_empty_frs() {
-        let title = derive_wp_title(&[], 3);
-        assert_eq!(title, "Work Package 03");
-    }
-
-    #[test]
-    fn derive_wp_title_truncates_long_description() {
-        let fr = FunctionalRequirement {
-            id: "FR-001".into(),
-            description: "A".repeat(80),
-            dependencies: vec![],
-        };
-        let title = derive_wp_title(&[fr], 1);
-        // Title should be truncated to ~50 chars of the description + WP suffix
-        assert!(title.len() < 80);
-        assert!(title.contains("WP01"));
-    }
-
-    // ── generate_wp_prompt tests ─────────────────────────────────────
-
-    #[test]
-    fn generate_wp_prompt_contains_frontmatter() {
-        let wp = WorkPackage::new(1, "Auth Module (WP01)", 1, "- FR-001 login");
-        let prompt = generate_wp_prompt(&wp, "My Feature", "my-feat");
-        assert!(prompt.contains("work_package_id: WP01"));
-        assert!(prompt.contains("title: Auth Module (WP01)"));
-        assert!(prompt.contains("feature: My Feature"));
-        assert!(prompt.contains("feature_slug: my-feat"));
-        assert!(prompt.contains("sequence: 1"));
-        assert!(prompt.contains("state: planned"));
-    }
-
-    #[test]
-    fn generate_wp_prompt_contains_sections() {
-        let wp = WorkPackage::new(1, "Auth (WP01)", 1, "- criteria 1\n- criteria 2");
-        let prompt = generate_wp_prompt(&wp, "F", "f");
-        assert!(prompt.contains("# Work Package: Auth (WP01)"));
-        assert!(prompt.contains("## Feature"));
-        assert!(prompt.contains("## Acceptance Criteria"));
-        assert!(prompt.contains("## File Scope"));
-        assert!(prompt.contains("## Instructions"));
-    }
-
-    #[test]
-    fn generate_wp_prompt_acceptance_criteria_included() {
-        let wp = WorkPackage::new(1, "WP", 1, "- FR-001 must login\n- FR-002 must logout");
-        let prompt = generate_wp_prompt(&wp, "F", "f");
-        assert!(prompt.contains("FR-001 must login"));
-        assert!(prompt.contains("FR-002 must logout"));
-    }
-
-    #[test]
-    fn generate_wp_prompt_empty_file_scope_auto_detect() {
-        let wp = WorkPackage::new(1, "WP", 1, "- criteria");
-        let prompt = generate_wp_prompt(&wp, "F", "f");
-        assert!(prompt.contains("(auto-detect from spec)"));
-    }
-
-    #[test]
-    fn generate_wp_prompt_with_file_scope() {
-        let mut wp = WorkPackage::new(1, "WP", 1, "- criteria");
-        wp.file_scope = vec!["src/main.rs".into(), "src/lib.rs".into()];
-        let prompt = generate_wp_prompt(&wp, "F", "f");
-        assert!(prompt.contains("`src/main.rs`"));
-        assert!(prompt.contains("`src/lib.rs`"));
-    }
-
-    #[test]
-    fn generate_wp_prompt_references_plan_and_spec() {
-        let wp = WorkPackage::new(1, "WP", 1, "- c");
-        let prompt = generate_wp_prompt(&wp, "F", "my-feat");
-        assert!(prompt.contains("docs/agileplus/my-feat/spec.md"));
-        assert!(prompt.contains("docs/agileplus/my-feat/plan.md"));
-    }
-
-    // ── build_governance_contract tests ───────────────────────────────
-
-    #[test]
-    fn build_governance_contract_generates_rules_per_wp() {
-        let wp1 = WorkPackage::new(1, "A (WP01)", 1, "- c1");
-        let wp2 = WorkPackage::new(1, "B (WP02)", 2, "- c2");
-        let contract = build_governance_contract(42, &[wp1, wp2]);
-        // 2 WPs -> 2 doing->review + 2 review->done = 4 rules
-        assert_eq!(contract.rules.len(), 4);
-        assert_eq!(contract.feature_id, 42);
-        assert_eq!(contract.version, 1);
-    }
-
-    #[test]
-    fn build_governance_contract_rule_transitions() {
-        let wp = WorkPackage::new(1, "A (WP01)", 1, "- c1");
-        let contract = build_governance_contract(1, &[wp]);
-        assert!(contract.rules[0].transition.contains("Doing -> Review"));
-        assert!(contract.rules[1].transition.contains("Review -> Done"));
-    }
-
-    #[test]
-    fn build_governance_contract_ci_evidence() {
-        let wp = WorkPackage::new(1, "A (WP01)", 1, "- c1");
-        let contract = build_governance_contract(1, &[wp]);
-        assert!(contract.rules[0].required_evidence[0].contains("CI"));
-    }
-
-    #[test]
-    fn explicit_fr_dependencies_are_parsed_and_wp_identity_is_exact() {
-        let frs = parse_functional_requirements(
-            "- **FR-001**: First\n- **FR-0010**: Tenth\n- **FR-004**: depends on FR-001 and FR-0010",
-        );
-        assert_eq!(frs[2].dependencies, vec!["FR-001", "FR-0010"]);
-        let wp = WorkPackage::new(1, "Tenth", 2, "- FR-0010 -- Tenth");
-        assert!(!wp_has_fr(&wp, "FR-001"));
-        assert!(wp_has_fr(&wp, "FR-0010"));
-    }
-
-    #[test]
-    fn explicit_dependency_cycle_and_unknown_fr_fail_preflight() {
-        let wps = vec![
-            WorkPackage::new(1, "First", 1, "- FR-001 -- First"),
-            WorkPackage::new(1, "Second", 2, "- FR-004 -- Second"),
-        ];
-        let cyclic =
-            parse_functional_requirements("FR-001: depends on FR-004\nFR-004: depends on FR-001");
-        assert!(
-            preflight_fr_dependencies(&cyclic, &wps)
-                .unwrap_err()
-                .to_string()
-                .contains("cycle")
-        );
-        let unknown = parse_functional_requirements("FR-001: depends on FR-999\nFR-004: task");
-        assert!(
-            preflight_fr_dependencies(&unknown, &wps)
-                .unwrap_err()
-                .to_string()
-                .contains("unknown")
-        );
-    }
-
-    #[test]
-    fn generated_contract_binds_each_fr_to_its_wp() {
-        let wp = WorkPackage::new(1, "Implementation", 2, "- FR-004 -- depends on FR-001");
-        let contract = build_governance_contract(1, &[wp]);
-        assert_eq!(contract.rules[0].transition, "WP02: Doing -> Review");
-        assert!(
-            contract.rules[0]
-                .required_evidence
-                .contains(&"FR-004:test_result".to_string())
-        );
-        assert!(
-            !contract.rules[0]
-                .required_evidence
-                .contains(&"FR-001:test_result".to_string())
-        );
-    }
-
-    #[test]
-    fn build_governance_contract_review_evidence() {
-        let wp = WorkPackage::new(1, "A (WP01)", 1, "- c1");
-        let contract = build_governance_contract(1, &[wp]);
-        assert!(contract.rules[1].required_evidence[0].contains("REVIEW"));
-    }
-
-    #[test]
-    fn build_governance_contract_empty_wps() {
-        let contract = build_governance_contract(1, &[]);
-        assert!(contract.rules.is_empty());
-        assert_eq!(contract.feature_id, 1);
-    }
-
-    #[test]
-    fn build_governance_contract_bound_at_set() {
-        let before = chrono::Utc::now();
-        let contract = build_governance_contract(1, &[]);
-        let after = chrono::Utc::now();
-        assert!(contract.bound_at >= before);
-        assert!(contract.bound_at <= after);
     }
 }

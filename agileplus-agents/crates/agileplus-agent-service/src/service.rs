@@ -10,20 +10,15 @@ use tracing::{info, warn};
 use uuid::Uuid;
 
 // Include generated protobuf types.
-// `dead_code` is allowed here only because these are machine-generated
-// prost/tonic types for the full gRPC contract; this binary implements a
-// single service and never constructs the remaining generated messages, and
-// the generated file cannot carry its own attribute from source.
-#[allow(dead_code)]
 pub mod proto {
     tonic::include_proto!("agileplus.v1");
 }
 
 use proto::{
-    AgentEventsRequest, AgentEventsResponse, CancelAgentRequest, CancelAgentResponse,
-    GetAgentStatusRequest, GetAgentStatusResponse, GetReviewStatusRequest, GetReviewStatusResponse,
-    SpawnAgentRequest, SpawnAgentResponse, StartReviewLoopRequest, StartReviewLoopResponse,
-    agent_dispatch_service_server::AgentDispatchService,
+    agent_dispatch_service_server::AgentDispatchService, CancelAgentRequest, CancelAgentResponse,
+    GetAgentStatusRequest, GetAgentStatusResponse, SpawnAgentRequest, SpawnAgentResponse,
+    StartReviewLoopRequest, StartReviewLoopResponse, GetReviewStatusRequest,
+    GetReviewStatusResponse, AgentEventsRequest, AgentEventsResponse,
 };
 
 // ─── Service implementation ───────────────────────────────────────────────────
@@ -134,17 +129,14 @@ impl AgentDispatchService for AgentDispatchServiceImpl {
     }
 
     /// Bidirectional streaming for agent events (stub — not yet implemented).
-    type AgentEventsStream =
-        tokio_stream::wrappers::ReceiverStream<Result<AgentEventsResponse, Status>>;
+    type AgentEventsStream = tokio_stream::wrappers::ReceiverStream<Result<AgentEventsResponse, Status>>;
 
     async fn agent_events(
         &self,
         _request: Request<tonic::Streaming<AgentEventsRequest>>,
     ) -> Result<Response<Self::AgentEventsStream>, Status> {
         let (_tx, rx) = tokio::sync::mpsc::channel(1);
-        Ok(Response::new(tokio_stream::wrappers::ReceiverStream::new(
-            rx,
-        )))
+        Ok(Response::new(tokio_stream::wrappers::ReceiverStream::new(rx)))
     }
 
     /// Trigger the review-fix loop for a PR (stub — delegates to agent-review).

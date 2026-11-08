@@ -1,9 +1,5 @@
 <!-- work-state: 🟢 ready | ██████████ 100% (phase-finish-stack complete) -->
-
-[![AI slop inside](https://sladge.net/badge.svg)](https://sladge.net) [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/<REDACTED>/AgilePlus/total)](https://github.com/KooshaPari/AgilePlus/releases)
-
 # build / coverage / e2e / perf / qe
-
 [![Coverage ≥85%](https://img.shields.io/badge/coverage-≥85%25-brightgreen)](.github/workflows/coverage.yml)
 [![E2E](https://img.shields.io/badge/e2e-100%25-brightgreen)](.github/workflows/e2e.yml)
 [![Perf](https://img.shields.io/badge/perf-100%25-brightgreen)](.github/workflows/perf.yml)
@@ -13,7 +9,6 @@
 [![GH Pages](https://img.shields.io/badge/GitHub%20Pages-live-success)](.github/workflows/deploy-frontend.yml)
 [![Helm](https://img.shields.io/badge/Helm-chart-blueviolet)](deploy/kubernetes/Chart.yaml)
 [![PWA](https://img.shields.io/badge/PWA-installable-orange)](workspace/manifest.json)
-
 **Quality Gate:** coverage ≥85% · e2e 100% · perf 100% · qe 100%
 
 <p align="center">
@@ -22,10 +17,10 @@
 <p align="center"><em>AI-native project management with hexagonal Rust core, Plane.so / GitHub integration, and an AI-agent MCP surface.</em></p>
 <p align="center"><sub><a href="assets/brand/README.md">Brand assets &amp; palette</a> · <a href="docs/assets/identity/">visual identity demo</a></sub></p>
 
+
 ## DINOForge Integration
 
 **DINOForge** (`Dino/`) — mod operating system for Diplomacy is Not an Option.
-
 - 12K+ files, .NET + Rust + Python + Go + Zig polyglot
 - 52 CI workflows, 21 releases (v1.1.0), 3,613+ tests
 - Pack system (YAML-first declarative content)
@@ -37,15 +32,14 @@
 
 # AgilePlus
 
-**Project management system with AI agent integration** — 21-crate Rust workspace with hexagonal architecture, Python MCP server, and Plane.so/GitHub integration.
+**Project management system with AI agent integration** — 24-crate Rust monorepo with hexagonal architecture, Python MCP server, and Plane.so/GitHub integration.
 
 ## Project Overview
 
 AgilePlus is a full-stack project management platform built with:
-
-- **Rust** (21 active crates) — Core domain, storage, event sourcing, CLI, REST API
+- **Rust** (24 crates) — Core domain, storage, event sourcing, CLI, REST API
 - **Python** — MCP server for AI agent integration
-- **TypeScript** — Electrobun desktop shell
+- **TypeScript** — pheno-cli, React components
 
 ## Key Features
 
@@ -68,10 +62,10 @@ bun install
 cargo build --workspace
 
 # Run CLI
-cargo run --package agileplus-cli -- --help
+cargo run --package pheno-cli -- --help
 
 # Start REST server
-cargo run --package agileplus-api
+cargo run --package pheno-cli -- serve
 
 # Run tests
 cargo test --workspace
@@ -79,21 +73,21 @@ cargo test --workspace
 
 ## Documentation
 
-| Document                                                   | Purpose                                 |
-| ---------------------------------------------------------- | --------------------------------------- |
-| [PLAN.md](./PLAN.md)                                       | Implementation phases and task tracking |
-| [PRD.md](./PRD.md)                                         | Product requirements and user journeys  |
-| [FUNCTIONAL_REQUIREMENTS.md](./FUNCTIONAL_REQUIREMENTS.md) | Detailed FR traceability                |
-| [AGENTS.md](./AGENTS.md)                                   | Agent interaction rules                 |
-| [GOVERNANCE.md](./GOVERNANCE.md)                           | Project governance                      |
+| Document | Purpose |
+|----------|---------|
+| [PLAN.md](./PLAN.md) | Implementation phases and task tracking |
+| [PRD.md](./PRD.md) | Product requirements and user journeys |
+| [FUNCTIONAL_REQUIREMENTS.md](./FUNCTIONAL_REQUIREMENTS.md) | Detailed FR traceability |
+| [AGENTS.md](./AGENTS.md) | Agent interaction rules |
+| [GOVERNANCE.md](./GOVERNANCE.md) | Project governance |
 
 ### MCP, APIs, and routing infrastructure
 
 ```
 AgilePlus/
-├── crates/          # 21 active Rust crates (workspace)
+├── crates/          # 24 Rust crates (workspace)
 ├── python/          # Python MCP server
-├── desktop/         # Electrobun desktop shell
+├── pheno-cli/       # CLI tool
 ├── kitty-specs/     # Feature specifications
 ├── docs/            # Documentation
 └── harnesses/       # Agent harness configs
@@ -115,7 +109,6 @@ not at shelf level.
 
 The files that were previously here describing AgilePlus have been moved to
 their correct locations:
-
 - AgilePlus governance → `AgilePlus/GOVERNANCE.md`
 - AgilePlus agent rules → `AgilePlus/AGENTS.md`
 - AgilePlus README → `AgilePlus/README.md`
@@ -126,6 +119,7 @@ their correct locations:
 - Project-specific issues: `cd <project>` and check that project's docs
 - Architecture decisions: `cat docs/adr/INDEX.md`
 - General questions: Check `projects/INDEX.md` first
+
 
 ## Worklog schema — cross-reference (ADR-032, 2026-06-18)
 

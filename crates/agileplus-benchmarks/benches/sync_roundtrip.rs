@@ -10,8 +10,7 @@
 //! - Sync with 5 conflicts:        < 10 s
 
 use agileplus_benchmarks::helpers::{SyncPayload, make_sync_payloads, simulate_sync_roundtrip};
-use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
-use std::hint::black_box;
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 
 // ---------------------------------------------------------------------------
 // Benchmark: single push (serialise + map to Plane schema)

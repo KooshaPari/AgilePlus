@@ -105,11 +105,11 @@ export const TaskChecklist: React.FC<TaskChecklistProps> = ({
           </p>
 
           {/* ── Task list ──────────────────────────────────────────────────── */}
-          <ul className="space-y-1">
+          <ul role="list" className="space-y-1">
             {DEFAULT_DEMO_TASKS.map((task) => {
               const isDone = completedTasks.includes(task.id);
               return (
-                <li key={task.id}>
+                <li key={task.id} role="listitem">
                   <button
                     type="button"
                     onClick={() => {

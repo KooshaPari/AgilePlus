@@ -38,7 +38,8 @@ pub(crate) fn get_latest_audit_entry(
         .lock()
         .expect("audit lock poisoned")
         .iter()
-        .rfind(|e| e.feature_id == feature_id)
+        .filter(|e| e.feature_id == feature_id)
+        .last()
         .cloned();
     async move { Ok(entry) }
 }

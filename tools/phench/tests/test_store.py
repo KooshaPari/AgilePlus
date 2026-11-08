@@ -36,16 +36,10 @@ class StoreTests(unittest.TestCase):
         self.assertIn("mirror_path", result)
         self.assertEqual(read_dual("alpha", "state.json"), {"answer": 42})
 
-    def test_read_dual_falls_back_to_home_mirror_when_project_copy_missing(
-        self,
-    ) -> None:
+    def test_read_dual_falls_back_to_home_mirror_when_project_copy_missing(self) -> None:
         dual_write("alpha", "state.json", {"answer": 42})
         project_file = (
-            Path(os.environ["THGENT_PHENOTYPE_ROOT"])
-            / "projects"
-            / "alpha"
-            / ".phench"
-            / "state.json"
+            Path(os.environ["THGENT_PHENOTYPE_ROOT"]) / "projects" / "alpha" / ".phench" / "state.json"
         )
         project_file.unlink()
 
@@ -54,11 +48,7 @@ class StoreTests(unittest.TestCase):
     def test_sync_dual_prefers_project_copy_when_requested(self) -> None:
         dual_write("alpha", "state.json", {"answer": 42})
         project_file = (
-            Path(os.environ["THGENT_PHENOTYPE_ROOT"])
-            / "projects"
-            / "alpha"
-            / ".phench"
-            / "state.json"
+            Path(os.environ["THGENT_PHENOTYPE_ROOT"]) / "projects" / "alpha" / ".phench" / "state.json"
         )
         mirror_file = (
             Path(os.environ["THGENT_PHENCH_HOME_ROOT"]) / "alpha" / ".phench" / "state.json"

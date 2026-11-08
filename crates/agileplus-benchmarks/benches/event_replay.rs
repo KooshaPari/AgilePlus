@@ -9,8 +9,7 @@ use agileplus_benchmarks::helpers::{
 };
 use agileplus_events::{replay_events, replay_events_since};
 use agileplus_sqlite::repository::events as event_repo;
-use criterion::{Criterion, criterion_group, criterion_main};
-use std::hint::black_box;
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 
 // ---------------------------------------------------------------------------
 // Setup helpers (synchronous – we drive the async runtime manually)

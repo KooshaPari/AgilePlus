@@ -2,32 +2,32 @@
 name = "agileplus-p2p"
 version.workspace = true
 edition.workspace = true
-rust-version.workspace = true
 license.workspace = true
-authors.workspace = true
-repository.workspace = true
+rust-version.workspace = true
+description = "P2P sync via Tailscale — peer discovery and event replication with vector clocks"
 
 [dependencies]
-agileplus-domain = { version = "0.2.4", path = "../agileplus-domain" }
-agileplus-events = { version = "0.2.4", path = "../agileplus-events" }
-async-nats.workspace = true
-async-trait.workspace = true
-bytes = "1"
-chrono.workspace = true
-hostname = "0.4"
-futures-util.workspace = true
+agileplus-domain = { path = "../agileplus-domain" }
+agileplus-events = { path = "../agileplus-events" }
+agileplus-sync = { path = "../agileplus-sync" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+async-nats = "0.47"
+async-trait = "0.1"
+uuid = { version = "1", features = ["v4", "serde"] }
+hyper = { version = "1", features = ["client", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
 http-body-util = "0.1"
-hyper = { workspace = true, features = ["client", "http1"] }
-hyper-util = { workspace = true, features = ["tokio", "http1"] }
-serde.workspace = true
-serde_json.workspace = true
-thiserror.workspace = true
-tokio.workspace = true
-tracing.workspace = true
-uuid.workspace = true
+bytes = "1"
+futures-util = "0.3"
+hostname = "0.4"
+tokio-retry = "0.3"
 
 [dev-dependencies]
+tokio = { workspace = true }
+proptest = "1"
 tempfile = "3"
-
-[package.metadata.dist]
-dist = false

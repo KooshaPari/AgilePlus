@@ -1,3 +1,5 @@
+use std::env;
+
 use super::*;
 
 #[test]
@@ -35,4 +37,16 @@ log_level = "verbose"
 "#;
     let config: AppConfig = toml::from_str(bad).unwrap();
     assert!(config.validate().is_err());
+}
+
+#[test]
+fn env_override_api_port() {
+    unsafe {
+        env::set_var("AGILEPLUS_API_PORT", "9999");
+    }
+    let port: u16 = env::var("AGILEPLUS_API_PORT").unwrap().parse().unwrap();
+    assert_eq!(port, 9999);
+    unsafe {
+        env::remove_var("AGILEPLUS_API_PORT");
+    }
 }

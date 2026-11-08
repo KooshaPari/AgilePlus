@@ -1,5 +1,4 @@
 [package]
-workspace = "../../.."
 name = "agileplus-agent-service"
 version.workspace = true
 edition.workspace = true
@@ -11,13 +10,13 @@ name = "agileplus-agent-service"
 path = "src/main.rs"
 
 [dependencies]
-agileplus-agent-dispatch = { version = "0.2.4", path = "../agileplus-agent-dispatch" }
+agileplus-agent-dispatch = { path = "../agileplus-agent-dispatch" }
+agileplus-agent-review = { path = "../agileplus-agent-review" }
 
 tokio = { workspace = true }
 tokio-stream = { workspace = true }
 tonic = { workspace = true }
 tonic-health = { workspace = true }
-tonic-prost = { workspace = true }
 prost = { workspace = true }
 async-trait = { workspace = true }
 tracing = { workspace = true }
@@ -26,10 +25,3 @@ uuid = { workspace = true }
 
 [build-dependencies]
 tonic-build = { workspace = true }
-tonic-prost-build = { workspace = true }
-
-[package.metadata.cargo-machete]
-ignored = ["tonic-prost"]
-
-[package.metadata.dist]
-dist = false

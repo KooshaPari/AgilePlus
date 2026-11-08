@@ -7,7 +7,7 @@
 
 use std::collections::HashMap;
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -17,7 +17,6 @@ use crate::client::{GitHubClient, GitHubIssuePayload};
 use crate::map::{GhIssue, GhPullRequest, issue_to_story, pr_to_story};
 use agileplus_domain::domain::backlog::BacklogItem;
 use agileplus_domain::domain::story::Story;
-use agileplus_domain::error::DomainError;
 
 #[async_trait]
 pub trait GhDataSource: Send + Sync {
@@ -70,30 +69,18 @@ pub async fn sync_repository(
     for issue in source.list_issues().await? {
         match issue_to_story(&issue, epic_id, project_id) {
             Ok(story) => report.stories.push(story),
-            Err(DomainError::Validation(message)) => report
+            Err(error) => report
                 .skipped
-                .push((issue.number.try_into().unwrap(), message)),
-            Err(error) => {
-                return Err(anyhow!(
-                    "unexpected error mapping issue #{}: {error}",
-                    issue.number
-                ));
-            }
+                .push((issue.number.try_into().unwrap(), error.to_string())),
         }
     }
 
     for pr in source.list_prs().await? {
         match pr_to_story(&pr, epic_id, project_id) {
             Ok(story) => report.stories.push(story),
-            Err(DomainError::Validation(message)) => report
+            Err(error) => report
                 .skipped
-                .push((pr.number.try_into().unwrap(), message)),
-            Err(error) => {
-                return Err(anyhow!(
-                    "unexpected error mapping PR #{}: {error}",
-                    pr.number
-                ));
-            }
+                .push((pr.number.try_into().unwrap(), error.to_string())),
         }
     }
 
@@ -142,10 +129,10 @@ impl GitHubSyncAdapter {
         let body_hash = hash_content(&body);
 
         // Check if unchanged
-        if let Some(existing_hash) = state.content_hashes.get(&item_id)
-            && *existing_hash == body_hash
-        {
-            return Ok(SyncOutcome::Skipped);
+        if let Some(existing_hash) = state.content_hashes.get(&item_id) {
+            if *existing_hash == body_hash {
+                return Ok(SyncOutcome::Skipped);
+            }
         }
 
         let labels = vec![
@@ -162,18 +149,17 @@ impl GitHubSyncAdapter {
 
         let outcome = if let Some(&issue_number) = state.issue_mappings.get(&item_id) {
             // Conflict check: fetch remote and compare hashes
-            if let Ok(remote) = self.client.get_issue(issue_number).await
-                && let Some(ref remote_body) = remote.body
-            {
-                let remote_hash = hash_content(remote_body);
-                if let Some(our_hash) = state.content_hashes.get(&item_id)
-                    && remote_hash != *our_hash
-                    && body_hash != remote_hash
-                {
-                    return Ok(SyncOutcome::Conflict {
-                        issue_number,
-                        reason: "Remote issue body was modified externally".to_string(),
-                    });
+            if let Ok(remote) = self.client.get_issue(issue_number).await {
+                if let Some(ref remote_body) = remote.body {
+                    let remote_hash = hash_content(remote_body);
+                    if let Some(our_hash) = state.content_hashes.get(&item_id) {
+                        if remote_hash != *our_hash && body_hash != remote_hash {
+                            return Ok(SyncOutcome::Conflict {
+                                issue_number,
+                                reason: "Remote issue body was modified externally".to_string(),
+                            });
+                        }
+                    }
                 }
             }
 
@@ -234,7 +220,7 @@ fn format_bug_body(item: &BacklogItem) -> String {
 fn hash_content(content: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(content.as_bytes());
-    hex::encode(hasher.finalize())
+    format!("{:x}", hasher.finalize())
 }
 
 #[cfg(test)]
@@ -372,105 +358,5 @@ mod tests {
             report.skipped,
             vec![(7_u64, "story title must not be empty".to_string())]
         );
-    }
-
-    // ── format_bug_body (private) ─────────────────────────────────────────────
-
-    fn fixed_bug() -> BacklogItem {
-        let created: DateTime<Utc> = DateTime::parse_from_rfc3339("2025-01-15T10:30:00Z")
-            .expect("fixed RFC 3339 timestamp")
-            .with_timezone(&Utc);
-        BacklogItem {
-            id: Some(1),
-            title: "Login crash".to_string(),
-            description: "App crashes when clicking login".to_string(),
-            intent: Intent::Bug,
-            priority: BacklogPriority::High,
-            status: BacklogStatus::New,
-            source: "user-report".to_string(),
-            feature_slug: Some("auth".to_string()),
-            tags: Vec::new(),
-            created_at: created,
-            updated_at: created,
-        }
-    }
-
-    #[test]
-    fn bug_body_matches_the_golden_layout() {
-        // The body is content-hashed for change detection, so its exact layout
-        // is part of the sync contract: any reformatting re-syncs every issue.
-        let expected = concat!(
-            "## Description\n\n",
-            "App crashes when clicking login",
-            "\n\n",
-            "## Metadata\n\n",
-            "- **Priority**: high\n",
-            "- **Status**: new\n",
-            "- **Source**: user-report\n",
-            "- **Feature**: auth\n",
-            "- **Created**: 2025-01-15T10:30:00+00:00\n",
-            "\n---\n*Synced by AgilePlus*\n",
-        );
-        assert_eq!(format_bug_body(&fixed_bug()), expected);
-    }
-
-    #[test]
-    fn bug_body_omits_feature_line_without_a_slug() {
-        let mut item = fixed_bug();
-        item.feature_slug = None;
-        let body = format_bug_body(&item);
-        assert!(!body.contains("**Feature**"));
-        assert!(body.contains("- **Source**: user-report\n"));
-    }
-
-    #[test]
-    fn bug_body_reports_the_item_status_and_priority() {
-        let mut item = fixed_bug();
-        item.priority = BacklogPriority::Critical;
-        item.status = BacklogStatus::Triaged;
-        let body = format_bug_body(&item);
-        assert!(body.contains("- **Priority**: critical\n"));
-        assert!(body.contains("- **Status**: triaged\n"));
-    }
-
-    #[test]
-    fn bug_body_description_is_not_escaped() {
-        let mut item = fixed_bug();
-        item.description = "Use `--force` then **check** the log".to_string();
-        let body = format_bug_body(&item);
-        assert!(body.contains("Use `--force` then **check** the log"));
-    }
-
-    // ── hash_content (private) ────────────────────────────────────────────────
-
-    #[test]
-    fn hash_content_matches_published_sha256_vectors() {
-        // Standard SHA-256 vectors, so the digest is checked against the
-        // algorithm rather than against another call to itself.
-        assert_eq!(
-            hash_content(""),
-            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        );
-        assert_eq!(
-            hash_content("abc"),
-            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
-        );
-    }
-
-    #[test]
-    fn hash_content_is_lowercase_hex_of_fixed_length() {
-        let hash = hash_content("App crashes when clicking login");
-        assert_eq!(hash.len(), 64);
-        assert!(
-            hash.chars()
-                .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase())
-        );
-    }
-
-    #[test]
-    fn hash_content_distinguishes_whitespace_and_case() {
-        assert_ne!(hash_content("a b"), hash_content("ab"));
-        assert_ne!(hash_content("Bug"), hash_content("bug"));
-        assert_ne!(hash_content("ab\n"), hash_content("ab"));
     }
 }

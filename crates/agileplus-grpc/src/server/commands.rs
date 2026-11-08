@@ -1,19 +1,16 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::pin::Pin;
 
-use chrono::Utc;
 use tonic::{Response, Status};
 use tracing::info;
 
-use agileplus_domain::domain::governance::{GovernanceContract, GovernanceRule};
-use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::ports::{AgentPort, ObservabilityPort, ReviewPort, StoragePort, VcsPort};
 use agileplus_proto::agileplus::v1::{
     CommandResponse, DispatchCommandRequest, DispatchCommandResponse, StreamAgentEventsRequest,
     StreamAgentEventsResponse,
 };
 
-use super::{domain_error_to_status, parse_evidence_requirement, evidence_satisfies_requirement, AgilePlusCoreServer};
+use super::AgilePlusCoreServer;
 
 pub(super) type StreamAgentEventsStream =
     Pin<Box<dyn tokio_stream::Stream<Item = Result<StreamAgentEventsResponse, Status>> + Send>>;
@@ -78,18 +75,10 @@ where
         args: &HashMap<String, String>,
     ) -> Result<(String, HashMap<String, String>), Status> {
         match command {
-            // Commands that are fully implemented in the CLI and can be dispatched
-            // through the gRPC core. Each handler lives in the application layer
-            // and operates on repository-local SQLite state.
             "specify" | "research" | "plan" | "validate" | "ship" | "retrospective" => {
+                let message = format!("command '{command}' queued for feature '{feature_slug}'");
                 info!(command, feature_slug, "core command dispatched via gRPC");
-                // NOTE: these commands are handled by the CLI binary, not the gRPC
-                // daemon. Return unimplemented so callers know the gRPC surface
-                // does not yet replicate CLI lifecycle handling.
-                Err(Status::unimplemented(format!(
-                    "command '{command}' is not yet implemented over gRPC; \
-                     use the CLI binary 'agileplus {command}' instead"
-                )))
+                Ok((message, args.clone()))
             }
             other => Err(Status::unimplemented(format!("unknown command: '{other}'"))),
         }

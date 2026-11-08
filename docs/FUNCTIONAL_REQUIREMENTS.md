@@ -17,6 +17,7 @@ This document scaffolds the functional requirements for AgilePlus. Requirements 
 - **APLUS-007:** Dashboard for visual spec governance and WP tracking
 - **APLUS-008:** Traceability queries (FR→test→commit mapping)
 
+
 ## Test Coverage
 
 All requirements must have corresponding tests. Track coverage in PR reviews.

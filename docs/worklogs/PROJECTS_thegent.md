@@ -6,12 +6,12 @@
 
 ## Summary by Priority
 
-| Priority | Count | Items                                                               |
-| -------- | ----- | ------------------------------------------------------------------- |
-| P0       | 2     | Cross-Project Duplication Audit, Governance Implementation          |
-| P1       | 3     | MCP Integration, Hexagonal Architecture Review, Plane Fork Decision |
-| P2       | 2     | Performance Research, Benchmarking                                  |
-| P3       | 0     | -                                                                   |
+| Priority | Count | Items |
+|----------|-------|-------|
+| P0 | 2 | Cross-Project Duplication Audit, Governance Implementation |
+| P1 | 3 | MCP Integration, Hexagonal Architecture Review, Plane Fork Decision |
+| P2 | 2 | Performance Research, Benchmarking |
+| P3 | 0 | - |
 
 ---
 
@@ -26,14 +26,12 @@
 **Summary:** Comprehensive audit of AgilePlus codebase for cross-project duplication. Found 36+ error enums, 4 config patterns, 3 health check types.
 
 **Findings:**
-
 - Error types: Semantic duplication across `DomainError`, `ApiError`, `GraphError`
 - Health checks: `GraphHealth`, `CacheHealth`, `BusHealth` should unify
 - Config loading: 4 implementations with identical patterns
 - Store traits: 3 async traits with overlapping patterns
 
 **Next Steps:**
-
 - [x] Complete audit
 - [ ] Execute FORK-001 and FORK-002
 
@@ -50,7 +48,6 @@
 **Summary:** Deep research on 30 starred GitHub repos for relevance to Phenotype ecosystem.
 
 **Key Findings:**
-
 - **harbor-framework/skills**: Agent skills framework - HIGH relevance for tool definitions
 - **khoj-ai/khoj**: Local AI knowledge base - HIGH relevance for RAG
 - **pathwaycom/pathway**: Real-time ML processing - HIGH relevance for agent pipelines
@@ -59,13 +56,11 @@
 - **great-expectations**: Data validation - HIGH relevance for agent evaluation
 
 **Recommendations:**
-
 - Fork/adapt `harbor-skills` for agent tool definitions
 - Integrate `pathway` for streaming agent data
 - Use `great-expectations` patterns for agent validation
 
 **Next Steps:**
-
 - [ ] Evaluate fork candidates from starred repos
 - [ ] Design `platforms/knowledge-base` repo
 - [ ] Create `platforms/pathway-xpack` integration
@@ -81,14 +76,12 @@
 **Summary:** Research MCP integration patterns from various sources.
 
 **Findings:**
-
 - FastMCP patterns from `ahs-bh/fastmcp`
 - Claude Skill Registry schema
 - Pathway MCP server implementation
 - Lightdash MCP integration
 
 **Next Steps:**
-
 - [ ] Design MCP tool definitions
 - [ ] Implement skill-based tool registry
 - [ ] Add Pathway MCP integration
@@ -104,19 +97,16 @@
 **Summary:** Decision on forking Plane vs continuing with upstream.
 
 **Options:**
-
 1. Continue with upstream Plane
 2. Fork to `thegent/plane`
 3. Migrate to alternative (Linear, Plane OSS, Worktrunk)
 
 **Factors:**
-
 - Customization needs
 - Maintenance burden
 - Community support
 
 **Next Steps:**
-
 - [ ] Complete requirements analysis
 - [ ] Evaluate fork cost/benefit
 - [ ] Make decision by EOW
@@ -132,13 +122,11 @@
 **Summary:** Reviewed hexagonal architecture patterns in codebase.
 
 **Findings:**
-
 - `libs/hexagonal-rs` exists but underutilized
 - Ports and adapters pattern inconsistently applied
 - Domain-driven design principles partially followed
 
 **Recommendations:**
-
 - Promote `hexagonal-rs` usage
 - Standardize on ports/adapters pattern
 - Extract shared domain logic
@@ -168,7 +156,6 @@
 | Migration Needed | git2 → gix | Planned |
 
 **Next Steps:**
-
 - [x] Create fork plan
 - [ ] Execute FORK-001 and FORK-002
 
@@ -183,14 +170,12 @@
 **Summary:** Research from KushDocs on performance optimization.
 
 **Key Topics:**
-
 - Zero-copy architectures for AI agent systems
 - Hyper-fast local "serverless" patterns (tmpfs, shared memory)
 - LLM inference optimization (SGLang vs vLLM, speculative decoding)
 - Agentic harnesses (Tabby, OpenHands)
 
 **Recommendations:**
-
 - Evaluate tmpfs for hot data paths
 - Consider SGLang for LLM inference
 - Explore OpenHands for agent orchestration
@@ -199,15 +184,15 @@
 
 ## Aggregation by Category
 
-| Category     | Entries | Items                                            |
-| ------------ | ------- | ------------------------------------------------ |
-| architecture | 4       | ADRs, Hexagonal, Plane Fork, Architecture Review |
-| duplication  | 2       | Cross-Project Audit, Dependencies                |
-| dependencies | 1       | External Dependencies Worklog                    |
-| integration  | 1       | MCP Integration                                  |
-| performance  | 1       | Performance Research                             |
-| research     | 1       | Starred Repos                                    |
-| governance   | 1       | Governance Implementation                        |
+| Category | Entries | Items |
+|----------|---------|-------|
+| architecture | 4 | ADRs, Hexagonal, Plane Fork, Architecture Review |
+| duplication | 2 | Cross-Project Audit, Dependencies |
+| dependencies | 1 | External Dependencies Worklog |
+| integration | 1 | MCP Integration |
+| performance | 1 | Performance Research |
+| research | 1 | Starred Repos |
+| governance | 1 | Governance Implementation |
 
 ---
 

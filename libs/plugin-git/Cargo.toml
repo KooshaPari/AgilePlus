@@ -12,5 +12,7 @@ categories.workspace = true
 [dependencies]
 plugin-registry = { path = "../plugin-registry" }
 async-trait.workspace = true
+tokio.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 tracing.workspace = true

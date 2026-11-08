@@ -6,7 +6,7 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-agileplus-domain = { version = "0.2.4", path = "../agileplus-domain" }
+agileplus-domain = { path = "../agileplus-domain" }
 tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
@@ -15,17 +15,15 @@ tracing-opentelemetry.workspace = true
 opentelemetry.workspace = true
 opentelemetry-otlp.workspace = true
 opentelemetry_sdk.workspace = true
+reqwest = { version = "0.13" }
 serde = { workspace = true, features = ["derive"] }
-serde_norway.workspace = true
+serde_yaml = "0.9"
 chrono = { workspace = true }
 thiserror = { workspace = true }
-dirs = "7"
+dirs = "6"
 url = "2"
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util", "macros"] }
 tracing-test = "0.2"
 tempfile = "3"
-
-[package.metadata.dist]
-dist = false

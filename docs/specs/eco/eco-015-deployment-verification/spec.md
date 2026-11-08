@@ -9,7 +9,6 @@ superseded_by: null
 title: Deployment Verification
 type: operational
 ---
-
 # Deployment Verification
 
 ## Problem

@@ -88,7 +88,8 @@ def _call_omniroute(route: str, payload: dict[str, Any]) -> dict[str, Any]:
                 e,
             )
             raise RuntimeError(
-                f"OmniRoute returned an invalid response for route '{route}'"
+                "OmniRoute returned an invalid response for route "
+                f"'{route}'"
             ) from e
 
 
@@ -145,7 +146,6 @@ def main() -> None:
     """Start the MCP server. Registers SIGTERM/SIGINT handlers that log intent;
     the event loop (mcp.run) controls its own lifecycle and does not
     guarantee immediate interruption on signal receipt."""
-
     def _handle_signal(signum: int, frame: object) -> None:
         sig_name = signal.Signals(signum).name
         logger.warning("Received %s, initiating graceful shutdown", sig_name)

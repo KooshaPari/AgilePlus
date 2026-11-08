@@ -1,13 +1,5 @@
-//! Shared import contract for AgilePlus.
-//!
-//! Provides a single bundle format and persistence flow used by the CLI and API.
+//! agileplus-import — manifest parsing, import pipeline, and reporting.
 
-mod importer;
-mod manifest;
-mod report;
+pub mod report;
 
-pub use importer::import_bundle;
-pub use manifest::{
-    ImportBundle, ImportCycle, ImportFeature, ImportModule, ImportProject, ImportWorkPackage,
-};
 pub use report::ImportReport;

@@ -33,11 +33,7 @@ def target_init_cmd(name: str, mode: str = "repo") -> None:
     if mode not in {"repo", "stack"}:
         raise typer.BadParameter("mode must be one of: repo, stack")
     lock = init_target(name, mode=mode)
-    console.print_json(
-        json.dumps(
-            {"target": lock.target_name, "mode": lock.mode, "lock_hash": lock.lock_hash}
-        ).decode()
-    )
+    console.print_json(json.dumps({"target": lock.target_name, "mode": lock.mode, "lock_hash": lock.lock_hash}).decode())
 
 
 @target_app.command("add-repo")
@@ -50,13 +46,7 @@ def target_add_repo_cmd(
 ) -> None:
     lock = add_repo(name, repo, ref, repo_id=repo_id, worktree_path=worktree)
     console.print_json(
-        json.dumps(
-            {
-                "target": lock.target_name,
-                "repos": [repo.repo_id for repo in lock.repos],
-                "lock_hash": lock.lock_hash,
-            }
-        ).decode()
+        json.dumps({"target": lock.target_name, "repos": [repo.repo_id for repo in lock.repos], "lock_hash": lock.lock_hash}).decode()
     )
 
 
@@ -69,11 +59,7 @@ def target_lock_cmd(name: str) -> None:
                 "target": lock.target_name,
                 "lock_hash": lock.lock_hash,
                 "repos": [
-                    {
-                        "repo_id": repo.repo_id,
-                        "selected_ref": repo.selected_ref,
-                        "resolved_sha": repo.resolved_sha,
-                    }
+                    {"repo_id": repo.repo_id, "selected_ref": repo.selected_ref, "resolved_sha": repo.resolved_sha}
                     for repo in lock.repos
                 ],
             }

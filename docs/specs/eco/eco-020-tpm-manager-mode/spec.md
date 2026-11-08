@@ -9,7 +9,6 @@ superseded_by: null
 title: TPM Manager Mode
 type: operational
 ---
-
 # TPM Manager Mode (openclaw-persistent)
 
 ## Problem

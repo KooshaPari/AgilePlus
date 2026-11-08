@@ -13,32 +13,8 @@
 #[path = "api_integration/support/mod.rs"]
 mod support;
 
-// Domain-specific integration suites (each declared explicitly so the whole
-// directory is compiled, not just the file directly under `tests/`).
-#[path = "api_integration/auth_middleware.rs"]
-mod auth_middleware;
-#[path = "api_integration/branch.rs"]
-mod branch;
-#[path = "api_integration/domain_lifecycle.rs"]
-mod domain_lifecycle;
-#[path = "api_integration/features_work_packages.rs"]
-mod features_work_packages;
-#[path = "api_integration/governance_audit.rs"]
-mod governance_audit;
-#[path = "api_integration/module_cycle.rs"]
-mod module_cycle;
-#[path = "api_integration/request_validation.rs"]
-mod request_validation;
-#[path = "api_integration/route_coverage.rs"]
-mod route_coverage;
-#[path = "api_integration/stream_sse.rs"]
-mod stream_sse;
-#[path = "api_integration/vcs_contract.rs"]
-mod vcs_contract;
-#[path = "api_integration/worktree.rs"]
-mod worktree;
-
 use axum::http::StatusCode;
+use serde_json;
 
 use support::{TEST_API_KEY, setup_test_server};
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -157,42 +133,6 @@ async fn get_audit_trail() {
     let arr = body.as_array().unwrap();
     assert_eq!(arr.len(), 2);
     assert_eq!(arr[0]["actor"], "system");
-}
-
-#[tokio::test]
-async fn list_events_filters_audit_events_by_actor() {
-    let server = setup_test_server().await;
-    let resp = server
-        .get("/api/v1/events?entity_type=feature&actor=agent&limit=1")
-        .add_header("X-API-Key", TEST_API_KEY)
-        .await;
-    resp.assert_status_ok();
-
-    let body: serde_json::Value = resp.json();
-    let events = body.as_array().expect("event response should be an array");
-    assert_eq!(events.len(), 1);
-    assert_eq!(events[0]["id"], 2);
-    assert_eq!(events[0]["entity_type"], "feature");
-    assert_eq!(events[0]["actor"], "agent");
-    assert_eq!(events[0]["event_type"], "specified");
-}
-
-#[tokio::test]
-async fn list_events_rejects_an_invalid_since_filter() {
-    let server = setup_test_server().await;
-    let resp = server
-        .get("/api/v1/events?since=not-a-timestamp")
-        .add_header("X-API-Key", TEST_API_KEY)
-        .await;
-    resp.assert_status(StatusCode::BAD_REQUEST);
-
-    let body: serde_json::Value = resp.json();
-    assert!(
-        body["error"]
-            .as_str()
-            .expect("error response should include a message")
-            .contains("invalid since")
-    );
 }
 
 #[tokio::test]

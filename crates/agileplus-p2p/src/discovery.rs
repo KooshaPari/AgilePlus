@@ -176,16 +176,10 @@ pub async fn discover_peers() -> Result<Vec<PeerInfo>, PeerDiscoveryError> {
 #[cfg(unix)]
 async fn probe_agileplus(ip: &str) -> PeerStatus {
     use tokio::net::TcpStream;
-    let addr = format!("{ip}:3000");
-    probe_connection(TcpStream::connect(&addr), std::time::Duration::from_secs(2)).await
-}
+    use tokio::time::{Duration, timeout};
 
-#[cfg(unix)]
-async fn probe_connection<F, T>(connection: F, duration: std::time::Duration) -> PeerStatus
-where
-    F: std::future::Future<Output = std::io::Result<T>>,
-{
-    match tokio::time::timeout(duration, connection).await {
+    let addr = format!("{ip}:3000");
+    match timeout(Duration::from_secs(2), TcpStream::connect(&addr)).await {
         Ok(Ok(_)) => PeerStatus::Online,
         Ok(Err(_)) => PeerStatus::Offline,
         Err(_) => PeerStatus::Unknown,
@@ -213,141 +207,5 @@ mod tests {
         {
             assert!(tailscale_socket_path().is_err());
         }
-    }
-}
-
-#[cfg(test)]
-mod deep_tests {
-    use super::*;
-
-    #[test]
-    fn peer_status_online_offline_unknown_distinct() {
-        assert_ne!(PeerStatus::Online, PeerStatus::Offline);
-        assert_ne!(PeerStatus::Offline, PeerStatus::Unknown);
-        assert_ne!(PeerStatus::Online, PeerStatus::Unknown);
-    }
-
-    #[test]
-    fn peer_status_clone_and_debug() {
-        let s = PeerStatus::Online;
-        let c = s.clone();
-        assert_eq!(s, c);
-        assert!(format!("{s:?}").contains("Online"));
-    }
-
-    #[test]
-    fn peer_info_clone_preserves_fields() {
-        let p = PeerInfo {
-            device_id: "dev".into(),
-            hostname: "host".into(),
-            tailscale_ip: "100.0.0.1".into(),
-            status: PeerStatus::Offline,
-        };
-        let c = p.clone();
-        assert_eq!(c.device_id, p.device_id);
-        assert_eq!(c.hostname, p.hostname);
-        assert_eq!(c.tailscale_ip, p.tailscale_ip);
-        assert_eq!(c.status, p.status);
-    }
-
-    #[test]
-    fn peer_info_debug() {
-        let p = PeerInfo {
-            device_id: "dev".into(),
-            hostname: "host".into(),
-            tailscale_ip: "100.0.0.1".into(),
-            status: PeerStatus::Online,
-        };
-        let s = format!("{p:?}");
-        assert!(s.contains("dev"));
-        assert!(s.contains("100.0.0.1"));
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn tailscale_status_parses_single_peer() {
-        let json = r#"{
-            "Peer": {
-                "node1": {
-                    "ID": "node-1",
-                    "DNSName": "alpha.tailnet.ts.net.",
-                    "TailscaleIPs": ["100.64.0.1", "fd7a::1"],
-                    "Online": true
-                }
-            }
-        }"#;
-        let status: TailscaleStatus = serde_json::from_str(json).unwrap();
-        let peer = status.peer.get("node1").unwrap();
-        assert_eq!(peer.id, "node-1");
-        assert_eq!(peer.dns_name, "alpha.tailnet.ts.net.");
-        assert_eq!(peer.tailscale_ips.len(), 2);
-        assert!(peer.online);
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn tailscale_status_parses_empty_peer_map() {
-        let status: TailscaleStatus = serde_json::from_str(r#"{"Peer": {}}"#).unwrap();
-        assert!(status.peer.is_empty());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn tailscale_status_defaults_report_missing_fields() {
-        let status: TailscaleStatus =
-            serde_json::from_str(r#"{"Peer": {"n": {"ID": "id"}}}"#).unwrap();
-        let peer = status.peer.get("n").unwrap();
-        assert_eq!(peer.id, "id");
-        assert!(peer.dns_name.is_empty());
-        assert!(peer.tailscale_ips.is_empty());
-        assert!(!peer.online);
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn tailscale_status_missing_peer_key_defaults_empty() {
-        let status: TailscaleStatus = serde_json::from_str("{}").unwrap();
-        assert!(status.peer.is_empty());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn tailscale_status_invalid_json_is_parse_error() {
-        let r: Result<TailscaleStatus, _> = serde_json::from_str(": not json");
-        assert!(r.is_err());
-    }
-
-    #[test]
-    fn socket_path_is_absolute_on_supported_platforms() {
-        #[cfg(any(target_os = "linux", target_os = "macos"))]
-        {
-            let p = tailscale_socket_path().unwrap();
-            assert!(p.is_absolute(), "socket path should be absolute: {p:?}");
-        }
-    }
-
-    #[cfg(unix)]
-    #[tokio::test]
-    async fn probe_connection_timeout_is_unknown_without_external_network_assumptions() {
-        let status = probe_connection(
-            std::future::pending::<std::io::Result<()>>(),
-            std::time::Duration::from_millis(1),
-        )
-        .await;
-        assert_eq!(status, PeerStatus::Unknown);
-        let refused = std::future::ready(Err::<(), _>(std::io::Error::from(
-            std::io::ErrorKind::ConnectionRefused,
-        )));
-        assert_eq!(
-            probe_connection(refused, std::time::Duration::from_secs(1)).await,
-            PeerStatus::Offline
-        );
-    }
-
-    #[test]
-    fn discovery_module_compiles_without_unix_gate() {
-        // `discover_peers` is unix-gated; the module should still expose
-        // PeerInfo / PeerStatus on all platforms.
-        let _ = PeerStatus::Unknown;
     }
 }

@@ -12,11 +12,10 @@ categories = ["data-structures"]
 authors = ["<REDACTED>"]
 
 [dependencies]
-agileplus-domain = { version = "0.2.4", path = "../agileplus-domain" }
-agileplus-triage = { version = "0.2.4", path = "../agileplus-triage" }
-agileplus-graph = { version = "0.2.4", path = "../agileplus-graph" }
+agileplus-domain = { path = "../agileplus-domain" }
+agileplus-triage = { path = "../agileplus-triage" }
+agileplus-graph = { path = "../agileplus-graph" }
 serde = { workspace = true, features = ["derive"] }
-serde_json.workspace = true
 anyhow = "1.0"
 async-trait.workspace = true
 thiserror.workspace = true
@@ -24,12 +23,7 @@ tokio = { workspace = true, features = ["full"] }
 tracing.workspace = true
 
 [dev-dependencies]
-tempfile = "3"
 tokio = { workspace = true, features = ["full"] }
-serde_json.workspace = true
 
 [package.metadata.cargo-machete]
 ignored = ["agileplus-graph", "serde_json", "tracing"]
-
-[package.metadata.dist]
-dist = false

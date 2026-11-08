@@ -14,8 +14,8 @@ Before you begin, ensure you have:
 - **Git 2.x** — [Install git](https://git-scm.com/)
 - **Git-capable editor** — VS Code, Vim, or your preferred code editor
 - **Project tracker account** (optional but recommended):
-    - [Plane.so](https://plane.so) for issue tracking
-    - GitHub Issues for lighter workflows
+  - [Plane.so](https://plane.so) for issue tracking
+  - GitHub Issues for lighter workflows
 
 ## Installation
 
@@ -90,14 +90,14 @@ Generated:
 
 **What was created:**
 
-| File                     | Purpose                                            |
-| ------------------------ | -------------------------------------------------- |
-| `.kittify/config.toml`   | Project configuration (language, frameworks, etc.) |
-| `.kittify/metadata.yaml` | Version, timestamp, and platform metadata          |
-| `CLAUDE.md`              | Governance instructions for AI code assistants     |
-| `AGENTS.md`              | Cross-agent coordination rules                     |
-| `.claudeignore`          | Context optimization for assistants                |
-| `kitty-specs/`           | Directory for feature specifications               |
+| File | Purpose |
+|------|---------|
+| `.kittify/config.toml` | Project configuration (language, frameworks, etc.) |
+| `.kittify/metadata.yaml` | Version, timestamp, and platform metadata |
+| `CLAUDE.md` | Governance instructions for AI code assistants |
+| `AGENTS.md` | Cross-agent coordination rules |
+| `.claudeignore` | Context optimization for assistants |
+| `kitty-specs/` | Directory for feature specifications |
 
 ### 3. Review Project Config
 
@@ -219,18 +219,15 @@ Example research output:
 ## Codebase Scan
 
 ### Existing Auth Code
-
 - `src/auth/middleware.rs` - Request guard middleware
 - `src/models/user.rs` - User model with email field
 
 ### Frameworks
-
 - Axum for web framework
 - SQLx for database access
 - Argon2 for password hashing (already in Cargo.lock)
 
 ## Feasibility
-
 - Complexity: Medium
 - Risks: Password reset flow not in scope
 - Integration: Compatible with existing middleware
@@ -377,7 +374,6 @@ agileplus merge 001
 ```
 
 This:
-
 - Merges all WP branches into main
 - Removes worktrees
 - Cleans up branches
@@ -443,7 +439,6 @@ agileplus sync
 **Error: `cargo not found`**
 
 Install Rust:
-
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
@@ -458,7 +453,6 @@ Install Git from [git-scm.com](https://git-scm.com/)
 **Error: `agileplus: command not found`**
 
 Make sure installation succeeded:
-
 ```bash
 cargo install --path crates/agileplus-cli --force
 which agileplus
@@ -467,7 +461,6 @@ which agileplus
 **Error: `Permission denied` when running agileplus**
 
 Fix permissions:
-
 ```bash
 chmod +x ~/.cargo/bin/agileplus
 ```
@@ -481,7 +474,6 @@ Make sure you've run `agileplus specify` first. Specs are stored in `kitty-specs
 **Error: `Worktree creation failed`**
 
 Ensure your repository is clean:
-
 ```bash
 git status  # Should show no uncommitted changes
 git stash   # If needed

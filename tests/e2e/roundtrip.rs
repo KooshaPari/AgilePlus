@@ -12,12 +12,6 @@ fn agileplus_bin() -> PathBuf {
     if let Ok(path) = std::env::var("AGILEPLUS_BIN") {
         return PathBuf::from(path);
     }
-
-    let workspace_binary = repo_root().join("target/debug/agileplus");
-    if workspace_binary.is_file() {
-        return workspace_binary;
-    }
-
     PathBuf::from("agileplus")
 }
 
@@ -85,6 +79,8 @@ fn roundtrip_init_specify_list_writes_state_files() {
 
     Command::new(&bin)
         .args([
+            "--db",
+            db.to_str().expect("db path utf8"),
             "specify",
             "--feature",
             feature,
@@ -97,7 +93,7 @@ fn roundtrip_init_specify_list_writes_state_files() {
 
     let spec_file = repo
         .path()
-        .join("docs/agileplus")
+        .join("kitty-specs")
         .join(feature)
         .join("spec.md");
     assert!(
@@ -108,7 +104,13 @@ fn roundtrip_init_specify_list_writes_state_files() {
     assert!(db.is_file(), "sqlite db missing at {}", db.display());
 
     Command::new(&bin)
-        .args(["list", "--state", "specified"])
+        .args([
+            "--db",
+            db.to_str().expect("db path utf8"),
+            "list",
+            "--state",
+            "specified",
+        ])
         .current_dir(repo.path())
         .assert()
         .success()

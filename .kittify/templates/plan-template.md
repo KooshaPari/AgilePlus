@@ -1,6 +1,6 @@
 # Implementation Plan: [FEATURE]
+*Path: [templates/plan-template.md](templates/plan-template.md)*
 
-_Path: [templates/plan-template.md](templates/plan-template.md)_
 
 **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
 **Input**: Feature specification from `/kitty-specs/[###-feature-name]/spec.md`
@@ -33,7 +33,7 @@ The planner will not begin until all planning questions have been answered—cap
 
 ## Constitution Check
 
-_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
 [Gates determined based on constitution file]
 
@@ -52,7 +52,6 @@ kitty-specs/[###-feature]/
 ```
 
 ### Source Code (repository root)
-
 <!--
   ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
   for this feature. Delete unused options and expand the chosen structure with
@@ -101,9 +100,9 @@ directories captured above]
 
 ## Complexity Tracking
 
-_Fill ONLY if Constitution Check has violations that must be justified_
+*Fill ONLY if Constitution Check has violations that must be justified*
 
-| Violation                  | Why Needed         | Simpler Alternative Rejected Because |
-| -------------------------- | ------------------ | ------------------------------------ |
-| [e.g., 4th project]        | [current need]     | [why 3 projects insufficient]        |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient]  |
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+|-----------|------------|-------------------------------------|
+| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
+| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |

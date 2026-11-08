@@ -5,3 +5,4 @@
 3. Patch README badge and contributor instructions.
 4. Run focused validation.
 5. Commit changes and write canonical worklog JSON.
+

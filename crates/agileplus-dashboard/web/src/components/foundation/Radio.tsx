@@ -60,6 +60,7 @@ export const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
           )}
           aria-label={ariaLabel}
           aria-checked={checked}
+          role="radio"
           {...props}
         />
         {label && (
