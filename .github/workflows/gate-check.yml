@@ -38,8 +38,13 @@ jobs:
         timeout-minutes: 20
         steps:
             - uses: actions/checkout@v7
-            - name: Set up toolchain
-              uses: dtolnay/rust-toolchain@stable
+            - name: Install the pinned Rust channel
+              run: |
+                  set -euo pipefail
+                  channel="$(sed -n 's/^channel *= *"\(.*\)"$/\1/p' rust-toolchain.toml)"
+                  echo "pinned channel: ${channel}"
+                  test -n "${channel}"
+                  rustup toolchain install "${channel}" --profile minimal --component rustfmt,clippy --no-self-update
             - name: cargo fmt --check
               run: cargo fmt --all -- --check
             - name: cargo clippy
@@ -52,8 +57,13 @@ jobs:
         timeout-minutes: 45
         steps:
             - uses: actions/checkout@v7
-            - name: Set up toolchain
-              uses: dtolnay/rust-toolchain@stable
+            - name: Install the pinned Rust channel
+              run: |
+                  set -euo pipefail
+                  channel="$(sed -n 's/^channel *= *"\(.*\)"$/\1/p' rust-toolchain.toml)"
+                  echo "pinned channel: ${channel}"
+                  test -n "${channel}"
+                  rustup toolchain install "${channel}" --profile minimal --no-self-update
             - uses: Swatinem/rust-cache@v2
             - name: cargo test
               run: cargo test --workspace --locked --all-targets --no-fail-fast
