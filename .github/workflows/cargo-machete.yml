@@ -18,6 +18,14 @@ jobs:
         steps:
             - uses: actions/checkout@v7
 
+            - name: Install the pinned Rust channel
+              run: |
+                  set -euo pipefail
+                  channel="$(sed -n 's/^channel *= *"\(.*\)"$/\1/p' rust-toolchain.toml)"
+                  echo "pinned channel: ${channel}"
+                  test -n "${channel}"
+                  rustup toolchain install "${channel}" --profile minimal --no-self-update
+
             - uses: taiki-e/install-action@v2
               with:
                   tool: cargo-machete

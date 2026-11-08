@@ -44,10 +44,13 @@ jobs:
                   ref: ${{ github.sha }}
                   persist-credentials: false
             - id: toolchain
-              uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
-              with:
-                  toolchain: stable
-                  components: rustfmt, clippy
+              name: Install the pinned Rust channel
+              run: |
+                  set -euo pipefail
+                  channel="$(sed -n 's/^channel *= *"\(.*\)"$/\1/p' rust-toolchain.toml)"
+                  echo "pinned channel: ${channel}"
+                  test -n "${channel}"
+                  rustup toolchain install "${channel}" --profile minimal --component rustfmt,clippy --no-self-update
             - name: Install protoc for real tonic/prost types (never fallback stubs)
               run: |
                   sudo apt-get update -qq

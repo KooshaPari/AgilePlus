@@ -20,6 +20,14 @@ jobs:
               with:
                   fetch-depth: 0
 
+            - name: Install the pinned Rust channel
+              run: |
+                  set -euo pipefail
+                  channel="$(sed -n 's/^channel *= *"\(.*\)"$/\1/p' rust-toolchain.toml)"
+                  echo "pinned channel: ${channel}"
+                  test -n "${channel}"
+                  rustup toolchain install "${channel}" --profile minimal --no-self-update
+
             - name: Install git-cliff
               run: |
                   cargo install git-cliff

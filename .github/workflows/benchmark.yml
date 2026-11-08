@@ -29,8 +29,13 @@ jobs:
         steps:
             - uses: actions/checkout@v7
 
-            - name: Install Rust (nightly)
-              uses: dtolnay/rust-toolchain@nightly
+            - name: Install the pinned Rust channel
+              run: |
+                  set -euo pipefail
+                  channel="$(sed -n 's/^channel *= *"\(.*\)"$/\1/p' rust-toolchain.toml)"
+                  echo "pinned channel: ${channel}"
+                  test -n "${channel}"
+                  rustup toolchain install "${channel}" --profile minimal --no-self-update
 
             - uses: Swatinem/rust-cache@v2
               with:

@@ -125,10 +125,13 @@ jobs:
                     patchelf
                   protoc --version
 
-            - name: Install Rust
-              uses: dtolnay/rust-toolchain@stable
-              with:
-                  components: llvm-tools-preview
+            - name: Install the pinned Rust channel
+              run: |
+                  set -euo pipefail
+                  channel="$(sed -n 's/^channel *= *"\(.*\)"$/\1/p' rust-toolchain.toml)"
+                  echo "pinned channel: ${channel}"
+                  test -n "${channel}"
+                  rustup toolchain install "${channel}" --profile minimal --component llvm-tools-preview --no-self-update
 
             - name: Cache cargo
               uses: Swatinem/rust-cache@v2
