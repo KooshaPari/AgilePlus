@@ -33,7 +33,18 @@ env:
 jobs:
     mutants:
         name: cargo-mutants (agileplus-domain)
-        runs-on: ubuntu-latest
+        # Run on the desk self-hosted runner by default.
+        #
+        # The GitHub-hosted fleet has been evicting this job mid-campaign with
+        # "The runner has received a shutdown signal", which leaves the shard
+        # with no mutants.out and no exit code: a red job with no verdict, on
+        # shard 7 across repeated runs. The desk runner `desk-agileplus-1`
+        # (labels self-hosted, Linux, X64, desk) is registered and online.
+        #
+        # The repo variable MUTANTS_RUNNER overrides the whole runner list, so
+        # the job can be moved back to hosted runners without a code change if
+        # the desk host is unavailable.
+        runs-on: ${{ fromJSON(vars.MUTANTS_RUNNER || '["self-hosted","Linux","X64","desk"]') }}
         # Keep the GitHub-hosted maximum of 360 minutes. The campaign does not
         # fit in less, so lowering the ceiling cannot make this check pass --
         # it only terminates the campaign earlier with strictly less work done
