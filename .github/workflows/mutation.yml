@@ -173,6 +173,12 @@ jobs:
                   fi
 
             - name: Verify the shard produced results
+              # A runner killed mid-shard leaves no mutants.out and no rc. That
+              # was reported as a hard failure with no verdict at all, which is
+              # indistinguishable from a mutant failure to anyone reading the
+              # PR. Run the gate always, and when the job was cancelled say so
+              # as a retryable infrastructure warning instead of an error.
+              if: always()
               # Decides pass/fail from evidence rather than from file presence.
               # Three independent things must hold:
               #
@@ -201,6 +207,11 @@ jobs:
                   set -euo pipefail
                   rc="${{ steps.mutants.outputs.rc }}"
                   shard="${{ matrix.shard }}"
+
+                  if [ "${{ job.status }}" = "cancelled" ]; then
+                    echo "::warning::shard $shard/8 was cancelled by the runner before it produced a verdict; this is an infrastructure kill, not a mutant result. Re-run this shard."
+                    exit 0
+                  fi
 
                   if [ ! -e mutants.out ]; then
                     echo "::error::cargo-mutants produced no mutants.out; shard $shard/8 did not run"
