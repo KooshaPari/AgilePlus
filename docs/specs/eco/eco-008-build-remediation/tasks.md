@@ -1,7 +1,6 @@
 # Tasks: Build Remediation (eco-008)
 
 ## WP-01 phenoAI
-
 - **Status:** PENDING
 - **Worktree:** `repos/phenoAI-wtrees/build-triage-phenoAI/`
 - **File:** `crates/llm-router/Cargo.toml` (line 13)
@@ -11,7 +10,6 @@
 - **Disk floor:** ≥ 20 GiB free; defer verify if below.
 
 ## WP-02 OmniRoute
-
 - **Status:** PENDING
 - **Worktree:** `repos/OmniRoute-wtrees/build-triage-OmniRoute/`
 - **File:** `crates/focus-always-on/Cargo.toml` (line 17)
@@ -20,7 +18,6 @@
 - **Verify:** `cargo check --workspace` exits 0.
 
 ## WP-03 pheno
-
 - **Status:** PENDING
 - **Worktree:** `repos/pheno-wtrees/build-triage-pheno/`
 - **File:** `crates/agileplus-domain/Cargo.toml` (line 19)
@@ -29,7 +26,6 @@
 - **Verify:** `cargo check --workspace` exits 0.
 
 ## WP-04 phenoUtils
-
 - **Status:** PENDING
 - **Worktree:** `repos/phenoUtils-wtrees/build-triage-phenoUtils/`
 - **File:** `crates/pheno-crypto/src/lib.rs` (line 66)
@@ -38,7 +34,6 @@
 - **Verify:** `cargo check -p pheno-crypto` exits 0.
 
 ## WP-05 NetScript / MCPForge
-
 - **Status:** PENDING
 - **Worktrees:** `repos/NetScript-wtrees/build-triage-NetScript/`, `repos/MCPForge-wtrees/build-triage-MCPForge/`
 - **File:** parent workspace `repos/crates/focus-always-on/Cargo.toml` (line 17)
@@ -47,7 +42,6 @@
 - **Verify:** `cargo check --workspace` exits 0 in each repo.
 
 ## WP-06 phenoData (unconfirmed)
-
 - **Status:** PENDING
 - **Worktree:** `repos/phenoData-wtrees/build-triage-phenoData/`
 - **File:** `crates/surreal-bridge/Cargo.toml` (line 14)
@@ -56,7 +50,6 @@
 - **Verify:** Rerun command exits 0; log archived to `worklogs/`.
 
 ## WP-07 eyetracker (unconfirmed)
-
 - **Status:** PENDING
 - **Worktree:** `repos/eyetracker-wtrees/build-triage-eyetracker/`
 - **File:** `bindings/` (line 1)

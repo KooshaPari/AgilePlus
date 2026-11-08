@@ -66,25 +66,21 @@ Before merging, the system verifies:
 ## Pre-Merge Validation
 
 ### Feature Status
-
 - [ ] Feature marked as "accepted"
 - [ ] All WPs in "done" state
 - [ ] No WPs in "planned", "doing", or "for_review"
 
 ### Code Status
-
 - [ ] No uncommitted changes in worktrees
 - [ ] All commits are signed (if required)
 - [ ] No local changes on main branch
 
 ### Conflict Check
-
 - [ ] No conflicts between WP branches
 - [ ] No conflicts with main branch
 - [ ] All merges can fast-forward or cleanly squash
 
 ### Tracker Status
-
 - [ ] All issues updated to latest status
 - [ ] No pending review comments
 ```
@@ -125,7 +121,6 @@ graph TD
 5. WP07 — depends on WP05 and WP06, merges last
 
 This ensures:
-
 - No merge conflicts (dependencies already in main)
 - Linear history (clean git log)
 - Easy to bisect if issue discovered
@@ -142,7 +137,6 @@ strategy = "squash"
 ```
 
 Behavior:
-
 ```
 All commits in WP02 → single squashed commit on main
 
@@ -164,7 +158,6 @@ strategy = "rebase"
 ```
 
 Behavior:
-
 ```
 All commits in WP02 → replayed on top of main
 
@@ -186,7 +179,6 @@ strategy = "merge"
 ```
 
 Behavior:
-
 ```
 All commits in WP02 + merge commit on main
 
@@ -279,7 +271,6 @@ enabled = true
 ```
 
 System automatically:
-
 - Closes all WP issues
 - Updates feature issue to "Shipped"
 - Comments with merge commit link
@@ -413,19 +404,16 @@ git push origin v0.2.0
 # Release 0.2.0 - Email Notifications
 
 ## Features
-
 - Send transactional emails on user events
 - User preference management
 - Automatic retry with exponential backoff
 - Unsubscribe support
 
 ## Files Changed
-
 - 15 files modified
 - 2,047 lines added
 
 ## Commits
-
 - 20 commits merged
 - Feature branch: feat/001-email-notifications
 - Merged by: alice

@@ -2,23 +2,14 @@
 name = "agileplus-import"
 version.workspace = true
 edition.workspace = true
-rust-version.workspace = true
 license.workspace = true
-authors.workspace = true
-repository.workspace = true
+rust-version.workspace = true
 
 [dependencies]
-agileplus-domain = { version = "0.2.4", path = "../agileplus-domain" }
-chrono = { workspace = true }
-sha2 = { workspace = true }
+agileplus-domain = { path = "../agileplus-domain" }
+anyhow.workspace = true
+chrono = { workspace = true, features = ["serde"] }
 serde.workspace = true
 serde_json.workspace = true
-serde_norway.workspace = true
-anyhow.workspace = true
-
-[dev-dependencies]
-tokio = { workspace = true }
-async-trait = "0.1"
-
-[package.metadata.dist]
-dist = false
+sha2.workspace = true
+tracing.workspace = true

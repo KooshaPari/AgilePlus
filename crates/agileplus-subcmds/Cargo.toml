@@ -13,9 +13,10 @@ categories = ["development-tools", "command-line-utilities"]
 authors = ["<REDACTED>"]
 
 [features]
-default = []
+default = ["platform"]
 # Full subcommand surface (needs extra crates that may be parked).
 full = ["dashboard", "events", "sync", "audit", "registry"]
+platform = []
 dashboard = []
 events = []
 sync = []
@@ -32,9 +33,5 @@ tokio.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]
-clap.workspace = true
 tempfile = "3"
 tokio = { version = "1", features = ["rt", "macros"] }
-
-[package.metadata.dist]
-dist = false

@@ -10,7 +10,6 @@ superseded_by: null
 title: Deploy Markers
 type: operational
 ---
-
 # Deploy Markers
 
 ## Problem

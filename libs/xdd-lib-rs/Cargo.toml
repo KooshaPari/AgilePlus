@@ -11,9 +11,10 @@ categories.workspace = true
 description = "Cross-dialect development library for AgilePlus - convert between JSON, TOML, YAML formats"
 
 [dependencies]
+serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 toml.workspace = true
-serde_norway.workspace = true
+serde_yaml = "0.9"
 thiserror.workspace = true
 parking_lot = "0.12"
 

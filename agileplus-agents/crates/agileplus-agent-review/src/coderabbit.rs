@@ -79,7 +79,11 @@ struct GhReview {
 // ─── HTTP helpers ─────────────────────────────────────────────────────────────
 
 /// Build a GitHub API request with auth and accept headers.
-fn gh_request(client: &reqwest::Client, token: &str, url: &str) -> reqwest::RequestBuilder {
+fn gh_request(
+    client: &reqwest::Client,
+    token: &str,
+    url: &str,
+) -> reqwest::RequestBuilder {
     client
         .get(url)
         .header("Authorization", format!("Bearer {token}"))
@@ -141,11 +145,12 @@ fn extract_next_link(headers: &reqwest::header::HeaderMap) -> Option<String> {
     // Format: `<url>; rel="next", <url>; rel="last"`
     for part in link.split(',') {
         let part = part.trim();
-        if part.contains(r#"rel="next""#)
-            && let Some(start) = part.find('<')
-            && let Some(end) = part.find('>')
-        {
-            return Some(part[start + 1..end].to_owned());
+        if part.contains(r#"rel="next""#) {
+            if let Some(start) = part.find('<') {
+                if let Some(end) = part.find('>') {
+                    return Some(part[start + 1..end].to_owned());
+                }
+            }
         }
     }
     None
@@ -198,7 +203,8 @@ pub async fn fetch_review_comments(
 ) -> Result<Vec<CoderabbitComment>, DomainError> {
     // Inline review comments (code diffs).
     let inline_url = format!("{api_base}/repos/{owner}/{repo}/pulls/{pr_number}/comments");
-    let inline_raw: Vec<GhPullComment> = fetch_all_pages(client, token, &inline_url).await?;
+    let inline_raw: Vec<GhPullComment> =
+        fetch_all_pages(client, token, &inline_url).await?;
 
     // Top-level issue comments.
     let top_url = format!("{api_base}/repos/{owner}/{repo}/issues/{pr_number}/comments");
@@ -338,6 +344,8 @@ fn classify_comment(body: &str) -> (bool, CommentSeverity) {
         {
             let sev = if trimmed.starts_with("error:") {
                 CommentSeverity::Error
+            } else if trimmed.starts_with("warning:") {
+                CommentSeverity::Warning
             } else {
                 CommentSeverity::Warning
             };
@@ -354,14 +362,13 @@ fn classify_comment(body: &str) -> (bool, CommentSeverity) {
         || lower.contains("issue:")
         || lower.contains("actionable comment");
 
-    let severity =
-        if lower.contains("error") || lower.contains("critical") || lower.contains("must") {
-            CommentSeverity::Error
-        } else if lower.contains("warning") || lower.contains("should") || lower.contains("issue") {
-            CommentSeverity::Warning
-        } else {
-            CommentSeverity::Info
-        };
+    let severity = if lower.contains("error") || lower.contains("critical") || lower.contains("must") {
+        CommentSeverity::Error
+    } else if lower.contains("warning") || lower.contains("should") || lower.contains("issue") {
+        CommentSeverity::Warning
+    } else {
+        CommentSeverity::Info
+    };
 
     (is_actionable, severity)
 }

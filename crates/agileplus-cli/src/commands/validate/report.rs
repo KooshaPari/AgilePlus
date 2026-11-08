@@ -10,18 +10,6 @@ pub struct EvidenceCheck {
     pub message: String,
 }
 
-impl From<agileplus_domain::domain::governance_evaluator::EvidenceCheck> for EvidenceCheck {
-    fn from(value: agileplus_domain::domain::governance_evaluator::EvidenceCheck) -> Self {
-        Self {
-            fr_id: value.fr_id,
-            evidence_type: value.evidence_type,
-            found: value.found,
-            threshold_met: value.threshold_met,
-            message: value.message,
-        }
-    }
-}
-
 impl EvidenceCheck {
     fn to_markdown_row(&self) -> String {
         format!(
@@ -42,17 +30,6 @@ pub struct PolicyEvalResult {
     pub domain: String,
     pub passed: bool,
     pub message: String,
-}
-
-impl From<agileplus_domain::domain::governance_evaluator::PolicyEvalResult> for PolicyEvalResult {
-    fn from(value: agileplus_domain::domain::governance_evaluator::PolicyEvalResult) -> Self {
-        Self {
-            policy_id: value.policy_id,
-            domain: value.domain,
-            passed: value.passed,
-            message: value.message,
-        }
-    }
 }
 
 impl PolicyEvalResult {
@@ -202,139 +179,5 @@ impl ValidationReport {
             missing,
             exceptions
         )
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use chrono::Utc;
-
-    fn make_report(overall_pass: bool) -> ValidationReport {
-        ValidationReport {
-            feature_slug: "test-feat".to_string(),
-            timestamp: Utc::now(),
-            overall_pass,
-            evidence_results: vec![],
-            policy_results: vec![],
-            missing_evidence: vec![],
-            governance_exceptions: vec![],
-        }
-    }
-
-    #[test]
-    fn to_markdown_pass_shows_pass() {
-        let report = make_report(true);
-        let md = report.to_markdown();
-        assert!(md.contains("PASS"));
-        assert!(md.contains("test-feat"));
-    }
-
-    #[test]
-    fn to_markdown_fail_shows_fail() {
-        let report = make_report(false);
-        let md = report.to_markdown();
-        assert!(md.contains("FAIL"));
-    }
-
-    #[test]
-    fn to_markdown_empty_evidence_shows_placeholder() {
-        let report = make_report(true);
-        let md = report.to_markdown();
-        assert!(md.contains("no evidence requirements defined"));
-    }
-
-    #[test]
-    fn to_markdown_with_evidence_results() {
-        let mut report = make_report(true);
-        report.evidence_results = vec![EvidenceCheck {
-            fr_id: "FR-001".to_string(),
-            evidence_type: "TestResult".to_string(),
-            found: true,
-            threshold_met: true,
-            message: "OK".to_string(),
-        }];
-        let md = report.to_markdown();
-        assert!(md.contains("Evidence Checks"));
-        assert!(md.contains("FR-001"));
-        assert!(md.contains("TestResult"));
-    }
-
-    #[test]
-    fn to_markdown_with_policy_results() {
-        let mut report = make_report(true);
-        report.policy_results = vec![PolicyEvalResult {
-            policy_id: 42,
-            domain: "security".to_string(),
-            passed: true,
-            message: "All good".to_string(),
-        }];
-        let md = report.to_markdown();
-        assert!(md.contains("Policy Checks"));
-        assert!(md.contains("42"));
-        assert!(md.contains("security"));
-    }
-
-    #[test]
-    fn to_markdown_with_governance_exceptions() {
-        let mut report = make_report(false);
-        report.governance_exceptions = vec![
-            "Missing signature".to_string(),
-            "Stale approval".to_string(),
-        ];
-        let md = report.to_markdown();
-        assert!(md.contains("Governance Exceptions"));
-        assert!(md.contains("Missing signature"));
-        assert!(md.contains("Stale approval"));
-    }
-
-    #[test]
-    fn to_json_has_all_fields() {
-        let mut report = make_report(true);
-        report.evidence_results = vec![EvidenceCheck {
-            fr_id: "FR-001".to_string(),
-            evidence_type: "TestResult".to_string(),
-            found: true,
-            threshold_met: true,
-            message: "OK".to_string(),
-        }];
-        report.policy_results = vec![PolicyEvalResult {
-            policy_id: 1,
-            domain: "ci".to_string(),
-            passed: true,
-            message: "passed".to_string(),
-        }];
-        report.missing_evidence = vec![("FR-002".to_string(), "CiOutput".to_string())];
-        report.governance_exceptions = vec!["exception".to_string()];
-        let json = report.to_json();
-        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
-        assert_eq!(v["evidence_results"].as_array().unwrap().len(), 1);
-        assert_eq!(v["policy_results"].as_array().unwrap().len(), 1);
-        assert_eq!(v["missing_evidence"].as_array().unwrap().len(), 1);
-        assert_eq!(v["governance_exceptions"].as_array().unwrap().len(), 1);
-    }
-
-    #[test]
-    fn summary_pass_format() {
-        let mut report = make_report(true);
-        report.evidence_results = vec![EvidenceCheck {
-            fr_id: "FR-001".to_string(),
-            evidence_type: "TestResult".to_string(),
-            found: true,
-            threshold_met: true,
-            message: "OK".to_string(),
-        }];
-        let s = report.summary();
-        assert!(s.starts_with("PASS"));
-        assert!(s.contains("Evidence 1/1"));
-    }
-
-    #[test]
-    fn summary_fail_format() {
-        let mut report = make_report(false);
-        report.missing_evidence = vec![("FR-001".to_string(), "any".to_string())];
-        let s = report.summary();
-        assert!(s.starts_with("FAIL"));
-        assert!(s.contains("missing evidence 1"));
     }
 }

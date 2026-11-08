@@ -15,14 +15,7 @@ from .git_ops import (
     resolve_ref_to_sha,
     sanitize_repo_id,
 )
-from .models import (
-    RepoSelection,
-    RunnerCatalog,
-    RuntimeRepo,
-    RuntimeState,
-    TargetLock,
-    TargetMode,
-)
+from .models import RepoSelection, RuntimeRepo, RuntimeState, RunnerCatalog, TargetLock, TargetMode
 from .paths import projects_root, target_repos_root, target_root
 from .runner import build_runner_catalog, pick_command_interactive, run_command
 from .store import dual_write, read_dual, sync_dual, utc_now_iso
@@ -75,13 +68,7 @@ def load_target_lock(target: str) -> TargetLock:
     return _parse_lock(payload)
 
 
-def add_repo(
-    target: str,
-    repo_path: str,
-    selected_ref: str,
-    repo_id: str | None = None,
-    worktree_path: str | None = None,
-) -> TargetLock:
+def add_repo(target: str, repo_path: str, selected_ref: str, repo_id: str | None = None, worktree_path: str | None = None) -> TargetLock:
     lock = load_target_lock(target)
     repo = Path(repo_path).expanduser().resolve()
     if not (repo / ".git").exists() and not (repo / ".git").is_file():

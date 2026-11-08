@@ -7,7 +7,6 @@
 ## Context
 
 AgilePlus is evolving from a monolithic CLI to a platform with multiple entry points (CLI, MCP server, API, Dashboard). We need to support:
-
 - Productization: Custom deployments for different organizations
 - Pluginization: Third-party extensions and integrations
 - Libification: Shared code extracted to reusable libraries
@@ -106,13 +105,13 @@ crates/
 
 ## Benefits
 
-| Benefit             | Description                             |
-| ------------------- | --------------------------------------- |
-| **Extensibility**   | Add new adapters without modifying core |
-| **Testability**     | Mock adapters for unit testing          |
-| **Productization**  | Custom adapters per deployment          |
-| **Maintainability** | Smaller, focused crates                 |
-| **Polymorphism**    | Runtime plugin selection                |
+| Benefit | Description |
+|---------|-------------|
+| **Extensibility** | Add new adapters without modifying core |
+| **Testability** | Mock adapters for unit testing |
+| **Productization** | Custom adapters per deployment |
+| **Maintainability** | Smaller, focused crates |
+| **Polymorphism** | Runtime plugin selection |
 
 ## X-DDs Applied
 
@@ -126,13 +125,11 @@ crates/
 ## Consequences
 
 ### Positive
-
 - Clear extension points
 - Independent release cycles
 - Easy to add new VCS/storage/agent backends
 
 ### Negative
-
 - Dynamic dispatch overhead (minimal)
 - More complex dependency management
 - Requires careful API stability

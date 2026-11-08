@@ -4,22 +4,21 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-authors.workspace = true
 repository.workspace = true
 
 [dependencies]
 # workspace crates
-agileplus-domain = { version = "0.2.4", path = "../agileplus-domain" }
-agileplus-application = { version = "0.2.4", path = "../agileplus-application" }
-agileplus-git = { version = "0.2.4", path = "../agileplus-git" }
-agileplus-sqlite = { version = "0.2.4", path = "../agileplus-sqlite" }
+agileplus-domain = { version = "0.2.1", path = "../agileplus-domain" }
+agileplus-application = { version = "0.2.1", path = "../agileplus-application" }
+agileplus-git = { version = "0.2.1", path = "../agileplus-git" }
+agileplus-sqlite = { version = "0.2.1", path = "../agileplus-sqlite" }
 # workspace-managed external deps
 anyhow.workspace = true
 tokio.workspace = true
 axum.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-serde_norway.workspace = true
+serde_yaml = "0.9"
 tracing.workspace = true
 chrono.workspace = true
 utoipa.workspace = true
@@ -36,11 +35,6 @@ sha2.workspace = true
 
 [dev-dependencies]
 axum-test = "21"
-tempfile.workspace = true
-
-[package.metadata.dist]
-dist = false
 
 [package.metadata.cargo-machete]
 ignored = ["tracing-subscriber", "agileplus-telemetry"]
-

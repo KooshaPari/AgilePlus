@@ -1,6 +1,4 @@
 import React, { createContext, useState, useCallback, useRef } from 'react';
-import english from './messages/en.json';
-import german from './messages/de.json';
 import type { ReactNode } from 'react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -25,7 +23,10 @@ export interface LocaleContextValue {
 
 // ─── Locale registry — add new locales here ───────────────────────────────────
 
-const LOCALE_MESSAGES = import.meta.glob<{ default: MessageCatalog }>('./messages/*.json');
+const LOCALE_MESSAGES: Record<string, () => Promise<MessageCatalog>> = {
+  en: () => import('./messages/en.json').then((m) => m.default ?? m),
+  de: () => import('./messages/de.json').then((m) => m.default ?? m),
+};
 
 // ─── Context ───────────────────────────────────────────────────────────────────
 
@@ -46,16 +47,24 @@ interface LocaleProviderProps {
 /**
  * Provides locale state and a `t()` translation function to the component tree.
  *
- * Messages are imported as browser-compatible modules.
+ * Messages are loaded lazily via dynamic import when the locale changes.
  * Falls back to the message key itself when a translation is missing.
  */
 export function LocaleProvider({ children, defaultLocale = 'en' }: LocaleProviderProps) {
   const [locale, setLocaleState] = useState(defaultLocale);
-  const [messages, setMessages] = useState<MessageCatalog>({});
+  const [messages, setMessages] = useState<MessageCatalog>(() => {
+    // Synchronously require the default locale so first render is never empty
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      return require('./messages/en.json') as MessageCatalog;
+    } catch {
+      return {};
+    }
+  });
   const loadingRef = useRef(false);
 
   const switchLocale = useCallback(async (next: string) => {
-    const loader = LOCALE_MESSAGES[`./messages/${next}.json`];
+    const loader = LOCALE_MESSAGES[next];
     if (!loader) {
       console.warn(`[i18n] Unknown locale "${next}", falling back to key passthrough`);
       setLocaleState(next);
@@ -68,7 +77,7 @@ export function LocaleProvider({ children, defaultLocale = 'en' }: LocaleProvide
 
     try {
       const mod = await loader();
-      setMessages(mod.default);
+      setMessages(mod);
       setLocaleState(next);
     } catch (err) {
       console.error(`[i18n] Failed to load messages for "${next}":`, err);
@@ -82,7 +91,7 @@ export function LocaleProvider({ children, defaultLocale = 'en' }: LocaleProvide
       let value = messages[key];
       if (value === undefined) {
         // Fall back to the key itself so the UI doesn't break
-        if (import.meta.env.DEV) {
+        if (process.env.NODE_ENV === 'development') {
           console.warn(`[i18n] Missing translation for "${key}" in locale "${locale}"`);
         }
         value = key;

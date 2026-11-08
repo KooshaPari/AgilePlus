@@ -1,42 +1,15 @@
 # AgilePlus AGENTS.MD
 
-## Recovery Authority (2026-10-04)
-
-For the active mature-first recovery branch, use these files as the operational
-entrypoint before inferring state from older docs:
-
-- `spec/product/mature-contract.v1.json` — accepted mature semantic contract.
-- `verification/FORWARD_WBS_2026-10-04.md`
-- `verification/FORWARD_DELTA_2026-10-04.md` — current execution/release WBS.
-- `docs/architecture/NETWORK_DEPLOYMENT_DOCTRINE.md` — canonical tailnet-first
-  deployment/network architecture.
-- `verification/NEXT_DEPLOYABLE_RELEASE_2026-10-04.md` — deployed-release gate.
-
-Important invariants:
-
-- AgilePlus AcceptedWork is not Tracera Satisfied.
-- Generic state-transition transports must not award terminal acceptance.
-- Test not executed is not test passed.
-- Deployment status and time-to-next-deployed/installable release are
-  first-class status dimensions.
-- Private/operator deployment is tailnet-first; Cloudflare Tunnel is optional
-  future public ingress, not the private network foundation.
-- Run one host-level Caddy per physical host; do not stack per-project reverse
-  proxies without a demonstrated requirement.
-
 ## Project Overview
-
 AgilePlus is the Phenotype-org spec-driven development framework. Rust CLI + workspace for managing specs, work packages, and project governance. CLI: `agileplus <command>`
 
 ## Stack
-
 - Language: Rust
 - Build: Cargo workspace (members added when source exists; scaffolded crates/libs excluded until populated)
 - CLI: Custom typer-based CLI
 - Spec storage: `kitty-specs/` (inside the agileplus workspace)
 
 ## Key Commands
-
 - `cargo build --release`
 - `cargo test`
 - `agileplus specify [--feature <slug>] [--from-file <path>] [--force]` — create/revise a feature spec (no `--title` / `--description` flags)
@@ -45,26 +18,22 @@ AgilePlus is the Phenotype-org spec-driven development framework. Rust CLI + wor
 - There is no `agileplus init` command; SDD starts with `specify` in a git repo
 
 ## Quality Gates
-
 - `cargo clippy --all` + `cargo fmt --all`
 - `cargo test --workspace`
 - `cargo deny check licenses` (configured via `deny.toml`)
 - `ruff check python/` (Python quality)
 
 ## Branch Discipline
-
 - Feature work: `<repo>-wtrees/<subject>/` (e.g., `AgilePlus-wtrees/<topic>/`)
 - Canonical `AgilePlus/` = bare repo (main only, no direct commits)
 - Tracked workspace: `agileplus/` (lowercase; actual git worktree)
 - Branch naming: `chore/`, `feat/`, `fix/` prefixes
 
 ## Governance Integration
-
 - Specs: `kitty-specs/<feature-id>/` (relative to agileplus workspace root)
 - Worklog: `AgilePlus/.work-audit/worklog.md`
 
 ## Repo Structure
-
 - `agileplus/` — **primary tracked workspace** (lowercase; all actual source lives here)
 - `AgilePlus/` — bare git repo (remote: <REDACTED>/AgilePlus; commits only via PR merge)
 - `*-wtrees/` — feature worktrees; safe to work in directly
@@ -72,50 +41,40 @@ AgilePlus is the Phenotype-org spec-driven development framework. Rust CLI + wor
 - Individual repos: `Agentora/`, `pheno/`, etc.
 
 ## Important Notes
-
 - **Never commit directly to `AgilePlus/` main** — it is bare. All changes go through PRs.
 - **Do not use `AgilePlus-wtrees/<subject>/`** — the worktree convention is `<repo>-wtrees/` (lowercase repo name).
 - See `agileplus/CLAUDE.md` for detailed workspace structure, bootstrap status, and agent operating notes.
 
-## Desktop & OS Safety (CRITICAL)
-
-- **NEVER** blind-test on the user's main OS
-- **NEVER** take screenshots of the user's live desktop for testing
-- Use process lists (`ps aux`), window lists (`list_windows`), and log output to verify app state
-- For visual verification, use sandboxed environments: Docker, Apple Container, ephemeral user sessions, or CI runners
-- Desktop apps should be verified via `cargo check`, process enumeration, and window enumeration only
-
 ## Architecture Decision Records
 
 This repo documents architecture decisions in two locations:
-
 - **`ADR.md`** (root) --- inline ADR-001 through ADR-014
 - **`docs/adr/`** --- individual ADR files covering additional decisions
 
-| ID       | Title                                                     | Status   | Location                                                                                                               |
-| -------- | --------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------- |
-| ADR-001  | Rust Workspace Monorepo with 22 Crates                    | Accepted | [`ADR.md`](ADR.md)                                                                                                     |
-| ADR-002  | Hexagonal Architecture with Port/Adapter Pattern          | Accepted | [`ADR.md`](ADR.md)                                                                                                     |
-| ADR-003  | SQLite as Local-First Storage with Optional External Sync | Accepted | [`ADR.md`](ADR.md)                                                                                                     |
-| ADR-004  | SHA-256 Hash-Chained Immutable Audit Log and Event Store  | Accepted | [`ADR.md`](ADR.md)                                                                                                     |
-| ADR-005  | gRPC Service Layer with Tonic + Protobuf                  | Accepted | [`ADR.md`](ADR.md)                                                                                                     |
-| ADR-006  | NATS JetStream as the Event Bus                           | Accepted | [`ADR.md`](ADR.md)                                                                                                     |
-| ADR-007  | Plugin Architecture via External Git-Sourced Crates       | Accepted | [`ADR.md`](ADR.md)                                                                                                     |
-| ADR-008  | Python MCP Server for AI Agent Integration                | Accepted | [`ADR.md`](ADR.md)                                                                                                     |
-| ADR-009  | OpenTelemetry for Observability with OTLP Export          | Accepted | [`ADR.md`](ADR.md)                                                                                                     |
-| ADR-010  | process-compose for Local Dev Orchestration               | Accepted | [`ADR.md`](ADR.md)                                                                                                     |
-| ADR-011  | Credentials Management via OS Keychain                    | Accepted | [`ADR.md`](ADR.md)                                                                                                     |
-| ADR-012  | P2P Replication with Vector Clocks                        | Accepted | [`ADR.md`](ADR.md)                                                                                                     |
-| ADR-013  | Neo4j for Graph-Based Dependency Queries                  | Accepted | [`ADR.md`](ADR.md)                                                                                                     |
-| ADR-014  | Import Subsystem with Manifest-Driven Ingestion           | Accepted | [`ADR.md`](ADR.md)                                                                                                     |
-| ADR-0002 | Integration/Consolidate Branch Strategy                   | Accepted | [`docs/adr/0002-integration-consolidate-branch-strategy.md`](docs/adr/0002-integration-consolidate-branch-strategy.md) |
-| ADR-0003 | Docs Tree Consolidation                                   | Accepted | [`docs/adr/0003-docs-tree-consolidation.md`](docs/adr/0003-docs-tree-consolidation.md)                                 |
-| ADR-0004 | JSON Metadata to YAML Frontmatter + Code Decorators       | Accepted | [`docs/adr/0004-json-to-frontmatter-decorators.md`](docs/adr/0004-json-to-frontmatter-decorators.md)                   |
-| ADR-0005 | traceability-core Git Dependency                          | Accepted | [`docs/adr/0005-traceability-core-git-dependency.md`](docs/adr/0005-traceability-core-git-dependency.md)               |
-| ADR-0006 | Absorb agileplus-spec-harmonizer into workspace           | Accepted | [`docs/adr/0006-agileplus-spec-harmonizer-absorption.md`](docs/adr/0006-agileplus-spec-harmonizer-absorption.md)       |
-| ---      | Task Runner Selection                                     | Accepted | [`docs/adr/001-task-runner-selection.md`](docs/adr/001-task-runner-selection.md)                                       |
-| ---      | Registry Adapter Architecture                             | Accepted | [`docs/adr/002-registry-adapter-architecture.md`](docs/adr/002-registry-adapter-architecture.md)                       |
-| ADR-012  | Plugin Architecture (docs/adr copy)                       | Accepted | [`docs/adr/ADR-012-plugin-architecture.md`](docs/adr/ADR-012-plugin-architecture.md)                                   |
+| ID | Title | Status | Location |
+|----|-------|--------|----------|
+| ADR-001 | Rust Workspace Monorepo with 22 Crates | Accepted | [`ADR.md`](ADR.md) |
+| ADR-002 | Hexagonal Architecture with Port/Adapter Pattern | Accepted | [`ADR.md`](ADR.md) |
+| ADR-003 | SQLite as Local-First Storage with Optional External Sync | Accepted | [`ADR.md`](ADR.md) |
+| ADR-004 | SHA-256 Hash-Chained Immutable Audit Log and Event Store | Accepted | [`ADR.md`](ADR.md) |
+| ADR-005 | gRPC Service Layer with Tonic + Protobuf | Accepted | [`ADR.md`](ADR.md) |
+| ADR-006 | NATS JetStream as the Event Bus | Accepted | [`ADR.md`](ADR.md) |
+| ADR-007 | Plugin Architecture via External Git-Sourced Crates | Accepted | [`ADR.md`](ADR.md) |
+| ADR-008 | Python MCP Server for AI Agent Integration | Accepted | [`ADR.md`](ADR.md) |
+| ADR-009 | OpenTelemetry for Observability with OTLP Export | Accepted | [`ADR.md`](ADR.md) |
+| ADR-010 | process-compose for Local Dev Orchestration | Accepted | [`ADR.md`](ADR.md) |
+| ADR-011 | Credentials Management via OS Keychain | Accepted | [`ADR.md`](ADR.md) |
+| ADR-012 | P2P Replication with Vector Clocks | Accepted | [`ADR.md`](ADR.md) |
+| ADR-013 | Neo4j for Graph-Based Dependency Queries | Accepted | [`ADR.md`](ADR.md) |
+| ADR-014 | Import Subsystem with Manifest-Driven Ingestion | Accepted | [`ADR.md`](ADR.md) |
+| ADR-0002 | Integration/Consolidate Branch Strategy | Accepted | [`docs/adr/0002-integration-consolidate-branch-strategy.md`](docs/adr/0002-integration-consolidate-branch-strategy.md) |
+| ADR-0003 | Docs Tree Consolidation | Accepted | [`docs/adr/0003-docs-tree-consolidation.md`](docs/adr/0003-docs-tree-consolidation.md) |
+| ADR-0004 | JSON Metadata to YAML Frontmatter + Code Decorators | Accepted | [`docs/adr/0004-json-to-frontmatter-decorators.md`](docs/adr/0004-json-to-frontmatter-decorators.md) |
+| ADR-0005 | traceability-core Git Dependency | Accepted | [`docs/adr/0005-traceability-core-git-dependency.md`](docs/adr/0005-traceability-core-git-dependency.md) |
+| ADR-0006 | Absorb agileplus-spec-harmonizer into workspace | Accepted | [`docs/adr/0006-agileplus-spec-harmonizer-absorption.md`](docs/adr/0006-agileplus-spec-harmonizer-absorption.md) |
+| --- | Task Runner Selection | Accepted | [`docs/adr/001-task-runner-selection.md`](docs/adr/001-task-runner-selection.md) |
+| --- | Registry Adapter Architecture | Accepted | [`docs/adr/002-registry-adapter-architecture.md`](docs/adr/002-registry-adapter-architecture.md) |
+| ADR-012 | Plugin Architecture (docs/adr copy) | Accepted | [`docs/adr/ADR-012-plugin-architecture.md`](docs/adr/ADR-012-plugin-architecture.md) |
 
 ## DINO Integration
 
@@ -128,12 +87,10 @@ DINOForge (`Dino/`) is a mod platform for Diplomacy is Not an Option, tracked as
 - **Current Grade**: C (61/100) per 30-pillar audit
 
 ### Dino Worktree Convention
-
 - Feature work: `Dino-wtrees/<topic>/` (same as other submodules)
 - The `dinoforge-packs` and `dinoforge-packs-wtrees/journey-impl` submodule references are **archived** (repos absorbed into Dino via PR#377)
 - Do NOT re-create separate dinoforge-packs submodule
 
 ### Important
-
 - Dino has its own CI pipeline — do not duplicate workflows in AgilePlus
 - Dependabot PRs in Dino are auto-merged (patch/minor) via `agent-merge-on-bot-approve.yml`

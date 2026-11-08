@@ -9,7 +9,6 @@ protected release history.
 ## Scope
 
 In scope:
-
 - Active repos listed by AgilePlus inventory.
 - Root `CHANGELOG.md` policy.
 - Semver tag validation.
@@ -17,7 +16,6 @@ In scope:
 - Branch/tag hygiene for `main`, `release/*`, and release tags.
 
 Out of scope:
-
 - Archived or explicitly dormant repos.
 - Rewriting historical tags.
 - Paid SaaS release tooling.

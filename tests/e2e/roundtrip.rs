@@ -85,6 +85,8 @@ fn roundtrip_init_specify_list_writes_state_files() {
 
     Command::new(&bin)
         .args([
+            "--db",
+            db.to_str().expect("db path utf8"),
             "specify",
             "--feature",
             feature,
@@ -97,7 +99,7 @@ fn roundtrip_init_specify_list_writes_state_files() {
 
     let spec_file = repo
         .path()
-        .join("docs/agileplus")
+        .join("kitty-specs")
         .join(feature)
         .join("spec.md");
     assert!(
@@ -108,7 +110,13 @@ fn roundtrip_init_specify_list_writes_state_files() {
     assert!(db.is_file(), "sqlite db missing at {}", db.display());
 
     Command::new(&bin)
-        .args(["list", "--state", "specified"])
+        .args([
+            "--db",
+            db.to_str().expect("db path utf8"),
+            "list",
+            "--state",
+            "specified",
+        ])
         .current_dir(repo.path())
         .assert()
         .success()

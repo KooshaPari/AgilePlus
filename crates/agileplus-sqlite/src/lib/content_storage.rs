@@ -1,5 +1,5 @@
-use super::SqliteStorageAdapter;
 use crate::repository::{backlog, features, work_packages};
+use crate::lib::adapter::SqliteStorageAdapter;
 use agileplus_domain::{
     domain::{
         backlog::{BacklogFilters, BacklogItem, BacklogPriority, BacklogStatus},
@@ -11,7 +11,6 @@ use agileplus_domain::{
     ports::ContentStoragePort,
 };
 
-#[async_trait::async_trait]
 impl ContentStoragePort for SqliteStorageAdapter {
     async fn create_feature(&self, feature: &Feature) -> Result<i64, DomainError> {
         let conn = self.lock()?;
@@ -125,10 +124,7 @@ impl ContentStoragePort for SqliteStorageAdapter {
         work_packages::add_wp_dependency(&conn, dep)
     }
 
-    async fn get_wp_dependencies(
-        &self,
-        wp_id: i64,
-    ) -> Result<Vec<agileplus_domain::domain::work_package::WpDependency>, DomainError> {
+    async fn get_wp_dependencies(&self, wp_id: i64) -> Result<Vec<agileplus_domain::domain::work_package::WpDependency>, DomainError> {
         let conn = self.lock()?;
         work_packages::get_wp_dependencies(&conn, wp_id)
     }

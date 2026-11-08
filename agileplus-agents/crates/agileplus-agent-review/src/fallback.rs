@@ -73,16 +73,8 @@ pub fn prompt_manual_review(
     writeln!(out, "\n========== MANUAL REVIEW REQUIRED ==========").ok();
     writeln!(out, "Work package : {wp_title}").ok();
     writeln!(out, "PR URL       : {pr_url}").ok();
-    writeln!(
-        out,
-        "Coderabbit did not respond in time. Human review needed."
-    )
-    .ok();
-    writeln!(
-        out,
-        "Options: [a] approve   [r] reject   [c] request changes"
-    )
-    .ok();
+    writeln!(out, "Coderabbit did not respond in time. Human review needed.").ok();
+    writeln!(out, "Options: [a] approve   [r] reject   [c] request changes").ok();
     write!(out, "Your choice: ").ok();
     out.flush().ok();
 
@@ -108,11 +100,7 @@ pub fn prompt_manual_review(
             let reviewer = prompt_string(&mut out, "Reviewer name: ")?;
             let lines =
                 prompt_multiline(&mut out, "Comments (one per line, empty line to finish):")?;
-            warn!(
-                reviewer,
-                count = lines.len(),
-                "manual reviewer requested changes"
-            );
+            warn!(reviewer, count = lines.len(), "manual reviewer requested changes");
             Ok(ManualReviewResult::ChangesRequested {
                 reviewer,
                 comments: lines,
@@ -129,7 +117,10 @@ pub fn prompt_manual_review(
 fn read_line() -> Result<String, DomainError> {
     let stdin = io::stdin();
     let mut line = String::new();
-    stdin.lock().read_line(&mut line).map_err(DomainError::Io)?;
+    stdin
+        .lock()
+        .read_line(&mut line)
+        .map_err(|e| DomainError::Io(e))?;
     Ok(line)
 }
 

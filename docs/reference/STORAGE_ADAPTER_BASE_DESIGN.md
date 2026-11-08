@@ -697,7 +697,6 @@ impl StoragePort for SqliteStorageAdapter {
 ## Cargo.toml Structure
 
 **storage-adapter-base/Cargo.toml**:
-
 ```toml
 [package]
 name = "storage-adapter-base"
@@ -721,21 +720,18 @@ tokio = { version = "1", features = ["full"] }
 ## Testing Strategy
 
 ### Unit Tests
-
 - Error mapper behavior (transient detection)
 - Retry backoff calculation
 - Config validation
 - Pool metrics tracking
 
 ### Integration Tests
-
 - Each adapter's pool implements `StorageConnectionPool` correctly
 - Retry policy works with real backends
 - Health checks detect unhealthy adapters
 - Timeout handling works correctly
 
 ### Cross-Adapter Tests
-
 - All three adapters pass the same `StoragePort` test suite
 - Consistent error mapping across backends
 - Consistent retry behavior

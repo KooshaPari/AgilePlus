@@ -11,15 +11,12 @@ created_at: 2026-03-29T00:00:00Z
 # Work Package: Initial Implementation
 
 ## Feature
-
 # Portfolio audit: <REDACTED> legacy + Pheno SDK (`portfolio-audit-<REDACTED>-2026`)
 
 ## Acceptance Criteria
-
 - Implement the feature as specified.
 
 ## File Scope
-
 - `CI/QA`
 - `CodeProjects/`
 - `<REDACTED>/Dino`
@@ -34,7 +31,6 @@ created_at: 2026-03-29T00:00:00Z
 - `test/lint`
 
 ## Instructions
-
 Implement this work package according to the acceptance criteria above.
 Refer to `kitty-specs/portfolio-audit-<REDACTED>-2026/spec.md` for the full specification and
 `kitty-specs/portfolio-audit-<REDACTED>-2026/plan.md` for the implementation plan.
