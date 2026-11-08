@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-02-28
-**Feature**: /Users/kooshapari/CodeProjects/Phenotype/repos/heliosCLI/kitty-specs/001-codex-tui-renderer-optimization/spec.md
+**Feature**: /Users/<REDACTED>/CodeProjects/Phenotype/repos/heliosCLI/kitty-specs/001-codex-tui-renderer-optimization/spec.md
 
 ## Content Quality
 

@@ -1,11 +1,11 @@
-# Portfolio audit: KooshaPari legacy + Pheno SDK
+# Portfolio audit: <REDACTED> legacy + Pheno SDK
 
 ## Goal
-Establish a single tracked program to inventory, assess, and modernize KooshaPari-era and CodeProjects-local work (2023–2026), with Pheno SDK (`phenoSDK` GitHub) as the primary monolith input and Phenotype `libs/*` as extraction targets.
+Establish a single tracked program to inventory, assess, and modernize <REDACTED>-era and CodeProjects-local work (2023–2026), with Pheno SDK (`phenoSDK` GitHub) as the primary monolith input and Phenotype `libs/*` as extraction targets.
 
 ## Scope
-- GitHub org `KooshaPari` (249 repos): triage by last push, archive status, overlap with `Phenotype/repos`.
-- Local `CodeProjects/*` (KooshaPari/Dino, archive, orphans, Dev, learning): shallow health + link to remote if any.
+- GitHub org `<REDACTED>` (249 repos): triage by last push, archive status, overlap with `Phenotype/repos`.
+- Local `CodeProjects/*` (<REDACTED>/Dino, archive, orphans, Dev, learning): shallow health + link to remote if any.
 - Canonical SDK tree: `Phenotype/repos/worktrees/phenoSDK/main` (clone of `github.com/KooshaPari/phenoSDK`). Legacy `pheno-sdk` remote is empty; do not block on it.
 
 ## Acceptance criteria
@@ -16,7 +16,7 @@ Establish a single tracked program to inventory, assess, and modernize KooshaPar
 
 ## Non-goals (this phase)
 - Rewriting Pheno SDK in one pass.
-- Resolving GitHub Actions billing on KooshaPari account.
+- Resolving GitHub Actions billing on <REDACTED> account.
 
 ## Work packages (initial)
 - WP-A1: Freeze org inventory + local path map.

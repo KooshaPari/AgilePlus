@@ -9,7 +9,7 @@ description = "agileplus git — Phenotype infrastructure crate (AgilePlus)"
 documentation = "https://docs.rs/agileplus-git"
 keywords = ["phenotype", "agileplus", "git"]
 categories = ["development-tools::version-control"]
-authors = ["kooshapari"]
+authors = ["<REDACTED>"]
 
 [dependencies]
 agileplus-domain = { version = "0.2.1", path = "../agileplus-domain" }

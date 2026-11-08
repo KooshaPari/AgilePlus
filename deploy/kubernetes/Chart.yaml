@@ -12,9 +12,9 @@ keywords:
   - monorepo
   - phenokit
 maintainers:
-  - name: KooshaPari
-    email: kooshapari@gmail.com
+  - name: <REDACTED>
+    email: <REDACTED>@gmail.com
 annotations:
   category: Analytics
   licenses: Apache-2.0
-icon: https://raw.githubusercontent.com/KooshaPari/AgilePlus/main/assets/icon.png
+icon: https://raw.githubusercontent.com/<REDACTED>/AgilePlus/main/assets/icon.png

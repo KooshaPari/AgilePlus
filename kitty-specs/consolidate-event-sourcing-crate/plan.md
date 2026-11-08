@@ -3,7 +3,7 @@
 ## Phased WBS
 
 ### Phase 1 — Discovery (D)
-- D1: Enumerate exact copy paths across all KooshaPari org repos via `gh search code`.
+- D1: Enumerate exact copy paths across all <REDACTED> org repos via `gh search code`.
 - D2: Capture LOC + last-commit timestamp + `Cargo.toml` `version` for each copy.
 - D3: Diff each variant's public API against canonical (function signatures, public types, feature flags).
 - D4: List every internal Cargo.toml that declares `phenotype-event-sourcing = { path = ... }`.

@@ -34,7 +34,7 @@ Create 7 empty shared package repositories with proper structure, CI, README, an
 **Steps** (repeat for each):
 
 1. **phenotype-go-authkit**:
-   - `gh repo create KooshaPari/phenotype-go-authkit --public`
+   - `gh repo create <REDACTED>/phenotype-go-authkit --public`
    - `go mod init github.com/KooshaPari/phenotype-go-authkit`
    - Create `authkit.go` with package declaration + doc comment
    - Create `.github/workflows/go-ci.yml` (build, test, vet, lint)

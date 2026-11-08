@@ -9,7 +9,7 @@ repository = "https://github.com/KooshaPari/AgilePlus"
 documentation = "https://docs.rs/phenotype-dep-guard"
 keywords = ["phenotype", "agileplus"]
 categories = ["development-tools"]
-authors = ["kooshapari"]
+authors = ["<REDACTED>"]
 
 [dependencies]
 serde.workspace = true

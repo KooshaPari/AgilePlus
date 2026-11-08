@@ -536,7 +536,7 @@ https://docs.agileplus.dev
 
 If you need help:
 1. Comment on the issue you're working on
-2. Tag maintainers: `@KooshaPari`
+2. Tag maintainers: `@<REDACTED>`
 3. Ask in discussions
 4. Review architecture docs for context
 

@@ -54,7 +54,7 @@ iac/oci-lottery/
 │   ├── shapes.rs       # A1.Flex target spec
 │   ├── hooks.rs        # success hook chain dispatch
 │   └── ...
-└── launchd/com.kooshapari.oci-lottery.plist
+└── launchd/com.<REDACTED>.oci-lottery.plist
 ```
 
 - 5 regions polled concurrently via `tokio::spawn`

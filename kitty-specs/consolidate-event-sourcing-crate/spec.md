@@ -54,7 +54,7 @@ External (cross-workspace) consumers: **0**. All current dependency edges are lo
 ## Non-Goals
 
 - No new feature work on the crate API.
-- No re-purposing of the dormant `KooshaPari/phenotype-shared` repo (separate org-hygiene WP).
+- No re-purposing of the dormant `<REDACTED>/phenotype-shared` repo (separate org-hygiene WP).
 - No code in this spec, plan, or task documents (Planner-Agents-No-Code rule).
 - No simultaneous SemVer bump — the canonical crate retains its current version line.
 

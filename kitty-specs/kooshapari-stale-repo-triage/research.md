@@ -1,17 +1,17 @@
-# Research: kooshapari-stale-repo-triage (Post-Specify)
+# Research: <REDACTED>-stale-repo-triage (Post-Specify)
 **Date**: 2026-04-01 | **Mode**: delete-readiness validation
 
 ## Validated Case: `thegent-cache`
 
 ### Decision
 
-`KooshaPari/thegent-cache` should remain **archived**, not deleted.
+`<REDACTED>/thegent-cache` should remain **archived**, not deleted.
 
 ### Evidence
 
 - Local active code still exists in:
-  - `/Users/kooshapari/CodeProjects/Phenotype/repos/thegent/crates/thegent-cache`
-  - `/Users/kooshapari/CodeProjects/Phenotype/repos/platforms/thegent/crates/thegent-cache`
+  - `/Users/<REDACTED>/CodeProjects/Phenotype/repos/thegent/crates/thegent-cache`
+  - `/Users/<REDACTED>/CodeProjects/Phenotype/repos/platforms/thegent/crates/thegent-cache`
 - The active `thegent` workspace still includes `thegent-cache` in `crates/Cargo.toml`.
 - Package identity has **not** been migrated:
   - Rust package: `thegent-cache-rs`

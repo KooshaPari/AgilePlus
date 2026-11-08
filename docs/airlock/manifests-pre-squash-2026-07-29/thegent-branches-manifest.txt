@@ -1,7 +1,7 @@
 === Exporting thegent branches manifest ===
 Generated: 2026-07-29T06:57:00Z
-Repo: KooshaPari/thegent
-Local clone: /Users/kooshapari/CodeProjects/Phenotype/repos/thegent
+Repo: <REDACTED>/thegent
+Local clone: /Users/<REDACTED>/CodeProjects/Phenotype/repos/thegent
 HEAD: 73c30b26c905199cc10fbd42b633d37ed16beb28
 HEAD subject: fix(cli): expose package module entrypoint
 

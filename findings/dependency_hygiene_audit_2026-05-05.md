@@ -103,6 +103,6 @@ These are NOT masking stale dependency issues.
 
 ## Repository
 
-- Location: `/Users/kooshapari/CodeProjects/Phenotype/repos/findings/dependency_hygiene_audit_2026-05-05.md`
+- Location: `/Users/<REDACTED>/CodeProjects/Phenotype/repos/findings/dependency_hygiene_audit_2026-05-05.md`
 - Audit Date: 2026-05-05
 - Repos Audited: 5 (thegent, helios-cli, AtomsBot, PolicyStack, phenoShared)

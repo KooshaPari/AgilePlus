@@ -9,7 +9,7 @@ description = "agileplus refinery — Phenotype infrastructure crate (AgilePlus)
 documentation = "https://docs.rs/agileplus-refinery"
 keywords = ["phenotype", "agileplus", "refinery"]
 categories = ["data-structures"]
-authors = ["kooshapari"]
+authors = ["<REDACTED>"]
 
 [features]
 default = []

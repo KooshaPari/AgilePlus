@@ -6,7 +6,7 @@ Phenotype-org spec-driven development framework for AI agents.
 
 ### One-liner (Windows PowerShell)
 ```powershell
-irm https://raw.githubusercontent.com/KooshaPari/AgilePlus/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/<REDACTED>/AgilePlus/main/install.ps1 | iex
 ```
 
 ### Chocolatey
@@ -16,7 +16,7 @@ choco install agileplus
 
 ### WinGet
 ```powershell
-winget install KooshaPari.AgilePlus
+winget install <REDACTED>.AgilePlus
 ```
 
 ### From Source
@@ -41,7 +41,7 @@ agileplus --help              # All commands
 ## Uninstall
 
 ```powershell
-irm https://raw.githubusercontent.com/KooshaPari/AgilePlus/main/uninstall.ps1 | iex
+irm https://raw.githubusercontent.com/<REDACTED>/AgilePlus/main/uninstall.ps1 | iex
 ```
 
 ## Links

@@ -4,7 +4,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable.
 
 ## WP-CCA-01 — Discovery & drift matrix
 
-- **Scope (read):** all KooshaPari org repos containing `crates/phenotype-cache-adapter/`.
+- **Scope (read):** all <REDACTED> org repos containing `crates/phenotype-cache-adapter/`.
 - **Scope (write):** `kitty-specs/consolidate-cache-adapter-crate/research.md`.
 - **Acceptance criteria:**
   - Drift matrix lists LOC, last-commit, version, public-API delta, and cache-semantics constants (TTL default, capacity default, L1/L2 split) per copy.
@@ -13,7 +13,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable.
 - **Depends on:** none.
 - **Estimate:** 6–10 tool calls / 2–3 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-cache-adapter/`, phenoShared@HEAD, none]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-cache-adapter/`, phenoShared@HEAD, none]
 - Write: [`kitty-specs/consolidate-cache-adapter-crate/research.md`]
 
 ## WP-CCA-02 — Per-host migration ticket authoring
@@ -59,7 +59,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable.
 - **Parallel with:** WP-CCA-03, WP-CCA-05, WP-CCA-06.
 - **Estimate:** 5–8 tool calls / 3–4 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-cache-adapter/`, phenoShared/, WP-CCA-02]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-cache-adapter/`, phenoShared/, WP-CCA-02]
 - Write: [Cargo.toml, Nested `phenotype-shared/Cargo.toml` retired or repointed]
 
 ## WP-CCA-05 — Migrate host `DataKit/rust`
@@ -70,7 +70,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable.
 - **Parallel with:** WP-CCA-03, WP-CCA-04, WP-CCA-06.
 - **Estimate:** 4–6 tool calls / 2–3 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-cache-adapter/`, phenoShared/, WP-CCA-02]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-cache-adapter/`, phenoShared/, WP-CCA-02]
 - Write: [DataKit/rust]
 
 ## WP-CCA-06 — Migrate host `PhenoKits/HexaKit`
@@ -81,7 +81,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable.
 - **Parallel with:** WP-CCA-03, WP-CCA-04, WP-CCA-05.
 - **Estimate:** 4–6 tool calls / 2–3 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-cache-adapter/`, phenoShared/, WP-CCA-02]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-cache-adapter/`, phenoShared/, WP-CCA-02]
 - Write: [PhenoKits/HexaKit]
 
 ## WP-CCA-07 — Cache-semantics parity verification
@@ -108,7 +108,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable.
 - **Depends on:** WP-CCA-03 ∧ WP-CCA-04 ∧ WP-CCA-05 ∧ WP-CCA-06 ∧ WP-CCA-07.
 - **Estimate:** 3–5 tool calls / 1–2 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-cache-adapter/`, phenoShared/, WP-CCA-03 ∧ WP-CCA-04 ∧ WP-CCA-05 ∧ WP-CCA-06 ∧ WP-CCA-07]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-cache-adapter/`, phenoShared/, WP-CCA-03 ∧ WP-CCA-04 ∧ WP-CCA-05 ∧ WP-CCA-06 ∧ WP-CCA-07]
 - Write: [cross-project-reuse-audit-2026-04-25.md]
 
 ## Aggregate

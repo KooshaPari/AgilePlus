@@ -4,7 +4,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable except `Resi
 
 ## WP-CSM-01 — Discovery & drift matrix (incl. ResilienceKit inventory)
 
-- **Scope (read):** all KooshaPari org repos containing `crates/phenotype-state-machine/`.
+- **Scope (read):** all <REDACTED> org repos containing `crates/phenotype-state-machine/`.
 - **Scope (write):** `kitty-specs/consolidate-state-machine-crate/research.md`.
 - **Acceptance criteria:**
   - Drift matrix lists LOC, last-commit, version, public-API delta, transition-guard contract per copy.
@@ -14,7 +14,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable except `Resi
 - **Depends on:** none.
 - **Estimate:** 8–12 tool calls / 3–4 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-state-machine/`, none]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-state-machine/`, none]
 - Write: [`kitty-specs/consolidate-state-machine-crate/research.md`]
 
 ## WP-CSM-02 — Per-host migration ticket authoring + canonical feature-flag plan
@@ -44,7 +44,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable except `Resi
 - **Depends on:** WP-CSM-02.
 - **Estimate:** 6–10 tool calls / 3–4 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-state-machine/`, phenoShared/, WP-CSM-02]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-state-machine/`, phenoShared/, WP-CSM-02]
 - Write: [phenoShared/crates/phenotype-state-machine/Cargo.toml, phenoShared]
 
 ## WP-CSM-04 — Migrate host `pheno`
@@ -66,7 +66,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable except `Resi
 - **Parallel with:** WP-CSM-04, WP-CSM-06, WP-CSM-07.
 - **Estimate:** 5–8 tool calls / 3–4 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-state-machine/`, phenoShared/, WP-CSM-02]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-state-machine/`, phenoShared/, WP-CSM-02]
 - Write: [kitty-specs/consolidate-state-machine-crate/research.md]
 
 ## WP-CSM-06 — Migrate host `HexaKit/crates`
@@ -77,7 +77,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable except `Resi
 - **Parallel with:** WP-CSM-04, WP-CSM-05, WP-CSM-07.
 - **Estimate:** 4–6 tool calls / 2–3 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-state-machine/`, phenoShared/, WP-CSM-02]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-state-machine/`, phenoShared/, WP-CSM-02]
 - Write: [HexaKit/crates]
 
 ## WP-CSM-07 — Migrate host `PhenoKits/HexaKit`
@@ -88,7 +88,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable except `Resi
 - **Parallel with:** WP-CSM-04, WP-CSM-05, WP-CSM-06.
 - **Estimate:** 4–6 tool calls / 2–3 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-state-machine/`, phenoShared/, WP-CSM-02]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-state-machine/`, phenoShared/, WP-CSM-02]
 - Write: [PhenoKits/HexaKit]
 
 ## WP-CSM-08 — Migrate host `ResilienceKit/rust` (special: features-enabled swap)
@@ -119,7 +119,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable except `Resi
 - **Depends on:** WP-CSM-04 ∧ WP-CSM-05 ∧ WP-CSM-06 ∧ WP-CSM-07 ∧ WP-CSM-08.
 - **Estimate:** 3–5 tool calls / 1–2 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-state-machine/`, phenoShared/, WP-CSM-04 ∧ WP-CSM-05 ∧ WP-CSM-06 ∧ WP-CSM-07 ∧ WP-CSM-08]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-state-machine/`, phenoShared/, WP-CSM-04 ∧ WP-CSM-05 ∧ WP-CSM-06 ∧ WP-CSM-07 ∧ WP-CSM-08]
 - Write: [kitty-specs/consolidate-state-machine-crate/research.md]
 
 ## Aggregate

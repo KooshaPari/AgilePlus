@@ -9,7 +9,7 @@ repository = "https://github.com/KooshaPari/AgilePlus"
 documentation = "https://docs.rs/agileplus-mcp-intent"
 keywords = ["phenotype", "agileplus", "mcp"]
 categories = ["api-bindings"]
-authors = ["kooshapari"]
+authors = ["<REDACTED>"]
 
 [[bin]]
 name = "agileplus-mcp-intent"

@@ -2,7 +2,7 @@
   "schema_version": "2.0",
   "audit_date": "2026-07-17",
   "auditor": "forge / 130-pillar scorecard (fresh audit + pillar-by-pillar gap-to-95 WBS)",
-  "repository": "KooshaPari/AgilePlus",
+  "repository": "<REDACTED>/AgilePlus",
   "branch": "feat/audit-phase-2b",
   "summary": {
     "previous_score": 0.34,
@@ -68,5 +68,5 @@
     "L30_onboarding": { "score": 70, "evidence": [".devcontainer, scripts, README"] }
   },
   "next_sprint_target": "Add event bus crate (L26), pagination helpers (L28), clippy pedantic (L9), mutation CI (L21), and Astro pages (Planify L16). Goal: 75.3 -> 85.",
-  "push_status": "BLOCKED: KooshaPari/AgilePlus is archived and read-only on GitHub. Local commit f4cde7c6 on branch feat/audit-phase-2b is ready to push once the repo is unarchived or migrated."
+  "push_status": "BLOCKED: <REDACTED>/AgilePlus is archived and read-only on GitHub. Local commit f4cde7c6 on branch feat/audit-phase-2b is ready to push once the repo is unarchived or migrated."
 }

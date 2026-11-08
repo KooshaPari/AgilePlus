@@ -3,7 +3,7 @@
 ## Phased WBS
 
 ### Phase 1 — Discovery (D)
-- D1: Enumerate exact copy paths for `phenotype-policy-engine` across all KooshaPari org repos.
+- D1: Enumerate exact copy paths for `phenotype-policy-engine` across all <REDACTED> org repos.
 - D2: Capture LOC, last-commit, version per copy.
 - D3: Diff each variant's public API + TOML schema + decision-combination strategy.
 - D4: Enumerate consumer-edge map (`path =` refs and `use phenotype_policy_engine::*` sites).

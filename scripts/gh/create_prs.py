@@ -13,7 +13,7 @@ def run_command(command, cwd=None):
 
 
 def main():
-    repo_path = "/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus"
+    repo_path = "/Users/<REDACTED>/CodeProjects/Phenotype/repos/AgilePlus"
 
     # Get unmerged branches
     print("Getting unmerged branches...")
@@ -35,7 +35,7 @@ def main():
     # Get open PR head branches
     print("Getting open PR head branches...")
     stdout, stderr, code = run_command(
-        "gh pr list --repo KooshaPari/AgilePlus --state open --limit 1000 --json headRefName",
+        "gh pr list --repo <REDACTED>/AgilePlus --state open --limit 1000 --json headRefName",
         cwd=repo_path,
     )
     if code != 0:
@@ -59,7 +59,7 @@ def main():
         title = f"[{branch}] sync: align with main"
         body = "Automated PR created by subagent to ensure all branches have an open PR against main.\n\nMade with [Cursor](https://cursor.com)"
 
-        cmd = f'gh pr create --repo KooshaPari/AgilePlus --base main --head "{branch}" --title "{title}" --body "{body}"'
+        cmd = f'gh pr create --repo <REDACTED>/AgilePlus --base main --head "{branch}" --title "{title}" --body "{body}"'
         stdout, stderr, code = run_command(cmd, cwd=repo_path)
 
         if code == 0:

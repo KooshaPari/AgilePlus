@@ -34,7 +34,7 @@
 | `eco-012-orgops-capital-ledger` | ok | 7055 | `spec.md` |
 | `feature-specification-template-platform-completion` | contains placeholder markers: todo, placeholder | 9483 | `spec.md` |
 | `helioscli-rmcp-client-sdk-fix` | ok | 854 | `spec.md` |
-| `kooshapari-stale-repo-triage` | ok | 438 | `spec.md` |
+| `<REDACTED>-stale-repo-triage` | ok | 438 | `spec.md` |
 | `oci-lottery-daemon` | contains placeholder markers: tbd | 3860 | `spec.md` |
 | `oci-post-acquire-hooks` | contains placeholder markers: tbd | 4151 | `spec.md` |
 | `phenosdk-decompose-core` | ok | 1043 | `spec.md` |
@@ -43,6 +43,6 @@
 | `phenosdk-fix-notimplemented` | contains placeholder markers: todo | 892 | `spec.md` |
 | `phenosdk-sanitize-atoms` | ok | 927 | `spec.md` |
 | `phenosdk-wave-a-contracts` | ok | 551 | `spec.md` |
-| `portfolio-audit-kooshapari-2026` | ok | 1725 | `spec.md` |
+| `portfolio-audit-<REDACTED>-2026` | ok | 1725 | `spec.md` |
 | `snyk-phase-1-deploy` | ok | 3400 | `spec.md` |
 | `thegent-dotfiles-consolidation` | ok | 1036 | `spec.md` |

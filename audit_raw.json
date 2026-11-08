@@ -438,7 +438,7 @@
         "File":  "crates/agileplus-cli/src/sync_cmd.rs",
         "Line":  151,
         "IsTest":  "lib",
-        "Text":  "let (owner, name) = split_repo(\"KooshaPari/AgilePlus\").unwrap();"
+        "Text":  "let (owner, name) = split_repo(\"<REDACTED>/AgilePlus\").unwrap();"
     },
     {
         "Pattern":  "unwrap\\(\\)",

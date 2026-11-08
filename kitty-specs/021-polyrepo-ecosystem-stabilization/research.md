@@ -3,8 +3,8 @@
 ## Audit Methodology
 
 This research was conducted on 2026-04-02 using parallel worker agents to audit:
-1. **GitHub Organization**: All 247 repos under KooshaPari
-2. **Local Shelf State**: 9 cloned repos at /Users/kooshapari/CodeProjects/Phenotype/repos
+1. **GitHub Organization**: All 247 repos under <REDACTED>
+2. **Local Shelf State**: 9 cloned repos at /Users/<REDACTED>/CodeProjects/Phenotype/repos
 3. **AgilePlus State**: 35 specs, worklogs, governance docs
 4. **In-Progress Tasks**: All dirty files, open PRs, active branches across repos
 
@@ -62,7 +62,7 @@ Only 9 of 247 repos are cloned locally, but they consume 89 GB:
 Of 35 specs in kitty-specs/:
 - **Complete** (spec + plan + tasks + research): 3 specs (001, 002, 003)
 - **Partial** (spec + some artifacts): 8 specs (004, 008, eco-005, eco-006, eco-012, phenosdk-*)
-- **Spec only**: 15 specs (005, 006, 007, 012, 013, 014-020, kooshapari-stale-repo-triage, etc.)
+- **Spec only**: 15 specs (005, 006, 007, 012, 013, 014-020, <REDACTED>-stale-repo-triage, etc.)
 - **Ecosystem cleanup**: 6 specs (eco-001 through eco-004 complete, eco-005/006 partial)
 
 **Insight**: 43% of specs have only spec.md files — they need plans, tasks, and research to be actionable.

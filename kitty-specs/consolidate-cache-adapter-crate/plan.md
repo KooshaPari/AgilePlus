@@ -3,7 +3,7 @@
 ## Phased WBS
 
 ### Phase 1 — Discovery (D)
-- D1: Enumerate exact copy paths for `phenotype-cache-adapter` across all KooshaPari org repos.
+- D1: Enumerate exact copy paths for `phenotype-cache-adapter` across all <REDACTED> org repos.
 - D2: Capture LOC, last-commit timestamp, declared `Cargo.toml` `version` per copy.
 - D3: Diff each variant's public API + cache-semantics constants (TTL default, capacity default, L1/L2 split policy).
 - D4: List every internal `Cargo.toml` declaring `phenotype-cache-adapter = { path = ... }` plus all `use phenotype_cache_adapter::*` import sites.

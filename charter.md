@@ -39,7 +39,7 @@ Authority: [phenotype-registry DOMAIN_ROLES](https://github.com/KooshaPari/pheno
 
 | Action | Authority |
 |--------|-----------|
-| Merge to `main` | KooshaPari + 1 reviewer |
+| Merge to `main` | <REDACTED> + 1 reviewer |
 
 ## Changelog
 

@@ -303,9 +303,9 @@ Audit of GitHub-hosted external dependencies beyond crates.io.
 | Dependency | Type | Usage | Assessment |
 |------------|------|-------|------------|
 | `AgilePlus/agileplus` | Self | Workspace reference | OK |
-| `KooshaPari/agileplus-plugin-core` | Plugin | Optional dependency | Review |
-| `KooshaPari/agileplus-plugin-git` | Plugin | Optional dependency | Review |
-| `KooshaPari/agileplus-plugin-sqlite` | Plugin | Optional dependency | Review |
+| `<REDACTED>/agileplus-plugin-core` | Plugin | Optional dependency | Review |
+| `<REDACTED>/agileplus-plugin-git` | Plugin | Optional dependency | Review |
+| `<REDACTED>/agileplus-plugin-sqlite` | Plugin | Optional dependency | Review |
 | `phenotype/agileplus-proto` | Proto | Go package path | OK |
 
 ### Plugin Dependencies

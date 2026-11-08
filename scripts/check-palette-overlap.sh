@@ -12,7 +12,7 @@
 
 set -eo pipefail
 
-PHENOTYPE_ROOT="${PHENOTYPE_ROOT:-/Users/kooshapari/CodeProjects/Phenotype/repos}"
+PHENOTYPE_ROOT="${PHENOTYPE_ROOT:-/Users/<REDACTED>/CodeProjects/Phenotype/repos}"
 HEX_RE='#[0-9a-fA-F]{6}'
 
 # Canvas-default colors that don't count as brand tokens (universal SVG defaults,

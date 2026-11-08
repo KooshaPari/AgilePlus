@@ -3,7 +3,7 @@
 ## Phased WBS
 
 ### Phase 1 — Discovery (D)
-- D1: Enumerate exact copy paths for `phenotype-state-machine` across all KooshaPari org repos.
+- D1: Enumerate exact copy paths for `phenotype-state-machine` across all <REDACTED> org repos.
 - D2: Capture LOC, last-commit, declared version per copy.
 - D3: Diff each variant's public API + transition-guard contract surface.
 - D4: List every internal `Cargo.toml` declaring `phenotype-state-machine = { path = ... }` plus `use phenotype_state_machine::*` import sites.

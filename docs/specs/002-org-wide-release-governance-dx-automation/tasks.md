@@ -289,7 +289,7 @@
 - Templates use Go `text/template` with repo-specific variables (name, language, registry, risk profile)
 - Multi-language repos get merged configs (e.g., mise.toml with both Rust and Python tasks)
 - Private repos: skip publishing templates but include lint/test/hook infrastructure
-- Generated CI workflows reference `KooshaPari/phenotypeActions/.github/workflows/<name>.yml@v1`
+- Generated CI workflows reference `<REDACTED>/phenotypeActions/.github/workflows/<name>.yml@v1`
 
 ### Parallel Opportunities
 - T051-T055 are all parallel (independent template files)

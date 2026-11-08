@@ -35,7 +35,7 @@ WP01 establishes the foundational CLI structure and adapter interface that all d
 
 1. Create a new Go module at the root of the AgilePlus repository:
    ```bash
-   cd /Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus
+   cd /Users/<REDACTED>/CodeProjects/Phenotype/repos/AgilePlus
    go mod init github.com/KooshaPari/pheno-cli
    ```
 

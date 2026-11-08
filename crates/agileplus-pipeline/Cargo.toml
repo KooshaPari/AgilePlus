@@ -9,7 +9,7 @@ repository = "https://github.com/KooshaPari/AgilePlus"
 documentation = "https://docs.rs/agileplus-pipeline"
 keywords = ["phenotype", "agileplus", "pipeline"]
 categories = ["asynchronous"]
-authors = ["kooshapari"]
+authors = ["<REDACTED>"]
 
 [dependencies]
 agileplus-graph = { path = "../agileplus-graph" }

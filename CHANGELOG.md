@@ -60,7 +60,7 @@ Format: [CalVer](https://calver.org) -- `YEAR.MONTH(WAVE).PATCH`
 
 ### Chores
 
-- Add .mailmap canonicalizing bot identities to KooshaPari ([e8db364](https://github.com/KooshaPari/AgilePlus/commit/e8db3646))
+- Add .mailmap canonicalizing bot identities to <REDACTED> ([e8db364](https://github.com/KooshaPari/AgilePlus/commit/e8db3646))
 - Untrack __pycache__/*.pyc from index + gitignore ([bb7e413](https://github.com/KooshaPari/AgilePlus/commit/bb7e4139))
 - **deps**: Bump tokio, regex, uv group ([328f2ef](https://github.com/KooshaPari/AgilePlus/commit/328f2efa))
 
@@ -188,7 +188,7 @@ Format: [CalVer](https://calver.org) -- `YEAR.MONTH(WAVE).PATCH`
 - **work-audit**: Add 4 ghost repos — phenotype-gauge, phenotype-go-kit, phenotype-nexus, phenotype-shared ([2f03d4c](https://github.com/KooshaPari/thegent/commit/2f03d4c650ad053bffb5b21ca20133d36bb54cd5))
 - **work-audit**: Fix heliosApp path to correct location ([20810cf](https://github.com/KooshaPari/thegent/commit/20810cf4ae37a3525ce5ae644aa6d029e19a210b))
 - **work-audit**: Fix thegent path — final manifest state ([8a828a3](https://github.com/KooshaPari/thegent/commit/8a828a37d4a6e18404a64da3cf0afaa2e571474a))
-- Add portfolio-audit-kooshapari-2026 kitty-specs ([0c724f3](https://github.com/KooshaPari/thegent/commit/0c724f34664a4d19e094b5d32e2550e2df22de2f))
+- Add portfolio-audit-<REDACTED>-2026 kitty-specs ([0c724f3](https://github.com/KooshaPari/thegent/commit/0c724f34664a4d19e094b5d32e2550e2df22de2f))
 - **work-audit**: Fix template-commons and tokenledger paths — final state ([669cf7a](https://github.com/KooshaPari/thegent/commit/669cf7afde51d9f09b70411f5e0671992e7d97fb))
 - Update gitignore with all untracked dirs ([59d7c61](https://github.com/KooshaPari/thegent/commit/59d7c61dd62e1e205c9490ddb4ab27cc58b7ce80))
 - Ignore template-commons ([841551e](https://github.com/KooshaPari/thegent/commit/841551ee17841c851d76e1b4fbb6e0cafc51b08f))

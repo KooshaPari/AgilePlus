@@ -280,13 +280,14 @@ where
                 .collect()
         };
 
+        let wp_ids: Vec<_> = filtered.iter().map(|wp| wp.id).collect();
+        let dependency_rows = self
+            .storage
+            .get_wp_dependencies_batch(&wp_ids)
+            .await
+            .map_err(domain_error_to_status)?;
         let mut packages = Vec::with_capacity(filtered.len());
-        for wp in filtered {
-            let dependencies = self
-                .storage
-                .get_wp_dependencies(wp.id)
-                .await
-                .map_err(domain_error_to_status)?;
+        for (wp, (_, dependencies)) in filtered.into_iter().zip(dependency_rows) {
             packages.push(wp_to_proto_with_dependencies(wp, &dependencies));
         }
 

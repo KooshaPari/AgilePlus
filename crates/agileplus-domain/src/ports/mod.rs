@@ -56,6 +56,16 @@ pub trait StoragePort: Send + Sync {
     async fn list_wps_by_feature(&self, feature_id: i64) -> Result<Vec<WorkPackage>, DomainError>;
     async fn add_wp_dependency(&self, dep: &WpDependency) -> Result<(), DomainError>;
     async fn get_wp_dependencies(&self, wp_id: i64) -> Result<Vec<WpDependency>, DomainError>;
+    async fn get_wp_dependencies_batch(
+        &self,
+        wp_ids: &[i64],
+    ) -> Result<Vec<(i64, Vec<WpDependency>)>, DomainError> {
+        let mut result = Vec::with_capacity(wp_ids.len());
+        for &wp_id in wp_ids {
+            result.push((wp_id, self.get_wp_dependencies(wp_id).await?));
+        }
+        Ok(result)
+    }
     async fn get_ready_wps(&self, feature_id: i64) -> Result<Vec<WorkPackage>, DomainError>;
 
     async fn create_work_package_for_story(
@@ -288,6 +298,16 @@ pub trait ContentStoragePort: Send + Sync {
     async fn list_wps_by_feature(&self, feature_id: i64) -> Result<Vec<WorkPackage>, DomainError>;
     async fn add_wp_dependency(&self, dep: &WpDependency) -> Result<(), DomainError>;
     async fn get_wp_dependencies(&self, wp_id: i64) -> Result<Vec<WpDependency>, DomainError>;
+    async fn get_wp_dependencies_batch(
+        &self,
+        wp_ids: &[i64],
+    ) -> Result<Vec<(i64, Vec<WpDependency>)>, DomainError> {
+        let mut result = Vec::with_capacity(wp_ids.len());
+        for &wp_id in wp_ids {
+            result.push((wp_id, self.get_wp_dependencies(wp_id).await?));
+        }
+        Ok(result)
+    }
     async fn get_ready_wps(&self, feature_id: i64) -> Result<Vec<WorkPackage>, DomainError>;
     async fn create_backlog_item(&self, item: &BacklogItem) -> Result<i64, DomainError>;
     async fn get_backlog_item(&self, id: i64) -> Result<Option<BacklogItem>, DomainError>;

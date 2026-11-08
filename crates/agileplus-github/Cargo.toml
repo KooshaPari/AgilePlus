@@ -9,7 +9,7 @@ description = "agileplus github — Phenotype infrastructure crate (AgilePlus)"
 documentation = "https://docs.rs/agileplus-github"
 keywords = ["phenotype", "agileplus", "git"]
 categories = ["development-tools::version-control"]
-authors = ["kooshapari"]
+authors = ["<REDACTED>"]
 
 [dependencies]
 anyhow.workspace = true
