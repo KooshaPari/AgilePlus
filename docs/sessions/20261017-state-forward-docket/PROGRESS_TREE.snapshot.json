@@ -72,10 +72,10 @@
     },
     "Validation": {
       "PASS": 6,
-      "PARTIAL": 11,
-      "FAIL": 3,
-      "NOT_RUN": 40,
-      "UNKNOWN": 1,
+      "PARTIAL": 12,
+      "FAIL": 4,
+      "NOT_RUN": 39,
+      "UNKNOWN": 0,
       "STALE": 0,
       "BLOCKED": 0,
       "NOT_APPLICABLE": 1,
@@ -460,7 +460,7 @@
       "cell": "E.2.P1-GENERIC — Implement \"generic feature transition cannot award Validated or Shipped\"",
       "move": "(1) Decide product semantics: is \"generic\" a property of the Feature (new kind field with Generic/Specific) or of the governance contract (missing contract ⇒ transitions to Validated/Shipped are rejected)? (2) Implement the rule in crates/agileplus-domain/src/domain/feature.rs::Feature::transition() (lines 95-115) and/or atomic acceptance port at crates/agileplus-application/src/use_cases/accept_feature.rs. (3) Replace the tautology at crates/agileplus-api/src/routes/features.rs:392 with a behavior test that attempts transition(Implementing, Validated) on a feature whose governance contract is absent (or kind=Generic) and asserts Err(...).",
       "eta_min": 60,
-      "note": "PARTIAL 2026-10-18T20:07Z (raven, 4m 30s, 45m cap). Investigation advanced from OPEN to PARTIAL. Production enforcement already exists at 3 places: HTTP transition features.rs:283-287, HTTP create features.rs:168-172, gRPC dispatch mod.rs:705-714. t-rex carry-forward was directionally correct but operationally mis-scoped (misread \"generic\" as a Feature.kind field; it means \"generic transport path\"). The ONLY real gap is the tautology test at features.rs:391-399. Recommended fix: Design A (25 min, test-only). Open questions for operator: (1) accept Design A or want Design B/C layering? (2) test naming convention? (3) phase E.2.P1-GENERIC now or behind other P1 CFs? See docs/sessions/20261017-state-forward-docket/e2_p1_generic_2026-10-18-raven-result.md for full 685-line investigation + design alternatives + citation index.",
+      "note": "PARTIAL 2026-10-18T20:07Z (raven, 4m 30s, 45m cap). Investigation advanced from OPEN to PARTIAL. Production enforcement already exists at 3 places: HTTP transition features.rs:283-287, HTTP create features.rs:168-172, gRPC dispatch mod.rs:705-714. t-rex carry-forward was directionally correct but operationally mis-scoped (misread \"generic\" as a Feature.kind field; it means \"generic transport path\"). The ONLY real gap in those 3 transport paths is the tautology test at features.rs:391-399; two paths outside them remain unguarded (see unguarded_paths), so Design A alone does not close the rule. Recommended fix: Design A (25 min, test-only). Open questions for operator: (1) accept Design A or want Design B/C layering? (2) test naming convention? (3) phase E.2.P1-GENERIC now or behind other P1 CFs? See docs/sessions/20261017-state-forward-docket/e2_p1_generic_2026-10-18-raven-result.md for full 685-line investigation + design alternatives + citation index.",
       "source": "t-rex subagent 2026-10-18T19:36:07Z carry-forward (E.2/E.5 Val PARTIAL)",
       "verdict": "PARTIAL",
       "blocking": true,
@@ -471,12 +471,16 @@
       "wall_clock_seconds": 270,
       "operator_decision_pending": "design_pick (A: test-only, B: domain layer, C: governance contract)",
       "eta_after_decision": "25 min for Design A; 45-60 min for Design B; 90-120 min for Design C",
-      "t_rex_misframing": "t-rex misread \"generic\" as a Feature.kind enum. Production code already enforces the rule at the transport layer; only test is a tautology.",
+      "t_rex_misframing": "t-rex misread \"generic\" as a Feature.kind enum. Production code already enforces the rule at the 3 feature-level transport locations; only the test there is a tautology. The CLI mvp guard is a work-package guard (WpState::Done) and is not a feature-level protection, and the application-layer AdvanceFeature::execute plus the dashboard transition route remain unguarded.",
       "production_enforcement_locations": [
         "crates/agileplus-api/src/routes/features.rs:283-287 (HTTP transition)",
         "crates/agileplus-api/src/routes/features.rs:168-172 (HTTP create)",
-        "crates/agileplus-grpc/src/server/mod.rs:705-714 (gRPC dispatch)",
-        "crates/agileplus-cli/src/commands/mvp.rs:755-769 (CLI mvp)"
+        "crates/agileplus-grpc/src/server/mod.rs:705-714 (gRPC dispatch)"
+      ],
+      "production_enforcement_locations_correction": "2026-11-08: the former 4th entry 'crates/agileplus-cli/src/commands/mvp.rs:755-769 (CLI mvp)' was removed. That range is the test direct_wp_done_transition_is_rejected; the guard it exercises (mvp.rs:350-358) rejects a direct work-package transition to WpState::Done, and mvp.rs contains no feature-state transition path, so it is not a feature-level protection. The count of feature-level transport protections is 3, which is also what this entry's own note already stated.",
+      "unguarded_paths": [
+        "crates/agileplus-dashboard/src/routes/features.rs:536-567 (dashboard generic transition route — sets Validated/Shipped with no canonical-acceptance check; mutates the dashboard's in-memory DashboardStore only)",
+        "crates/agileplus-application/src/use_cases/advance_feature.rs:27-53 (AdvanceFeature::execute — domain transition check then update_feature_state, no canonical-acceptance check; persists the terminal state)"
       ]
     },
     {
@@ -1461,14 +1465,18 @@
     "verdict_after": "PARTIAL (investigation complete, design proposed, awaiting operator pick)",
     "t_rex_carry_forward_re_evaluated": {
       "t_rex_finding": "Production gap + tautology test",
-      "raven_correction": "Production code already enforces the rule at transport layer; only test is a tautology. t-rex misread \"generic\" as Feature.kind field. Real gap is test-quality only.",
-      "real_gap": "tautology test at features.rs:391-399 (1 line: 9-line test that asserts nothing)"
+      "raven_correction": "Production code already enforces the rule at the 3 feature-level transport locations; only the test there is a tautology. t-rex misread \"generic\" as a Feature.kind field. Real gap in the transport paths is test-quality only. The CLI mvp guard is a work-package guard (WpState::Done), not a feature-level protection, and two paths outside those transports remain unguarded: the dashboard's generic transition route and the application-layer AdvanceFeature::execute.",
+      "real_gap": "tautology test at features.rs:391-399 (1 line: 9-line test that asserts nothing); plus the two unguarded paths recorded in unguarded_paths"
     },
     "production_enforcement_locations": [
       "crates/agileplus-api/src/routes/features.rs:283-287 (HTTP transition rejects terminal targets with HTTP 400)",
       "crates/agileplus-api/src/routes/features.rs:168-172 (HTTP create rejects terminal initial states with HTTP 400)",
-      "crates/agileplus-grpc/src/server/mod.rs:705-714 (gRPC dispatch fails closed on validate/ship with Status::unimplemented)",
-      "crates/agileplus-cli/src/commands/mvp.rs:755-769 (CLI mvp transition enforces \"exact candidate-bound evaluation\")"
+      "crates/agileplus-grpc/src/server/mod.rs:705-714 (gRPC dispatch fails closed on validate/ship with Status::unimplemented)"
+    ],
+    "production_enforcement_locations_correction": "2026-11-08: the former 4th entry 'crates/agileplus-cli/src/commands/mvp.rs:755-769 (CLI mvp transition enforces \"exact candidate-bound evaluation\")' was removed. That range is the test direct_wp_done_transition_is_rejected; the guard it exercises (mvp.rs:350-358) rejects a direct work-package transition to WpState::Done, and mvp.rs contains no feature-state transition path. The count of feature-level transport protections is 3.",
+    "unguarded_paths": [
+      "crates/agileplus-dashboard/src/routes/features.rs:536-567 (dashboard generic transition route — sets Validated/Shipped with no canonical-acceptance check; mutates the dashboard's in-memory DashboardStore only)",
+      "crates/agileplus-application/src/use_cases/advance_feature.rs:27-53 (AdvanceFeature::execute — domain transition check then update_feature_state, no canonical-acceptance check; persists the terminal state)"
     ],
     "canonical_path": "crates/agileplus-application/src/use_cases/accept_feature.rs (15 lines) — invoked by POST /{slug}/accept",
     "design_alternatives": {
@@ -1476,7 +1484,7 @@
       "B": "Add rule to Feature::transition() (domain layer). 45-60 min, risk of breaking traceability_core upstream. Defense in depth.",
       "C": "Governance-contract-as-source-of-truth. 90-120 min. Heaviest design."
     },
-    "recommendation": "Design A. Production code already correct. WBS exit criterion substantively met today.",
+    "recommendation": "Design A. Production code is correct at the 3 feature-level transport locations. WBS exit criterion substantively met today for those transports; the two unguarded paths recorded in unguarded_paths are additional work that Design A does not cover.",
     "operator_decision_required": {
       "design_pick": "A (test-only, 25 min) | B (domain layer, 45-60 min) | C (governance contract, 90-120 min)",
       "test_naming": "coverage_transition_feature_rejects_terminal_states (recommended for symmetry) | other",
@@ -1485,7 +1493,7 @@
     "citation_index": "19 file:line citations in Appendix A of the result file (every claim anchored)",
     "no_source_code_modified": true,
     "no_pr_opened": true,
-    "p1_exit_criterion_status": "substantively met today; Design A is the only remaining work to formalize evidence"
+    "p1_exit_criterion_status": "substantively met today for the 3 feature-level transport locations; Design A is the remaining work to formalize evidence there, and the two unguarded paths recorded in unguarded_paths remain open"
   },
   "count_semantics": {
     "source_of_truth": "PROGRESS_TREE.md tree body (per-cell). The JSON dimension_breakdown and headline_counts are RENDERED from it.",

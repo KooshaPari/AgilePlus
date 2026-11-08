@@ -345,18 +345,30 @@ def collect_drift(md_text, rows, d, js):
     ndr = headlines.ndr_items(rows)
     gates = headlines.clear_gates(rows)
     hc_raw = js.get("headline_counts", {})
-    if not hc_raw.get("ndr_items_with_target_witness", "").startswith(f"{len(ndr)}/10"):
-        drift.append(
-            f"json ndr_items_with_target_witness: "
-            f"{hc_raw.get('ndr_items_with_target_witness', '')[:20]}... "
-            f"-> {len(ndr)}/10 (derived from tree body)"
-        )
-    if not hc_raw.get("gates_pass", "").startswith(f"{len(gates)}/20"):
-        drift.append(
-            f"json gates_pass: "
-            f"{hc_raw.get('gates_pass', '')[:20]}... "
-            f"-> {len(gates)}/20 (derived from tree body)"
-        )
+    # Compare the stored headline NAMES, not just the count. A tree edit can
+    # swap which items carry PASS without changing any count; then the stored
+    # names go stale and the snapshot contradicts the tree body while the
+    # headline still reads "3/10". Reporting only the count prefix would let
+    # that pass validation and leave the docket self-contradicting.
+    for key, total, derived, label in (
+        ("ndr_items_with_target_witness", 10, ndr, "json NDR"),
+        ("gates_pass", 20, gates, "json gates"),
+    ):
+        stored = hc_raw.get(key, "")
+        m = headlines.HEADLINE_RE.match(stored)
+        if not m:
+            drift.append(f"{label}: unexpected headline shape in {key}: {stored[:60]!r}")
+            continue
+        if int(m.group("count")) != len(derived):
+            drift.append(
+                f"{label}: stored count {m.group('count')} != derived {len(derived)} "
+                f"(derived from tree body)"
+            )
+        if int(m.group("total")) != total:
+            drift.append(f"{label}: stored denominator {m.group('total')} != expected {total}")
+        named = [x.strip() for x in m.group("items").split(",") if x.strip()]
+        if named != derived:
+            drift.append(f"{label}: stored names {named} != derived {derived}")
     for pat, want, label in (
         (r"\*\*(\d+) / 10\*\* NDR items", len(ndr), "md NDR"),
         (r"\*\*(\d+) / 20\*\* gates are clearly PASS", len(gates), "md gates"),

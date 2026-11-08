@@ -77,9 +77,11 @@ git commit -m "chore: untrack .agileplus/agileplus.db"
 ```
 
 Both steps (the untracking commit **and** the `.gitignore` addition) must land. This is the
-"B.y" carry-forward that was filed from this receipt and closed by squid in PR #1161
+"B.y" carry-forward that was filed from this receipt and implemented by squid in PR #1161,
+which was still **open — pending merge** — at this recorded checkpoint
 (`by_gitignore_hook_2026-10-18-squid-result.md`, "`.agileplus/agileplus.db` — Removed from index
-(`git rm --cached`); working tree copy preserved").
+(`git rm --cached`); working tree copy preserved"). Neither step had landed on `main` at this
+checkpoint: `.agileplus/agileplus.db` is still tracked in the repository.
 
 ## Carry-forward cell movement
 

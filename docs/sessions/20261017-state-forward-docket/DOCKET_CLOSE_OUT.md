@@ -31,31 +31,31 @@
 
 ### 11 CLOSED (this session = 5 new closures + 6 historical carry-ins)
 
-| #   | Cell                                               | Verdict              | Closed by                                                                                                                                                                                                                                                                                                 | When              |
-| --- | -------------------------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
-| 1   | A.4 / E.19 Validation                              | PASS (historical)    | sloth-v3 subagent (coverage 93.99%)                                                                                                                                                                                                                                                                       | 2026-10-18T09:17Z |
-| 2   | A.4 / E.20 Validation                              | PARTIAL (historical) | parrot subagent (PR #1157)                                                                                                                                                                                                                                                                                | 2026-10-18T06:48Z |
-| 3   | B.5 case-level                                     | PASS (historical)    | parent orchestrator (CASE_BINDING_2026-10-17.md)                                                                                                                                                                                                                                                          | 2026-10-17T22:14Z |
-| 4   | B.6 / E.6 Validation                               | PASS (historical)    | turtle subagent (20 events tests pass)                                                                                                                                                                                                                                                                    | 2026-10-17T23:08Z |
-| 5   | D.3 Implementation                                 | PASS (historical)    | turtle subagent (cargo build clean)                                                                                                                                                                                                                                                                       | 2026-10-17T23:02Z |
-| 6   | D.3 Validation                                     | PASS                 | **otter subagent** (3 reopen tests + live restart smoke)                                                                                                                                                                                                                                                  | 2026-10-18T09:29Z |
-| 7   | B.3 / B.4 Usability                                | PASS (composite)     | **ferret (PARTIAL 92s) → gecko (PASS 261s)**                                                                                                                                                                                                                                                              | 2026-10-18T09:46Z |
-| 8   | B.6 / B.7 Storage Hygiene                          | PASS                 | **gecko subagent** (5 rows UPDATE'd)                                                                                                                                                                                                                                                                      | 2026-10-18T09:46Z |
-| 9   | B.x follow-up: source of non-RFC3339               | CLOSED-PARTIAL       | **newt subagent** (210s; no Rust source culprit, upstream commit ea5a517a carried corruption)                                                                                                                                                                                                             | 2026-10-18T09:58Z |
-| 10  | B.y: gitignore + pre-commit hook                   | PASS                 | **squid subagent** (455s, PR #1161, all 5 self-tests pass)                                                                                                                                                                                                                                                | 2026-10-18T10:09Z |
-| 11  | E.2 / E.5 Validation                               | PARTIAL              | **t-rex subagent** (95s; P1 10/10, P2 6/6; 1 new carry-forward: E.2.P1-GENERIC)                                                                                                                                                                                                                           | 2026-10-18T19:36Z |
-| 12  | E.2.P1-422 — Pin the 422 status                    | PASS                 | **owl subagent** (60s; PR #1164; 1-line assertion tightening, zero behavior change)                                                                                                                                                                                                                       | 2026-10-18T19:41Z |
-| 13  | CF-1: python-coverage workflow needs COVERAGE_PATH | PASS                 | **badger subagent** (3m 30s; PR #1166; added coverage-path: python to coverage.yml; verified against upstream action.yml)                                                                                                                                                                                 | 2026-10-18T19:57Z |
-| 14  | CF-2: cargo-mutants timeout reduction              | PASS                 | **badger subagent** (3m 30s; PR #1166; timeout-minutes 360→300; 2 observed comms-loss events at 5h28m/5h32m15s; **the 300-minute value itself is unvalidated** — see the CF-2 receipt)                                                                                                                    | 2026-10-18T19:57Z |
-| 15  | E.2.P1-GENERIC — Replace tautology test            | PARTIAL              | **raven subagent** (4m 30s; investigation only; t-rex carry-forward was mis-scoped — production code already enforces the rule at 4 transport-layer locations; recommended fix is **Design A**: 25-min test-only replacement of tautology at features.rs:391-399; awaiting operator pick on Design A/B/C) | 2026-10-18T20:07Z |
+| #   | Cell                                               | Verdict              | Closed by                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | When              |
+| --- | -------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| 1   | A.4 / E.19 Validation                              | PASS (historical)    | sloth-v3 subagent (coverage 93.99%)                                                                                                                                                                                                                                                                                                                                                                                                                                                         | 2026-10-18T09:17Z |
+| 2   | A.4 / E.20 Validation                              | PARTIAL (historical) | parrot subagent (PR #1157)                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 2026-10-18T06:48Z |
+| 3   | B.5 case-level                                     | PASS (historical)    | parent orchestrator (CASE_BINDING_2026-10-17.md)                                                                                                                                                                                                                                                                                                                                                                                                                                            | 2026-10-17T22:14Z |
+| 4   | B.6 / E.6 Validation                               | PASS (historical)    | turtle subagent (20 events tests pass)                                                                                                                                                                                                                                                                                                                                                                                                                                                      | 2026-10-17T23:08Z |
+| 5   | D.3 Implementation                                 | PASS (historical)    | turtle subagent (cargo build clean)                                                                                                                                                                                                                                                                                                                                                                                                                                                         | 2026-10-17T23:02Z |
+| 6   | D.3 Validation                                     | PASS                 | **otter subagent** (3 reopen tests + live restart smoke)                                                                                                                                                                                                                                                                                                                                                                                                                                    | 2026-10-18T09:29Z |
+| 7   | B.3 / B.4 Usability                                | PASS (composite)     | **ferret (PARTIAL 92s) → gecko (PASS 261s)**                                                                                                                                                                                                                                                                                                                                                                                                                                                | 2026-10-18T09:46Z |
+| 8   | B.6 / B.7 Storage Hygiene                          | PASS                 | **gecko subagent** (5 rows UPDATE'd)                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 2026-10-18T09:46Z |
+| 9   | B.x follow-up: source of non-RFC3339               | CLOSED-PARTIAL       | **newt subagent** (210s; no Rust source culprit, upstream commit ea5a517a carried corruption)                                                                                                                                                                                                                                                                                                                                                                                               | 2026-10-18T09:58Z |
+| 10  | B.y: gitignore + pre-commit hook                   | PASS                 | **squid subagent** (455s, PR #1161 — open at this checkpoint, all 5 self-tests pass)                                                                                                                                                                                                                                                                                                                                                                                                        | 2026-10-18T10:09Z |
+| 11  | E.2 / E.5 Validation                               | PARTIAL              | **t-rex subagent** (95s; P1 10/10, P2 6/6; 1 new carry-forward: E.2.P1-GENERIC)                                                                                                                                                                                                                                                                                                                                                                                                             | 2026-10-18T19:36Z |
+| 12  | E.2.P1-422 — Pin the 422 status                    | PASS                 | **owl subagent** (60s; PR #1164; 1-line assertion tightening, zero behavior change)                                                                                                                                                                                                                                                                                                                                                                                                         | 2026-10-18T19:41Z |
+| 13  | CF-1: python-coverage workflow needs COVERAGE_PATH | PASS                 | **badger subagent** (3m 30s; PR #1166; added coverage-path: python to coverage.yml; verified against upstream action.yml)                                                                                                                                                                                                                                                                                                                                                                   | 2026-10-18T19:57Z |
+| 14  | CF-2: cargo-mutants timeout reduction              | PASS                 | **badger subagent** (3m 30s; PR #1166; timeout-minutes 360→300; 2 observed comms-loss events at 5h28m/5h32m15s; **the 300-minute value itself is unvalidated** — see the CF-2 receipt)                                                                                                                                                                                                                                                                                                      | 2026-10-18T19:57Z |
+| 15  | E.2.P1-GENERIC — Replace tautology test            | PARTIAL              | **raven subagent** (4m 30s; investigation only; t-rex carry-forward was mis-scoped — production code already enforces the rule at 3 feature-level transport locations; 2 further unguarded paths are open (dashboard generic transition route + `AdvanceFeature::execute`), so Design A alone does not close the rule — see Section 4.5 item 4); recommended fix is **Design A**: 25-min test-only replacement of tautology at features.rs:391-399; awaiting operator pick on Design A/B/C) | 2026-10-18T20:07Z |
 
 ### 4 OPEN (4 cheap_closes across the 3 rows below; E.2.P1-GENERIC moved out → PARTIAL awaiting operator — see Section 4.5 and Section 5)
 
-| #   | Cell                                                           | Why open                                                                                                                                                                                                                    | Path to close                                                                                                                                                                                                                   |
-| --- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 13  | A.4 / E.9 Validation (2 entries)                               | PR #1156 (`fix/mvp-test-true-cmd-portability`) is MERGEABLE but CI is currently FAILING (cargo-deny, cargo-mutants, semver-checks, python-coverage, gate CANCELLED). 1-line portability fix; merge blocked on CI diagnosis. | Operator: merge PR #1156 via `git -c merge.ff=true merge --squash`; then dispatch sloth-v4 to re-run cargo+llvm-cov WITHOUT `--skip wp_transition_requires_its_contract_evidence_before_mutation` to confirm 93.99% reproduces. |
-| 14  | F.3 doc gaps                                                   | 6 doc files (RISK_REGISTER, COVERAGE_REPORT, DASHBOARD_PROD_OBSERVED, etc.) to be added in 1 PR. **LOWEST priority per "do real work, not more docs" preference.**                                                          | Operator: dispatch subagent (eta 30m) to open 1 docs PR. Or deprioritize entirely.                                                                                                                                              |
-| 15  | CF-3: rust/ sub-workspace cleanup (deferred to kitty-spec 003) | The stale `rust/` sub-workspace is currently excluded via root `Cargo.toml` exclude. Full deletion tracked by `kitty-specs/003-agileplus-platform-completion`. 30m, non-blocking.                                           | Operator: when kitty-spec 003 advances, dispatch subagent to delete the `rust/` directory + remove the `exclude` line.                                                                                                          |
+| #   | Cell                                                                                                                                       | Why open                                                                                                                                                                                                                    | Path to close                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 13  | A.4 / E.9 Validation (2 entries — intent E9 = "Quality Gates", tree row **B.9**; **not** Section E's `E.9` = G9 "GitHub pull implemented") | PR #1156 (`fix/mvp-test-true-cmd-portability`) is MERGEABLE but CI is currently FAILING (cargo-deny, cargo-mutants, semver-checks, python-coverage, gate CANCELLED). 1-line portability fix; merge blocked on CI diagnosis. | Operator: diagnose PR #1156's failing checks (cargo-deny, cargo-mutants, semver-checks, python-coverage, gate CANCELLED) and confirm a fresh **passing** run of those checks on the PR head before merging. Merge through the PR (`gh pr merge --squash`) only once that green run is observed — a direct squash-merge push to `main` would land the change while those checks are still red. Then dispatch sloth-v4 to re-run cargo+llvm-cov WITHOUT `--skip wp_transition_requires_its_contract_evidence_before_mutation` to confirm 93.99% reproduces. |
+| 14  | F.3 doc gaps                                                                                                                               | 6 doc files (RISK_REGISTER, COVERAGE_REPORT, DASHBOARD_PROD_OBSERVED, etc.) to be added in 1 PR. **LOWEST priority per "do real work, not more docs" preference.**                                                          | Operator: dispatch subagent (eta 30m) to open 1 docs PR. Or deprioritize entirely.                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 15  | CF-3: rust/ sub-workspace cleanup (deferred to kitty-spec 003)                                                                             | The stale `rust/` sub-workspace is currently excluded via root `Cargo.toml` exclude. Full deletion tracked by `kitty-specs/003-agileplus-platform-completion`. 30m, non-blocking.                                           | Operator: when kitty-spec 003 advances, dispatch subagent to delete the `rust/` directory + remove the `exclude` line.                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ---
 
@@ -74,12 +74,45 @@
 
 **Canonical merge path** (per AGENTS.md "Merge Strategy: Direct-Push When `gh pr merge` Is Fail-Closed"):
 
+The direct-push fallback exists for the fail-closed case (`gh pr merge` blocked by tooling). It is
+**not** a way to land a PR whose checks are red: diagnose the failing checks and confirm a fresh
+passing run on the PR head before merging.
+
+The sequence below is written so that **any failing step stops it** (`set -euo pipefail`): a
+failed `git checkout` must not be followed by a squash commit on the wrong branch, and a failed
+`git push` must not be followed by closing the PR. The verification steps sit **before** the PR
+closure.
+
 ```bash
+set -euo pipefail
+
 git checkout main
 git pull --ff-only origin main
-git -c merge.ff=true merge --squash <branch-name>
-git commit -m "merge(<branch>): <PR title> (#<N>)\n\ntx-agent: jcode\ntx-validated: manual\ntx-intent: close <cheap close id>"
+
+# Verify the PR's current head before squashing. A stale local branch would
+# otherwise push an older squash and close the PR without its newer changes.
+git fetch origin <branch-name>
+PR_HEAD="$(gh pr view <N> --repo KooshaPari/AgilePlus --json headRefOid --jq .headRefOid)"
+test "$(git rev-parse "origin/<branch-name>")" = "$PR_HEAD"
+
+git -c merge.ff=true merge --squash "origin/<branch-name>"
+
+# Provenance trailers separated by REAL newlines (a heredoc), so Git parses
+# them as trailers instead of one line containing literal "\n" text.
+git commit -F- <<'MSG'
+merge(<branch>): <PR title> (#<N>)
+
+tx-agent: jcode
+tx-validated: manual
+tx-intent: close <cheap close id>
+MSG
+
 git push origin main
+
+# Verification, before the PR is closed.
+git log --oneline -1 origin/main   # must be the squash commit
+test "$(gh pr view <N> --repo KooshaPari/AgilePlus --json headRefOid --jq .headRefOid)" = "$PR_HEAD"
+
 gh pr close --repo KooshaPari/AgilePlus <N>
 ```
 
@@ -92,6 +125,10 @@ it first (as above), then verify the squash commit landed before closing the PR:
 ```bash
 git log --oneline -1 origin/main   # must be the squash commit
 ```
+
+That last check is evidence that **the squash landed**, not evidence that the PR head was current
+when the squash was built. PR-head currency is established by the `PR_HEAD` comparison before the
+squash and re-checked after the push, immediately before the PR is closed.
 
 ---
 
@@ -124,30 +161,35 @@ raven (4m 30s, 45m cap) investigated E.2.P1-GENERIC. Key findings:
 
 1. **t-rex carry-forward was mis-scoped**. There is NO `Feature.kind` field, no `FeatureKind` enum, no `is_generic()` method. "Generic" in this codebase means "the generic state-transition path" (HTTP, gRPC, CLI transport) — an established codebase term, not a feature classification.
 
-2. **Production enforcement already exists at 4 transport-layer locations**:
+2. **Production enforcement for the feature-level rule already exists at 3 transport-layer locations**:
     - `crates/agileplus-api/src/routes/features.rs:283-287` — HTTP transition rejects `Validated|Shipped` with HTTP 400
     - `crates/agileplus-api/src/routes/features.rs:168-172` — HTTP create rejects terminal initial states with HTTP 400
     - `crates/agileplus-grpc/src/server/mod.rs:705-714` — gRPC dispatch fails closed on `validate|ship` with `Status::unimplemented`
-    - `crates/agileplus-cli/src/commands/mvp.rs:755-769` — CLI mvp enforces "exact candidate-bound evaluation"
 
-3. **The only real gap is the tautology test at `crates/agileplus-api/src/routes/features.rs:391-399`** (9 lines, asserts nothing about behavior).
+    The fourth location formerly listed here, `crates/agileplus-cli/src/commands/mvp.rs:755-769`, is **not** a feature-level guard: that range is the test `direct_wp_done_transition_is_rejected`, and the guard it exercises (`mvp.rs:350-358`) rejects a direct **work-package** transition to `WpState::Done`. `crates/agileplus-cli/src/commands/mvp.rs` contains no feature-state transition path at all, so it governs a different state machine and does not count toward the feature-level protections.
 
-4. **P1 exit criterion ("HTTP is a projection of the application acceptance use case") is substantively met today.**
+3. **The only real gap in those transport paths is the tautology test at `crates/agileplus-api/src/routes/features.rs:391-399`** (9 lines, asserts nothing about behavior).
 
-5. **Recommended fix: Design A (25 min, test-only)**:
+4. **Two paths outside those transports are unguarded, so a transport-layer test fix alone does not close the rule**:
+    - `crates/agileplus-dashboard/src/routes/features.rs:536-567` — the dashboard's generic transition route (`POST /api/features/:id/transition`) parses `target_state` and calls `Feature::transition()` directly, with no canonical-acceptance check. The domain state machine permits `Implementing → Validated` and `Validated → Shipped` (`crates/agileplus-domain/src/domain/feature.rs:95-117`), so the route can set a feature to `Validated`/`Shipped` without canonical acceptance. It mutates only the dashboard's in-memory `DashboardStore`, not the canonical database — but it is a live unguarded path and therefore belongs in this carry-forward.
+    - `crates/agileplus-application/src/use_cases/advance_feature.rs:27-53` — `AdvanceFeature::execute` validates the transition with the same domain state machine and then persists it via `update_feature_state`, with no canonical-acceptance check. An integration that calls it with `validated`/`shipped` persists the terminal state directly. An HTTP behaviour test does not cover this path.
+
+5. **P1 exit criterion ("HTTP is a projection of the application acceptance use case") is substantively met today.**
+
+6. **Recommended fix: Design A (25 min, test-only)**:
     - Delete the 9-line tautology test at `features.rs:391-399`
     - Add a 25-line HTTP behavior test `coverage_transition_feature_rejects_terminal_states` next to its sibling `coverage_create_feature_rejects_terminal_states` at `route_coverage.rs:254-269`
     - Test shape: POST `/api/v1/features/{slug}/transition` with `target_state ∈ {"validated", "shipped"}`, assert HTTP 400 + message contains "terminal feature states"
-    - Zero behavior change; closes the BLOCKING cheap_close
+    - Zero behavior change; closes the BLOCKING cheap_close on the transport-path gap (item 3). The two unguarded paths in item 4 remain open and are tracked separately — Design A does not close them.
 
-6. **Operator decision required (3 questions)**:
+7. **Operator decision required (3 questions)**:
     - **Q1**: Pick Design A (test-only, 25 min), Design B (domain-layer rule, 45-60 min), or Design C (governance contract, 90-120 min)?
     - **Q2**: Confirm test name `coverage_transition_feature_rejects_terminal_states` (recommended for symmetry with create-route sibling)?
     - **Q3**: Land Design A now (close the only BLOCKING CF), or park behind other P1 carry-forwards?
 
-7. **After operator picks Design A**, dispatch 25-min subagent to apply. PR can be opened same session.
+8. **After operator picks Design A**, dispatch 25-min subagent to apply. PR can be opened same session.
 
-8. **Citation index**: 19 file:line citations in Appendix A of `e2_p1_generic_2026-10-18-raven-result.md` (every claim anchored).
+9. **Citation index**: 19 file:line citations in Appendix A of `e2_p1_generic_2026-10-18-raven-result.md` (every claim anchored). The two unguarded paths in item 4 were verified directly against those sources and are not part of raven's 19-citation Appendix A set.
 
 **Result file**: `docs/sessions/20261017-state-forward-docket/e2_p1_generic_2026-10-18-raven-result.md` (685 lines, 29776 bytes)
 
@@ -158,7 +200,7 @@ raven (4m 30s, 45m cap) investigated E.2.P1-GENERIC. Key findings:
 ### B.y (closed PASS)
 
 - Filed 2026-10-18T09:58Z as carry-forward from newt's B.x finding
-- Closed 2026-10-18T10:09Z by squid subagent (PR #1161)
+- Closed 2026-10-18T10:09Z by squid subagent (PR #1161) — closed as a **carry-forward** (the work was done and PR #1161 was opened); PR #1161 itself was still **open, pending merge** at this checkpoint, and `.agileplus/agileplus.db` remained tracked
 - Durable fix: `.gitignore` explicit `.agileplus/*.db*` patterns + `.githooks/pre-commit-validate-timestamps` (NEW +102 lines, executable bash)
 
 ### E.2.P1-422 (closed PASS)
@@ -171,7 +213,7 @@ raven (4m 30s, 45m cap) investigated E.2.P1-GENERIC. Key findings:
 ### E.2.P1-GENERIC (PARTIAL, awaiting operator decision on Design A/B/C)
 
 - Filed 2026-10-18T19:36Z as carry-forward from t-rex's E.2/E.5 Val PARTIAL
-- **Corrected 2026-10-18T20:07Z by raven's investigation (Section 4.5):** production enforcement for "generic feature transition cannot award Validated or Shipped" **already exists** at 4 transport-layer locations (HTTP create, HTTP transition, gRPC dispatch, CLI mvp). The remaining gap is the tautology test at `crates/agileplus-api/src/routes/features.rs:391-399` — not a missing production rule.
+- **Corrected 2026-10-18T20:07Z by raven's investigation (Section 4.5):** production enforcement for "generic feature transition cannot award Validated or Shipped" **already exists** at 3 feature-level transport locations (HTTP create, HTTP transition, gRPC dispatch). The CLI `mvp` guard is a **work-package** guard (rejects `WpState::Done`) and is not a feature-level protection. The remaining transport-path gap is the tautology test at `crates/agileplus-api/src/routes/features.rs:391-399` — not a missing production rule. Two paths outside those transports are still unguarded: the dashboard's generic transition route (`crates/agileplus-dashboard/src/routes/features.rs:536-567`, in-memory store only) and the application-layer `AdvanceFeature::execute` (`crates/agileplus-application/src/use_cases/advance_feature.rs:27-53`, which persists the terminal state) — see Section 4.5 item 4.
 - Still blocks the P1 exit criterion until the operator picks Design A (test-only), B (domain-layer rule) or C (governance contract)
 
 ---

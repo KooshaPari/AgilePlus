@@ -23,8 +23,48 @@ HEADLINE_RE = re.compile(
 
 # The md headline bullets. The NDR bullet lists bare item names; the gates
 # bullet lists per-gate descriptions, so only its count is rewritten.
-MD_NDR_RE = re.compile(r"\*\*(\d+) / 10\*\* NDR items \(([^)]*)\)")
-MD_GATES_RE = re.compile(r"\*\*(\d+) / 20\*\* gates are clearly PASS \(([^)]*)\)")
+#
+# The pattern matches the bullet's opening parenthesis only; the *content* is
+# extracted with `_balanced_group` below. A flat `[^)]*` would stop at the
+# first `)`, so a description that itself contains brackets (for example
+# "G9 = GitHub pull implemented (GH PR)") would truncate the captured text,
+# silently drop every gate name that follows it, and make the rewrite report
+# a false mismatch instead of repairing the docket.
+MD_NDR_RE = re.compile(r"\*\*(?P<count>\d+) / 10\*\* NDR items \(")
+MD_GATES_RE = re.compile(r"\*\*(?P<count>\d+) / 20\*\* gates are clearly PASS \(")
+
+
+def _balanced_group(text, open_idx):
+    """Return `(inner, end)` for the parenthesised group starting at `open_idx`.
+
+    `open_idx` must index the opening `(`. Nested parentheses are matched, so
+    a description containing brackets is captured whole rather than cut at the
+    first `)`. Raises ValueError when the group is never closed.
+    """
+    depth = 0
+    for i in range(open_idx, len(text)):
+        ch = text[i]
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+            if depth == 0:
+                return text[open_idx + 1 : i], i + 1
+    raise ValueError("unbalanced parenthesis in headline bullet")
+
+
+def _bullet(text, regex):
+    """Return `(count, inner, span)` for a headline bullet matched by `regex`.
+
+    `span` is the `(start, end)` slice covering the whole bullet -- the
+    leading `**N / M**` label through the closing parenthesis -- so a rewrite
+    can replace it exactly.
+    """
+    m = regex.search(text)
+    if not m:
+        raise ValueError("headline bullet not found")
+    inner, end = _balanced_group(text, m.end() - 1)
+    return int(m.group("count")), inner, (m.start(), end)
 
 
 def row_index(label):
@@ -85,28 +125,21 @@ def rewrite_md_bullets(md_text, ndr, gates):
     Raises ValueError when a bullet's stored item list does not match the
     tree body, so a stale narrative is reported instead of silently kept.
     """
-    m = MD_NDR_RE.search(md_text)
-    if not m:
-        raise ValueError("md NDR headline bullet not found")
-    named = [x.strip() for x in m.group(2).split(",") if x.strip()]
+    _, inner, (start, end) = _bullet(md_text, MD_NDR_RE)
+    named = [x.strip() for x in inner.split(",") if x.strip()]
     if named != ndr:
         raise ValueError(f"md NDR bullet names {named} but the tree body derives {ndr}")
-    md_text = MD_NDR_RE.sub(
-        lambda _: f"**{len(ndr)} / 10** NDR items ({', '.join(ndr)})", md_text, count=1
-    )
+    md_text = md_text[:start] + f"**{len(ndr)} / 10** NDR items ({', '.join(ndr)})" + md_text[end:]
 
-    m = MD_GATES_RE.search(md_text)
-    if not m:
-        raise ValueError("md gates headline bullet not found")
-    descriptions = m.group(2)
+    _, descriptions, (start, end) = _bullet(md_text, MD_GATES_RE)
     named = sorted(
         {"G" + g for g in re.findall(r"\bG(\d+)\b", descriptions)}, key=lambda g: int(g[1:])
     )
     if named != gates:
         raise ValueError(f"md gates bullet names {named} but the tree body derives {gates}")
-    md_text = MD_GATES_RE.sub(
-        lambda _: f"**{len(gates)} / 20** gates are clearly PASS ({descriptions})",
-        md_text,
-        count=1,
+    md_text = (
+        md_text[:start]
+        + f"**{len(gates)} / 20** gates are clearly PASS ({descriptions})"
+        + md_text[end:]
     )
     return md_text

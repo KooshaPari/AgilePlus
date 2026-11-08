@@ -50,11 +50,17 @@ PARTIAL because the cell claims CLI invocation usability, and invocation-side us
   mistyped subcommand, so the CLI's behaviour on a bad subcommand name is **unknown** from this
   receipt and is not covered by the HEALTHY verdict above.
 - **Epic-specific behaviour: not exercised.** The invocations cover the CLI _invocation surface_
-  (`--help`, `--version`, per-subcommand help) and the `list` / `queue list` data paths. They do
+  (`--help`, `--version`, per-subcommand help) and the `list` data path (invocation row 3, which
+  failed on the data-quality fault described below). They do
   **not** exercise worker dispatch (E3 "Attempt + Worker Lifecycle") or the independent evaluator
   (E4 "Independent Evaluator") at runtime. The Usability PASS that the parent later recorded for
   B.3 / B.4 rests on this invocation-surface evidence; it is a statement about the operator-facing
   CLI surface, not a claim that those two capabilities were executed end to end.
+- **`queue list` was not run by this receipt.** The invocation table above records no `queue list`
+  run. The `queue list` coverage behind the composite B.3 / B.4 verdict comes from the later
+  gecko receipt (`b67_storage_2026-10-18-gecko-result.md`, 2026-10-18T09:46Z: "`./target/debug/agileplus
+queue list` exit 0 — 4 backlog items rendered"), which ran the command after the storage-hygiene
+  fix landed. Credit for that command belongs to gecko's receipt, not to this smoke.
 - **Scope of the data-path failure.** The `agileplus list` failure is a data-quality fault in the
   local `agileplus.db`, not a CLI defect (see the Blockers section).
 
