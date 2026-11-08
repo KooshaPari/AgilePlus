@@ -2,7 +2,7 @@
 """Compare the MEDIAN of N cargo bench runs against a stored baseline.
 
 Usage:
-    check_bench_regressions_median.py <bench1.txt> <bench2.txt> [<bench3.txt> ...] <baseline.json> [--max-regress N]
+    check_bench_regressions_median.py <bench1.txt> <bench2.txt> [<bench3.txt> ...] <baseline.json> [--noise-budget PCT] [--max-regress N]
 
 This is the noise-tolerant variant of `check_bench_regressions.py`. It takes the
 median of median_ns values per benchmark across N runs and compares that
