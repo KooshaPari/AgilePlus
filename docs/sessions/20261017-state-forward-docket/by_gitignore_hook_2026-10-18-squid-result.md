@@ -34,6 +34,41 @@
 - Cross-check: `SELECT count(*) FROM features WHERE updated_at IS NOT NULL AND updated_at NOT GLOB '*T*'` returned `0` (gecko's 5-row fix is still intact).
 - 16 tables in the current DB have `updated_at` columns: features, work_packages, policy_rules, modules, cycles, projects, backlog_items, users, epics, stories, gate_results, run_records, scope_status, intent_nodes, intent_graph_metadata, channel_iterations. All passed.
 
+**Limitation of this check (important).** The hook's predicate is `updated_at NOT GLOB '*T*'` — it
+verifies only that the value contains a `T` separator, **not** that the value is a valid RFC3339
+timestamp. A value such as `2026-99-99Tgarbage` passes the hook but fails
+`.parse::<chrono::DateTime<Utc>>()` at read time, so the row surfaces as a storage error
+(`Conversion error from type Text at index: N, premature end of input`) rather than as a rejected
+commit. The predicate also **ignores NULL**: `NULL NOT GLOB '*T*'` is not true, so NULL rows are
+never candidates. Some columns are legitimately nullable, so a NULL `updated_at` is not itself a
+defect the hook reports — but it is not a value the hook can validate either, and a feature read
+can still fail on it because the mapper parses that column as a timestamp. The hook's own PASS
+output therefore means "no **non-NULL** value is missing its `T` separator", not
+"all values are valid RFC3339". **Full timestamp validation is tracked in PR #1161** (this hook's
+PR): the predicate must be tightened to a real RFC3339 parse before the hook can be treated as a
+timestamp-validity gate.
+
+**Which copy is scanned (important).** The hook enumerates the staged `.agileplus/*.db` _paths_
+from the index (`git diff --cached --name-only --diff-filter=AM`, matching "Hook design notes"
+item 2 below), but it then reads the **working-tree copy** of each selected path. A database that
+is corrected only in the working tree therefore still PASSes, while the blob that the commit will
+actually record keeps its missing-`T` value. PASS covers the working-tree copy, **not** the staged
+blob; staged-blob validation is tracked in PR #1161 (this hook's PR).
+
+**Subsequent revision in PR #1161 (2026-10-19).** The two limitations above describe the hook as
+it stood at this recorded checkpoint (PR #1161 commit `98f87bdfd`, 2026-10-18T10:06:45Z). PR
+#1161 has since superseded it: commit `42653abfe` ("tighten hook to real RFC3339 structural
+prefix") and commit `a3d9ddb90` ("replace glob-only RFC3339 check with strict UTC Python
+validator") replace the GLOB predicate with a strict UTC RFC3339 Python validator
+(`.githooks/rfc3339-utc-validate.py`) that scans the **staged blob** — the index blob is
+extracted with `git cat-file blob <index-sha>` into a temporary file and that copy is validated —
+and that fails closed on a missing `sqlite3`/`grep`/`python3`/validator, on a schema-discovery or
+row-query error, and on a validator error. Its row query is
+`SELECT 'updated_at', updated_at FROM "<table>" WHERE updated_at IS NOT NULL`, so it too ignores
+NULL. The PR #1161 head closes the working-tree-vs-staged-blob limitation, but it still does not
+validate NULL timestamps — its row query filters them out with `updated_at IS NOT NULL` — so the
+non-NULL-only limitation recorded above remains open.
+
 ### End-to-end `git commit` smoke
 
 - Created `.agileplus/test-hook-corrupt.db` (table `features`, one good row + one corrupt row).

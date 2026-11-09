@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, __file__.rsplit("/", 1)[0])
+from sfd_headlines import clear_gates, gate_clear, ndr_items
 from sfd_validate_counts import (
     JS_PATH,
     MD_PATH,
@@ -49,7 +50,6 @@ def main():
         print(f"  {sec}: {n} rows")
 
     print("\n=== NDR items (section D) ===")
-    ndr_pass = []
     for k in sorted(rows, key=lambda x: (x[0], int(x.split(".")[1]))):
         if not k.startswith("D."):
             continue
@@ -58,29 +58,22 @@ def main():
         has_fail = "FAIL" in v
         mark = "PASS" if has_pass else ("FAIL" if has_fail else "-")
         print(f"  {k:5} {v}  {mark}")
-        if has_pass:
-            ndr_pass.append(k)
-    print(f"  -> NDR items with >=1 PASS cell: {len(ndr_pass)}/10 {ndr_pass}")
+    print(f"  -> NDR items with >=1 PASS cell: {len(ndr_items(rows))}/10 {ndr_items(rows)}")
 
     print("\n=== gates (section E) ===")
-    gate_clear = []
     for k in sorted(rows, key=lambda x: (x[0], int(x.split(".")[1]))):
         if not k.startswith("E."):
             continue
         v = rows[k]
-        meaningful = [c for c in v if c not in ("DIM_NOT_MEANINGFUL", "NOT_APPLICABLE")]
         has_pass = "PASS" in v
         has_fail = "FAIL" in v
-        all_pass = bool(meaningful) and all(c == "PASS" for c in meaningful)
-        clear = all_pass
+        clear = gate_clear(v)
         mark = "CLEAR-PASS" if clear else ("HAS-FAIL" if has_fail else "-")
         if has_pass or has_fail:
             print(f"  {k:5} {v}  {mark}")
-        if clear:
-            gate_clear.append(k)
     print(
-        f"  -> gates clearly PASS (EVERY meaningful cell is PASS): "
-        f"{len(gate_clear)}/20 {gate_clear}"
+        "  -> gates clearly PASS (EVERY meaningful cell is PASS): "
+        f"{len(clear_gates(rows))}/20 {clear_gates(rows)}"
     )
 
     print("\n=== journey rows with any PASS (C) ===")

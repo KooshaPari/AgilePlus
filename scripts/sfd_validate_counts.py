@@ -48,6 +48,9 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+sys.path.insert(0, __file__.rsplit("/", 1)[0])
+import sfd_headlines as headlines
+
 DOC = "docs/sessions/20261017-state-forward-docket"
 MD_PATH = f"{DOC}/PROGRESS_TREE.md"
 JS_PATH = f"{DOC}/PROGRESS_TREE.snapshot.json"
@@ -89,6 +92,37 @@ COMPOUND_RE = re.compile(rf"({_TOK_ALT})\s*/\s*({_TOK_ALT})")
 
 ROW_RE = re.compile(r"^([A-E](?:-std)?\.\d+)\s+(.*)$")
 
+# The 64 intent rows the tree must contain: A.1-A.10, B.1-B.12, C.1-C.12,
+# D.1-D.10, E.1-E.20. A mis-typed label (E.21 for E.19) keeps the row count at
+# 64 while a gate row silently carries the wrong identity, so the labels are
+# compared against this grid and not just counted.
+EXPECTED_ROWS = (
+    [f"A.{i}" for i in range(1, 11)]
+    + [f"B.{i}" for i in range(1, 13)]
+    + [f"C.{i}" for i in range(1, 13)]
+    + [f"D.{i}" for i in range(1, 11)]
+    + [f"E.{i}" for i in range(1, 21)]
+)
+
+# The md Counts table. `BLOCKED` is a verdict in its own right: when a cell
+# carries it, the row must be shown, otherwise the column total includes a
+# verdict the table never displays.
+MD_COUNTS_TABLE_RE = re.compile(
+    r"(\|\s*Verdict\s*\|\s*Impl\s*\|\s*Usab\s*\|\s*Val\s*\|\s*Assur\s*\|\s*Total\s*\|\n"
+    r"\|[\s\-:|]*\|\n"
+    r"(?:\|[^\n]*\|\n)+)"
+)
+
+
+def _normalise_label(label):
+    """Map an overlay row label onto the canonical intent-row label.
+
+    An overlay block may restate a row as `B-std.3`; that is the same intent
+    row as `B.3` and must update it rather than create a new one.
+    """
+    m = re.match(r"^([A-E])(?:-std)?\.(\d+)$", label)
+    return f"{m.group(1)}.{m.group(2)}" if m else label
+
 
 def _scan4(text, start):
     """Read exactly 4 cell tokens starting at `start`.
@@ -122,18 +156,20 @@ def _scan4(text, start):
 def _find_cells(rest):
     """Locate the 4-token cell run in a row's text.
 
-    The cell run is the one that is followed by two or more spaces
-    (the column separator before the citation column).
+    The cell run is the FIRST run of 4 verdict tokens that is followed by two
+    or more spaces (the column separator before the citation column). The scan
+    stops there: everything after that separator is the citation column, which
+    may itself contain verdict-looking tokens (for example a quoted historical
+    tuple) and must never be mistaken for the row's current verdicts.
     """
-    found = None
     for m in TOKEN_RE.finditer(rest):
         toks, pos = _scan4(rest, m.start())
         if len(toks) != 4:
             continue
         if pos < len(rest) and not rest.startswith("  ", pos):
             continue
-        found = toks
-    return found
+        return toks
+    return None
 
 
 def _normalise(tok):
@@ -184,6 +220,7 @@ def parse_tree_body(text):
             if not m:
                 continue
             label, rest = m.group(1), m.group(2)
+            label = _normalise_label(label)
             toks = _find_cells(rest)
             if toks is None:
                 raise SystemExit(f"unparsed tree row: {ln[:90]!r}")
@@ -254,6 +291,7 @@ def md_count_table(breakdown):
         ("NOT_RUN", "NOT_RUN"),
         ("UNKNOWN", "UNKNOWN"),
         ("STALE", "STALE"),
+        ("BLOCKED", "BLOCKED"),
         ("NOT_APPLICABLE", "NOT_APPLICABLE"),
         ("dim_not_meaningful", "dim-not-meaningful"),
     ]
@@ -268,30 +306,13 @@ def md_count_table(breakdown):
     return "\n".join(out)
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument(
-        "--write", action="store_true", help="rewrite the JSON breakdown/headline and the md table"
-    )
-    args = ap.parse_args()
+def collect_drift(md_text, rows, d, js):
+    """Return every inconsistency between the tree body, the md table and the JSON.
 
-    md_text = Path(MD_PATH).read_text()
-    rows, occ = parse_tree_body(md_text)
-    if len(rows) != 64:
-        print(f"FAIL: {len(rows)} unique rows, expected 64")
-        return 1
-    d = derive(rows)
-
-    print(f"rows={len(rows)}  occurrences={len(occ)}  cells={d['total_cells']}")
-    for dim in DIMS:
-        b = d["dimension_breakdown"][dim]
-        print(f"  {dim:15} " + " ".join(f"{k}={b[k]}" for k in JSON_KEYS))
-    print(f"  PASS any        = {d['cells_pass_any']}")
-    print(f"  meaningful      = {d['cells_pass_meaningful']} (256 - nm - NOT_APPLICABLE)")
-    print()
-
+    The tree body is the source of truth; everything else is checked against
+    what it derives.
+    """
     drift = []
-    js = json.loads(Path(JS_PATH).read_text())
     jb = js.get("dimension_breakdown", {})
     for dim in DIMS:
         for k in JSON_KEYS:
@@ -314,49 +335,90 @@ def main():
         )
 
     # md counts table. Tolerant of prettier's padding and separator style.
-    table_re = re.compile(
-        r"(\|\s*Verdict\s*\|\s*Impl\s*\|\s*Usab\s*\|\s*Val\s*\|\s*Assur\s*\|\s*Total\s*\|\n"
-        r"\|[\s\-:|]*\|\n"
-        r"(?:\|[^\n]*\|\n)+)"
-    )
-    mm = table_re.search(md_text)
+    mm = MD_COUNTS_TABLE_RE.search(md_text)
     if not mm:
         drift.append("md: counts table not found")
     elif _table_rows(mm.group(0)) != _table_rows(md_count_table(d["dimension_breakdown"])):
         drift.append("md: counts table differs from derived breakdown")
 
     # derived headline counters (must be derivable from the tree body)
-    ndr_pass = [k for k in rows if k.startswith("D.") and "PASS" in rows[k]]
-    gate_clear = []
-    for k in rows:
-        if not k.startswith("E."):
-            continue
-        vs = [v for v in rows[k] if v != "DIM_NOT_MEANINGFUL"]
-        if vs and all(v == "PASS" for v in vs):
-            gate_clear.append(k)
+    ndr = headlines.ndr_items(rows)
+    gates = headlines.clear_gates(rows)
     hc_raw = js.get("headline_counts", {})
-    if not hc_raw.get("ndr_items_with_target_witness", "").startswith(f"{len(ndr_pass)}/10"):
-        drift.append(
-            f"json ndr_items_with_target_witness: "
-            f"{hc_raw.get('ndr_items_with_target_witness', '')[:20]}... "
-            f"-> {len(ndr_pass)}/10 (derived from tree body)"
-        )
-    if not hc_raw.get("gates_pass", "").startswith(f"{len(gate_clear)}/20"):
-        drift.append(
-            f"json gates_pass: "
-            f"{hc_raw.get('gates_pass', '')[:20]}... "
-            f"-> {len(gate_clear)}/20 (derived from tree body)"
-        )
+    # Compare the stored headline NAMES, not just the count. A tree edit can
+    # swap which items carry PASS without changing any count; then the stored
+    # names go stale and the snapshot contradicts the tree body while the
+    # headline still reads "3/10". Reporting only the count prefix would let
+    # that pass validation and leave the docket self-contradicting.
+    for key, total, derived, label in (
+        ("ndr_items_with_target_witness", 10, ndr, "json NDR"),
+        ("gates_pass", 20, gates, "json gates"),
+    ):
+        stored = hc_raw.get(key, "")
+        m = headlines.HEADLINE_RE.match(stored)
+        if not m:
+            drift.append(f"{label}: unexpected headline shape in {key}: {stored[:60]!r}")
+            continue
+        if int(m.group("count")) != len(derived):
+            drift.append(
+                f"{label}: stored count {m.group('count')} != derived {len(derived)} "
+                f"(derived from tree body)"
+            )
+        if int(m.group("total")) != total:
+            drift.append(f"{label}: stored denominator {m.group('total')} != expected {total}")
+        named = [x.strip() for x in m.group("items").split(",") if x.strip()]
+        if named != derived:
+            drift.append(f"{label}: stored names {named} != derived {derived}")
     for pat, want, label in (
-        (r"\*\*(\d+) / 10\*\* NDR items", len(ndr_pass), "md NDR"),
-        (r"\*\*(\d+) / 20\*\* gates are clearly PASS", len(gate_clear), "md gates"),
+        (r"\*\*(\d+) / 10\*\* NDR items", len(ndr), "md NDR"),
+        (r"\*\*(\d+) / 20\*\* gates are clearly PASS", len(gates), "md gates"),
     ):
         m2 = re.search(pat, md_text)
         if not m2:
             drift.append(f"{label}: headline bullet not found")
         elif int(m2.group(1)) != want:
             drift.append(f"{label}: {m2.group(1)} != {want} (derived)")
+    return drift
 
+
+def main():
+    """Validate the three cockpit artefacts; with --write, rewrite and re-check them."""
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "--write", action="store_true", help="rewrite the JSON breakdown/headline and the md table"
+    )
+    args = ap.parse_args()
+
+    md_text = Path(MD_PATH).read_text()
+    rows, occ = parse_tree_body(md_text)
+    if len(rows) != len(EXPECTED_ROWS):
+        print(f"FAIL: {len(rows)} unique rows, expected {len(EXPECTED_ROWS)}")
+        return 1
+    if sorted(rows) != sorted(EXPECTED_ROWS):
+        missing = sorted(set(EXPECTED_ROWS) - set(rows))
+        extra = sorted(set(rows) - set(EXPECTED_ROWS))
+        print("FAIL: row identities do not match the expected A-E intent grid")
+        if missing:
+            print("  missing:", ", ".join(missing))
+        if extra:
+            print("  unexpected:", ", ".join(extra))
+        print(
+            "  (a mis-typed label keeps the row count at "
+            f"{len(EXPECTED_ROWS)} while a row silently carries the wrong identity)"
+        )
+        return 1
+    d = derive(rows)
+
+    print(f"rows={len(rows)}  occurrences={len(occ)}  cells={d['total_cells']}")
+    for dim in DIMS:
+        b = d["dimension_breakdown"][dim]
+        print(f"  {dim:15} " + " ".join(f"{k}={b[k]}" for k in JSON_KEYS))
+    print(f"  PASS any        = {d['cells_pass_any']}")
+    print(f"  meaningful      = {d['cells_pass_meaningful']} (256 - nm - NOT_APPLICABLE)")
+    print()
+
+    js = json.loads(Path(JS_PATH).read_text())
+    drift = collect_drift(md_text, rows, d, js)
     if not drift:
         print("OK: md tree body, md counts table and json snapshot all agree.")
         return 0
@@ -371,9 +433,30 @@ def main():
     for x in drift:
         print("FIXING:", x)
 
+    # The derived NDR / gate headlines carry narrative prose as well as a
+    # count. Rewrite them from the tree body, or fail loudly: leaving a stale
+    # headline behind and exiting 0 would report success while the docket
+    # still contradicts itself.
+    ndr = headlines.ndr_items(rows)
+    gates = headlines.clear_gates(rows)
+    try:
+        js.setdefault("headline_counts", {})["ndr_items_with_target_witness"] = (
+            headlines.rewrite_json_headline(
+                js.get("headline_counts", {}).get("ndr_items_with_target_witness", ""), 10, ndr
+            )
+        )
+        js["headline_counts"]["gates_pass"] = headlines.rewrite_json_headline(
+            js.get("headline_counts", {}).get("gates_pass", ""), 20, gates
+        )
+        md_text = headlines.rewrite_md_bullets(md_text, ndr, gates)
+    except ValueError as exc:
+        print(f"FAIL: cannot rewrite the derived headlines: {exc}")
+        print("       the stored narrative does not match the tree body; fix it by hand")
+        return 1
+
     js["dimension_breakdown"] = d["dimension_breakdown"]
     js["total_cells"] = d["total_cells"]
-    hc = dict(hc)
+    hc = dict(js["headline_counts"])
     hc["cells_pass_any"] = f"{d['cells_pass_any']}/{d['total_cells']}"
     hc["cells_pass_meaningful"] = f"{d['cells_pass_any']}/{d['cells_pass_meaningful']}"
     js["headline_counts"] = hc
@@ -383,7 +466,7 @@ def main():
     print(f"wrote {JS_PATH}")
 
     new_table = md_count_table(d["dimension_breakdown"])
-    md_text = table_re.sub(new_table + "\n", md_text, count=1)
+    md_text = MD_COUNTS_TABLE_RE.sub(new_table + "\n", md_text, count=1)
     with open(MD_PATH, "w") as f:
         f.write(md_text)
     print(f"wrote {MD_PATH}")
@@ -408,6 +491,19 @@ def main():
             "NOTE: prettier not on PATH; run `prettier --write "
             f"{MD_PATH}` so the markdown matches the repo's format check."
         )
+
+    # Re-check: --write must not report success while drift survives. The
+    # artefacts are re-read from disk so the check covers what was written.
+    md_after = Path(MD_PATH).read_text()
+    rows_after, _ = parse_tree_body(md_after)
+    js_after = json.loads(Path(JS_PATH).read_text())
+    residual = collect_drift(md_after, rows_after, derive(rows_after), js_after)
+    if residual:
+        print("FAIL: drift remains after --write:")
+        for x in residual:
+            print("  -", x)
+        return 1
+    print("OK: md tree body, md counts table and json snapshot all agree after --write.")
     return 0
 
 

@@ -155,15 +155,31 @@ def _scan4(text, start):
 
 
 def _find_run(rest):
-    best = None
+    """Locate the 4-token cell run in a row's text.
+
+    The cell run is the FIRST run of 4 verdict tokens followed by two or more
+    spaces (the column separator before the citation column). The scan stops
+    there: the citation column may itself contain verdict-looking tokens and
+    must never be mistaken for the row's current verdicts.
+    """
     for m in MD_TOKEN_RE.finditer(rest):
         toks, pos = _scan4(rest, m.start())
         if len(toks) != 4:
             continue
         if pos < len(rest) and not rest.startswith("  ", pos):
             continue
-        best = toks
-    return best
+        return toks
+    return None
+
+
+def _normalise_label(label):
+    """Map an overlay row label onto the canonical intent-row label.
+
+    An overlay block may restate a row as `B-std.3`; that is the same intent
+    row as `B.3` and must update it rather than create a new one.
+    """
+    m = re.match(r"^([A-E])(?:-std)?\.(\d+)$", label)
+    return f"{m.group(1)}.{m.group(2)}" if m else label
 
 
 def parse_md(path="docs/sessions/20261017-state-forward-docket/PROGRESS_TREE.md"):
@@ -196,6 +212,7 @@ def parse_md(path="docs/sessions/20261017-state-forward-docket/PROGRESS_TREE.md"
             if not m:
                 continue
             label, rest = m.group(1), m.group(2)
+            label = _normalise_label(label)
             toks = _find_run(rest)
             if toks is None:
                 continue

@@ -127,10 +127,19 @@ pub async fn accept_feature<S: AtomicAcceptancePort + ?Sized>(
 
 It is invoked from `crates/agileplus-api/src/routes/acceptance.rs:48`
 (`POST /{slug}/accept`), backed by `AtomicAcceptancePort` from
-`crates/agileplus-domain/src/ports/execution.rs`. The validation
-(`command.validate()`) is where governance-contract evidence and required
-rules are evaluated — only a feature that has satisfied them gets
-minted `Validated`/`Shipped`.
+`crates/agileplus-domain/src/ports/execution.rs`. `command.validate()`
+(`crates/agileplus-domain/src/domain/acceptance.rs:39-54`) checks
+**request identity only** — feature id, request id and actor. The
+governance contract, evidence and candidate-correctness checks are
+performed by the **port implementation**, not by `command.validate()`:
+in the SQLite port they run inside the `TransactionBehavior::Immediate`
+write transaction (`crates/agileplus-sqlite/src/repository/acceptance/mod.rs:59-257`
+— governance contract lookup, version preflight, work-package and
+evidence load, `evaluate_governance_snapshot`, `governance.passed(&contract)`,
+then the per-candidate assignment and spec-revision checks). Only a feature
+that has satisfied them gets minted `Validated`/`Shipped`. Any replacement
+port implementation must perform those same checks atomically; a port that
+relies on `command.validate()` alone would accept without governance.
 
 ### 1b. Why "generic" can never award terminal states
 

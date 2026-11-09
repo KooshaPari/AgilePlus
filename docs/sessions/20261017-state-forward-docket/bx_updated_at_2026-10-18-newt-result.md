@@ -52,7 +52,7 @@ The local working copy of the DB was last written by whatever `agileplus` CLI / 
 
 - The actual binding code is already correct (`to_rfc3339()` everywhere in `crates/agileplus-sqlite/src/repository/*` and `desktop/src-tauri/src/work_packages.rs`).
 - The carry-forward hazard is the **committed `.agileplus/agileplus.db`** itself. Recommend:
-    - Add `.agileplus/*.db` to `.gitignore` (currently committed — bad).
+    - Add `.agileplus/*.db` to `.gitignore` **and remove the already-tracked DB from the index**. Ignore patterns alone do not untrack a file that is already committed — as of this receipt `.agileplus/agileplus.db` is still tracked (`git ls-files --stage -- .agileplus/agileplus.db` returns a stage-0 entry), so `git rm --cached .agileplus/agileplus.db` (working-tree copy preserved) **plus committing that removal** is required. The B.y carry-forward does exactly this; see `by_gitignore_hook_2026-10-18-squid-result.md`.
     - Or: regenerate from migrations via `cargo run -p agileplus-sqlite --bin seed_db` and never commit a populated db.
     - Or: if db commits are needed for review, run a hook that `cargo run -p agileplus-sqlite --bin validate_timestamps -- .agileplus/agileplus.db` and rejects the commit if any non-RFC3339 row is found.
 
@@ -67,6 +67,21 @@ The local working copy of the DB was last written by whatever `agileplus` CLI / 
 ```
 
 …and re-seed via `cargo run -p agileplus-sqlite --bin seed_db -- .agileplus/agileplus.db` on first checkout.
+
+**The ignore patterns alone are not sufficient.** `.agileplus/agileplus.db` is already tracked, so
+`.gitignore` does not prevent later changes to it from being committed. The complete procedure is:
+
+```bash
+git rm --cached .agileplus/agileplus.db   # untrack; working-tree copy preserved
+git commit -m "chore: untrack .agileplus/agileplus.db"
+```
+
+Both steps (the untracking commit **and** the `.gitignore` addition) must land. This is the
+"B.y" carry-forward that was filed from this receipt and implemented by squid in PR #1161,
+which was still **open — pending merge** — at this recorded checkpoint
+(`by_gitignore_hook_2026-10-18-squid-result.md`, "`.agileplus/agileplus.db` — Removed from index
+(`git rm --cached`); working tree copy preserved"). Neither step had landed on `main` at this
+checkpoint: `.agileplus/agileplus.db` is still tracked in the repository.
 
 ## Carry-forward cell movement
 
