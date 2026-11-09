@@ -3,7 +3,7 @@
 //! Traceability: FR-STORE-STORY
 
 use chrono::DateTime;
-use rusqlite::{Connection, params};
+use rusqlite::{params, Connection};
 
 use agileplus_domain::domain::story::{Story, StoryStatus};
 use agileplus_domain::error::DomainError;
@@ -80,9 +80,14 @@ pub fn create_story(conn: &Connection, story: &Story) -> Result<i64, DomainError
 /// Uses manual get-then-insert/update because `requirement_id` is added via ALTER TABLE
 /// (no inline UNIQUE constraint); SQLite upsert `ON CONFLICT(col)` requires a declared
 /// table-level constraint that ALTER TABLE cannot add.
-pub fn upsert_story_by_requirement_id(conn: &Connection, story: &Story) -> Result<i64, DomainError> {
+pub fn upsert_story_by_requirement_id(
+    conn: &Connection,
+    story: &Story,
+) -> Result<i64, DomainError> {
     let req_id = story.requirement_id.as_deref().ok_or_else(|| {
-        DomainError::Validation("upsert_story_by_requirement_id requires requirement_id".to_string())
+        DomainError::Validation(
+            "upsert_story_by_requirement_id requires requirement_id".to_string(),
+        )
     })?;
     let now = chrono::Utc::now().to_rfc3339();
     // Check if a row with this requirement_id already exists.
@@ -115,7 +120,10 @@ pub fn upsert_story_by_requirement_id(conn: &Connection, story: &Story) -> Resul
 }
 
 /// Look up a story by `requirement_id`. Returns `None` if not found.
-pub fn get_story_by_requirement_id(conn: &Connection, req_id: &str) -> Result<Option<Story>, DomainError> {
+pub fn get_story_by_requirement_id(
+    conn: &Connection,
+    req_id: &str,
+) -> Result<Option<Story>, DomainError> {
     let mut stmt = conn
         .prepare(
             "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description, requirement_id \
@@ -146,7 +154,11 @@ pub fn get_story_by_id(conn: &Connection, id: i64) -> Result<Option<Story>, Doma
 }
 
 /// Update the status of a story.
-pub fn update_story_status(conn: &Connection, id: i64, status: StoryStatus) -> Result<(), DomainError> {
+pub fn update_story_status(
+    conn: &Connection,
+    id: i64,
+    status: StoryStatus,
+) -> Result<(), DomainError> {
     let now = chrono::Utc::now().to_rfc3339();
     let rows = conn
         .execute(
@@ -178,7 +190,10 @@ pub fn list_stories_by_epic(conn: &Connection, epic_id: i64) -> Result<Vec<Story
 }
 
 /// List all stories for a given project, ordered by creation time.
-pub fn list_stories_by_project(conn: &Connection, project_id: i64) -> Result<Vec<Story>, DomainError> {
+pub fn list_stories_by_project(
+    conn: &Connection,
+    project_id: i64,
+) -> Result<Vec<Story>, DomainError> {
     let mut stmt = conn
         .prepare(
             "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description, requirement_id \

@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use reqwest::Method;
 
-use super::{PlaneClient, PlaneCreateModuleRequest, PlaneModuleResponse, transport};
+use super::{transport, PlaneClient, PlaneCreateModuleRequest, PlaneModuleResponse};
 
 impl PlaneClient {
     /// Create a Module in Plane.so. Returns Plane's module UUID.

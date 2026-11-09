@@ -3,7 +3,7 @@
 //! Traceability: WP06-T033
 
 use chrono::Utc;
-use rusqlite::{Connection, params};
+use rusqlite::{params, Connection};
 
 use agileplus_domain::domain::sync_mapping::{SyncDirection, SyncMapping};
 use agileplus_domain::error::DomainError;

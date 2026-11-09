@@ -6,16 +6,16 @@
 
 use std::{
     sync::{
-        Arc,
         atomic::{AtomicU64, Ordering},
+        Arc,
     },
     time::Duration,
 };
 
 use chrono::{DateTime, Utc};
 use opentelemetry::{
-    KeyValue,
     metrics::{Counter, Gauge, Histogram, Meter},
+    KeyValue,
 };
 
 // ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 //! Repository operations for backlog queue items.
 
-use rusqlite::{Connection, Row, params, params_from_iter, types::Value};
+use rusqlite::{params, params_from_iter, types::Value, Connection, Row};
 
 use agileplus_domain::{
     domain::backlog::{

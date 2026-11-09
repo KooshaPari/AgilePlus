@@ -22,20 +22,20 @@ pub use agileplus_domain::ports::{PlaneIssue, PlaneProject, PlaneSyncPort};
 pub use client::{
     PlaneCreateCycleRequest, PlaneCreateModuleRequest, PlaneCycleResponse, PlaneModuleResponse,
 };
-pub use content_hash::{ConflictStatus, compute_content_hash, detect_conflict};
+pub use content_hash::{compute_content_hash, detect_conflict, ConflictStatus};
 pub use inbound::{InboundOutcome, InboundSync, LocalEntityStore};
 pub use labels::{LabelSync, PlaneLabel};
 pub use outbound::{
-    OutboundSync, push_cycle, push_cycle_delete, push_feature_cycle_assignment,
-    push_feature_module_assignment, push_module, push_module_delete,
+    push_cycle, push_cycle_delete, push_feature_cycle_assignment, push_feature_module_assignment,
+    push_module, push_module_delete, OutboundSync,
 };
 pub use plane_sync::PlaneClient;
 pub use runtime::*;
 pub use state_mapper::{PlaneStateMapper, PlaneStateMapperConfig};
 pub use sync::{PlaneSyncAdapter, SyncState};
-pub use sync_queue::{MAX_RETRIES, SyncOpKind, SyncQueue, SyncQueueItem, SyncQueueStore, SyncTask};
+pub use sync_queue::{SyncOpKind, SyncQueue, SyncQueueItem, SyncQueueStore, SyncTask, MAX_RETRIES};
 pub use webhook::{
+    handle_plane_webhook, parse_webhook, verify_hmac_signature, verify_webhook_signature,
     PlaneInboundEvent, PlaneWebhookAction, PlaneWebhookCycle, PlaneWebhookModule,
-    PlaneWebhookPayload, handle_plane_webhook, parse_webhook, verify_hmac_signature,
-    verify_webhook_signature,
+    PlaneWebhookPayload,
 };

@@ -20,7 +20,7 @@ use agileplus_domain::{
 
 use crate::{
     repository::{epics, projects, stories},
-    seed::catalog::{CatalogEntry, CatalogStatus, parse_catalog},
+    seed::catalog::{parse_catalog, CatalogEntry, CatalogStatus},
 };
 
 /// Describes one initiative to seed.
@@ -281,10 +281,7 @@ Some description without a status row.
         let story = stories::get_story_by_requirement_id(&conn, "FR-MINI-001")
             .unwrap()
             .unwrap();
-        assert_eq!(
-            story.requirement_id.as_deref(),
-            Some("FR-MINI-001")
-        );
+        assert_eq!(story.requirement_id.as_deref(), Some("FR-MINI-001"));
     }
 
     #[test]

@@ -31,9 +31,7 @@ impl TransitionStory {
         // Domain invariant enforced inside `transition_status`.
         story.transition_status(cmd.target_status)?;
 
-        self.repo
-            .update_status(cmd.story_id, story.status)
-            .await?;
+        self.repo.update_status(cmd.story_id, story.status).await?;
 
         self.publisher
             .publish(DomainEvent::StoryStatusChanged {

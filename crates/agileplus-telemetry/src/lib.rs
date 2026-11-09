@@ -17,7 +17,7 @@ pub mod logs;
 pub mod metrics;
 pub mod traces;
 
-pub use adapter::{TelemetryAdapter, TelemetryError, TelemetryGuard, init_telemetry};
+pub use adapter::{init_telemetry, TelemetryAdapter, TelemetryError, TelemetryGuard};
 pub use config::TelemetryConfig;
 
 use tracing_subscriber::prelude::*;
@@ -145,7 +145,10 @@ mod tests {
     #[test]
     fn init_telemetry_no_otlp_returns_guard() {
         let config = TelemetryConfig::default();
-        assert!(config.otlp.is_none(), "default config must have no OTLP endpoint");
+        assert!(
+            config.otlp.is_none(),
+            "default config must have no OTLP endpoint"
+        );
         let result = init_telemetry(config);
         assert!(result.is_ok(), "init_telemetry failed: {:?}", result.err());
     }

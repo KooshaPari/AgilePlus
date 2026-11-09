@@ -2,7 +2,7 @@
 //!
 //! Traces to: FR-C01, FR-C02, FR-C03, FR-C04, FR-C05, FR-C07
 
-use rusqlite::{Connection, OptionalExtension, params};
+use rusqlite::{params, Connection, OptionalExtension};
 
 use agileplus_domain::{
     domain::cycle::{Cycle, CycleFeature, CycleState, CycleWithFeatures},

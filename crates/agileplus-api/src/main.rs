@@ -5,12 +5,12 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use agileplus_api::AppState;
-use agileplus_domain::config::AppConfig;
+use agileplus_domain::config::{AppConfig, ConfigError};
 use agileplus_domain::credentials::create_credential_store;
 use agileplus_domain::ports::observability::{LogEntry, ObservabilityPort, SpanContext};
 use agileplus_git::GitVcsAdapter;
 use agileplus_sqlite::SqliteStorageAdapter;
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -66,7 +66,7 @@ impl ObservabilityPort for NoOpObservability {
 }
 
 fn load_runtime_config() -> Result<AppConfig> {
-    let mut config = AppConfig::load_with_env_overrides()?;
+    let mut config = AppConfig::load_with_env_overrides().map_err(|e: ConfigError| anyhow!(e))?;
 
     if let Ok(database_url) = env::var("DATABASE_URL") {
         config.core.database_path = sqlite_path_from_database_url(&database_url)?;

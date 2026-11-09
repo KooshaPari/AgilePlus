@@ -15,7 +15,7 @@ use std::time::Instant;
 use opentelemetry::global;
 use opentelemetry::trace::TracerProvider as _;
 use tracing::Subscriber;
-use tracing_subscriber::{Layer, registry::LookupSpan};
+use tracing_subscriber::{registry::LookupSpan, Layer};
 
 // ---------------------------------------------------------------------------
 // OTLP initialisation (T090 / T091)

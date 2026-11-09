@@ -2,7 +2,7 @@
 
 use std::str::FromStr;
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use clap::Args;
 
 use agileplus_domain::domain::state_machine::FeatureState;

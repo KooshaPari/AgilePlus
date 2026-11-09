@@ -1,6 +1,6 @@
 //! Event repository — CRUD for the `events` table.
 
-use rusqlite::{Connection, Row, params};
+use rusqlite::{params, Connection, Row};
 
 use agileplus_domain::domain::event::Event;
 use agileplus_domain::error::DomainError;

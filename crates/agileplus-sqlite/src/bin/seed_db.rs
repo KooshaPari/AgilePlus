@@ -8,15 +8,14 @@ use std::path::PathBuf;
 
 use agileplus_sqlite::{
     migrations::MigrationRunner,
-    seed::{Initiative, seed_requirements},
+    seed::{seed_requirements, Initiative},
 };
 
 const AGILEPLUS_CATALOG: &str = include_str!("../../../../docs/requirements/agileplus-frnfr.md");
 const TRACERA_CATALOG: &str = include_str!("../../../../docs/requirements/tracera-frnfr.md");
 const PHENOTYPE_VOXEL_CATALOG: &str =
     include_str!("../../../../docs/requirements/phenotype-voxel-frnfr.md");
-const AUTHVAULT_CATALOG: &str =
-    include_str!("../../../../docs/requirements/authvault-frnfr.md");
+const AUTHVAULT_CATALOG: &str = include_str!("../../../../docs/requirements/authvault-frnfr.md");
 
 fn main() -> anyhow::Result<()> {
     let db_path: PathBuf = std::env::args()
@@ -30,7 +29,9 @@ fn main() -> anyhow::Result<()> {
     conn.execute_batch("PRAGMA foreign_keys=ON;")?;
 
     let runner = MigrationRunner::new(&conn);
-    runner.run_all().map_err(|e| anyhow::anyhow!("migration failed: {e}"))?;
+    runner
+        .run_all()
+        .map_err(|e| anyhow::anyhow!("migration failed: {e}"))?;
     println!("Migrations applied.");
 
     let initiatives = vec![
@@ -56,12 +57,14 @@ fn main() -> anyhow::Result<()> {
         },
     ];
 
-    let report = seed_requirements(&conn, &initiatives)
-        .map_err(|e| anyhow::anyhow!("seed failed: {e}"))?;
+    let report =
+        seed_requirements(&conn, &initiatives).map_err(|e| anyhow::anyhow!("seed failed: {e}"))?;
 
     println!(
         "Done: {} epic(s), {} story/stories across {} initiative(s).",
-        report.epics_upserted, report.stories_upserted, report.initiatives.len()
+        report.epics_upserted,
+        report.stories_upserted,
+        report.initiatives.len()
     );
 
     Ok(())

@@ -2,7 +2,7 @@ use anyhow::Context;
 use reqwest::Method;
 use serde::Deserialize;
 
-use super::{PlaneClient, PlaneIssue, PlaneWorkItem, PlaneWorkItemResponse, transport};
+use super::{transport, PlaneClient, PlaneIssue, PlaneWorkItem, PlaneWorkItemResponse};
 
 #[derive(Debug, Clone, Deserialize)]
 struct PaginatedResponse<T> {

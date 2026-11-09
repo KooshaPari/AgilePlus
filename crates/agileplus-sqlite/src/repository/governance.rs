@@ -1,6 +1,6 @@
 //! Governance repository — CRUD for `governance_contracts` and `policy_rules`.
 
-use rusqlite::{Connection, Row, params};
+use rusqlite::{params, Connection, Row};
 
 use agileplus_domain::{
     domain::governance::{

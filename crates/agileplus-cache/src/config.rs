@@ -16,7 +16,11 @@ config_builder! {
 impl CacheConfig {
     /// Construct with explicit host and port; all other fields use defaults.
     pub fn new(host: String, port: u16) -> Self {
-        Self { host, port, ..Self::default() }
+        Self {
+            host,
+            port,
+            ..Self::default()
+        }
     }
 
     /// Back-compat alias for [`with_default_ttl_secs`].

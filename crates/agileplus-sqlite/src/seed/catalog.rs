@@ -106,7 +106,10 @@ fn extract_heading_id(line: &str) -> Option<(String, String)> {
     // Pattern: WORD-WORD-NNN (e.g. FR-AGP-001, NFR-TRC-002, FR-VOXEL-003)
     let (id_part, title_part) = if let Some(pos) = stripped.find(" \u{2014} ") {
         // " — " separator (em-dash)
-        (&stripped[..pos], stripped[pos + " \u{2014} ".len()..].trim())
+        (
+            &stripped[..pos],
+            stripped[pos + " \u{2014} ".len()..].trim(),
+        )
     } else if let Some(pos) = stripped.find(" - ") {
         // Plain hyphen separator fallback
         (&stripped[..pos], stripped[pos + 3..].trim())
@@ -116,10 +119,7 @@ fn extract_heading_id(line: &str) -> Option<(String, String)> {
     };
 
     if looks_like_req_id(id_part.trim()) {
-        Some((
-            id_part.trim().to_string(),
-            title_part.to_string(),
-        ))
+        Some((id_part.trim().to_string(), title_part.to_string()))
     } else {
         None
     }
@@ -136,15 +136,15 @@ fn looks_like_req_id(s: &str) -> bool {
         return false;
     }
     // Last part should be digits
-    parts.last().map(|p| p.chars().all(|c| c.is_ascii_digit())).unwrap_or(false)
+    parts
+        .last()
+        .map(|p| p.chars().all(|c| c.is_ascii_digit()))
+        .unwrap_or(false)
 }
 
 /// Try to find `**Title:** Some title text` in a line.
 fn extract_title_field(line: &str) -> Option<String> {
-    let line = line
-        .trim_start_matches('|')
-        .trim_end_matches('|')
-        .trim();
+    let line = line.trim_start_matches('|').trim_end_matches('|').trim();
     if let Some(rest) = line.strip_prefix("**Title:**") {
         let t = rest.trim().to_string();
         if !t.is_empty() {
@@ -246,7 +246,10 @@ No status field here; should default to Shipped.
         let ids: Vec<&str> = entries.iter().map(|e| e.id.as_str()).collect();
         assert!(ids.contains(&"FR-TEST-001"), "missing FR-TEST-001: {ids:?}");
         assert!(ids.contains(&"FR-TEST-002"), "missing FR-TEST-002: {ids:?}");
-        assert!(ids.contains(&"NFR-TEST-001"), "missing NFR-TEST-001: {ids:?}");
+        assert!(
+            ids.contains(&"NFR-TEST-001"),
+            "missing NFR-TEST-001: {ids:?}"
+        );
     }
 
     #[test]

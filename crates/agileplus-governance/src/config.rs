@@ -13,8 +13,8 @@
 //! - `AGILEPLUS_POLICY_*` for policy config
 //! - `AGILEPLUS_RATE_LIMIT_*` for rate limit config
 
-use agileplus_config::config_builder;
 use crate::types::AuthMethod;
+use agileplus_config::config_builder;
 use serde::{Deserialize, Serialize};
 
 /// Main governance configuration

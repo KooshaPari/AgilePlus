@@ -1,6 +1,6 @@
 //! Audit repository — CRUD for the `audit_log` table.
 
-use rusqlite::{Connection, Row, params};
+use rusqlite::{params, Connection, Row};
 
 use agileplus_domain::{
     domain::audit::{AuditEntry, EvidenceRef},

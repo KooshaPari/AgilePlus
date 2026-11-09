@@ -22,12 +22,12 @@ pub use domain_event::{
     StoryCreated, StoryStatusChanged, UserAdded, UserRoleChanged, UserStatusChanged,
     WorkPackageCreated, WorkPackageStateChanged,
 };
-pub use hash::{HashError, compute_hash, verify_chain};
+pub use hash::{compute_hash, verify_chain, HashError};
 pub use query::{EventQuery, QueryError};
-pub use replay::{Aggregate, ReplayError, replay_events, replay_events_since};
+pub use replay::{replay_events, replay_events_since, Aggregate, ReplayError};
 pub use snapshot::{
-    InMemorySnapshotStore, LoadedState, SnapshotConfig, SnapshotError, SnapshotStore,
-    should_snapshot,
+    should_snapshot, InMemorySnapshotStore, LoadedState, SnapshotConfig, SnapshotError,
+    SnapshotStore,
 };
 pub use store::{EventError, EventStore, InMemoryEventStore};
 

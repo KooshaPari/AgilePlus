@@ -171,8 +171,14 @@ fn cmd_feature_show(store: &MockStore, id: i64) {
                     .unwrap_or_else(|| "\u{2014}".to_string())
             );
             println!("labels       : [{}]", f.labels.join(", "));
-            println!("created_at   : {}", f.created_at.format("%Y-%m-%d %H:%M:%S UTC"));
-            println!("updated_at   : {}", f.updated_at.format("%Y-%m-%d %H:%M:%S UTC"));
+            println!(
+                "created_at   : {}",
+                f.created_at.format("%Y-%m-%d %H:%M:%S UTC")
+            );
+            println!(
+                "updated_at   : {}",
+                f.updated_at.format("%Y-%m-%d %H:%M:%S UTC")
+            );
         }
         None => eprintln!("error: feature {} not found", id),
     }

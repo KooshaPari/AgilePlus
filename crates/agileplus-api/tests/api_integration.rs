@@ -12,10 +12,10 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use agileplus_api::{AppState, create_router};
+use agileplus_api::{create_router, AppState};
 use agileplus_domain::config::AppConfig;
 use agileplus_domain::credentials::InMemoryCredentialStore;
-use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
+use agileplus_domain::domain::audit::{hash_entry, AuditEntry};
 use agileplus_domain::domain::backlog::{
     BacklogFilters, BacklogItem, BacklogPriority, BacklogStatus,
 };
@@ -29,12 +29,12 @@ use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::sync_mapping::SyncMapping;
 use agileplus_domain::domain::work_package::{WorkPackage, WpDependency, WpState};
 use agileplus_domain::error::DomainError;
-use agileplus_domain::ports::ContentStoragePort;
 use agileplus_domain::ports::observability::{LogEntry, ObservabilityPort, SpanContext};
 use agileplus_domain::ports::storage::StoragePort;
 use agileplus_domain::ports::vcs::{
     ConflictInfo, FeatureArtifacts, MergeResult, VcsPort, WorktreeInfo,
 };
+use agileplus_domain::ports::ContentStoragePort;
 use async_trait::async_trait;
 use axum::http::StatusCode;
 use axum_test::TestServer;
@@ -512,11 +512,16 @@ impl StoragePort for MockStorage {
         Ok(None)
     }
 
-    async fn get_project_by_id(&self, _id: i64) -> Result<Option<agileplus_domain::domain::project::Project>, DomainError> {
+    async fn get_project_by_id(
+        &self,
+        _id: i64,
+    ) -> Result<Option<agileplus_domain::domain::project::Project>, DomainError> {
         Ok(None)
     }
 
-    async fn list_all_projects(&self) -> Result<Vec<agileplus_domain::domain::project::Project>, DomainError> {
+    async fn list_all_projects(
+        &self,
+    ) -> Result<Vec<agileplus_domain::domain::project::Project>, DomainError> {
         Ok(vec![])
     }
 
@@ -525,27 +530,46 @@ impl StoragePort for MockStorage {
     }
 
     // --- Users ---
-    async fn create_user(&self, _user: &agileplus_domain::domain::user::User) -> Result<i64, DomainError> {
+    async fn create_user(
+        &self,
+        _user: &agileplus_domain::domain::user::User,
+    ) -> Result<i64, DomainError> {
         Ok(1)
     }
 
-    async fn get_user_by_id(&self, _id: i64) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
+    async fn get_user_by_id(
+        &self,
+        _id: i64,
+    ) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
         Ok(None)
     }
 
-    async fn get_user_by_email(&self, _email: &str) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
+    async fn get_user_by_email(
+        &self,
+        _email: &str,
+    ) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
         Ok(None)
     }
 
-    async fn update_user_status(&self, _id: i64, _status: agileplus_domain::domain::user::UserStatus) -> Result<(), DomainError> {
+    async fn update_user_status(
+        &self,
+        _id: i64,
+        _status: agileplus_domain::domain::user::UserStatus,
+    ) -> Result<(), DomainError> {
         Ok(())
     }
 
-    async fn update_user_role(&self, _id: i64, _role: agileplus_domain::domain::user::UserRole) -> Result<(), DomainError> {
+    async fn update_user_role(
+        &self,
+        _id: i64,
+        _role: agileplus_domain::domain::user::UserRole,
+    ) -> Result<(), DomainError> {
         Ok(())
     }
 
-    async fn list_all_users(&self) -> Result<Vec<agileplus_domain::domain::user::User>, DomainError> {
+    async fn list_all_users(
+        &self,
+    ) -> Result<Vec<agileplus_domain::domain::user::User>, DomainError> {
         Ok(vec![])
     }
 
@@ -554,19 +578,32 @@ impl StoragePort for MockStorage {
     }
 
     // --- Epics ---
-    async fn create_epic(&self, _epic: &agileplus_domain::domain::epic::Epic) -> Result<i64, DomainError> {
+    async fn create_epic(
+        &self,
+        _epic: &agileplus_domain::domain::epic::Epic,
+    ) -> Result<i64, DomainError> {
         Ok(1)
     }
 
-    async fn get_epic_by_id(&self, _id: i64) -> Result<Option<agileplus_domain::domain::epic::Epic>, DomainError> {
+    async fn get_epic_by_id(
+        &self,
+        _id: i64,
+    ) -> Result<Option<agileplus_domain::domain::epic::Epic>, DomainError> {
         Ok(None)
     }
 
-    async fn update_epic_status(&self, _id: i64, _status: agileplus_domain::domain::epic::EpicStatus) -> Result<(), DomainError> {
+    async fn update_epic_status(
+        &self,
+        _id: i64,
+        _status: agileplus_domain::domain::epic::EpicStatus,
+    ) -> Result<(), DomainError> {
         Ok(())
     }
 
-    async fn list_epics_by_project(&self, _project_id: i64) -> Result<Vec<agileplus_domain::domain::epic::Epic>, DomainError> {
+    async fn list_epics_by_project(
+        &self,
+        _project_id: i64,
+    ) -> Result<Vec<agileplus_domain::domain::epic::Epic>, DomainError> {
         Ok(vec![])
     }
 
@@ -575,23 +612,39 @@ impl StoragePort for MockStorage {
     }
 
     // --- Stories ---
-    async fn create_story(&self, _story: &agileplus_domain::domain::story::Story) -> Result<i64, DomainError> {
+    async fn create_story(
+        &self,
+        _story: &agileplus_domain::domain::story::Story,
+    ) -> Result<i64, DomainError> {
         Ok(1)
     }
 
-    async fn get_story_by_id(&self, _id: i64) -> Result<Option<agileplus_domain::domain::story::Story>, DomainError> {
+    async fn get_story_by_id(
+        &self,
+        _id: i64,
+    ) -> Result<Option<agileplus_domain::domain::story::Story>, DomainError> {
         Ok(None)
     }
 
-    async fn update_story_status(&self, _id: i64, _status: agileplus_domain::domain::story::StoryStatus) -> Result<(), DomainError> {
+    async fn update_story_status(
+        &self,
+        _id: i64,
+        _status: agileplus_domain::domain::story::StoryStatus,
+    ) -> Result<(), DomainError> {
         Ok(())
     }
 
-    async fn list_stories_by_epic(&self, _epic_id: i64) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
+    async fn list_stories_by_epic(
+        &self,
+        _epic_id: i64,
+    ) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
         Ok(vec![])
     }
 
-    async fn list_stories_by_project(&self, _project_id: i64) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
+    async fn list_stories_by_project(
+        &self,
+        _project_id: i64,
+    ) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
         Ok(vec![])
     }
 
@@ -599,7 +652,10 @@ impl StoragePort for MockStorage {
         Ok(())
     }
 
-    async fn upsert_story_by_requirement_id(&self, _story: &agileplus_domain::domain::story::Story) -> Result<i64, DomainError> {
+    async fn upsert_story_by_requirement_id(
+        &self,
+        _story: &agileplus_domain::domain::story::Story,
+    ) -> Result<i64, DomainError> {
         Ok(1)
     }
 }
@@ -814,10 +870,19 @@ impl VcsPort for MockVcs {
             other: vec![],
         })
     }
-    async fn list_branches(&self, _pattern: Option<&str>, _remote: bool) -> Result<Vec<agileplus_domain::ports::vcs::BranchInfo>, DomainError> {
+    async fn list_branches(
+        &self,
+        _pattern: Option<&str>,
+        _remote: bool,
+    ) -> Result<Vec<agileplus_domain::ports::vcs::BranchInfo>, DomainError> {
         Ok(vec![])
     }
-    async fn delete_branch(&self, _branch_name: &str, _force: bool, _remote: Option<&str>) -> Result<(), DomainError> {
+    async fn delete_branch(
+        &self,
+        _branch_name: &str,
+        _force: bool,
+        _remote: Option<&str>,
+    ) -> Result<(), DomainError> {
         Ok(())
     }
 }
@@ -1097,12 +1162,15 @@ async fn auth_health_is_public_no_token_needed() {
 #[tokio::test]
 async fn otel_request_span_middleware_wraps_handler() {
     use agileplus_api::middleware::otel::opentelemetry_tracing_layer;
-    use axum::{Json, Router, routing::get};
+    use axum::{routing::get, Json, Router};
     use axum_test::TestServer;
 
     // Minimal router with the OTel layer applied — mirrors production wiring.
     let app = Router::new()
-        .route("/ping", get(|| async { Json(serde_json::json!({"ok": true})) }))
+        .route(
+            "/ping",
+            get(|| async { Json(serde_json::json!({"ok": true})) }),
+        )
         .layer(opentelemetry_tracing_layer());
 
     let server = TestServer::new(app);
@@ -1119,11 +1187,14 @@ async fn otel_request_span_middleware_wraps_handler() {
 #[tokio::test]
 async fn otel_request_span_propagates_traceparent() {
     use agileplus_api::middleware::otel::opentelemetry_tracing_layer;
-    use axum::{Json, Router, routing::get};
+    use axum::{routing::get, Json, Router};
     use axum_test::TestServer;
 
     let app = Router::new()
-        .route("/ping", get(|| async { Json(serde_json::json!({"ok": true})) }))
+        .route(
+            "/ping",
+            get(|| async { Json(serde_json::json!({"ok": true})) }),
+        )
         .layer(opentelemetry_tracing_layer());
 
     let server = TestServer::new(app);

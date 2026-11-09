@@ -18,7 +18,11 @@ fn which_protoc() -> Option<std::path::PathBuf> {
             return Some(path);
         }
     }
-    let name = if cfg!(windows) { "protoc.exe" } else { "protoc" };
+    let name = if cfg!(windows) {
+        "protoc.exe"
+    } else {
+        "protoc"
+    };
     std::env::var_os("PATH").and_then(|paths| {
         std::env::split_paths(&paths).find_map(|dir| {
             let candidate = dir.join(name);

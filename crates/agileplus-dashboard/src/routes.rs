@@ -8,11 +8,11 @@ use std::env;
 
 use askama::Template;
 use axum::{
-    Router,
     extract::{Path, Query, State},
     http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse, Response},
     routing::{get, post},
+    Router,
 };
 
 use agileplus_domain::domain::{
@@ -23,13 +23,13 @@ use crate::app_state::{ServiceHealth, SharedState};
 use crate::health;
 use crate::process_detector;
 use crate::templates::{
-    AgentActivityPartial, AgentSettingsPage, AgentView, CiLinkView, DashboardPage,
-    EcosystemProject, EventTimelinePartial, EventsPage, EvidenceBundleView, FeatureDetailPage,
-    FeatureEvidencePartial, FeatureView, FeaturesPage, GenerateEvidenceResponse, GitCommitView,
-    HealthPage, HealthPanelPartial, HomePage, HubPage, KanbanPartial, MediaAssetView,
-    PlaneHealthEndpointView, PlaneSettingsPage, PrLinkView, ProjectSummaryView,
+    all_feature_states, AgentActivityPartial, AgentSettingsPage, AgentView, CiLinkView,
+    DashboardPage, EcosystemProject, EventTimelinePartial, EventsPage, EvidenceBundleView,
+    FeatureDetailPage, FeatureEvidencePartial, FeatureView, FeaturesPage, GenerateEvidenceResponse,
+    GitCommitView, HealthPage, HealthPanelPartial, HomePage, HubPage, KanbanPartial,
+    MediaAssetView, PlaneHealthEndpointView, PlaneSettingsPage, PrLinkView, ProjectSummaryView,
     ProjectSwitcherPartial, ProjectView, ReportArtifactView, ServiceHealthView,
-    ServicesSettingsPage, SettingsPage, ToastPartial, WpListPartial, WpView, all_feature_states,
+    ServicesSettingsPage, SettingsPage, ToastPartial, WpListPartial, WpView,
 };
 
 use chrono::Utc;
@@ -1633,7 +1633,7 @@ pub async fn feature_evidence_json(
 
 use axum::response::sse::{Event, Sse};
 use std::convert::Infallible;
-use tokio::time::{Duration, interval};
+use tokio::time::{interval, Duration};
 
 pub async fn sse_stream(
     State(state): State<SharedState>,
@@ -2345,7 +2345,10 @@ pub fn router(state: SharedState) -> Router {
         // JSON API endpoints (for polling from JavaScript templates)
         .route("/api/dashboard/agents.json", get(agents_json))
         .route("/api/dashboard/health.json", get(health_json))
-        .route("/api/dashboard/work-packages.json", get(all_work_packages_json))
+        .route(
+            "/api/dashboard/work-packages.json",
+            get(all_work_packages_json),
+        )
         .route("/api/dashboard/epics-stories.json", get(epics_stories_json))
         .route("/api/dashboard/projects", get(project_switcher))
         .route(
@@ -2382,7 +2385,7 @@ pub fn router(state: SharedState) -> Router {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app_state::{DashboardStore, default_health};
+    use crate::app_state::{default_health, DashboardStore};
     use crate::templates::{AgentActivityPartial, AgentView, EventTimelinePartial};
     use std::sync::Arc;
     use tokio::sync::RwLock;

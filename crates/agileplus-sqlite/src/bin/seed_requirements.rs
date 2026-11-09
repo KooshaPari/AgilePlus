@@ -9,24 +9,14 @@
 
 use std::path::PathBuf;
 
-const AGILEPLUS_CATALOG: &str = include_str!(
-    "../../../../docs/requirements/agileplus-frnfr.md"
-);
-const TRACERA_CATALOG: &str = include_str!(
-    "../../../../docs/requirements/tracera-frnfr.md"
-);
-const PHENOTYPE_VOXEL_CATALOG: &str = include_str!(
-    "../../../../docs/requirements/phenotype-voxel-frnfr.md"
-);
-const AUTHVAULT_CATALOG: &str = include_str!(
-    "../../../../docs/requirements/authvault-frnfr.md"
-);
-const PHENOMCP_CATALOG: &str = include_str!(
-    "../../../../docs/requirements/phenomcp-frnfr.md"
-);
-const PHENOOBSERVABILITY_CATALOG: &str = include_str!(
-    "../../../../docs/requirements/phenoobservability-frnfr.md"
-);
+const AGILEPLUS_CATALOG: &str = include_str!("../../../../docs/requirements/agileplus-frnfr.md");
+const TRACERA_CATALOG: &str = include_str!("../../../../docs/requirements/tracera-frnfr.md");
+const PHENOTYPE_VOXEL_CATALOG: &str =
+    include_str!("../../../../docs/requirements/phenotype-voxel-frnfr.md");
+const AUTHVAULT_CATALOG: &str = include_str!("../../../../docs/requirements/authvault-frnfr.md");
+const PHENOMCP_CATALOG: &str = include_str!("../../../../docs/requirements/phenomcp-frnfr.md");
+const PHENOOBSERVABILITY_CATALOG: &str =
+    include_str!("../../../../docs/requirements/phenoobservability-frnfr.md");
 
 fn main() -> anyhow::Result<()> {
     // Simple arg parse: --db <path>
@@ -51,7 +41,7 @@ fn main() -> anyhow::Result<()> {
     let runner = agileplus_sqlite::migrations::MigrationRunner::new(&conn);
     runner.run_all().map_err(|e| anyhow::anyhow!("{e}"))?;
 
-    use agileplus_sqlite::seed::{Initiative, seed_requirements};
+    use agileplus_sqlite::seed::{seed_requirements, Initiative};
 
     let initiatives = vec![
         Initiative {
@@ -86,8 +76,8 @@ fn main() -> anyhow::Result<()> {
         },
     ];
 
-    let report = seed_requirements(&conn, &initiatives)
-        .map_err(|e| anyhow::anyhow!("seed failed: {e}"))?;
+    let report =
+        seed_requirements(&conn, &initiatives).map_err(|e| anyhow::anyhow!("seed failed: {e}"))?;
 
     println!(
         "Seeded {} epic(s) and {} story/stories across {} initiative(s).",
@@ -97,9 +87,11 @@ fn main() -> anyhow::Result<()> {
     );
 
     for init in &report.initiatives {
-        let done_count = init.stories.iter().filter(|s| {
-            matches!(s.status, agileplus_domain::domain::story::StoryStatus::Done)
-        }).count();
+        let done_count = init
+            .stories
+            .iter()
+            .filter(|s| matches!(s.status, agileplus_domain::domain::story::StoryStatus::Done))
+            .count();
         let todo_count = init.stories.len() - done_count;
         println!(
             "  [{}] epic_id={} stories={} (Done={} Todo={})",

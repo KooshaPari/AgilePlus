@@ -176,7 +176,7 @@ pub async fn discover_peers() -> Result<Vec<PeerInfo>, PeerDiscoveryError> {
 #[cfg(unix)]
 async fn probe_agileplus(ip: &str) -> PeerStatus {
     use tokio::net::TcpStream;
-    use tokio::time::{Duration, timeout};
+    use tokio::time::{timeout, Duration};
 
     let addr = format!("{ip}:3000");
     match timeout(Duration::from_secs(2), TcpStream::connect(&addr)).await {

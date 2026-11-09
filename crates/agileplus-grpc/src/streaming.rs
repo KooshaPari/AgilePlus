@@ -5,9 +5,9 @@
 use std::pin::Pin;
 
 use tokio::sync::broadcast;
+use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::Stream;
 use tokio_stream::StreamExt as TokioStreamExt;
-use tokio_stream::wrappers::BroadcastStream;
 use tonic::Status;
 
 use agileplus_proto::agileplus::v1::AgentEvent as ProtoAgentEvent;

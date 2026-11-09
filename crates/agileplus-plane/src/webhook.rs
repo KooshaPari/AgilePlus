@@ -3,10 +3,10 @@
 //! Traceability: WP08-T047
 
 use axum::{
-    Json,
     body::Bytes,
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
+    Json,
 };
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};

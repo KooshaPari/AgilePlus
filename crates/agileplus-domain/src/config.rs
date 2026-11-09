@@ -54,11 +54,12 @@ impl Default for AppConfig {
 
 impl AppConfig {
     /// Load config with environment variable overrides.
-    pub fn load_with_env_overrides() -> anyhow::Result<Self> {
+    pub fn load_with_env_overrides() -> Result<Self, ConfigError> {
         let mut config = Self::default();
 
-        if let Ok(port) = std::env::var("API_PORT").or_else(|_| std::env::var("AGILEPLUS_API_PORT")) {
-            config.api.port = port.parse()?;
+        if let Ok(port) = std::env::var("API_PORT").or_else(|_| std::env::var("AGILEPLUS_API_PORT"))
+        {
+            config.api.port = port.parse().map_err(ConfigError::InvalidPort)?;
         }
 
         if let Ok(db) = std::env::var("DATABASE_PATH") {
@@ -74,4 +75,11 @@ impl AppConfig {
 
         Ok(config)
     }
+}
+
+/// Errors that can occur while loading configuration.
+#[derive(Debug, thiserror::Error)]
+pub enum ConfigError {
+    #[error("invalid port value: {0}")]
+    InvalidPort(std::num::ParseIntError),
 }

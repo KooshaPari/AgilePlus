@@ -21,6 +21,6 @@ pub mod work_items;
 
 // Re-export the public entry points callers need.
 pub use server::domain_error_to_status;
-pub use server::AgilePlusCoreServer;
 #[cfg(not(agileplus_proto_stubs))]
 pub use server::start_server;
+pub use server::AgilePlusCoreServer;

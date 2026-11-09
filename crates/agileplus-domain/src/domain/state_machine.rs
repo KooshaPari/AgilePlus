@@ -91,7 +91,10 @@ impl FeatureState {
             });
         }
         Ok(TransitionResult {
-            transition: Transition { from: self, to: target },
+            transition: Transition {
+                from: self,
+                to: target,
+            },
             timestamp: Utc::now(),
         })
     }

@@ -10,4 +10,4 @@
 pub mod catalog;
 pub mod runner;
 
-pub use runner::{Initiative, SeedReport, seed_requirements};
+pub use runner::{seed_requirements, Initiative, SeedReport};

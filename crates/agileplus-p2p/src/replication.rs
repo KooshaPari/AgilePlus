@@ -14,7 +14,7 @@ use async_nats::jetstream;
 use chrono::{DateTime, Utc};
 use futures_util::StreamExt as _;
 use serde::{Deserialize, Serialize};
-use tokio::time::{Duration, sleep};
+use tokio::time::{sleep, Duration};
 use tracing::{debug, error, info, warn};
 
 use crate::discovery::PeerInfo;

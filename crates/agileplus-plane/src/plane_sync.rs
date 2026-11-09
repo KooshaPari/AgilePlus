@@ -7,8 +7,8 @@ use serde::Serialize;
 use agileplus_domain::domain::story::{Story, StoryStatus};
 use agileplus_domain::error::DomainError;
 use agileplus_domain::ports::{
-    PlaneIssue, PlaneProject, PlaneSyncPort, plane_state_to_story_status,
-    story_status_to_plane_state,
+    plane_state_to_story_status, story_status_to_plane_state, PlaneIssue, PlaneProject,
+    PlaneSyncPort,
 };
 
 #[derive(Debug, Clone)]

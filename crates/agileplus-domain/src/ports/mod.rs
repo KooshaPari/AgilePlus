@@ -14,8 +14,8 @@ pub use epic::EpicRepository;
 pub use events::{DomainEvent, DomainEventPublisher};
 pub use observability::ObservabilityPort;
 pub use plane_sync::{
-    PlaneIssue, PlaneProject, PlaneSyncPort, plane_state_to_story_status,
-    story_status_to_plane_state,
+    plane_state_to_story_status, story_status_to_plane_state, PlaneIssue, PlaneProject,
+    PlaneSyncPort,
 };
 pub use story::StoryRepository;
 
@@ -307,7 +307,7 @@ pub trait VcsPort: Send + Sync {
     ) -> Result<(), DomainError>;
     async fn checkout_branch(&self, branch_name: &str) -> Result<(), DomainError>;
     async fn merge_to_target(&self, source: &str, target: &str)
-    -> Result<MergeResult, DomainError>;
+        -> Result<MergeResult, DomainError>;
     async fn detect_conflicts(
         &self,
         source: &str,

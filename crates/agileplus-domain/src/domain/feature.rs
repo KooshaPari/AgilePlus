@@ -52,7 +52,12 @@ impl Feature {
     }
 
     /// Construct a new Feature with sensible defaults.
-    pub fn new(slug: &str, friendly_name: &str, spec_hash: [u8; 32], target_branch: Option<&str>) -> Self {
+    pub fn new(
+        slug: &str,
+        friendly_name: &str,
+        spec_hash: [u8; 32],
+        target_branch: Option<&str>,
+    ) -> Self {
         let now = Utc::now();
         Self {
             id: 0,
