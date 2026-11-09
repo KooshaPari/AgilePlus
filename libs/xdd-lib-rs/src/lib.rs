@@ -306,21 +306,14 @@ mod tests {
         let reg = DialectRegistry::default();
         let conv = DialectConverter::new();
         let yaml = conv
-            .convert_by_name(
-                agileplus_trace_json(),
-                "json",
-                "yaml",
-                &reg,
-            )
+            .convert_by_name(agileplus_trace_json(), "json", "yaml", &reg)
             .unwrap();
         assert!(yaml.contains("schema_version:"));
         assert!(yaml.contains("FR-024-1"));
         assert!(yaml.contains("last_validated:"));
 
         // Verify round-trip back to JSON
-        let json_back = conv
-            .convert_by_name(&yaml, "yaml", "json", &reg)
-            .unwrap();
+        let json_back = conv.convert_by_name(&yaml, "yaml", "json", &reg).unwrap();
         let v1: Value = serde_json::from_str(agileplus_trace_json()).unwrap();
         let v2: Value = serde_json::from_str(&json_back).unwrap();
         assert_eq!(v1, v2);
@@ -331,21 +324,14 @@ mod tests {
         let reg = DialectRegistry::default();
         let conv = DialectConverter::new();
         let toml = conv
-            .convert_by_name(
-                agileplus_trace_json(),
-                "json",
-                "toml",
-                &reg,
-            )
+            .convert_by_name(agileplus_trace_json(), "json", "toml", &reg)
             .unwrap();
         assert!(toml.contains("schema_version ="));
         assert!(toml.contains("fr_id ="));
         assert!(toml.contains("FR-024-1"));
 
         // Verify round-trip back to JSON
-        let json_back = conv
-            .convert_by_name(&toml, "toml", "json", &reg)
-            .unwrap();
+        let json_back = conv.convert_by_name(&toml, "toml", "json", &reg).unwrap();
         let v1: Value = serde_json::from_str(agileplus_trace_json()).unwrap();
         let v2: Value = serde_json::from_str(&json_back).unwrap();
         assert_eq!(v1, v2);
@@ -375,12 +361,7 @@ metadata:
         let reg = DialectRegistry::default();
         let conv = DialectConverter::new();
         let json = conv
-            .convert_by_name(
-                agileplus_worklog_yaml(),
-                "yaml",
-                "json",
-                &reg,
-            )
+            .convert_by_name(agileplus_worklog_yaml(), "yaml", "json", &reg)
             .unwrap();
         let parsed: Value = serde_json::from_str(&json).unwrap();
         assert_eq!(parsed["worklog_id"], "L1-001-2026-06-11");
@@ -395,12 +376,7 @@ metadata:
         let reg = DialectRegistry::default();
         let conv = DialectConverter::new();
         let toml = conv
-            .convert_by_name(
-                agileplus_worklog_yaml(),
-                "yaml",
-                "toml",
-                &reg,
-            )
+            .convert_by_name(agileplus_worklog_yaml(), "yaml", "toml", &reg)
             .unwrap();
         assert!(toml.contains("worklog_id ="));
         assert!(toml.contains("L1-001-2026-06-11"));
@@ -430,18 +406,16 @@ spec_file = "specs/001-agileplus-core/FR-CORE-001-DOMAIN-MODELS.md"
         let reg = DialectRegistry::default();
         let conv = DialectConverter::new();
         let json = conv
-            .convert_by_name(
-                agileplus_spec_config_toml(),
-                "toml",
-                "json",
-                &reg,
-            )
+            .convert_by_name(agileplus_spec_config_toml(), "toml", "json", &reg)
             .unwrap();
         let parsed: Value = serde_json::from_str(&json).unwrap();
         assert_eq!(parsed["spec"]["id"], "FR-CORE-001");
         assert_eq!(parsed["spec"]["title"], "Domain Models");
         assert_eq!(parsed["spec"]["status"], "accepted");
-        assert_eq!(parsed["spec"]["criteria"]["ac1"], "Preserve entity identity");
+        assert_eq!(
+            parsed["spec"]["criteria"]["ac1"],
+            "Preserve entity identity"
+        );
     }
 
     // â”€â”€ Registry tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -489,9 +463,7 @@ spec_file = "specs/001-agileplus-core/FR-CORE-001-DOMAIN-MODELS.md"
     fn converter_unknown_dialect_errors() {
         let reg = DialectRegistry::default();
         let conv = DialectConverter::new();
-        let err = conv
-            .convert_by_name("", "xml", "json", &reg)
-            .unwrap_err();
+        let err = conv.convert_by_name("", "xml", "json", &reg).unwrap_err();
         assert!(matches!(err, DialectError::UnknownDialect(_)));
         assert!(err.to_string().contains("xml"));
     }
@@ -538,11 +510,7 @@ spec_file = "specs/001-agileplus-core/FR-CORE-001-DOMAIN-MODELS.md"
         for dialect in [&JsonDialect as &dyn Dialect, &TomlDialect, &YamlDialect] {
             let serialized = dialect.serialize(&value).unwrap();
             let parsed = dialect.parse(&serialized).unwrap();
-            assert_eq!(
-                parsed, value,
-                "{} round-trip failed",
-                dialect.name()
-            );
+            assert_eq!(parsed, value, "{} round-trip failed", dialect.name());
         }
     }
 

@@ -10,7 +10,7 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-plugin-registry = { path = "../plugin-registry" }
+plugin-registry = { path = "../plugin-registry", version = "0.2.4" }
 serde_json.workspace = true
 tracing.workspace = true
 tonic.workspace = true

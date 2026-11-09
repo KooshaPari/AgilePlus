@@ -48,3 +48,28 @@ cargo run -p xtask-anti-patterns
 ```
 
 Run crate-specific tests with `cargo test -p <crate-name>`.
+
+## Workspace Membership
+
+The root `Cargo.toml` uses globs so new packages are picked up without edits:
+
+- `crates/*` -- domain, application, adapters, interfaces, CLI, governance
+- `libs/*` -- shared libraries absorbed from the old `libs/` tree
+- `tests/e2e`, `tests/e2e-desktop`, `tests/transport`, `tests/bdd` -- test suites
+- `agileplus-agents/crates/*` -- agent dispatch/review/service
+- `desktop/src-tauri` -- Tauri desktop app
+- `xtask-anti-patterns` -- workspace anti-pattern linter
+
+`apps/` and `tools/` contain no Rust crates today, so they are not listed.
+`tests/contract` is fixture data only and must stay out of the members list.
+
+Deliberately excluded:
+
+- `rust/` -- legacy proto stub whose package name (`agileplus-proto`)
+  duplicates `crates/agileplus-proto`; the crate under `crates/` is canonical.
+- `crates/agileplus-domain/fuzz` -- standalone `cargo-fuzz` workspace.
+- `AgilePlus-wtrees/`, `desktop-bun/` -- not packages.
+
+Run `scripts/workspace-audit.sh` (also enforced by
+`.github/workflows/workspace-audit.yml`) to verify that every member pattern
+matches a manifest and that `cargo metadata --no-deps` succeeds.

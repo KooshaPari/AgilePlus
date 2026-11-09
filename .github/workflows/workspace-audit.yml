@@ -12,7 +12,7 @@ jobs:
     workspace-audit:
         name: Workspace Path Dependency Audit
         runs-on: ubuntu-24.04
-        timeout-minutes: 5
+        timeout-minutes: 10
         steps:
             - name: Checkout
               uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -24,6 +24,19 @@ jobs:
               with:
                   python-version: "3.12"
 
+            # The workspace members are globbed (crates/*, libs/*) so a directory can
+            # be added or removed without editing Cargo.toml. Real Cargo is the only
+            # authority on whether the resulting graph resolves: duplicate package
+            # names, missing manifests, and bad path dependencies all show up here.
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: nightly-2026-07-31
+
+            - name: Validate workspace resolves (cargo metadata)
+              run: |
+                  cargo metadata --no-deps --format-version 1 > /tmp/cargo-metadata.json
+                  python3 -c 'import json; d=json.load(open("/tmp/cargo-metadata.json")); print("ok: workspace resolves with", len(d["workspace_members"]), "member(s)")'
+
             - name: Run workspace audit
               # Empirical fix (eco-044-gate-triage): the prior bash script used awk
               # to parse `members = [...]` from Cargo.toml and failed on inline
@@ -32,7 +45,7 @@ jobs:
               # parser so trailing comments on member lines don't trip the check.
               run: |
                   python3 - <<'PY'
-                  import pathlib, sys, tomllib
+                  import glob, pathlib, sys, tomllib
 
                   cargo_toml = pathlib.Path("Cargo.toml")
                   with cargo_toml.open("rb") as fh:
@@ -47,22 +60,36 @@ jobs:
                   print("=== Workspace Members Check ===")
                   repo_root = pathlib.Path(".").resolve()
                   missing = []
-                  for member in members:
-                      if isinstance(member, str):
-                          member_path = (repo_root / member).resolve()
-                          if not member_path.is_dir():
-                              print(f"MISSING: {member} (path: {member_path})")
-                              missing.append(member)
+                  for pattern in members:
+                      if not isinstance(pattern, str):
+                          continue
+                      # Members may be globs (crates/*). Expand them, then require every
+                      # matched directory to be a package so cargo will not choke on it.
+                      matches = sorted(
+                          p for p in glob.glob(str(repo_root / pattern))
+                          if pathlib.Path(p).is_dir()
+                      )
+                      if not matches:
+                          print(f"MISSING: {pattern} (no directories matched)")
+                          missing.append(pattern)
+                          continue
+                      for match in matches:
+                          match_path = pathlib.Path(match)
+                          manifest = match_path / "Cargo.toml"
+                          rel = match_path.relative_to(repo_root)
+                          if not manifest.is_file():
+                              print(f"MISSING: {rel}/Cargo.toml (matched by {pattern})")
+                              missing.append(str(rel))
                           else:
-                              print(f"OK:    {member}")
+                              print(f"OK:    {rel}")
 
                   if missing:
                       print("")
-                      print("error: workspace audit found missing path dependencies. Fix before merging.")
+                      print("error: workspace audit found missing members/manifests. Fix before merging.")
                       sys.exit(1)
 
                   print("")
-                  print("ok: all workspace members and path dependencies are present.")
+                  print("ok: all workspace members and manifests are present.")
                   PY
               env:
                   RUSTFLAGS: "-D warnings"

@@ -1,53 +1,29 @@
 [workspace]
 resolver = "2"
-# Active members — only crates/libs with actual source files.
-# Remaining scaffolding (44 crates, 19 libs) tracked but excluded from
-# workspace until source is implemented. See: kitty-specs/003-agileplus-platform-completion.
-# Exclude `rust/` — a leftover scaffolded sub-workspace that also defines
-# `agileplus-proto`, causing `cargo-semver-checks` (which walks the root
-# path and ignores the `members` list) to fail with "package
-# `agileplus-proto` is ambiguous: it is defined by in multiple manifests".
-# See subagent fox CI diagnosis 2026-10-18 for PRs #1156/#1157/#1161/#1162/#1163/#1164.
-exclude = ["rust"]
+# Active members — globbed so every crate directory with a Cargo.toml is
+# picked up automatically. Path dependencies of members are also resolved by
+# cargo even when they are not explicitly matched here.
+#
+# `apps/` and `tools/` currently contain no Rust crates (apps/byteport is
+# JS/backend-owned, tools/* are PowerShell), so they are intentionally absent.
 members = [
-  "tests/e2e", # installed-CLI round-trip; workflow runs this crate from its manifest directory
-  "tests/e2e-desktop", # E2E tests for the Tauri desktop app (DB, CLI bridge, tray, config)
-  "tests/transport", # Transport-layer integration tests (gRPC, CLI, IPC)
-  "tests/bdd", # fixture and Cucumber acceptance tests
-  "crates/agileplus-proto", # canonical tonic/prost gRPC contract
-  "crates/agileplus-grpc", # loopback Rust core consumed by the MCP bridge
-  "crates/agileplus-cli", # agileplus: spec-first CLI binary
-  "crates/agileplus-subcmds", # platform/dashboard CLI subcommands (platform health)
-  "crates/agileplus-api", # HTTP API binary (default port 3000)
-  "crates/agileplus-application",
-  "crates/agileplus-domain",
-  "crates/agileplus-governance", # SpecKitty scorecard enforcement (rubric + scoring)
-  "crates/traceability-core", # unified PM/traceability spine (un-park 2026-07-04)
-  "crates/agileplus-git",
-  "crates/agileplus-github",
-  "crates/agileplus-graph",
-  "crates/agileplus-plane",
-  "crates/agileplus-sqlite",
-  "crates/agileplus-triage",
-  "crates/agileplus-telemetry",
-  "crates/agileplus-dashboard",
-  "crates/agileplus-events",
-  "crates/agileplus-benchmarks",
-  "crates/agileplus-api-types",
-  "crates/agileplus-cache",
-  "crates/agileplus-contract-tests",
-  "crates/agileplus-error-core",
-  "crates/agileplus-import",
-  "crates/agileplus-integration-tests",
-  "crates/agileplus-nats",
-  "crates/agileplus-config",
-  "crates/agileplus-p2p",
-  "crates/agileplus-sync",
-  "agileplus-agents/crates/agileplus-agent-dispatch",
-  "agileplus-agents/crates/agileplus-agent-review",
-  "agileplus-agents/crates/agileplus-agent-service",
-  "desktop/src-tauri", # Tauri desktop app
-  # NOTE: clap-ext temporarily excluded — incompatible clap version constraint (4.3.x vs 4.6.x). Tracked in PR #924.
+  "crates/*",                  # domain, application, adapters, interfaces, CLI
+  "libs/*",                    # shared libraries absorbed from the old libs tree
+  "tests/e2e",                 # installed-CLI round-trip
+  "tests/e2e-desktop",         # Tauri desktop E2E
+  "tests/transport",           # gRPC/CLI/IPC transport integration tests
+  "tests/bdd",                 # Cucumber acceptance tests (tests/contract is fixtures only)
+  "agileplus-agents/crates/*", # agent dispatch/review/service
+  "desktop/src-tauri",         # Tauri desktop app
+  "xtask-anti-patterns",       # workspace anti-pattern linter binary
+]
+
+# Directories that must never join the root workspace.
+exclude = [
+  "rust",                        # legacy proto stub; duplicate package name agileplus-proto (see crates/agileplus-proto)
+  "crates/agileplus-domain/fuzz", # standalone cargo-fuzz workspace
+  "AgilePlus-wtrees",            # sibling git worktrees, not packages
+  "desktop-bun",                 # bun/TS desktop shell, no Rust manifest
 ]
 
 [workspace.package]
