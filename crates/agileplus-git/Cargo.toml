@@ -23,7 +23,7 @@ gix = { version = "0.88", default-features = false, features = [
   "sha1",
 ] }
 notify = "8"
-async-nats = "0.50"
+async-nats.workspace = true
 tokio = { version = "1", features = ["sync", "time", "macros"] }
 tracing = "0.1"
 toml = "1.1"
