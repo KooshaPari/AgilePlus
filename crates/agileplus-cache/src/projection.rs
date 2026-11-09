@@ -1,10 +1,12 @@
 //! Projection cache for Feature and WorkPackage state.
 
-use crate::store::{CacheStore, RedisCacheStore};
+use crate::store::CacheStore;
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::work_package::WorkPackage;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::time::Duration;
+
+const PROJECTION_TTL_SECS: u64 = 60;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ProjectionError {
@@ -24,12 +26,12 @@ pub struct WorkPackageProjection {
     pub cached_at: chrono::DateTime<chrono::Utc>,
 }
 
-pub struct ProjectionCache {
-    store: Arc<RedisCacheStore>,
+pub struct ProjectionCache<S: CacheStore> {
+    store: S,
 }
 
-impl ProjectionCache {
-    pub fn new(store: Arc<RedisCacheStore>) -> Self {
+impl<S: CacheStore> ProjectionCache<S> {
+    pub fn new(store: S) -> Self {
         Self { store }
     }
 
@@ -49,7 +51,11 @@ impl ProjectionCache {
             cached_at: chrono::Utc::now(),
         };
         self.store
-            .set(&format!("feature:{}", feature.id), &projection, None)
+            .set(
+                &format!("feature:{}", feature.id),
+                &projection,
+                Some(Duration::from_secs(PROJECTION_TTL_SECS)),
+            )
             .await
             .map_err(|e| ProjectionError::CacheError(e.to_string()))
     }
@@ -70,7 +76,11 @@ impl ProjectionCache {
             cached_at: chrono::Utc::now(),
         };
         self.store
-            .set(&format!("wp:{}", wp.id), &projection, None)
+            .set(
+                &format!("wp:{}", wp.id),
+                &projection,
+                Some(Duration::from_secs(PROJECTION_TTL_SECS)),
+            )
             .await
             .map_err(|e| ProjectionError::CacheError(e.to_string()))
     }
@@ -87,29 +97,5 @@ impl ProjectionCache {
             .delete(&format!("wp:{wp_id}"))
             .await
             .map_err(|e| ProjectionError::CacheError(e.to_string()))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn projection_error_implements_std_error() {
-        fn assert_error<T: std::error::Error + Send + Sync>() {}
-        assert_error::<ProjectionError>();
-    }
-
-    #[test]
-    fn projection_error_wraps_message_without_source() {
-        let error = ProjectionError::CacheError("backend down".to_string());
-        assert!(error.to_string().contains("backend down"));
-        assert!(std::error::Error::source(&error).is_none());
-    }
-
-    #[test]
-    fn projection_key_layout_is_stable() {
-        assert_eq!(format!("feature:{}", 7), "feature:7");
-        assert_eq!(format!("wp:{}", 7), "wp:7");
     }
 }

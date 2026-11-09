@@ -1,4 +1,4 @@
-//! SyncReport — audit summary for a single sync run.
+//! SyncReport â€” audit summary for a single sync run.
 //!
 //! Traceability: FR-SYNC-REPORT / WP09-T057
 
@@ -48,29 +48,29 @@ impl SyncReport {
 
 impl fmt::Display for SyncReport {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let sep = "─".repeat(52);
-        writeln!(f, "┌{sep}┐")?;
-        writeln!(f, "│  AgilePlus Sync Report{:>29}│", "")?;
-        writeln!(f, "├{sep}┤")?;
-        writeln!(f, "│  {:<20} {:>28}│", "Created", self.created.len())?;
-        writeln!(f, "│  {:<20} {:>28}│", "Updated", self.updated.len())?;
-        writeln!(f, "│  {:<20} {:>28}│", "Skipped", self.skipped.len())?;
-        writeln!(f, "│  {:<20} {:>28}│", "Conflicts", self.conflicts.len())?;
-        writeln!(f, "│  {:<20} {:>28}│", "Errors", self.errors.len())?;
+        let sep = "â”€".repeat(52);
+        writeln!(f, "â”Œ{sep}â”�")?;
+        writeln!(f, "â”‚  AgilePlus Sync Report{:>29}â”‚", "")?;
+        writeln!(f, "â”œ{sep}â”¤")?;
+        writeln!(f, "â”‚  {:<20} {:>28}â”‚", "Created", self.created.len())?;
+        writeln!(f, "â”‚  {:<20} {:>28}â”‚", "Updated", self.updated.len())?;
+        writeln!(f, "â”‚  {:<20} {:>28}â”‚", "Skipped", self.skipped.len())?;
+        writeln!(f, "â”‚  {:<20} {:>28}â”‚", "Conflicts", self.conflicts.len())?;
+        writeln!(f, "â”‚  {:<20} {:>28}â”‚", "Errors", self.errors.len())?;
         writeln!(
             f,
-            "│  {:<20} {:>26.3}s│",
+            "â”‚  {:<20} {:>26.3}sâ”‚",
             "Duration",
             self.duration.as_secs_f64()
         )?;
-        writeln!(f, "└{sep}┘")?;
+        writeln!(f, "â””{sep}â”˜")?;
 
         if !self.conflicts.is_empty() {
             writeln!(f, "\nConflicts:")?;
             for c in &self.conflicts {
                 writeln!(
                     f,
-                    "  • {}/{} — local={} remote={}",
+                    "  â€¢ {}/{} â€” local={} remote={}",
                     c.entity_type,
                     c.entity_id,
                     &c.local_hash[..8],
@@ -82,7 +82,7 @@ impl fmt::Display for SyncReport {
         if !self.errors.is_empty() {
             writeln!(f, "\nErrors:")?;
             for e in &self.errors {
-                writeln!(f, "  • {e}")?;
+                writeln!(f, "  â€¢ {e}")?;
             }
         }
 

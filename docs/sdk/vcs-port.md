@@ -108,13 +108,12 @@ pub struct WorktreeInfo {
 ```
 
 Example:
-
 ```json
 {
-    "path": "/path/to/repo/.worktrees/001-login-WP01",
-    "branch": "feat/001-login-WP01",
-    "feature_slug": "001-login",
-    "wp_id": "WP01"
+  "path": "/path/to/repo/.worktrees/001-login-WP01",
+  "branch": "feat/001-login-WP01",
+  "feature_slug": "001-login",
+  "wp_id": "WP01"
 }
 ```
 
@@ -137,28 +136,26 @@ pub struct ConflictInfo {
 ```
 
 Example successful merge:
-
 ```json
 {
-    "success": true,
-    "conflicts": [],
-    "merged_commit": "abc123def456..."
+  "success": true,
+  "conflicts": [],
+  "merged_commit": "abc123def456..."
 }
 ```
 
 Example with conflicts:
-
 ```json
 {
-    "success": false,
-    "conflicts": [
-        {
-            "path": "src/auth/login.rs",
-            "ours": "...\n<<<<<<< HEAD\nour version\n||||||| parent\n...",
-            "theirs": "...\n=======\ntheir version\n>>>>>>> feat/001-login-WP01"
-        }
-    ],
-    "merged_commit": null
+  "success": false,
+  "conflicts": [
+    {
+      "path": "src/auth/login.rs",
+      "ours": "...\n<<<<<<< HEAD\nour version\n||||||| parent\n...",
+      "theirs": "...\n=======\ntheir version\n>>>>>>> feat/001-login-WP01"
+    }
+  ],
+  "merged_commit": null
 }
 ```
 
@@ -244,7 +241,6 @@ Example Python usage:
 import asyncio
 from agileplus_git import GitVcsAdapter
 
-
 async def main():
     vcs = GitVcsAdapter("/path/to/repo")
 
@@ -256,16 +252,21 @@ async def main():
     # ... agent operations ...
 
     # Check for conflicts before merging
-    conflicts = await vcs.detect_conflicts("feat/001-login-WP01", "main")
+    conflicts = await vcs.detect_conflicts(
+        "feat/001-login-WP01",
+        "main"
+    )
 
     if not conflicts:
-        result = await vcs.merge_to_target("feat/001-login-WP01", "main")
+        result = await vcs.merge_to_target(
+            "feat/001-login-WP01",
+            "main"
+        )
         assert result.success
         print(f"Merged: {result.merged_commit}")
 
     # Clean up
     await vcs.cleanup_worktree(wt_path)
-
 
 asyncio.run(main())
 ```
@@ -377,7 +378,6 @@ Then wire into the CLI and configure in `.kittify/config.toml`.
 ## Git-Backed State Sync
 
 Beyond worktrees and branches, the `VcsPort` supports exporting and importing the full AgilePlus state into a git-tracked directory. This enables:
-
 - Sharing feature state across machines without a network service
 - Git-based backup and restore of AgilePlus data
 - Diffing feature state over time (`git log -- features/`)

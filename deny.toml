@@ -1,49 +1,5 @@
 [advisories]
 db-path = "$CARGO_HOME/advisory-db"
-# Unmaintained (info-severity) advisories. All are transitive or build-time
-# only; none have a drop-in fix available in the current dependency graph.
-# CVE-level vulnerability advisories are handled by a separate triage pass.
-#
-# Stale entries (RUSTSEC-2024-0436, RUSTSEC-2024-0370, RUSTSEC-2025-0134,
-# RUSTSEC-2025-0075, RUSTSEC-2025-0080, RUSTSEC-2025-0081, RUSTSEC-2025-0098,
-# RUSTSEC-2025-0100, RUSTSEC-2025-0012, RUSTSEC-2024-0384) were removed in
-# commit-chain 2026-10-13 because none of the underlying crates still match
-# the advisory criteria after upstream migrations.
-#
-# RUSTSEC-2024-0449 (unsafe-libyaml) was reachable only through the deprecated
-# `serde_yaml` 0.9.x line. The migration in commit-chain 2026-10-13 (issue
-# #1107) replaces `serde_yaml` with `serde_norway` 0.9 (the maintained
-# 0.9-line fork by cafkafk/emberian, pure-Rust parser, no `unsafe-libyaml`).
-# `serde_yml` was considered and rejected: deprecated in 0.0.13 in favor of
-# `noyalib`. `serde_yaml_ng` (acatton's continuation of the dtolnay line)
-# was also tried first and was rejected: it still pulls in `unsafe-libyaml`,
-# so the advisory would persist.
-#
-# RUSTSEC-2024-0370 (proc-macro-error) remains: build-time only via
-# glib-macros 0.18 (tauri tray-icon stack); glib 0.18 pins it, no fix until
-# tauri/tray-icon bump to a version that drops the libappindicator default
-# or ships a maintained ksni-only path.
-#
-# RUSTSEC-2024-0429 (glib VariantStrIter): glib reaches this tree only through
-# libappindicator -> tray-icon -> tauri, a LINUX-ONLY path (macOS builds use
-# muda directly, with no gtk/glib). Consequence: cargo-deny emits
-# `advisory-not-detected` for this ignore entry when run on a macOS host,
-# because no crate in the host graph matches. On ubuntu (what CI uses) the
-# crate matches and the ignore is required. Do not remove it based on a
-# local macOS warning. glib 0.18.5 is the latest resolvable version in this
-# graph; upstream fixed only in 0.20.0, reachable once tauri PR #16170
-# ("chore(deps): update gtk crates to 0.19") lands. Dependabot run
-# 38524349833 (2026-10-14) confirmed security_update_not_possible:
-# latest-resolvable 0.18.5, lowest-non-vulnerable 0.20.0,
-# conflicting-dependencies [].
-ignore = [
-  { id = "RUSTSEC-2024-0370", reason = "proc-macro-error unmaintained: build-time only via glib-macros 0.18 (tauri stack); glib 0.18 pins it, no fix until tauri/tray-icon bump." },
-  { id = "RUSTSEC-2024-0429", reason = "glib VariantStrIter: latest resolvable glib is 0.18.5; fixed in 0.20.0 behind tauri PR #16170. LINUX-ONLY path (libappindicator->tray-icon->tauri). On a macOS host cargo-deny reports `advisory-not-detected` for this entry because no crate in the macOS dependency graph matches the advisory criteria; that is expected and benign, CI runs ubuntu where the advisory IS encountered. Re-evaluate when tauri PR #16170 lands." },
-  { id = "RUSTSEC-2026-0370", reason = "zvariant unmaintained (info): merged into zbus 6.0.0 as zbus::wire on 2026-10-16. LINUX-ONLY path via keyring 4.x -> zbus-secret-service-keyring-store 1.0.1 -> zbus 5 (which still pulls the deprecated zvariant 5.15.x). On macOS, cargo-deny emits advisory-not-detected for this entry (benign, same pattern as RUSTSEC-2024-0429). Re-evaluate when zbus-secret-service-keyring-store cuts a release on zbus 6." },
-  { id = "RUSTSEC-2026-0371", reason = "zbus_names unmaintained (info): merged into zbus 6.0.0 as zbus::names on 2026-10-16. Same LINUX-ONLY path as RUSTSEC-2026-0370 (zbus 5 backend). Re-evaluate alongside -0370 when keyring's linux backend migrates to zbus 6." },
-  { id = "RUSTSEC-2026-0372", reason = "zvariant_derive unmaintained (info): merged into zbus 6.0.0 macros on 2026-10-16. Same LINUX-ONLY path as RUSTSEC-2026-0370. Re-evaluate alongside -0370 when keyring's linux backend migrates to zbus 6." },
-  { id = "RUSTSEC-2026-0374", reason = "basic-toml unmaintained (archived upstream): transitive, build-time only; no safe upgrade exists." },
-]
 
 [licenses]
 version = 2
@@ -53,8 +9,6 @@ allow = [
   "BSD-2-Clause",
   "BSD-3-Clause",
   "BSD-3-Clause-Clear",
-  # Boost Software License (OSI-approved): xxhash-rust via redis 1.7.
-  "BSL-1.0",
   "CC0-1.0",
   "CC-BY-SA-4.0",
   "GPL-3.0",

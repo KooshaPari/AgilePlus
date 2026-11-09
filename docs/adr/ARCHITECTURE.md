@@ -87,14 +87,12 @@ crates/agileplus-domain/
 ### Port Interfaces
 
 #### Primary (Driving) Ports
-
 - `AgentPort` - Agent lifecycle and task delegation
 - `ReviewPort` - Code review operations
 - `ContentPort` - Content/document management
 - `VcsPort` - Version control operations
 
 #### Secondary (Driven) Ports
-
 - `StoragePort` - Persistence abstraction
 - `EventPort` - Event publishing
 - `ObservabilityPort` - Metrics, traces, logs
@@ -129,11 +127,11 @@ impl<P: StoragePort, E: EventPort> BacklogService<P, E> {
 
 ### Alternatives Considered
 
-| Alternative                   | Reason for Rejection           |
-| ----------------------------- | ------------------------------ |
-| Pure layered                  | Less explicit port abstraction |
-| Feature-oriented              | Less mature tooling            |
-| ECS (Entity-Component-System) | Overkill for this domain       |
+| Alternative | Reason for Rejection |
+|-------------|---------------------|
+| Pure layered | Less explicit port abstraction |
+| Feature-oriented | Less mature tooling |
+| ECS (Entity-Component-System) | Overkill for this domain |
 
 ### Consequences
 
@@ -152,7 +150,6 @@ impl<P: StoragePort, E: EventPort> BacklogService<P, E> {
 ### Single Responsibility Principle (SRP)
 
 Each module has one reason to change:
-
 - `BacklogService` - only backlog management
 - `FeatureService` - only feature operations
 - `CycleService` - only cycle/iteration management
@@ -160,7 +157,6 @@ Each module has one reason to change:
 ### Open/Closed Principle (OCP)
 
 Domain entities open for extension, closed for modification:
-
 - Use traits for new behavior
 - Value objects immutable
 
@@ -171,7 +167,6 @@ All port implementations must satisfy port contracts.
 ### Interface Segregation Principle (ISP)
 
 Fine-grained ports over monolithic interfaces:
-
 - `AgentPort` vs generic `ServicePort`
 - `StoragePort` vs `PersistencePort`
 
@@ -194,13 +189,13 @@ High-level modules depend on abstractions (ports), not concretions.
 
 ### Contexts Identified
 
-| Context                 | Entities                  | Ubiquitous Language               |
-| ----------------------- | ------------------------- | --------------------------------- |
-| **Feature Management**  | Feature, BacklogItem      | story points, acceptance criteria |
-| **Cycle Management**    | Cycle, Sprint, Milestone  | velocity, burndown                |
-| **Module Organization** | Module, Dependency        | coupling, cohesion                |
-| **Agent Coordination**  | Agent, Task, Delegation   | capability, routing               |
-| **Governance**          | Policy, Audit, Compliance | enforcement, reporting            |
+| Context | Entities | Ubiquitous Language |
+|---------|----------|-------------------|
+| **Feature Management** | Feature, BacklogItem | story points, acceptance criteria |
+| **Cycle Management** | Cycle, Sprint, Milestone | velocity, burndown |
+| **Module Organization** | Module, Dependency | coupling, cohesion |
+| **Agent Coordination** | Agent, Task, Delegation | capability, routing |
+| **Governance** | Policy, Audit, Compliance | enforcement, reporting |
 
 ### Integration Points
 
@@ -228,12 +223,12 @@ High-level modules depend on abstractions (ports), not concretions.
 
 ### Test Locations
 
-| Type        | Location                                       |
-| ----------- | ---------------------------------------------- |
-| Unit        | `crates/*/src/**/*.rs` (inline `#[cfg(test)]`) |
-| Integration | `crates/*/tests/*.rs`                          |
-| Contract    | `crates/agileplus-contract-tests/`             |
-| BDD         | `tests/bdd/`                                   |
+| Type | Location |
+|------|----------|
+| Unit | `crates/*/src/**/*.rs` (inline `#[cfg(test)]`) |
+| Integration | `crates/*/tests/*.rs` |
+| Contract | `crates/agileplus-contract-tests/` |
+| BDD | `tests/bdd/` |
 
 ### Naming Conventions
 
@@ -268,13 +263,11 @@ High-level modules depend on abstractions (ports), not concretions.
 # Feature: Backlog Management
 
 ## Acceptance Criteria
-
 - [ ] Can create backlog items
 - [ ] Can assign to cycles
 - [ ] Progress tracked automatically
 
 ## Edge Cases
-
 - Empty backlog: Show empty state
 - Duplicate names: Reject with error
 ```
@@ -294,11 +287,11 @@ High-level modules depend on abstractions (ports), not concretions.
 
 ### Error Types
 
-| Type               | Use Case                 | Example                  |
-| ------------------ | ------------------------ | ------------------------ |
-| `DomainError`      | Business rule violations | Invalid state transition |
-| `PortError`        | Infrastructure failures  | DB connection lost       |
-| `ApplicationError` | Use case failures        | Feature not found        |
+| Type | Use Case | Example |
+|------|----------|---------|
+| `DomainError` | Business rule violations | Invalid state transition |
+| `PortError` | Infrastructure failures | DB connection lost |
+| `ApplicationError` | Use case failures | Feature not found |
 
 ### Error Propagation
 
@@ -309,7 +302,6 @@ PortError ──wrap──→ ApplicationError ──wrap──→ DomainError
 ### Result Type Convention
 
 All port and service methods return `Result<T, Error>`:
-
 - `Ok(T)` - Success with value
 - `Err(DomainError)` - Business rule violation
 - `Err(ApplicationError)` - Operational failure
@@ -323,21 +315,21 @@ All port and service methods return `Result<T, Error>`:
 
 ### Three Pillars
 
-| Pillar      | Implementation                   |
-| ----------- | -------------------------------- |
-| **Metrics** | OpenTelemetry + Prometheus       |
+| Pillar | Implementation |
+|--------|---------------|
+| **Metrics** | OpenTelemetry + Prometheus |
 | **Logging** | `tracing` with structured fields |
-| **Traces**  | OpenTelemetry with W3C context   |
+| **Traces** | OpenTelemetry with W3C context |
 
 ### Log Format
 
 ```json
 {
-    "level": "INFO",
-    "timestamp": "2026-03-25T12:00:00Z",
-    "message": "Feature created",
-    "feature_id": "feat_123",
-    "trace_id": "abc123"
+  "level": "INFO",
+  "timestamp": "2026-03-25T12:00:00Z",
+  "message": "Feature created",
+  "feature_id": "feat_123",
+  "trace_id": "abc123"
 }
 ```
 
@@ -420,9 +412,9 @@ AgilePlus/
 
 ### Crate Naming Convention
 
-| Prefix              | Purpose          |
-| ------------------- | ---------------- |
-| `agileplus-`        | Core crates      |
+| Prefix | Purpose |
+|--------|---------|
+| `agileplus-` | Core crates |
 | `agileplus-*-tests` | Test-only crates |
 | `agileplus-*-bench` | Benchmark crates |
 
@@ -468,4 +460,4 @@ AgilePlus/
 
 ---
 
-_This document is the authoritative source for architecture decisions. Update via PR with ADR template._
+*This document is the authoritative source for architecture decisions. Update via PR with ADR template.*

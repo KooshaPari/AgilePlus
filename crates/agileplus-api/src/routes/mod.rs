@@ -1,6 +1,5 @@
 //! HTTP route handler modules.
 
-pub mod acceptance;
 pub mod audit;
 pub mod branch;
 pub mod cycle;

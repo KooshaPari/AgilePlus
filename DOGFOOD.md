@@ -9,13 +9,11 @@
 ## Quick Start (2 minutes)
 
 ### Build
-
 ```bash
 cargo build --release
 ```
 
 ### Initialize a project
-
 ```bash
 cd your-project
 agileplus init
@@ -23,7 +21,6 @@ agileplus init
 ```
 
 ### Create a spec
-
 ```bash
 # Interactive interview
 agileplus specify
@@ -36,7 +33,6 @@ agileplus specify --feature my-feature
 ```
 
 ### List specs
-
 ```bash
 # All specs
 agileplus list
@@ -54,7 +50,6 @@ agileplus list --state implemented
 ### Core Commands (always available)
 
 #### `specify` — Create/review specs
-
 ```bash
 # Interactive interview (asks questions)
 agileplus specify
@@ -73,7 +68,6 @@ agileplus specify --target-branch develop
 ```
 
 #### `list` — List features
-
 ```bash
 # All features
 agileplus list
@@ -88,7 +82,6 @@ agileplus list --format json
 ```
 
 #### `cycle` — Manage delivery cycles
-
 ```bash
 # List cycles
 agileplus cycle list
@@ -98,7 +91,6 @@ agileplus cycle create --name "Sprint 1" --duration 14d
 ```
 
 #### `queue` — Manage triage backlog
-
 ```bash
 # List backlog
 agileplus queue list
@@ -108,7 +100,6 @@ agileplus queue add --title "Bug fix" --description "..."
 ```
 
 #### `module` — Manage product modules
-
 ```bash
 # List modules
 agileplus module list
@@ -118,7 +109,6 @@ agileplus module create --name "Frontend" --description "UI components"
 ```
 
 #### `platform` — Manage platform services
-
 ```bash
 # Start all services
 agileplus platform up
@@ -134,7 +124,6 @@ agileplus platform logs
 ```
 
 #### `dashboard` — Render DAG/status
-
 ```bash
 # Show DAG status
 agileplus dashboard
@@ -144,7 +133,6 @@ agileplus dashboard --format json
 ```
 
 #### `cockpit` — Scorecards
-
 ```bash
 # Show scorecard
 agileplus cockpit
@@ -154,7 +142,6 @@ agileplus cockpit publish
 ```
 
 #### `rubric` — Governance scoring
-
 ```bash
 # Score a repo
 agileplus rubric --path ./my-repo
@@ -193,43 +180,40 @@ agileplus triage
 ## How Agents Use AgilePlus
 
 ### Create a Spec (via MCP)
-
 ```json
 {
-    "tool": "create_spec",
-    "arguments": {
-        "title": "User Authentication",
-        "description": "Implement JWT-based auth with refresh tokens",
-        "requirements": [
-            "FR-001: Login endpoint",
-            "FR-002: Token refresh",
-            "FR-003: Logout endpoint"
-        ]
-    }
+  "tool": "create_spec",
+  "arguments": {
+    "title": "User Authentication",
+    "description": "Implement JWT-based auth with refresh tokens",
+    "requirements": [
+      "FR-001: Login endpoint",
+      "FR-002: Token refresh",
+      "FR-003: Logout endpoint"
+    ]
+  }
 }
 ```
 
 ### List Specs (via MCP)
-
 ```json
 {
-    "tool": "list_specs",
-    "arguments": {
-        "state": "draft",
-        "format": "json"
-    }
+  "tool": "list_specs",
+  "arguments": {
+    "state": "draft",
+    "format": "json"
+  }
 }
 ```
 
 ### Update Spec State (via MCP)
-
 ```json
 {
-    "tool": "update_spec_state",
-    "arguments": {
-        "feature": "user-auth",
-        "state": "approved"
-    }
+  "tool": "update_spec_state",
+  "arguments": {
+    "feature": "user-auth",
+    "state": "approved"
+  }
 }
 ```
 

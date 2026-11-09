@@ -1,19 +1,13 @@
 name: Fuzz
 on:
-    push:
-        branches: [main]
-    pull_request:
+  push:
+    branches: [main]
+  pull_request:
 jobs:
-    fuzz:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v7
-            - name: Install the pinned Rust channel
-              run: |
-                  set -euo pipefail
-                  channel="$(sed -n 's/^channel *= *"\(.*\)"$/\1/p' rust-toolchain.toml)"
-                  echo "pinned channel: ${channel}"
-                  test -n "${channel}"
-                  rustup toolchain install "${channel}" --profile minimal --no-self-update
-            - run: cargo install cargo-fuzz
-            - run: if [ -d fuzz ]; then cargo fuzz run 2>&1 | tail -50 || true; else echo no-fuzz; fi
+  fuzz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo install cargo-fuzz
+      - run: if [ -d fuzz ]; then cargo fuzz run 2>&1 | tail -50 || true; else echo no-fuzz; fi

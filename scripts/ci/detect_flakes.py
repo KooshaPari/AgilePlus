@@ -11,7 +11,6 @@ artifact.
 
 Traces to: FR-CI-01 (infrastructure), pillar L27 (Infrastructure CI).
 """
-
 from __future__ import annotations
 
 import json

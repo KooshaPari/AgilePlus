@@ -16,26 +16,14 @@ from __future__ import annotations
 
 import logging
 import os
-import socket
-import subprocess
-from ipaddress import ip_address
-from pathlib import Path
 from typing import Any
-from urllib.parse import unquote, urlparse
 
-from fastmcp import Context, FastMCP
-from fastmcp.server.middleware import Middleware
-from mcp.types import Root
+from fastmcp import FastMCP
 
-from agileplus_mcp.grpc_client import (
-    AgilePlusCoreClient,
-    GrpcConnectionError,
-    bind_session_project_root,
-)
+from agileplus_mcp.grpc_client import AgilePlusCoreClient, GrpcConnectionError
 from agileplus_mcp.sampling import SamplingHandler
 from agileplus_mcp.tools import features as features_module
 from agileplus_mcp.tools import governance as governance_module
-from agileplus_mcp.tools import queue as queue_module
 from agileplus_mcp.tools import status as status_module
 from agileplus_mcp.validation import validate_slug, validate_text
 
@@ -50,9 +38,6 @@ GRPC_ADDRESS = os.environ.get("AGILEPLUS_GRPC_ADDRESS", "localhost:50051")
 mcp: FastMCP = FastMCP("AgilePlus")
 _client: AgilePlusCoreClient | None = None
 _sampling: SamplingHandler | None = None
-_registered_app: FastMCP | None = None
-_runtime_tool_names: set[str] = set()
-_session_project_root: Path | None = None
 
 
 def _get_client() -> AgilePlusCoreClient:
@@ -61,119 +46,26 @@ def _get_client() -> AgilePlusCoreClient:
     return _client
 
 
-async def resolve_client_project_root(roots: list[Root]) -> Path:
-    """Validate one absolute client-advertised Git worktree URI.
-
-    Uses Git discovery so linked worktrees (``.git`` is a file) and main
-    worktrees (``.git`` is a directory) are both accepted, while any
-    directory containing a fake ``.git`` is rejected.
-    """
-    if len(roots) != 1:
-        raise ValueError("exactly one file root is required for an AgilePlus session")
-    parsed = urlparse(str(roots[0].uri))
-    if parsed.scheme != "file" or parsed.netloc:
-        raise ValueError("the project root must be an absolute file URI")
-    path = Path(unquote(parsed.path))
-    if not path.is_absolute():
-        raise ValueError("the project root must be an absolute file URI")
-    try:
-        root = path.resolve(strict=True)
-    except FileNotFoundError as exc:
-        raise ValueError("the project root does not exist") from exc
-    if not root.is_dir():
-        raise ValueError("the project root must be a Git worktree")
-    try:
-        completed = subprocess.run(
-            ["git", "-C", str(root), "rev-parse", "--show-toplevel", "--git-common-dir"],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise ValueError("the project root must be a Git worktree") from exc
-    if completed.returncode != 0:
-        raise ValueError("the project root must be a Git worktree")
-    lines = [line.strip() for line in completed.stdout.splitlines() if line.strip()]
-    if len(lines) != 2:
-        raise ValueError("the project root must be a Git worktree")
-    toplevel = Path(lines[0]).resolve()
-    if toplevel != root:
-        raise ValueError(f"the advertised project root {root} resolves to git worktree {toplevel}")
-    return root
-
-
-async def _ensure_session_project_root(fastmcp_context: Any) -> str:
-    """Return the session-bound project root, resolving from Roots if missing.
-
-    Resource requests and tool requests both go through this helper so
-    that ``on_read_resource`` gets the same binding as ``on_call_tool``.
-    """
-    project_root = await fastmcp_context.get_state("agileplus.project_root")
-    if project_root is None:
-        root = await resolve_client_project_root(await fastmcp_context.list_roots())
-        project_root = str(root)
-        await fastmcp_context.set_state("agileplus.project_root", project_root)
-    return project_root
-
-
-class ProjectRootMiddleware(Middleware):
-    """Bind each tool/resource request to one client-approved repository root."""
-
-    async def on_call_tool(self, context: Any, call_next: Any) -> Any:
-        fastmcp_context = context.fastmcp_context
-        if fastmcp_context is None:
-            raise RuntimeError("MCP session context is unavailable")
-        project_root = await _ensure_session_project_root(fastmcp_context)
-        with bind_session_project_root(project_root):
-            return await call_next(context)
-
-    async def on_read_resource(self, context: Any, call_next: Any) -> Any:
-        fastmcp_context = context.fastmcp_context
-        if fastmcp_context is None:
-            raise RuntimeError("MCP session context is unavailable")
-        project_root = await _ensure_session_project_root(fastmcp_context)
-        with bind_session_project_root(project_root):
-            return await call_next(context)
-
-
-mcp.add_middleware(ProjectRootMiddleware())
-
-
 # ---------------------------------------------------------------------------
 # T084c: MCP Roots primitive — declare workspace boundaries.
 # ---------------------------------------------------------------------------
 
 
 @mcp.resource("roots://workspace")
-async def get_workspace_roots(ctx: Context | None = None) -> dict[str, Any]:
+async def get_workspace_roots() -> dict[str, Any]:
     """Declare workspace roots for the MCP client.
 
     Returns a list of filesystem roots the server works within, allowing
     the MCP client to scope file operations correctly.
 
     Roots update dynamically as features are created.
-
-    Note: the ``on_read_resource`` middleware is responsible for binding
-    the session project root before this resource handler runs, so the
-    ``list_features`` call below already carries a valid ``ProjectScope``.
-    The local ``_ensure_session_project_root`` call here covers callers
-    that bypass middleware (e.g. direct in-process unit tests).
     """
-    if ctx is not None:
-        project_root = await _ensure_session_project_root(ctx)
-    elif _session_project_root is None:
-        raise RuntimeError("project root is not bound to this MCP session")
-    else:
-        project_root = str(_session_project_root)
-    with bind_session_project_root(project_root):
-        client = _get_client()
-        features = await client.list_features()
+    client = _get_client()
+    features = await client.list_features()
 
-    root = Path(project_root).resolve()
     roots = [
-        {"uri": root.as_uri(), "name": "project-root"},
-        {"uri": (root / ".agileplus").as_uri(), "name": "agileplus-data"},
+        {"uri": "file:///", "name": "project-root"},
+        {"uri": "file://.agileplus/", "name": "agileplus-data"},
     ]
 
     for feature in features:
@@ -185,8 +77,14 @@ async def get_workspace_roots(ctx: Context | None = None) -> dict[str, Any]:
             continue
         roots.append(
             {
-                "uri": (root / "docs" / "agileplus" / slug).as_uri(),
+                "uri": f"file://kitty-specs/{slug}/",
                 "name": f"feature-spec-{slug}",
+            }
+        )
+        roots.append(
+            {
+                "uri": f"file://.worktrees/{slug}/",
+                "name": f"feature-worktree-{slug}",
             }
         )
 
@@ -377,131 +275,9 @@ async def sample_retrospective(feature_slug: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-def register_compatibility_tools(app: FastMCP, client: AgilePlusCoreClient) -> None:
-    """Register the canonical Codex-facing AgilePlus tool names."""
-
-    @app.tool(name="health_check")
-    async def health_check() -> dict[str, str]:
-        try:
-            await client.list_features()
-        except Exception as exc:
-            return {
-                "status": "unhealthy",
-                "mcp_server": "ok",
-                "grpc_core": "unreachable",
-                "version": "0.1.0",
-                "error": str(exc),
-            }
-        return {"status": "healthy", "mcp_server": "ok", "grpc_core": "ok", "version": "0.1.0"}
-
-    @app.tool(name="list_features")
-    async def list_features(state: str | None = None) -> list[dict[str, Any]]:
-        return await client.list_features(state)
-
-    @app.tool(name="get_feature")
-    async def get_feature(slug: str) -> dict[str, Any]:
-        return await client.get_feature(slug)
-
-    @app.tool(name="get_work_packages")
-    async def get_work_packages(feature_slug: str) -> list[dict[str, Any]]:
-        return await client.list_work_packages(feature_slug)
-
-    @app.tool(name="get_work_package")
-    async def get_work_package(feature_slug: str, wp_id: str) -> dict[str, Any]:
-        if not wp_id.startswith("WP") or not wp_id[2:].isdigit():
-            raise ValueError("wp_id must use the canonical WP<positive integer> form")
-        sequence = int(wp_id[2:])
-        if sequence < 1:
-            raise ValueError("wp_id sequence must be positive")
-        return await client.get_work_package_status(feature_slug, sequence)
-
-    @app.tool(name="get_tasks")
-    async def get_tasks(feature_slug: str, wp_id: str | None = None) -> dict[str, str]:
-        del feature_slug, wp_id
-        return {"error": "not_implemented", "capability": "tasks"}
-
-    @app.tool(name="get_metrics")
-    async def get_metrics(feature_slug: str | None = None) -> dict[str, str]:
-        del feature_slug
-        return {"error": "not_implemented", "capability": "metrics"}
-
-    @app.tool(name="get_governance_rules")
-    async def get_governance_rules(feature_slug: str | None = None) -> dict[str, str]:
-        del feature_slug
-        return {"error": "not_implemented", "capability": "governance_rules"}
-
-    @app.tool(name="check_governance")
-    async def check_governance(feature_slug: str, transition: str | None = None) -> dict[str, Any]:
-        """Check governance rules for one transition.
-
-        When ``transition`` is omitted, the core evaluates only rules that
-        apply globally (rules whose transition is empty). An explicit value
-        is forwarded verbatim and must contain a ``source -> destination``
-        transition, including planner forms such as ``WP01: Doing -> Review``.
-        """
-        if transition is not None:
-            source, separator, destination = transition.partition("->")
-            if (
-                transition.count("->") != 1
-                or not separator
-                or not source.strip()
-                or not destination.strip()
-                or "\r" in transition
-                or "\n" in transition
-            ):
-                raise ValueError("transition must contain source -> destination")
-        return await client.check_governance_gate(feature_slug, transition or "")
-
-    @app.tool(name="get_audit_trail")
-    async def get_audit_trail(feature_slug: str, limit: int = 50) -> list[dict[str, Any]]:
-        if limit < 0:
-            raise ValueError("limit must be non-negative")
-        return (await client.get_audit_trail(feature_slug))[:limit]
-
-    @app.tool(name="verify_audit_chain")
-    async def verify_audit_chain(feature_slug: str) -> dict[str, Any]:
-        return await client.verify_audit_chain(feature_slug)
-
-    @app.tool(name="get_dashboard")
-    async def get_dashboard() -> dict[str, Any]:
-        features = await client.list_features()
-        counts: dict[str, int] = {}
-        active_work_packages: list[dict[str, Any]] = []
-        recent_audit_entries: list[dict[str, Any]] = []
-        for feature in features:
-            state = str(feature.get("state", "unknown"))
-            counts[state] = counts.get(state, 0) + 1
-            slug = str(feature.get("slug", ""))
-            work_packages = await client.list_work_packages(slug)
-            active_work_packages.extend(
-                work_package
-                for work_package in work_packages
-                if str(work_package.get("state", "")).lower() in {"doing", "in_progress", "blocked"}
-            )
-            recent_audit_entries.extend(await client.get_audit_trail(slug))
-        recent_audit_entries.sort(key=lambda entry: str(entry.get("timestamp", "")), reverse=True)
-        return {
-            "feature_counts": counts,
-            "active_work_packages": active_work_packages,
-            "recent_audit_entries": recent_audit_entries[:10],
-            "health": "healthy",
-        }
-
-
 async def startup(grpc_address: str = GRPC_ADDRESS) -> None:
     """Initialise the gRPC client and register all tools."""
-    global _client, _registered_app, _runtime_tool_names, _sampling
-
-    if _client is not None:
-        await _client.close()
-
-    if _registered_app is mcp:
-        for tool_name in _runtime_tool_names:
-            mcp.local_provider.remove_tool(tool_name)
-    else:
-        _runtime_tool_names = set()
-
-    existing_tool_names = {tool.name for tool in await mcp.list_tools()}
+    global _client, _sampling
 
     client = AgilePlusCoreClient(grpc_address)
     try:
@@ -516,26 +292,20 @@ async def startup(grpc_address: str = GRPC_ADDRESS) -> None:
     _client = client
     _sampling = SamplingHandler(client)
 
+    # Register domain tool modules
     features_module.register_tools(mcp, client)
     governance_module.register_tools(mcp, client)
-    queue_module.register_tools(mcp, client)
     status_module.register_tools(mcp, client)
-    register_compatibility_tools(mcp, client)
-    _runtime_tool_names = {
-        tool.name for tool in await mcp.list_tools() if tool.name not in existing_tool_names
-    }
-    _registered_app = mcp
 
     logger.info("AgilePlus MCP server ready (gRPC: %s)", grpc_address)
 
 
 async def shutdown() -> None:
     """Close the gRPC connection."""
-    global _client, _sampling
+    global _client
     if _client is not None:
         await _client.close()
         _client = None
-    _sampling = None
 
 
 def main() -> None:
@@ -546,43 +316,10 @@ def main() -> None:
 
     async def _run() -> None:
         await startup()
-        try:
-            transport = os.environ.get("AGILEPLUS_MCP_TRANSPORT", "stdio")
-            kwargs = _transport_kwargs(transport)
-            await mcp.run_async(transport=transport, show_banner=False, **kwargs)
-        finally:
-            await shutdown()
+        await mcp.run_async()
+        await shutdown()
 
     asyncio.run(_run())
-
-
-def _transport_kwargs(transport: str) -> dict[str, Any]:
-    if transport != "http":
-        return {}
-    host = os.environ.get("AGILEPLUS_MCP_HOST", "127.0.0.1")
-    if host == "localhost":
-        try:
-            resolved_addresses = {
-                ip_address(address[4][0])
-                for address in socket.getaddrinfo(host, None, type=socket.SOCK_STREAM)
-            }
-        except (OSError, ValueError) as exc:
-            raise ValueError("plaintext AgilePlus MCP host must resolve to loopback") from exc
-        is_loopback = bool(resolved_addresses) and all(
-            address.is_loopback for address in resolved_addresses
-        )
-    else:
-        try:
-            is_loopback = ip_address(host).is_loopback
-        except ValueError:
-            is_loopback = False
-    if not is_loopback:
-        raise ValueError("plaintext AgilePlus MCP must bind to a loopback address")
-    return {
-        "host": host,
-        "port": int(os.environ.get("AGILEPLUS_MCP_PORT", "8765")),
-        "path": os.environ.get("AGILEPLUS_MCP_PATH", "/mcp"),
-    }
 
 
 if __name__ == "__main__":

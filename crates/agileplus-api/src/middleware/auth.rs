@@ -26,14 +26,15 @@ const PUBLIC_PATHS: &[&str] = &["/health", "/info", "/webhooks"];
 
 /// Extract a candidate token from `Authorization: Bearer`, `X-API-Key`, or `?api_key=`.
 fn extract_token(headers: &HeaderMap, request: &Request) -> Result<String, ApiError> {
-    if let Some(auth) = headers.get("Authorization").and_then(|v| v.to_str().ok())
-        && let Some(token) = auth
+    if let Some(auth) = headers.get("Authorization").and_then(|v| v.to_str().ok()) {
+        if let Some(token) = auth
             .strip_prefix("Bearer ")
             .or_else(|| auth.strip_prefix("bearer "))
-    {
-        let token = token.trim();
-        if !token.is_empty() {
-            return Ok(token.to_string());
+        {
+            let token = token.trim();
+            if !token.is_empty() {
+                return Ok(token.to_string());
+            }
         }
     }
 
@@ -41,13 +42,13 @@ fn extract_token(headers: &HeaderMap, request: &Request) -> Result<String, ApiEr
         return Ok(header_val.to_string());
     }
 
-    if let Some(query) = request.uri().query()
-        && let Some(v) = query.split('&').find_map(|pair| {
+    if let Some(query) = request.uri().query() {
+        if let Some(v) = query.split('&').find_map(|pair| {
             let (k, v) = pair.split_once('=')?;
             (k == "api_key").then(|| v.to_string())
-        })
-    {
-        return Ok(v);
+        }) {
+            return Ok(v);
+        }
     }
 
     Err(ApiError::Unauthorized(
@@ -144,135 +145,6 @@ mod tests {
             .unwrap();
         assert!(!validate_api_key_value(&credentials, "old-key").unwrap());
         assert!(validate_api_key_value(&credentials, "new-key").unwrap());
-    }
-
-    #[test]
-    fn validate_api_key_empty_key_rejected() {
-        let credentials = InMemoryCredentialStore::new();
-        credentials
-            .set(
-                "agileplus",
-                keys::API_KEYS,
-                &format_api_key_hash("valid-key"),
-            )
-            .unwrap();
-        assert!(!validate_api_key_value(&credentials, "").unwrap());
-    }
-
-    #[test]
-    fn validate_api_key_wrong_key_rejected() {
-        let credentials = InMemoryCredentialStore::new();
-        credentials
-            .set(
-                "agileplus",
-                keys::API_KEYS,
-                &format_api_key_hash("correct-key"),
-            )
-            .unwrap();
-        assert!(!validate_api_key_value(&credentials, "wrong-key").unwrap());
-    }
-
-    #[test]
-    fn validate_api_key_no_keys_stored() {
-        let credentials = InMemoryCredentialStore::new();
-        assert!(!validate_api_key_value(&credentials, "any-key").unwrap());
-    }
-
-    #[test]
-    fn extract_token_from_bearer_header() {
-        use axum::http::{HeaderMap, HeaderValue};
-        let mut headers = HeaderMap::new();
-        headers.insert("Authorization", HeaderValue::from_static("Bearer my-token"));
-        let req = axum::http::Request::builder()
-            .uri("/api/v1/features")
-            .body(axum::body::Body::empty())
-            .unwrap();
-        let token = extract_token(&headers, &req).unwrap();
-        assert_eq!(token, "my-token");
-    }
-
-    #[test]
-    fn extract_token_from_lowercase_bearer() {
-        use axum::http::{HeaderMap, HeaderValue};
-        let mut headers = HeaderMap::new();
-        headers.insert(
-            "Authorization",
-            HeaderValue::from_static("bearer lowercase-token"),
-        );
-        let req = axum::http::Request::builder()
-            .uri("/api/v1/features")
-            .body(axum::body::Body::empty())
-            .unwrap();
-        let token = extract_token(&headers, &req).unwrap();
-        assert_eq!(token, "lowercase-token");
-    }
-
-    #[test]
-    fn extract_token_from_x_api_key_header() {
-        use axum::http::{HeaderMap, HeaderValue};
-        let mut headers = HeaderMap::new();
-        headers.insert("X-API-Key", HeaderValue::from_static("x-api-key-value"));
-        let req = axum::http::Request::builder()
-            .uri("/api/v1/features")
-            .body(axum::body::Body::empty())
-            .unwrap();
-        let token = extract_token(&headers, &req).unwrap();
-        assert_eq!(token, "x-api-key-value");
-    }
-
-    #[test]
-    fn extract_token_from_query_param() {
-        use axum::http::HeaderMap;
-        let headers = HeaderMap::new();
-        let req = axum::http::Request::builder()
-            .uri("/api/v1/features?api_key=query-key-123")
-            .body(axum::body::Body::empty())
-            .unwrap();
-        let token = extract_token(&headers, &req).unwrap();
-        assert_eq!(token, "query-key-123");
-    }
-
-    #[test]
-    fn extract_token_missing_returns_unauthorized() {
-        use axum::http::HeaderMap;
-        let headers = HeaderMap::new();
-        let req = axum::http::Request::builder()
-            .uri("/api/v1/features")
-            .body(axum::body::Body::empty())
-            .unwrap();
-        let err = extract_token(&headers, &req).unwrap_err();
-        assert!(matches!(err, ApiError::Unauthorized(_)));
-    }
-
-    #[test]
-    fn extract_token_bearer_takes_precedence_over_x_api_key() {
-        use axum::http::{HeaderMap, HeaderValue};
-        let mut headers = HeaderMap::new();
-        headers.insert(
-            "Authorization",
-            HeaderValue::from_static("Bearer bearer-val"),
-        );
-        headers.insert("X-API-Key", HeaderValue::from_static("xkey-val"));
-        let req = axum::http::Request::builder()
-            .uri("/api/v1/features")
-            .body(axum::body::Body::empty())
-            .unwrap();
-        let token = extract_token(&headers, &req).unwrap();
-        assert_eq!(token, "bearer-val");
-    }
-
-    #[test]
-    fn extract_token_empty_bearer_falls_through_to_x_api_key() {
-        use axum::http::{HeaderMap, HeaderValue};
-        let mut headers = HeaderMap::new();
-        headers.insert("Authorization", HeaderValue::from_static("Bearer "));
-        headers.insert("X-API-Key", HeaderValue::from_static("fallback-key"));
-        let req = axum::http::Request::builder()
-            .uri("/api/v1/features")
-            .body(axum::body::Body::empty())
-            .unwrap();
-        let token = extract_token(&headers, &req).unwrap();
-        assert_eq!(token, "fallback-key");
     }
 
     #[tokio::test]

@@ -9,7 +9,7 @@ use crate::codex::spawn_codex;
 use crate::ports::VcsPort;
 use crate::types::{AgentConfig, AgentKind, AgentResult, AgentTask, DomainError};
 use futures::future::join_all;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use tracing::{info, warn};
 
 // ─── Single-agent dispatch ────────────────────────────────────────────────────
@@ -25,7 +25,9 @@ pub async fn dispatch_wp(
     config: &AgentConfig,
 ) -> Result<AgentResult, DomainError> {
     // 1. Create the worktree.
-    let worktree = vcs.create_worktree(&task.feature_slug, &task.wp_id).await?;
+    let worktree = vcs
+        .create_worktree(&task.feature_slug, &task.wp_id)
+        .await?;
     task.worktree_path = worktree.clone();
 
     info!(
@@ -104,7 +106,7 @@ async fn dispatch_wp_owned(
 }
 
 /// Copy context files into `worktree_root`, logging but not failing on errors.
-async fn copy_context_files(paths: &[PathBuf], worktree_root: &Path) {
+async fn copy_context_files(paths: &[PathBuf], worktree_root: &PathBuf) {
     for src in paths {
         let file_name = src.file_name().unwrap_or_default();
         let dest = worktree_root.join(file_name);
@@ -122,7 +124,7 @@ mod tests {
     use crate::ports::VcsPort;
     use crate::types::{AgentConfig, AgentKind, AgentTask, DomainError};
     use async_trait::async_trait;
-    use std::path::{Path, PathBuf};
+    use std::path::PathBuf;
     use std::sync::Arc;
     use tempfile::tempdir;
 
@@ -132,17 +134,21 @@ mod tests {
 
     #[async_trait]
     impl VcsPort for FakeVcs {
-        async fn create_worktree(&self, _feature: &str, _wp: &str) -> Result<PathBuf, DomainError> {
+        async fn create_worktree(
+            &self,
+            _feature: &str,
+            _wp: &str,
+        ) -> Result<PathBuf, DomainError> {
             Ok(self.worktree_dir.clone())
         }
 
-        async fn remove_worktree(&self, _path: &Path) -> Result<(), DomainError> {
+        async fn remove_worktree(&self, _path: &PathBuf) -> Result<(), DomainError> {
             Ok(())
         }
 
         async fn new_commits_since(
             &self,
-            _path: &Path,
+            _path: &PathBuf,
             _since: &str,
         ) -> Result<Vec<String>, DomainError> {
             Ok(vec![])
@@ -156,9 +162,7 @@ mod tests {
 
         // Create a fake prompt file.
         let prompt_file = tmp.path().join("WP-TEST.md");
-        tokio::fs::write(&prompt_file, "# Test Prompt")
-            .await
-            .unwrap();
+        tokio::fs::write(&prompt_file, "# Test Prompt").await.unwrap();
 
         // Create a fake context file.
         let ctx_file = tmp.path().join("spec.md");

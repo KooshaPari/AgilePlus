@@ -1,14 +1,14 @@
-import json
 import subprocess
+import json
 
 
 def run_command(command, cwd=None):
     try:
         result = subprocess.run(
-            command, shell=True, capture_output=True, text=True, cwd=cwd, check=False
+            command, shell=True, capture_output=True, text=True, cwd=cwd
         )
         return result.stdout.strip(), result.stderr.strip(), result.returncode
-    except Exception as e:  # noqa: BLE001 -- wrapper converts any command failure into an error return
+    except Exception as e:
         return "", str(e), 1
 
 
@@ -17,7 +17,9 @@ def main():
 
     # Get unmerged branches
     print("Getting unmerged branches...")
-    stdout, stderr, code = run_command("git branch -r --no-merged origin/main", cwd=repo_path)
+    stdout, stderr, code = run_command(
+        "git branch -r --no-merged origin/main", cwd=repo_path
+    )
     if code != 0:
         print(f"Error getting branches: {stderr}")
         return
@@ -78,7 +80,7 @@ def main():
                 f'git checkout "{branch}" || git checkout -b "{branch}" "origin/{branch}"',
                 cwd=repo_path,
             )
-            _stdout_merge, _stderr_merge, code_merge = run_command(
+            stdout_merge, stderr_merge, code_merge = run_command(
                 "git merge origin/main --no-edit", cwd=repo_path
             )
 
@@ -91,9 +93,13 @@ def main():
                     print(f"Successfully created PR for {branch} after merge: {pr_url}")
                     results.append(f"Created PR for {branch} (after merge): {pr_url}")
                 else:
-                    print(f"Failed to create PR for {branch} even after merge: {stderr_retry}")
+                    print(
+                        f"Failed to create PR for {branch} even after merge: {stderr_retry}"
+                    )
             else:
-                print(f"Failed to merge origin/main into {branch}. Likely conflicts. Skipping.")
+                print(
+                    f"Failed to merge origin/main into {branch}. Likely conflicts. Skipping."
+                )
                 run_command("git merge --abort", cwd=repo_path)
 
             run_command("git checkout main", cwd=repo_path)

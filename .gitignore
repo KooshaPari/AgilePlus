@@ -6,14 +6,10 @@
 !pyproject.toml
 !deny.toml
 !.gitleaks.toml
-!Cargo.toml
 !package.json
 !vercel.json
 !.commitlintrc.json
 !.coderabbit.yaml
-!desktop/pnpm-lock.yaml
-!tauri.conf.json
-!ruff.toml
 
 # Environment configuration
 .env
@@ -47,22 +43,6 @@ target/
 
 # python test cache
 **/__pycache__/
-**/.coverage
 *.pyc
 *.pyo
 **/*.pyc
-node_modules/
-.tauri/
-agileplus-recovery-wtrees/
-
-# Disposable browser verification output
-crates/agileplus-dashboard/web/operator-browser-report/
-crates/agileplus-dashboard/web/test-results/
-crates/agileplus-dashboard/web/operator-browser-receipt.png
-
-# Operational databases (never commit)
-.agileplus/*.db
-.agileplus/*.db-wal
-.agileplus/*.db-shm
-.archive/**/*.db
-

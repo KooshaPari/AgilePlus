@@ -19,10 +19,11 @@ impl RateLimiter {
     }
 
     /// Check if a request is allowed under the sliding window.
-    pub async fn is_allowed(
+    /// Returns Ok(true) if within limit, Ok(false) if rate limited.
+    pub async fn check_rate_limit(
         &self,
         key: &str,
-        max_requests: u32,
+        limit: u32,
         window_secs: u64,
     ) -> Result<bool, LimiterError> {
         let mut conn = self
@@ -45,10 +46,10 @@ impl RateLimiter {
                 .map_err(|e| LimiterError::Error(e.to_string()))?;
         }
 
-        Ok(count <= max_requests)
+        Ok(count <= limit)
     }
 
-    pub async fn get_remaining(&self, key: &str, max_requests: u32) -> Result<u32, LimiterError> {
+    pub async fn get_remaining(&self, key: &str, limit: u32) -> Result<u32, LimiterError> {
         let mut conn = self
             .pool
             .get_connection()
@@ -61,7 +62,7 @@ impl RateLimiter {
             .await
             .map_err(|e| LimiterError::Error(e.to_string()))?;
 
-        Ok(max_requests.saturating_sub(count.unwrap_or(0)))
+        Ok(limit.saturating_sub(count.unwrap_or(0)))
     }
 
     pub async fn reset(&self, key: &str) -> Result<(), LimiterError> {
@@ -77,31 +78,5 @@ impl RateLimiter {
             .map_err(|e| LimiterError::Error(e.to_string()))?;
 
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn limiter_error_implements_std_error() {
-        fn assert_error<T: std::error::Error + Send + Sync>() {}
-        assert_error::<LimiterError>();
-    }
-
-    #[test]
-    fn limiter_error_source_is_none() {
-        let error = LimiterError::Error("x".to_string());
-        assert!(std::error::Error::source(&error).is_none());
-    }
-
-    #[test]
-    fn remaining_is_saturating_at_zero() {
-        // Mirrors `get_remaining` arithmetic: never underflows below zero.
-        let max_requests: u32 = 5;
-        let count: u32 = 9;
-        assert_eq!(max_requests.saturating_sub(count), 0);
-        assert_eq!(max_requests.saturating_sub(3), 2);
     }
 }

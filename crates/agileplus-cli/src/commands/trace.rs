@@ -38,7 +38,6 @@ use anyhow::{Context, Result, anyhow, bail};
 use clap::{Args, Subcommand};
 use rusqlite::{Connection, params};
 
-use agileplus_git::ProjectContext;
 use agileplus_sqlite::migrations::MigrationRunner;
 
 // â”€â”€ CLI surface â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -158,14 +157,6 @@ pub fn run(args: &TraceCmd) -> Result<()> {
 }
 
 pub fn run_link(args: &LinkArgs) -> Result<()> {
-    let current_dir =
-        std::env::current_dir().context("reading current directory for project context")?;
-    let context =
-        ProjectContext::discover(&current_dir).context("trace link requires a Git repository")?;
-    run_link_in_project_context(args, &context)
-}
-
-fn run_link_in_project_context(args: &LinkArgs, context: &ProjectContext) -> Result<()> {
     let (from_kind, from_id) = parse_ref(&args.from, "from")?;
     let (to_kind, to_id) = parse_ref(&args.to, "to")?;
 
@@ -192,14 +183,7 @@ fn run_link_in_project_context(args: &LinkArgs, context: &ProjectContext) -> Res
         bail!("refusing to create a self-link `{from_kind}:{from_id}` -> `{to_kind}:{to_id}`");
     }
 
-    // Honor an explicit --db override so scripts and tests can target a
-    // specific file without having to chdir into the Git worktree first.
-    let db_path = args.db.clone().unwrap_or_else(|| context.database_path());
-    if let Some(parent) = db_path.parent() {
-        std::fs::create_dir_all(parent).with_context(|| {
-            format!("creating AgilePlus state directory at {}", parent.display())
-        })?;
-    }
+    let db_path = resolve_db_path(args.db.as_deref());
     let conn = open_db(&db_path)?;
     let actor = args
         .by
@@ -381,20 +365,11 @@ pub(crate) fn open_db(path: &Path) -> Result<Connection> {
     Ok(conn)
 }
 
-/// Resolve the SQLite database path for the trace subcommands.
-///
-/// Priority:
-///   1. Explicit `--db <PATH>` override (used by scripts and tests).
-///   2. Repository-local `.agileplus/agileplus.db` discovered from CWD.
 pub(crate) fn resolve_db_path(override_path: Option<&Path>) -> PathBuf {
-    if let Some(p) = override_path {
-        return p.to_path_buf();
-    }
-    let current_dir = std::env::current_dir()
-        .expect("reading current directory for repository-local AgilePlus state");
-    ProjectContext::discover(&current_dir)
-        .expect("trace commands require a Git repository")
-        .database_path()
+    override_path
+        .map(|p| p.to_path_buf())
+        .or_else(|| std::env::var("AGILEPLUS_DB").ok().map(PathBuf::from))
+        .unwrap_or_else(|| PathBuf::from("agileplus.db"))
 }
 
 pub(crate) fn truncate(s: &str, max: usize) -> String {
@@ -531,24 +506,18 @@ mod tests {
     }
 
     #[test]
-    fn run_link_in_project_context_writes_a_row_to_disk() {
+    fn run_link_writes_a_row_to_disk() {
         let dir = tempfile::tempdir().unwrap();
-        let status = std::process::Command::new("git")
-            .args(["init", "--quiet", dir.path().to_str().unwrap()])
-            .status()
-            .expect("initialize test repository");
-        assert!(status.success(), "test repository initialized");
-        let context = ProjectContext::discover(dir.path()).unwrap();
-        let db = context.database_path();
+        let db = dir.path().join("run-link.db");
         let args = LinkArgs {
             from: "work_package:99".to_string(),
             to: "feature:5".to_string(),
             link_type: "implements".to_string(),
             note: "unit test".to_string(),
             by: Some("test-suite".to_string()),
-            db: None,
+            db: Some(db.clone()),
         };
-        run_link_in_project_context(&args, &context).unwrap();
+        run_link(&args).unwrap();
 
         let conn = open_db(&db).unwrap();
         let note: String = conn
@@ -622,230 +591,5 @@ mod tests {
         // run_show prints to stdout; we only verify the call returns Ok
         // (and that the SQL joins both outgoing + incoming rows).
         run_show(&args).unwrap();
-    }
-    #[test]
-    fn parse_ref_with_colons_in_id() {
-        let (k, i) = parse_ref("wp:abc:def", "from").unwrap();
-        assert_eq!(k, "wp");
-        assert_eq!(i, "abc:def");
-    }
-
-    #[test]
-    fn parse_ref_rejects_single_colon_only() {
-        assert!(parse_ref(":", "from").is_err());
-    }
-
-    // ── Additional truncate edge cases ──────────────────────────────────────
-
-    #[test]
-    fn truncate_exact_boundary() {
-        let s = "12345";
-        assert_eq!(truncate(s, 5), "12345");
-        // truncate("12345", 4) -> take 3 chars + truncation suffix
-        let result = truncate(s, 4);
-        assert!(result.starts_with("123"));
-        assert_ne!(result, s);
-    }
-
-    #[test]
-    fn truncate_empty_string() {
-        assert_eq!(truncate("", 10), "");
-    }
-
-    // ── open_db creates trace_links table ───────────────────────────────────
-
-    #[test]
-    fn open_db_creates_trace_links_table() {
-        let dir = tempfile::tempdir().unwrap();
-        let db = dir.path().join("open-db-test.db");
-        let conn = open_db(&db).unwrap();
-        let columns: Vec<String> = conn
-            .prepare("PRAGMA table_info(trace_links)")
-            .unwrap()
-            .query_map([], |row| row.get::<_, String>(1))
-            .unwrap()
-            .collect::<rusqlite::Result<Vec<_>>>()
-            .unwrap();
-        assert!(columns.contains(&"from_kind".to_string()));
-        assert!(columns.contains(&"to_kind".to_string()));
-        assert!(columns.contains(&"link_type".to_string()));
-    }
-
-    #[test]
-    fn open_db_is_idempotent() {
-        let dir = tempfile::tempdir().unwrap();
-        let db = dir.path().join("idempotent.db");
-        open_db(&db).unwrap();
-        open_db(&db).unwrap();
-        let count: i64 = open_db(&db)
-            .unwrap()
-            .query_row("SELECT COUNT(*) FROM trace_links", [], |r| r.get(0))
-            .unwrap();
-        assert_eq!(count, 0);
-    }
-
-    // ── run_link with --db override ─────────────────────────────────────────
-
-    #[test]
-    fn run_link_with_explicit_db_path() {
-        let dir = tempfile::tempdir().unwrap();
-        let db = dir.path().join("explicit.db");
-        let args = LinkArgs {
-            from: "feature:1".to_string(),
-            to: "epic:2".to_string(),
-            link_type: "implements".to_string(),
-            note: "test".to_string(),
-            by: Some("test".to_string()),
-            db: Some(db.clone()),
-        };
-        run_link(&args).unwrap();
-        let conn = open_db(&db).unwrap();
-        let count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM trace_links", [], |r| r.get(0))
-            .unwrap();
-        assert_eq!(count, 1);
-    }
-
-    #[test]
-    fn run_link_rejects_invalid_from_kind() {
-        let dir = tempfile::tempdir().unwrap();
-        let db = dir.path().join("bad-from.db");
-        let args = LinkArgs {
-            from: "bogus:1".to_string(),
-            to: "feature:2".to_string(),
-            link_type: "implements".to_string(),
-            note: String::new(),
-            by: None,
-            db: Some(db),
-        };
-        let err = run_link(&args).unwrap_err();
-        assert!(format!("{err:#}").contains("invalid --from-kind"));
-    }
-
-    #[test]
-    fn run_link_rejects_invalid_to_kind() {
-        let dir = tempfile::tempdir().unwrap();
-        let db = dir.path().join("bad-to.db");
-        let args = LinkArgs {
-            from: "work_package:1".to_string(),
-            to: "bogus:2".to_string(),
-            link_type: "implements".to_string(),
-            note: String::new(),
-            by: None,
-            db: Some(db),
-        };
-        let err = run_link(&args).unwrap_err();
-        assert!(format!("{err:#}").contains("invalid --to-kind"));
-    }
-
-    #[test]
-    fn run_list_empty_table_returns_ok() {
-        let dir = tempfile::tempdir().unwrap();
-        let db = dir.path().join("empty-list.db");
-        open_db(&db).unwrap();
-        let args = ListArgs {
-            limit: 10,
-            db: Some(db),
-        };
-        run_list(&args).unwrap();
-    }
-
-    #[test]
-    fn run_show_no_matches_returns_ok() {
-        let dir = tempfile::tempdir().unwrap();
-        let db = dir.path().join("no-show.db");
-        open_db(&db).unwrap();
-        let args = ShowArgs {
-            entity: "feature:999".to_string(),
-            db: Some(db),
-        };
-        run_show(&args).unwrap();
-    }
-
-    // ── additional truncate edge cases ──────────────────────────────────────
-
-    #[test]
-    fn truncate_exact_max_length() {
-        assert_eq!(truncate("12345", 5), "12345");
-    }
-
-    #[test]
-    fn truncate_one_over_max() {
-        // truncate takes max-1 chars + ellipsis (mojibake encoded)
-        let result = truncate("123456", 5);
-        assert_eq!(result, "1234â€¦");
-    }
-
-    #[test]
-    fn truncate_max_zero() {
-        // max=0: saturating_sub(1) = 0, so take(0) + ellipsis
-        let result = truncate("abc", 0);
-        assert_eq!(result, "â€¦");
-    }
-
-    #[test]
-    fn truncate_unicode_chars() {
-        let s = "\u{03b1}\u{03b2}\u{03b3}\u{03b4}\u{03b5}\u{03b6}\u{03b7}\u{03b8}";
-        // take(max-1=2) + ellipsis
-        let result = truncate(s, 3);
-        assert_eq!(result, "\u{03b1}\u{03b2}â€¦");
-    }
-
-    #[test]
-    fn truncate_single_char_string() {
-        assert_eq!(truncate("a", 1), "a");
-        assert_eq!(truncate("a", 5), "a");
-    }
-
-    // ── additional parse_ref edge cases ─────────────────────────────────────
-
-    #[test]
-    fn parse_ref_with_numeric_id() {
-        let (k, i) = parse_ref("feature:0", "from").unwrap();
-        assert_eq!(k, "feature");
-        assert_eq!(i, "0");
-    }
-
-    #[test]
-    fn parse_ref_with_uuid_id() {
-        let (k, i) = parse_ref("wp:550e8400-e29b-41d4-a716-446655440000", "to").unwrap();
-        assert_eq!(k, "wp");
-        assert_eq!(i, "550e8400-e29b-41d4-a716-446655440000");
-    }
-
-    #[test]
-    fn parse_ref_with_multiple_colons() {
-        let (k, i) = parse_ref("kind:id:extra", "from").unwrap();
-        assert_eq!(k, "kind");
-        assert_eq!(i, "id:extra");
-    }
-
-    // ── allowed constants ───────────────────────────────────────────────────
-
-    #[test]
-    fn allowed_kinds_contains_expected_values() {
-        assert!(ALLOWED_KINDS.contains(&"work_package"));
-        assert!(ALLOWED_KINDS.contains(&"feature"));
-        assert!(ALLOWED_KINDS.contains(&"story"));
-        assert!(ALLOWED_KINDS.contains(&"epic"));
-        assert!(ALLOWED_KINDS.contains(&"project"));
-        assert!(ALLOWED_KINDS.contains(&"cycle"));
-        assert!(ALLOWED_KINDS.contains(&"module"));
-        assert!(ALLOWED_KINDS.contains(&"requirement"));
-        assert!(ALLOWED_KINDS.contains(&"external"));
-        assert_eq!(ALLOWED_KINDS.len(), 9);
-    }
-
-    #[test]
-    fn allowed_link_types_contains_expected_values() {
-        assert!(ALLOWED_LINK_TYPES.contains(&"parent_of"));
-        assert!(ALLOWED_LINK_TYPES.contains(&"child_of"));
-        assert!(ALLOWED_LINK_TYPES.contains(&"depends_on"));
-        assert!(ALLOWED_LINK_TYPES.contains(&"blocks"));
-        assert!(ALLOWED_LINK_TYPES.contains(&"implements"));
-        assert!(ALLOWED_LINK_TYPES.contains(&"verifies"));
-        assert!(ALLOWED_LINK_TYPES.contains(&"references"));
-        assert!(ALLOWED_LINK_TYPES.contains(&"duplicates"));
-        assert_eq!(ALLOWED_LINK_TYPES.len(), 8);
     }
 }

@@ -25,15 +25,12 @@ pub mod worklog;
 // ── SDD core modules (wired into the CLI binary) ──────────────────────────────
 pub mod branch; // OK: VcsPort only
 pub mod cycle;
-pub mod evidence;
 pub mod governance; // OK: VcsPort read_artifact only
 pub mod module;
 pub mod queue;
 pub mod specify;
 
 // ── full-deps SDD modules ─────────────────────────────────────────────────────
-#[cfg(feature = "full-deps")]
-pub mod evaluate;
 #[cfg(feature = "full-deps")]
 pub mod implement;
 #[cfg(feature = "full-deps")]

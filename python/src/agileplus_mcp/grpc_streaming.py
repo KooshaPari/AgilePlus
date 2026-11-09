@@ -4,17 +4,9 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import AsyncIterator
-from typing import Any, Protocol, cast
+from typing import Any
 
 from agileplus_mcp.grpc_errors import GrpcCallError, GrpcConnectionError
-
-
-class _StreamingGrpcHost(Protocol):
-    """Host operations supplied by the concrete gRPC client."""
-
-    def _require_stub(self) -> Any: ...
-
-    async def connect(self) -> None: ...
 
 
 class AgilePlusGrpcStreamingMixin:
@@ -26,8 +18,7 @@ class AgilePlusGrpcStreamingMixin:
 
         from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
-        host = cast(_StreamingGrpcHost, self)
-        stub = host._require_stub()
+        stub = self._require_stub()
         request = core_pb2.StreamAgentEventsRequest(feature_slug=feature_slug)
 
         while True:
@@ -46,8 +37,8 @@ class AgilePlusGrpcStreamingMixin:
                 if exc.code() == grpc.StatusCode.UNAVAILABLE:
                     await asyncio.sleep(2.0)
                     try:
-                        await host.connect()
-                        stub = host._require_stub()
+                        await self.connect()
+                        stub = self._require_stub()
                     except GrpcConnectionError:
                         return
                 else:

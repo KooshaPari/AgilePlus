@@ -57,6 +57,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
           )}
           aria-label={ariaLabel}
           aria-checked={checked}
+          role="checkbox"
           {...props}
         />
         {label && (

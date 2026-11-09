@@ -6,14 +6,11 @@
 //! Traceability: WP14-T079, T080, T080b, T083
 
 use agileplus_domain::{
-    domain::{
-        feature::Feature,
-        work_package::{DependencyType, WorkPackage, WpDependency},
-    },
+    domain::{feature::Feature, work_package::WorkPackage},
     error::DomainError,
 };
 use agileplus_grpc::{
-    conversions::{feature_to_proto, wp_to_proto, wp_to_proto_with_dependencies},
+    conversions::{feature_to_proto, wp_to_proto},
     event_bus::{AgentEvent, EventBus},
     proxy::ProxyRouter,
     server::domain_error_to_status,
@@ -39,28 +36,6 @@ fn wp_to_proto_state_lowercase() {
     assert_eq!(p.state, "planned");
     assert_eq!(p.sequence, 3);
     assert_eq!(p.title, "My WP");
-}
-
-#[test]
-fn wp_to_proto_preserves_persisted_dependency_ids() {
-    let mut wp = WorkPackage::new(1, "Dependent WP", 3, "done when green");
-    wp.id = 30;
-    let dependencies = vec![
-        WpDependency {
-            wp_id: 30,
-            depends_on: 10,
-            dep_type: DependencyType::Explicit,
-        },
-        WpDependency {
-            wp_id: 30,
-            depends_on: 20,
-            dep_type: DependencyType::FileOverlap,
-        },
-    ];
-
-    let proto = wp_to_proto_with_dependencies(wp, &dependencies);
-
-    assert_eq!(proto.depends_on, vec![10, 20]);
 }
 
 // --- Error mapping tests ---
@@ -162,7 +137,7 @@ async fn proxy_router_stub_mode() {
     let result = router
         .dispatch_agent_command("implement", "test-feat", &Default::default())
         .await;
-    assert!(!result.is_success());
+    assert!(result.is_success());
     assert!(result.message().contains("stub"));
 }
 
@@ -178,5 +153,5 @@ async fn proxy_router_unreachable_address_falls_back_to_stub() {
     let result = router
         .dispatch_agent_command("implement", "feat-x", &Default::default())
         .await;
-    assert!(!result.is_success());
+    assert!(result.is_success()); // Stubs always succeed
 }

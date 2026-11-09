@@ -43,3 +43,4 @@ try {
 /ap-mcp install     # install editable package
 /ap-mcp run         # launch local dispatch MCP process
 ```
+

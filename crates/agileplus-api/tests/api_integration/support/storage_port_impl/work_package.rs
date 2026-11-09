@@ -93,18 +93,18 @@ pub(crate) fn list_wps_by_feature(
     async move { Ok(wps) }
 }
 
-pub(crate) async fn add_wp_dependency(
+pub(crate) fn add_wp_dependency(
     _storage: &MockStorage,
     _dep: &WpDependency,
-) -> Result<(), DomainError> {
-    Ok(())
+) -> impl Future<Output = Result<(), DomainError>> + Send {
+    async move { Ok(()) }
 }
 
-pub(crate) async fn get_wp_dependencies(
+pub(crate) fn get_wp_dependencies(
     _storage: &MockStorage,
     _wp_id: i64,
-) -> Result<Vec<WpDependency>, DomainError> {
-    Ok(vec![])
+) -> impl Future<Output = Result<Vec<WpDependency>, DomainError>> + Send {
+    async move { Ok(vec![]) }
 }
 
 pub(crate) fn get_ready_wps(
@@ -155,61 +155,65 @@ pub(crate) fn get_latest_audit_entry(
         .lock()
         .expect("audit lock poisoned")
         .iter()
-        .rfind(|e| e.feature_id == feature_id)
+        .filter(|e| e.feature_id == feature_id)
+        .last()
         .cloned();
     async move { Ok(entry) }
 }
 
-pub(crate) async fn create_evidence(
+pub(crate) fn create_evidence(
     _storage: &MockStorage,
     _e: &Evidence,
-) -> Result<i64, DomainError> {
-    Ok(1)
+) -> impl Future<Output = Result<i64, DomainError>> + Send {
+    async move { Ok(1) }
 }
 
-pub(crate) async fn get_evidence_by_wp(
+pub(crate) fn get_evidence_by_wp(
     _storage: &MockStorage,
     _wp_id: i64,
-) -> Result<Vec<Evidence>, DomainError> {
-    Ok(vec![])
+) -> impl Future<Output = Result<Vec<Evidence>, DomainError>> + Send {
+    async move { Ok(vec![]) }
 }
 
-pub(crate) async fn get_evidence_by_fr(
+pub(crate) fn get_evidence_by_fr(
     _storage: &MockStorage,
     _fr_id: &str,
-) -> Result<Vec<Evidence>, DomainError> {
-    Ok(vec![])
+) -> impl Future<Output = Result<Vec<Evidence>, DomainError>> + Send {
+    async move { Ok(vec![]) }
 }
 
-pub(crate) async fn create_policy_rule(
+pub(crate) fn create_policy_rule(
     _storage: &MockStorage,
     _r: &PolicyRule,
-) -> Result<i64, DomainError> {
-    Ok(1)
+) -> impl Future<Output = Result<i64, DomainError>> + Send {
+    async move { Ok(1) }
 }
 
-pub(crate) async fn list_active_policies(
+pub(crate) fn list_active_policies(
     _storage: &MockStorage,
-) -> Result<Vec<PolicyRule>, DomainError> {
-    Ok(vec![])
+) -> impl Future<Output = Result<Vec<PolicyRule>, DomainError>> + Send {
+    async move { Ok(vec![]) }
 }
 
-pub(crate) async fn record_metric(_storage: &MockStorage, _m: &Metric) -> Result<i64, DomainError> {
-    Ok(1)
+pub(crate) fn record_metric(
+    _storage: &MockStorage,
+    _m: &Metric,
+) -> impl Future<Output = Result<i64, DomainError>> + Send {
+    async move { Ok(1) }
 }
 
-pub(crate) async fn get_metrics_by_feature(
+pub(crate) fn get_metrics_by_feature(
     _storage: &MockStorage,
     _feature_id: i64,
-) -> Result<Vec<Metric>, DomainError> {
-    Ok(vec![])
+) -> impl Future<Output = Result<Vec<Metric>, DomainError>> + Send {
+    async move { Ok(vec![]) }
 }
 
-pub(crate) async fn create_governance_contract(
+pub(crate) fn create_governance_contract(
     _storage: &MockStorage,
     _c: &GovernanceContract,
-) -> Result<i64, DomainError> {
-    Ok(1)
+) -> impl Future<Output = Result<i64, DomainError>> + Send {
+    async move { Ok(1) }
 }
 
 pub(crate) fn get_governance_contract(

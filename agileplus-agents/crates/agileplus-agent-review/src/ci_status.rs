@@ -8,8 +8,8 @@ use agileplus_agent_dispatch::DomainError;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use std::time::Duration;
-use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
+use tokio::time::sleep;
 use tracing::{debug, info, warn};
 
 // ─── Public types ─────────────────────────────────────────────────────────────
@@ -65,6 +65,7 @@ struct GhCheckRun {
 
 #[derive(Debug, Deserialize)]
 struct GhCombinedStatus {
+    state: String,
     statuses: Vec<GhStatus>,
 }
 
@@ -85,7 +86,11 @@ fn gh_get(client: &reqwest::Client, token: &str, url: &str) -> reqwest::RequestB
         .header("X-GitHub-Api-Version", "2022-11-28")
 }
 
-async fn json_get<T>(client: &reqwest::Client, token: &str, url: &str) -> Result<T, DomainError>
+async fn json_get<T>(
+    client: &reqwest::Client,
+    token: &str,
+    url: &str,
+) -> Result<T, DomainError>
 where
     T: serde::de::DeserializeOwned,
 {
@@ -153,7 +158,9 @@ async fn fetch_check_runs(
     repo: &str,
     sha: &str,
 ) -> Result<Vec<CheckResult>, DomainError> {
-    let url = format!("{api_base}/repos/{owner}/{repo}/commits/{sha}/check-runs?per_page=100");
+    let url = format!(
+        "{api_base}/repos/{owner}/{repo}/commits/{sha}/check-runs?per_page=100"
+    );
     let page: GhCheckRunsPage = json_get(client, token, &url).await?;
     Ok(page
         .check_runs
@@ -233,11 +240,7 @@ fn aggregate_checks(checks: &[CheckResult]) -> CiStatus {
                         failed.push(check.name.clone());
                     }
                     other => {
-                        warn!(
-                            name = check.name,
-                            conclusion = other,
-                            "unknown check conclusion"
-                        );
+                        warn!(name = check.name, conclusion = other, "unknown check conclusion");
                     }
                 }
             }
@@ -252,13 +255,9 @@ fn aggregate_checks(checks: &[CheckResult]) -> CiStatus {
     }
 
     if !failed.is_empty() {
-        CiStatus::Failed {
-            failed_checks: failed,
-        }
+        CiStatus::Failed { failed_checks: failed }
     } else if !pending.is_empty() {
-        CiStatus::Pending {
-            pending_checks: pending,
-        }
+        CiStatus::Pending { pending_checks: pending }
     } else {
         CiStatus::Passed
     }
@@ -335,17 +334,17 @@ pub async fn poll_until_complete(
 
     loop {
         // Cancellation check.
-        if let Some(ct) = cancel
-            && ct.is_cancelled()
-        {
-            info!("CI polling cancelled by token");
-            return Ok(CiStatus::Unknown);
+        if let Some(ref ct) = cancel {
+            if ct.is_cancelled() {
+                info!("CI polling cancelled by token");
+                return Ok(CiStatus::Unknown);
+            }
         }
 
         // Timeout check.
         if start.elapsed() >= max_wait {
             info!("CI polling max_wait exceeded");
-            return check_ci_status(client, api_base, token, owner, repo, pr_number).await;
+            return Ok(check_ci_status(client, api_base, token, owner, repo, pr_number).await?);
         }
 
         let status = check_ci_status(client, api_base, token, owner, repo, pr_number).await?;
@@ -403,7 +402,10 @@ mod tests {
             make_check("lint", "completed", Some("success")),
             make_check("tests", "completed", Some("failure")),
         ];
-        assert!(matches!(aggregate_checks(&checks), CiStatus::Failed { .. }));
+        assert!(matches!(
+            aggregate_checks(&checks),
+            CiStatus::Failed { .. }
+        ));
         if let CiStatus::Failed { failed_checks } = aggregate_checks(&checks) {
             assert_eq!(failed_checks, vec!["tests"]);
         }
@@ -441,6 +443,9 @@ mod tests {
     #[test]
     fn aggregate_cancelled_counts_as_failed() {
         let checks = vec![make_check("build", "completed", Some("cancelled"))];
-        assert!(matches!(aggregate_checks(&checks), CiStatus::Failed { .. }));
+        assert!(matches!(
+            aggregate_checks(&checks),
+            CiStatus::Failed { .. }
+        ));
     }
 }
