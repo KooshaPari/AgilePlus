@@ -49,7 +49,7 @@ fn work_package(id: i64, feature_id: i64, state: WpState) -> WorkPackage {
     wp
 }
 
-/// Empty store with default health only.
+/// Explicit empty demo store with default health only.
 fn empty_state() -> SharedState {
     Arc::new(RwLock::new(DashboardStore {
         health: default_health(),
@@ -57,7 +57,7 @@ fn empty_state() -> SharedState {
     }))
 }
 
-/// A populated but fully in-memory store with one project and a few features.
+/// Explicit demo fixtures with one project and a few features.
 fn populated_state() -> SharedState {
     let mut store = DashboardStore {
         health: default_health(),
@@ -86,7 +86,8 @@ fn populated_state() -> SharedState {
 }
 
 fn app(state: SharedState) -> Router {
-    router(state)
+    let source = agileplus_dashboard::live_store::DashboardSource::demo(&state.try_read().unwrap());
+    router(state).layer(axum::Extension(Arc::new(source)))
 }
 
 async fn send(app: &Router, request: Request<Body>) -> (StatusCode, Vec<u8>, String) {
