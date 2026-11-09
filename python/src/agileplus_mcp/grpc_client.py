@@ -12,27 +12,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import AsyncIterator, Iterator
-from contextlib import asynccontextmanager, contextmanager
-from contextvars import ContextVar
-from pathlib import Path
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any
 
 from agileplus_mcp.grpc_backlog import AgilePlusBacklogGrpcMixin
 
 logger = logging.getLogger(__name__)
-
-_session_project_root: ContextVar[str | None] = ContextVar("session_project_root", default=None)
-
-
-@contextmanager
-def bind_session_project_root(project_root: str) -> Iterator[None]:
-    """Bind one MCP session's canonical root to the current request only."""
-    token = _session_project_root.set(project_root)
-    try:
-        yield
-    finally:
-        _session_project_root.reset(token)
 
 
 class GrpcConnectionError(Exception):
@@ -54,9 +40,8 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
     Connection management, retries, and error mapping are handled here.
     """
 
-    def __init__(self, address: str = "localhost:50051", project_root: str | None = None) -> None:
+    def __init__(self, address: str = "localhost:50051") -> None:
         self._address = address
-        self._project_root = str(Path(project_root).resolve()) if project_root else ""
         self._channel: Any | None = None
         self._stub: Any | None = None
         self._integrations_stub: Any | None = None
@@ -108,14 +93,6 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
             raise GrpcConnectionError("Not connected — call connect() first")
         return self._integrations_stub
 
-    def _project_scope(self) -> Any:
-        """Return the optional repository identity attached to core requests."""
-        from agileplus_proto.gen.agileplus.v1 import common_pb2  # type: ignore[import]
-
-        return common_pb2.ProjectScope(
-            canonical_repo_root=_session_project_root.get() or self._project_root
-        )
-
     # ------------------------------------------------------------------
     # Retry helper
     # ------------------------------------------------------------------
@@ -162,7 +139,7 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
         from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
         stub = self._require_stub()
-        request = core_pb2.GetFeatureRequest(slug=slug, project_scope=self._project_scope())
+        request = core_pb2.GetFeatureRequest(slug=slug)
         response = await self._call_with_retry(lambda: stub.GetFeature(request))
         return self._feature_to_dict(response.feature)
 
@@ -171,9 +148,7 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
         from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
         stub = self._require_stub()
-        request = core_pb2.ListFeaturesRequest(
-            state_filter=state or "", project_scope=self._project_scope()
-        )
+        request = core_pb2.ListFeaturesRequest(state_filter=state or "")
         response = await self._call_with_retry(lambda: stub.ListFeatures(request))
         return [self._feature_to_dict(f) for f in response.features]
 
@@ -182,7 +157,7 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
         from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
         stub = self._require_stub()
-        request = core_pb2.GetFeatureStateRequest(slug=slug, project_scope=self._project_scope())
+        request = core_pb2.GetFeatureStateRequest(slug=slug)
         response = await self._call_with_retry(lambda: stub.GetFeatureState(request))
         fs = response.feature_state
         return {
@@ -203,7 +178,7 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
 
         stub = self._require_stub()
         request = core_pb2.ListWorkPackagesRequest(
-            feature_slug=feature_slug, state_filter=state or "", project_scope=self._project_scope()
+            feature_slug=feature_slug, state_filter=state or ""
         )
         response = await self._call_with_retry(lambda: stub.ListWorkPackages(request))
         return [self._wp_to_dict(wp) for wp in response.packages]
@@ -214,9 +189,7 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
 
         stub = self._require_stub()
         request = core_pb2.GetWorkPackageStatusRequest(
-            feature_slug=feature_slug,
-            wp_sequence=wp_sequence,
-            project_scope=self._project_scope(),
+            feature_slug=feature_slug, wp_sequence=wp_sequence
         )
         response = await self._call_with_retry(lambda: stub.GetWorkPackageStatus(request))
         return self._wp_to_dict(response.work_package_status)
@@ -231,7 +204,7 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
 
         stub = self._require_stub()
         request = core_pb2.CheckGovernanceGateRequest(
-            feature_slug=feature_slug, transition=transition, project_scope=self._project_scope()
+            feature_slug=feature_slug, transition=transition
         )
         response = await self._call_with_retry(lambda: stub.CheckGovernanceGate(request))
         return {
@@ -252,9 +225,7 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
         from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
         stub = self._require_stub()
-        request = core_pb2.GetAuditTrailRequest(
-            feature_slug=feature_slug, after_id=after_id, project_scope=self._project_scope()
-        )
+        request = core_pb2.GetAuditTrailRequest(feature_slug=feature_slug, after_id=after_id)
         entries = []
         async for response in stub.GetAuditTrail(request):
             entries.append(self._audit_entry_to_dict(response.audit_entry))
@@ -265,9 +236,7 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
         from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
         stub = self._require_stub()
-        request = core_pb2.VerifyAuditChainRequest(
-            feature_slug=feature_slug, project_scope=self._project_scope()
-        )
+        request = core_pb2.VerifyAuditChainRequest(feature_slug=feature_slug)
         response = await self._call_with_retry(lambda: stub.VerifyAuditChain(request))
         return {
             "valid": response.valid,
@@ -299,9 +268,7 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
             feature_slug=feature_slug,
             args={k: str(v) for k, v in kwargs.items()},
         )
-        request = core_pb2.DispatchCommandRequest(
-            command=cmd_request, project_scope=self._project_scope()
-        )
+        request = core_pb2.DispatchCommandRequest(command=cmd_request)
         response = await self._call_with_retry(lambda: stub.DispatchCommand(request))
         result = response.result
         return {
@@ -327,9 +294,7 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
         from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
         stub = self._require_stub()
-        request = core_pb2.StreamAgentEventsRequest(
-            feature_slug=feature_slug, project_scope=self._project_scope()
-        )
+        request = core_pb2.StreamAgentEventsRequest(feature_slug=feature_slug)
 
         while True:
             try:
@@ -407,19 +372,15 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
 @asynccontextmanager
 async def connect_client(
     address: str = "localhost:50051",
-    project_root: Path | str | None = None,
 ) -> AsyncIterator[AgilePlusCoreClient]:
     """Async context manager for a connected gRPC client.
 
     Usage::
 
-        async with connect_client(project_root="/abs/path/to/repo") as client:
+        async with connect_client() as client:
             feature = await client.get_feature("my-feature")
-
-    If ``project_root`` is provided, the client is configured with the canonical
-    repo root so every stateful RPC injects ``ProjectScope``.
     """
-    client = AgilePlusCoreClient(address, project_root=project_root)
+    client = AgilePlusCoreClient(address)
     await client.connect()
     try:
         yield client

@@ -5,14 +5,13 @@ use agileplus_domain::domain::backlog::BacklogItem;
 use agileplus_domain::domain::cycle::{Cycle, CycleFeature};
 use agileplus_domain::domain::epic::{Epic, EpicStatus};
 use agileplus_domain::domain::feature::Feature;
-use agileplus_domain::domain::governance::{Evidence, GovernanceContract};
+use agileplus_domain::domain::governance::GovernanceContract;
 use agileplus_domain::domain::module::{Module, ModuleFeatureTag};
 use agileplus_domain::domain::project::Project;
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::story::{Story, StoryStatus};
 use agileplus_domain::domain::user::{User, UserRole, UserStatus};
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
-use agileplus_domain::error::DomainError;
 use chrono::Utc;
 
 #[derive(Default, Clone)]
@@ -25,40 +24,14 @@ pub(crate) struct MockStorage {
     pub(crate) module_tags: Arc<Mutex<Vec<ModuleFeatureTag>>>,
     pub(crate) cycle_features: Arc<Mutex<Vec<CycleFeature>>>,
     pub(crate) governance: Arc<Mutex<Vec<GovernanceContract>>>,
-    /// Evidence artifacts, keyed by `wp_id`/`fr_id` on read. Empty by default,
-    /// which is what every pre-existing suite relies on.
-    pub(crate) evidence: Arc<Mutex<Vec<Evidence>>>,
     pub(crate) audit: Arc<Mutex<Vec<AuditEntry>>>,
     pub(crate) projects: Arc<Mutex<Vec<Project>>>,
     pub(crate) epics: Arc<Mutex<Vec<Epic>>>,
     pub(crate) stories: Arc<Mutex<Vec<Story>>>,
     pub(crate) users: Arc<Mutex<Vec<User>>>,
-    /// Error injection: when a method name is present, the matching
-    /// `StoragePort` method returns `Err(DomainError::Storage(message))`
-    /// instead of its data. Drives the handler 500-paths and the
-    /// `/detailed-health` "unavailable" branch without a real database.
-    pub(crate) failures: Arc<Mutex<std::collections::HashMap<&'static str, String>>>,
 }
 
 impl MockStorage {
-    /// Force the named `StoragePort` method to fail with a
-    /// `DomainError::Storage` carrying `message`.
-    pub(crate) fn fail_on(&self, method: &'static str, message: &str) {
-        self.failures
-            .lock()
-            .expect("failures lock poisoned")
-            .insert(method, message.to_string());
-    }
-
-    /// The injected failure for `method`, if the test asked for one.
-    pub(crate) fn injected_failure(&self, method: &str) -> Option<DomainError> {
-        self.failures
-            .lock()
-            .expect("failures lock poisoned")
-            .get(method)
-            .map(|message| DomainError::Storage(message.clone()))
-    }
-
     pub(crate) fn with_test_data() -> Self {
         let s = MockStorage::default();
         let now = Utc::now();

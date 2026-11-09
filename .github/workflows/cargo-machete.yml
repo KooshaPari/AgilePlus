@@ -1,34 +1,26 @@
 name: Cargo Machete
 
 on:
-    push:
-        branches: [main]
-    pull_request:
-        branches: [main]
-    schedule:
-        - cron: "0 3 * * 1"
-    workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
 
 permissions:
-    contents: read
+  contents: read
 
 jobs:
-    detect-unused-dependencies:
-        runs-on: ubuntu-24.04
-        steps:
-            - uses: actions/checkout@v7
+  detect-unused-dependencies:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
 
-            - name: Install the pinned Rust channel
-              run: |
-                  set -euo pipefail
-                  channel="$(sed -n 's/^channel *= *"\(.*\)"$/\1/p' rust-toolchain.toml)"
-                  echo "pinned channel: ${channel}"
-                  test -n "${channel}"
-                  rustup toolchain install "${channel}" --profile minimal --no-self-update
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-machete
 
-            - uses: taiki-e/install-action@v2
-              with:
-                  tool: cargo-machete
-
-            - name: Run cargo machete
-              run: cargo machete .
+      - name: Run cargo machete
+        run: cargo machete .

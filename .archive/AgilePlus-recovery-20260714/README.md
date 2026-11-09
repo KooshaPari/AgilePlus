@@ -1,21 +1,21 @@
 # `AgilePlus-recovery-20260714` — Absorbed Recovery Snapshot
 
 This directory preserves the unique content from
-`<REDACTED>/zz-archive-AgilePlus-recovery-20260714` (archived 2026-07-15),
+`KooshaPari/zz-archive-AgilePlus-recovery-20260714` (archived 2026-07-15),
 which was a recovery snapshot of the `AgilePlus` repo taken on 2026-07-14
 when the live working tree had gotten into a dirty state during the cleanup
 wave and a clean baseline was needed.
 
 **Date merged:** 2026-08-08
-**Source commit:** `<REDACTED>/zz-archive-AgilePlus-recovery-20260714@main`
+**Source commit:** `KooshaPari/zz-archive-AgilePlus-recovery-20260714@main`
 **Merger:** forge-airlock (manual semantic integration)
 
 ## What this archive was
 
-A pre-2026-07-14 snapshot of `<REDACTED>/AgilePlus`, created via:
+A pre-2026-07-14 snapshot of `KooshaPari/AgilePlus`, created via:
 
 ```
-git clone --depth 1 git@github.com:<REDACTED>/AgilePlus.git AgilePlus-recovery-20260714
+git clone --depth 1 git@github.com:KooshaPari/AgilePlus.git AgilePlus-recovery-20260714
 ```
 
 The recovery was performed at baseline `a83a7677ecacac0a3080e41da312d80def74fee5`
@@ -75,7 +75,6 @@ snapshot date.
 ### 7. `docs/sessions/20260714-isolated-recovery/` (7 files)
 
 The full session documentation explaining the recovery procedure:
-
 - `00_SESSION_OVERVIEW.md` — Goal, boundaries, baseline SHA, evidence archive
 - `01_RESEARCH.md` — Investigation of the dirty checkout state
 - `02_SPECIFICATIONS.md` — Recovery procedure specification

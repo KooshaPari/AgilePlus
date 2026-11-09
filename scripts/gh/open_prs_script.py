@@ -1,5 +1,5 @@
-import json
 import subprocess
+import json
 
 GH_PATH = "/opt/homebrew/bin/gh"
 
@@ -7,10 +7,10 @@ GH_PATH = "/opt/homebrew/bin/gh"
 def run_command(cmd, cwd=None):
     try:
         result = subprocess.run(
-            cmd, shell=True, capture_output=True, text=True, cwd=cwd, check=False
+            cmd, shell=True, capture_output=True, text=True, cwd=cwd
         )
         return result
-    except Exception as e:  # noqa: BLE001 -- wrapper reports any command failure and returns None
+    except Exception as e:
         print(f"Error running command: {cmd}\n{e}")
         return None
 
@@ -27,7 +27,9 @@ def main():
         print("Failed to get branches")
         return
     branches = [
-        b.strip() for b in res.stdout.strip().split("\n") if b.strip() and b.strip() != "main"
+        b.strip()
+        for b in res.stdout.strip().split("\n")
+        if b.strip() and b.strip() != "main"
     ]
 
     # 2. Get all open PRs
@@ -94,8 +96,12 @@ def main():
                     print(f"Successfully created PR for {branch} after merge")
                     report.append(f"CREATED (after merge): {branch}")
                 else:
-                    print(f"Failed to create PR for {branch} even after merge: {res.stderr}")
-                    report.append(f"FAILED (after merge): {branch} - {res.stderr.strip()}")
+                    print(
+                        f"Failed to create PR for {branch} even after merge: {res.stderr}"
+                    )
+                    report.append(
+                        f"FAILED (after merge): {branch} - {res.stderr.strip()}"
+                    )
             else:
                 print(f"Failed to push {branch} after merge: {push_res.stderr}")
                 report.append(f"FAILED (push): {branch}")
@@ -106,7 +112,9 @@ def main():
                 run_command("git merge --abort", cwd=repo_dir)
                 report.append(f"FAILED (conflict): {branch}")
             else:
-                print(f"Merge failed for {branch}: {merge_res.stderr if merge_res else 'Unknown'}")
+                print(
+                    f"Merge failed for {branch}: {merge_res.stderr if merge_res else 'Unknown'}"
+                )
                 report.append(f"FAILED (merge): {branch}")
 
         # Return to main

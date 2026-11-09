@@ -3,15 +3,13 @@ name = "agileplus-grpc"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-authors.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-agileplus-domain = { version = "0.2.4", path = "../agileplus-domain" }
-agileplus-application = { version = "0.2.4", path = "../agileplus-application" }
-agileplus-git = { version = "0.2.4", path = "../agileplus-git" }
-agileplus-proto = { version = "0.2.4", path = "../agileplus-proto" }
-agileplus-sqlite = { version = "0.2.4", path = "../agileplus-sqlite" }
+agileplus-domain = { version = "0.2.1", path = "../agileplus-domain" }
+agileplus-git = { version = "0.2.1", path = "../agileplus-git" }
+agileplus-proto = { version = "0.2.1", path = "../agileplus-proto" }
+agileplus-sqlite = { version = "0.2.1", path = "../agileplus-sqlite" }
 tonic = { workspace = true }
 prost.workspace = true
 tokio.workspace = true
@@ -25,6 +23,3 @@ tracing-subscriber.workspace = true
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }
-
-[package.metadata.dist]
-dist = false

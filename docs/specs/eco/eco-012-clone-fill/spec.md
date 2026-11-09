@@ -9,7 +9,6 @@ superseded_by: null
 title: Clone Fill
 type: operational
 ---
-
 # eco-012: Clone Fill
 
 ## Problem

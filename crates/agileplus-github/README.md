@@ -13,3 +13,4 @@ GitHub REST client, GitHub-to-domain mapping, and repository sync support.
 ```bash
 cargo test -p agileplus-github
 ```
+

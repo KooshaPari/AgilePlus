@@ -7,3 +7,4 @@ Cross-repo documentation and architectural decisions.
 - `adr/` - Architecture Decision Records
 - `guides/` - How-to guides
 - `reference/` - Reference documentation
+

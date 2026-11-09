@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "repo": "<REDACTED>/AgilePlus",
+  "repo": "KooshaPari/AgilePlus",
   "crutches": [
     {
       "id": "agents_md_drift",

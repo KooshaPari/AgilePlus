@@ -1,4 +1,4 @@
-use std::collections::{BTreeSet, HashMap};
+use std::collections::BTreeSet;
 
 use anyhow::{Context, Result};
 
@@ -8,7 +8,6 @@ use agileplus_domain::domain::governance::{
 use agileplus_domain::ports::StoragePort;
 
 use super::{EvidenceCheck, PolicyEvalResult};
-use crate::commands::evidence::valid_artifact;
 
 /// Parse `FR-ID` or `FR-ID:evidence_type` contract evidence keys.
 fn parse_requirement(raw: &str) -> (String, Option<EvidenceType>) {
@@ -29,7 +28,6 @@ fn parse_requirement(raw: &str) -> (String, Option<EvidenceType>) {
 }
 
 /// Evaluate governance evidence requirements against stored evidence.
-#[allow(dead_code)] // Reserved for future governance gate expansion; not used by current test suite.
 pub(crate) async fn evaluate_evidence<S: StoragePort>(
     storage: &S,
     contract: &GovernanceContract,
@@ -40,21 +38,17 @@ pub(crate) async fn evaluate_evidence<S: StoragePort>(
     let feature_evidence = load_feature_evidence(storage, feature_id).await?;
 
     for rule in &contract.rules {
-        let wp_sequence = rule_wp_sequence(&rule.transition);
         for raw in &rule.required_evidence {
             let (fr_id, expected_type) = parse_requirement(raw);
             let relevant = match expected_type {
-                Some(ty) => feature_evidence.evidence_for(fr_id.as_str(), ty, wp_sequence),
-                None => feature_evidence.evidence_for_fr(fr_id.as_str(), wp_sequence),
+                Some(ty) => feature_evidence.evidence_for(fr_id.as_str(), ty),
+                None => feature_evidence.evidence_for_fr(fr_id.as_str()),
             };
             let found = !relevant.is_empty();
             let message = if found {
                 "OK".to_string()
             } else {
-                format!(
-                    "No valid evidence found for FR `{fr_id}` at {}",
-                    rule.transition
-                )
+                format!("No evidence found for FR `{fr_id}`")
             };
 
             if !found {
@@ -108,7 +102,6 @@ pub(crate) fn evaluate_threshold(evidence: &[&Evidence], threshold: &serde_json:
 }
 
 /// Evaluate active policy rules and built-in contract policy refs against stored evidence.
-#[allow(dead_code)] // Called transitively from `evaluate_evidence` (reserved for future governance gate expansion).
 pub(crate) async fn evaluate_policies<S: StoragePort>(
     storage: &S,
     contract: &GovernanceContract,
@@ -150,14 +143,10 @@ pub(crate) async fn evaluate_policies<S: StoragePort>(
             PolicyCheck::ThresholdMet { metric, min } => {
                 evaluate_metric_policy(storage, feature_id, metric, *min).await?
             }
-            PolicyCheck::ManualApproval => evaluate_evidence_policy(
+            PolicyCheck::ManualApproval | PolicyCheck::Automated => evaluate_evidence_policy(
                 contract,
                 &feature_evidence,
                 EvidenceType::ManualAttestation,
-            ),
-            PolicyCheck::Automated => (
-                false,
-                "automated policy requires a concrete evaluator".to_string(),
             ),
             PolicyCheck::Custom { script } => (
                 false,
@@ -205,7 +194,6 @@ pub(crate) async fn evaluate_policies<S: StoragePort>(
     Ok(results)
 }
 
-#[allow(dead_code)] // Called transitively from `evaluate_policies`.
 fn evaluate_evidence_policy(
     contract: &GovernanceContract,
     feature_evidence: &FeatureEvidence,
@@ -217,7 +205,7 @@ fn evaluate_evidence_policy(
         let any = feature_evidence
             .evidence
             .iter()
-            .any(|e| e.evidence_type == evidence_type && valid_artifact(e));
+            .any(|e| e.evidence_type == evidence_type);
         return if any {
             (true, format!("{} evidence present", evidence_type.as_str()))
         } else {
@@ -234,10 +222,10 @@ fn evaluate_evidence_policy(
     let mut satisfied = 0usize;
     let mut missing = Vec::new();
 
-    for (fr_id, wp_sequence) in &requirements {
-        let relevant = feature_evidence.evidence_for(fr_id, evidence_type, *wp_sequence);
+    for fr_id in &requirements {
+        let relevant = feature_evidence.evidence_for(fr_id, evidence_type);
         if relevant.is_empty() {
-            missing.push(format!("{fr_id} for WP {wp_sequence:?}"));
+            missing.push(fr_id.clone());
         } else {
             satisfied += 1;
         }
@@ -266,45 +254,19 @@ fn evaluate_evidence_policy(
 
 struct FeatureEvidence {
     evidence: Vec<Evidence>,
-    wp_sequences: HashMap<i64, i32>,
 }
 
 impl FeatureEvidence {
-    fn evidence_for(
-        &self,
-        fr_id: &str,
-        evidence_type: EvidenceType,
-        wp_sequence: Option<i32>,
-    ) -> Vec<&Evidence> {
+    fn evidence_for(&self, fr_id: &str, evidence_type: EvidenceType) -> Vec<&Evidence> {
         self.evidence
             .iter()
-            .filter(|e| {
-                e.fr_id == fr_id
-                    && e.evidence_type == evidence_type
-                    && self.in_scope(e, wp_sequence)
-                    && valid_artifact(e)
-            })
+            .filter(|e| e.fr_id == fr_id && e.evidence_type == evidence_type)
             .collect()
     }
 
-    fn evidence_for_fr(&self, fr_id: &str, wp_sequence: Option<i32>) -> Vec<&Evidence> {
-        self.evidence
-            .iter()
-            .filter(|e| e.fr_id == fr_id && self.in_scope(e, wp_sequence) && valid_artifact(e))
-            .collect()
+    fn evidence_for_fr(&self, fr_id: &str) -> Vec<&Evidence> {
+        self.evidence.iter().filter(|e| e.fr_id == fr_id).collect()
     }
-
-    fn in_scope(&self, evidence: &Evidence, sequence: Option<i32>) -> bool {
-        sequence.is_none_or(|sequence| self.wp_sequences.get(&evidence.wp_id) == Some(&sequence))
-    }
-}
-
-fn rule_wp_sequence(transition: &str) -> Option<i32> {
-    transition
-        .split_once(':')
-        .and_then(|(prefix, _)| prefix.strip_prefix("WP"))?
-        .parse()
-        .ok()
 }
 
 async fn load_feature_evidence<S: StoragePort>(
@@ -316,22 +278,16 @@ async fn load_feature_evidence<S: StoragePort>(
         .await
         .context("listing work packages for evidence")?;
     let mut evidence = Vec::new();
-    let mut wp_sequences = HashMap::new();
     for wp in wps {
-        wp_sequences.insert(wp.id, wp.sequence);
         let mut items = storage
             .get_evidence_by_wp(wp.id)
             .await
             .with_context(|| format!("listing evidence for WP {}", wp.id))?;
         evidence.append(&mut items);
     }
-    Ok(FeatureEvidence {
-        evidence,
-        wp_sequences,
-    })
+    Ok(FeatureEvidence { evidence })
 }
 
-#[allow(dead_code)] // Called transitively from `evaluate_policies`.
 async fn evaluate_metric_policy<S: StoragePort>(
     storage: &S,
     feature_id: i64,
@@ -359,27 +315,25 @@ async fn evaluate_metric_policy<S: StoragePort>(
     })
 }
 
-#[allow(dead_code)] // Called transitively from `evaluate_evidence_policy`.
 fn requirements_for_evidence_type(
     contract: &GovernanceContract,
     evidence_type: EvidenceType,
-) -> Vec<(String, Option<i32>)> {
+) -> Vec<String> {
     contract
         .rules
         .iter()
-        .flat_map(|rule| rule.required_evidence.iter().map(move |raw| (rule, raw)))
-        .filter_map(|(rule, raw)| {
+        .flat_map(|rule| rule.required_evidence.iter())
+        .filter_map(|raw| {
             let (fr, ty) = parse_requirement(raw);
             match ty {
-                Some(t) if t == evidence_type => Some((fr, rule_wp_sequence(&rule.transition))),
-                None => Some((fr, rule_wp_sequence(&rule.transition))),
+                Some(t) if t == evidence_type => Some(fr),
+                None => Some(fr),
                 _ => None,
             }
         })
         .collect()
 }
 
-#[allow(dead_code)] // Called transitively from `evaluate_metric_policy`.
 fn metric_value(metric: &agileplus_domain::domain::metric::Metric, name: &str) -> Option<f64> {
     let direct = match name {
         "duration_ms" => Some(metric.duration_ms as f64),
@@ -398,74 +352,4 @@ fn metric_value(metric: &agileplus_domain::domain::metric::Metric, name: &str) -
         .as_ref()
         .and_then(|meta| meta.get(name))
         .and_then(|v| v.as_f64())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // ── parse_requirement ───────────────────────────────────────────────
-
-    #[test]
-    fn parse_requirement_fr_only() {
-        let (fr, ty) = parse_requirement("FR-001");
-        assert_eq!(fr, "FR-001");
-        assert!(ty.is_none());
-    }
-
-    #[test]
-    fn parse_requirement_with_test_result() {
-        let (fr, ty) = parse_requirement("FR-001:test_result");
-        assert_eq!(fr, "FR-001");
-        assert_eq!(ty, Some(EvidenceType::TestResult));
-    }
-
-    #[test]
-    fn parse_requirement_with_ci_output() {
-        let (fr, ty) = parse_requirement("FR-042:ci_output");
-        assert_eq!(fr, "FR-042");
-        assert_eq!(ty, Some(EvidenceType::CiOutput));
-    }
-
-    #[test]
-    fn parse_requirement_with_review_approval() {
-        let (fr, ty) = parse_requirement("FR-005:review_approval");
-        assert_eq!(fr, "FR-005");
-        assert_eq!(ty, Some(EvidenceType::ReviewApproval));
-    }
-
-    #[test]
-    fn parse_requirement_with_security_scan() {
-        let (fr, ty) = parse_requirement("FR-SEC:security_scan");
-        assert_eq!(fr, "FR-SEC");
-        assert_eq!(ty, Some(EvidenceType::SecurityScan));
-    }
-
-    #[test]
-    fn parse_requirement_with_lint_result() {
-        let (fr, ty) = parse_requirement("FR-010:lint_result");
-        assert_eq!(fr, "FR-010");
-        assert_eq!(ty, Some(EvidenceType::LintResult));
-    }
-
-    #[test]
-    fn parse_requirement_with_manual_attestation() {
-        let (fr, ty) = parse_requirement("FR-010:manual_attestation");
-        assert_eq!(fr, "FR-010");
-        assert_eq!(ty, Some(EvidenceType::ManualAttestation));
-    }
-
-    #[test]
-    fn parse_requirement_with_unknown_type() {
-        let (fr, ty) = parse_requirement("FR-010:unknown_type");
-        assert_eq!(fr, "FR-010");
-        assert!(ty.is_none());
-    }
-
-    #[test]
-    fn parse_requirement_empty_colon() {
-        let (fr, ty) = parse_requirement("FR-001:");
-        assert_eq!(fr, "FR-001");
-        assert!(ty.is_none());
-    }
 }

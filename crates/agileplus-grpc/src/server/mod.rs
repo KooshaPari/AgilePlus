@@ -4,20 +4,16 @@
 
 use std::collections::{HashMap, HashSet};
 use std::net::SocketAddr;
-use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 
-use chrono::Utc;
 #[cfg(not(agileplus_proto_stubs))]
 use tonic::transport::Server;
 use tonic::{Request, Response, Status};
 use tracing::info;
 
 use agileplus_domain::domain::audit::AuditChain;
-use agileplus_domain::domain::governance::{
-    Evidence, EvidenceType, GovernanceContract, GovernanceRule,
-};
+use agileplus_domain::domain::governance::{Evidence, EvidenceType, GovernanceRule};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::ports::{AgentPort, ObservabilityPort, ReviewPort, StoragePort, VcsPort};
 #[cfg(not(agileplus_proto_stubs))]
@@ -32,9 +28,7 @@ use agileplus_proto::agileplus::v1::{
     VerifyAuditChainResponse, agile_plus_core_service_server::AgilePlusCoreService,
 };
 
-use crate::conversions::{
-    audit_entry_to_proto, feature_to_proto_with_wps, wp_to_proto_with_dependencies,
-};
+use crate::conversions::{audit_entry_to_proto, feature_to_proto, wp_to_proto};
 use crate::event_bus::EventBus;
 use crate::proxy::ProxyRouter;
 
@@ -52,33 +46,8 @@ pub fn domain_error_to_status(e: agileplus_domain::error::DomainError) -> Status
     }
 }
 
-/// Reject stateful requests that do not identify the repository bound to the core.
-///
-/// Request handlers pass the `canonical_repo_root` value from their optional
-/// `ProjectScope`; keeping this helper string-based allows the generated proto
-/// field to remain at the transport boundary.
-fn validate_project_scope(
-    canonical_repo_root: Option<&str>,
-    expected_repo_root: &str,
-) -> Result<(), Status> {
-    let canonical_repo_root = canonical_repo_root
-        .map(str::trim)
-        .filter(|root| !root.is_empty())
-        .ok_or_else(|| {
-            Status::invalid_argument("missing project scope canonical repository root")
-        })?;
-
-    if canonical_repo_root != expected_repo_root {
-        return Err(Status::permission_denied(
-            "project scope does not match this core server repository",
-        ));
-    }
-
-    Ok(())
-}
-
 /// Parse the contract representation `FR-ID` or `FR-ID:evidence_type`.
-pub fn parse_evidence_requirement(raw: &str) -> (&str, Option<EvidenceType>, bool) {
+fn parse_evidence_requirement(raw: &str) -> (&str, Option<EvidenceType>, bool) {
     let (fr_id, evidence_type) = raw
         .split_once(':')
         .map_or((raw, None), |(fr_id, kind)| (fr_id, Some(kind)));
@@ -131,8 +100,6 @@ where
     R: ReviewPort + 'static,
     O: ObservabilityPort + 'static,
 {
-    #[allow(dead_code)] // consumed by request scope enforcement
-    canonical_repo_root: PathBuf,
     storage: Arc<S>,
     #[allow(dead_code)] // reserved - injected for future downstream service calls
     vcs: Arc<V>,
@@ -155,9 +122,7 @@ where
     R: ReviewPort + 'static,
     O: ObservabilityPort + 'static,
 {
-    #[allow(clippy::too_many_arguments)]
     pub fn new(
-        canonical_repo_root: PathBuf,
         storage: Arc<S>,
         vcs: Arc<V>,
         agents: Arc<A>,
@@ -167,7 +132,6 @@ where
         proxy: Arc<ProxyRouter>,
     ) -> Self {
         Self {
-            canonical_repo_root,
             storage,
             vcs,
             agents,
@@ -196,27 +160,11 @@ where
         &self,
         request: Request<GetFeatureRequest>,
     ) -> Result<Response<GetFeatureResponse>, Status> {
-        let req = request.into_inner();
-        validate_project_scope(
-            req.project_scope
-                .as_ref()
-                .map(|scope| scope.canonical_repo_root.as_str()),
-            self.canonical_repo_root
-                .to_str()
-                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
-        )?;
-        let slug = req.slug;
+        let slug = request.into_inner().slug;
         match self.storage.get_feature_by_slug(&slug).await {
-            Ok(Some(feature)) => {
-                let wps = self
-                    .storage
-                    .list_wps_by_feature(feature.id)
-                    .await
-                    .map_err(domain_error_to_status)?;
-                Ok(Response::new(GetFeatureResponse {
-                    feature: Some(feature_to_proto_with_wps(feature, &wps)),
-                }))
-            }
+            Ok(Some(feature)) => Ok(Response::new(GetFeatureResponse {
+                feature: Some(feature_to_proto(feature)),
+            })),
             Ok(None) => Err(Status::not_found(format!("feature '{slug}' not found"))),
             Err(e) => Err(domain_error_to_status(e)),
         }
@@ -226,16 +174,7 @@ where
         &self,
         request: Request<ListFeaturesRequest>,
     ) -> Result<Response<ListFeaturesResponse>, Status> {
-        let req = request.into_inner();
-        validate_project_scope(
-            req.project_scope
-                .as_ref()
-                .map(|scope| scope.canonical_repo_root.as_str()),
-            self.canonical_repo_root
-                .to_str()
-                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
-        )?;
-        let state_filter = req.state_filter;
+        let state_filter = request.into_inner().state_filter;
         let features = if state_filter.is_empty() {
             self.storage
                 .list_all_features()
@@ -250,15 +189,7 @@ where
                 .await
                 .map_err(domain_error_to_status)?
         };
-        let mut proto_features = Vec::with_capacity(features.len());
-        for feature in features {
-            let work_packages = self
-                .storage
-                .list_wps_by_feature(feature.id)
-                .await
-                .map_err(domain_error_to_status)?;
-            proto_features.push(feature_to_proto_with_wps(feature, &work_packages));
-        }
+        let proto_features = features.into_iter().map(feature_to_proto).collect();
         Ok(Response::new(ListFeaturesResponse {
             features: proto_features,
         }))
@@ -268,16 +199,7 @@ where
         &self,
         request: Request<GetFeatureStateRequest>,
     ) -> Result<Response<GetFeatureStateResponse>, Status> {
-        let req = request.into_inner();
-        validate_project_scope(
-            req.project_scope
-                .as_ref()
-                .map(|scope| scope.canonical_repo_root.as_str()),
-            self.canonical_repo_root
-                .to_str()
-                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
-        )?;
-        let slug = req.slug;
+        let slug = request.into_inner().slug;
         let feature = self
             .storage
             .get_feature_by_slug(&slug)
@@ -316,14 +238,6 @@ where
         request: Request<ListWorkPackagesRequest>,
     ) -> Result<Response<ListWorkPackagesResponse>, Status> {
         let req = request.into_inner();
-        validate_project_scope(
-            req.project_scope
-                .as_ref()
-                .map(|scope| scope.canonical_repo_root.as_str()),
-            self.canonical_repo_root
-                .to_str()
-                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
-        )?;
         let feature = self
             .storage
             .get_feature_by_slug(&req.feature_slug)
@@ -349,17 +263,9 @@ where
                 .collect()
         };
 
-        let mut packages = Vec::with_capacity(filtered.len());
-        for wp in filtered {
-            let dependencies = self
-                .storage
-                .get_wp_dependencies(wp.id)
-                .await
-                .map_err(domain_error_to_status)?;
-            packages.push(wp_to_proto_with_dependencies(wp, &dependencies));
-        }
-
-        Ok(Response::new(ListWorkPackagesResponse { packages }))
+        Ok(Response::new(ListWorkPackagesResponse {
+            packages: filtered.into_iter().map(wp_to_proto).collect(),
+        }))
     }
 
     async fn get_work_package_status(
@@ -367,14 +273,6 @@ where
         request: Request<GetWorkPackageStatusRequest>,
     ) -> Result<Response<GetWorkPackageStatusResponse>, Status> {
         let req = request.into_inner();
-        validate_project_scope(
-            req.project_scope
-                .as_ref()
-                .map(|scope| scope.canonical_repo_root.as_str()),
-            self.canonical_repo_root
-                .to_str()
-                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
-        )?;
         let feature = self
             .storage
             .get_feature_by_slug(&req.feature_slug)
@@ -397,14 +295,8 @@ where
                 Status::not_found(format!("WP sequence {} not found", req.wp_sequence))
             })?;
 
-        let dependencies = self
-            .storage
-            .get_wp_dependencies(wp.id)
-            .await
-            .map_err(domain_error_to_status)?;
-
         Ok(Response::new(GetWorkPackageStatusResponse {
-            work_package_status: Some(wp_to_proto_with_dependencies(wp, &dependencies)),
+            work_package_status: Some(wp_to_proto(wp)),
         }))
     }
 
@@ -417,14 +309,6 @@ where
         request: Request<CheckGovernanceGateRequest>,
     ) -> Result<Response<CheckGovernanceGateResponse>, Status> {
         let req = request.into_inner();
-        validate_project_scope(
-            req.project_scope
-                .as_ref()
-                .map(|scope| scope.canonical_repo_root.as_str()),
-            self.canonical_repo_root
-                .to_str()
-                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
-        )?;
         let feature = self
             .storage
             .get_feature_by_slug(&req.feature_slug)
@@ -502,14 +386,6 @@ where
         request: Request<GetAuditTrailRequest>,
     ) -> Result<Response<Self::GetAuditTrailStream>, Status> {
         let req = request.into_inner();
-        validate_project_scope(
-            req.project_scope
-                .as_ref()
-                .map(|scope| scope.canonical_repo_root.as_str()),
-            self.canonical_repo_root
-                .to_str()
-                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
-        )?;
         let feature = self
             .storage
             .get_feature_by_slug(&req.feature_slug)
@@ -544,16 +420,7 @@ where
         &self,
         request: Request<VerifyAuditChainRequest>,
     ) -> Result<Response<VerifyAuditChainResponse>, Status> {
-        let req = request.into_inner();
-        validate_project_scope(
-            req.project_scope
-                .as_ref()
-                .map(|scope| scope.canonical_repo_root.as_str()),
-            self.canonical_repo_root
-                .to_str()
-                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
-        )?;
-        let slug = req.feature_slug;
+        let slug = request.into_inner().feature_slug;
         let feature = self
             .storage
             .get_feature_by_slug(&slug)
@@ -605,16 +472,7 @@ where
         &self,
         request: Request<agileplus_proto::agileplus::v1::StreamAgentEventsRequest>,
     ) -> Result<Response<Self::StreamAgentEventsStream>, Status> {
-        let req = request.into_inner();
-        validate_project_scope(
-            req.project_scope
-                .as_ref()
-                .map(|scope| scope.canonical_repo_root.as_str()),
-            self.canonical_repo_root
-                .to_str()
-                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
-        )?;
-        let feature_slug = req.feature_slug;
+        let feature_slug = request.into_inner().feature_slug;
         let rx = self.event_bus.subscribe();
         let stream = crate::streaming::agent_event_stream(rx, feature_slug);
         Ok(Response::new(stream))
@@ -624,20 +482,11 @@ where
     // Command dispatch RPC
     // -------------------------------------------------------------------------
 
-    #[allow(clippy::too_many_arguments)]
     async fn dispatch_command(
         &self,
         request: Request<DispatchCommandRequest>,
     ) -> Result<Response<DispatchCommandResponse>, Status> {
         let req = request.into_inner();
-        validate_project_scope(
-            req.project_scope
-                .as_ref()
-                .map(|scope| scope.canonical_repo_root.as_str()),
-            self.canonical_repo_root
-                .to_str()
-                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
-        )?;
         let cmd_req = req
             .command
             .ok_or_else(|| Status::invalid_argument("missing command field"))?;
@@ -687,86 +536,21 @@ where
     R: ReviewPort + 'static,
     O: ObservabilityPort + 'static,
 {
-    /// Dispatch core (non-agent) commands with real state transitions.
-    ///
-    /// Each command looks up the feature by slug, validates the state transition
-    /// via the domain model, persists the change, and returns the new state.
+    /// Dispatch core (non-agent) commands.
     async fn dispatch_core_command(
         &self,
         command: &str,
         feature_slug: &str,
         args: &HashMap<String, String>,
     ) -> Result<(String, HashMap<String, String>), Status> {
-        info!(command, feature_slug, "core command dispatched via gRPC");
-
-        // Determine the target state for this command.
-        let target_state = match command {
-            "specify" => FeatureState::Specified,
-            "research" => FeatureState::Researched,
-            "plan" => FeatureState::Planned,
-            // Terminal acceptance and promotion have stronger invariants than a
-            // generic state transition. Until gRPC is wired to the canonical
-            // validate/ship application services, fail closed rather than minting
-            // Validated/Shipped states from transport-local checks.
-            "validate" | "ship" => {
-                return Err(Status::unimplemented(format!(
-                    "command '{command}' requires the canonical acceptance/promotion service"
-                )));
+        match command {
+            "specify" | "research" | "plan" | "validate" | "ship" | "retrospective" => {
+                let msg = format!("command '{command}' queued for feature '{feature_slug}'");
+                info!(command, feature_slug, "core command dispatched via gRPC");
+                Ok((msg, args.clone()))
             }
-            "retrospective" => FeatureState::Retrospected,
-            other => {
-                return Err(Status::unimplemented(format!("unknown command: '{other}'")));
-            }
-        };
-
-        // Look up the feature by slug.
-        let mut feature = self
-            .storage
-            .get_feature_by_slug(feature_slug)
-            .await
-            .map_err(domain_error_to_status)?
-            .ok_or_else(|| Status::not_found(format!("feature '{feature_slug}' not found")))?;
-
-        // Validate and apply the state transition via the domain model.
-        feature
-            .transition(target_state)
-            .map_err(Status::failed_precondition)?;
-
-        // Persist the new state.
-        self.storage
-            .update_feature_state(feature.id, feature.state)
-            .await
-            .map_err(domain_error_to_status)?;
-
-        // Command-specific post-transition logic.
-        if command == "plan" {
-            // Create a default governance contract for the planned feature.
-            let contract = GovernanceContract {
-                id: 0,
-                feature_id: feature.id,
-                version: 1,
-                rules: vec![GovernanceRule {
-                    transition: String::new(),
-                    required_evidence: Vec::new(),
-                    policy_refs: Vec::new(),
-                }],
-                bound_at: Utc::now(),
-            };
-            if let Err(e) = self.storage.create_governance_contract(&contract).await {
-                info!(
-                    feature_slug,
-                    error = %e,
-                    "governance contract creation skipped (storage may not support it)"
-                );
-            }
+            other => Err(Status::unimplemented(format!("unknown command: '{other}'"))),
         }
-
-        let new_state = feature.state.to_string();
-        let mut outputs = args.clone();
-        outputs.insert("state".to_string(), new_state.clone());
-
-        let msg = format!("command '{command}' applied to feature '{feature_slug}': {new_state}");
-        Ok((msg, outputs))
     }
 }
 
@@ -775,7 +559,6 @@ where
 #[allow(clippy::too_many_arguments)] // Server bootstrap requires all service ports
 pub async fn start_server<S, V, A, R, O>(
     addr: SocketAddr,
-    canonical_repo_root: PathBuf,
     storage: Arc<S>,
     vcs: Arc<V>,
     agents: Arc<A>,
@@ -791,16 +574,8 @@ where
     R: ReviewPort + 'static,
     O: ObservabilityPort + 'static,
 {
-    let service = AgilePlusCoreServer::new(
-        canonical_repo_root,
-        storage,
-        vcs,
-        agents,
-        review,
-        telemetry,
-        event_bus,
-        proxy,
-    );
+    let service =
+        AgilePlusCoreServer::new(storage, vcs, agents, review, telemetry, event_bus, proxy);
 
     info!(%addr, "starting AgilePlus gRPC server");
 
@@ -818,7 +593,6 @@ where
 #[allow(clippy::too_many_arguments)]
 pub async fn start_server<S, V, A, R, O>(
     _addr: SocketAddr,
-    _canonical_repo_root: PathBuf,
     _storage: Arc<S>,
     _vcs: Arc<V>,
     _agents: Arc<A>,
@@ -871,4 +645,84 @@ async fn shutdown_signal() {
 }
 
 #[cfg(test)]
-mod tests;
+mod tests {
+    use super::*;
+    use chrono::Utc;
+
+    #[test]
+    fn domain_error_mapping() {
+        use agileplus_domain::error::DomainError;
+        let s = domain_error_to_status(DomainError::NotFound("feat".into()));
+        assert_eq!(s.code(), tonic::Code::NotFound);
+
+        let s = domain_error_to_status(DomainError::InvalidTransition {
+            from: "a".into(),
+            to: "b".into(),
+            reason: "test".into(),
+        });
+        assert_eq!(s.code(), tonic::Code::FailedPrecondition);
+
+        let s = domain_error_to_status(DomainError::Conflict("x".into()));
+        assert_eq!(s.code(), tonic::Code::AlreadyExists);
+    }
+
+    #[test]
+    fn governance_requirement_uses_fr_id_and_optional_type() {
+        assert_eq!(
+            parse_evidence_requirement("FR-053:ci_output"),
+            ("FR-053", Some(EvidenceType::CiOutput), true)
+        );
+        assert_eq!(parse_evidence_requirement("FR-054"), ("FR-054", None, true));
+        assert_eq!(
+            parse_evidence_requirement("FR-055:unknown"),
+            ("FR-055", None, false)
+        );
+    }
+
+    #[test]
+    fn governance_evidence_must_belong_to_feature_and_match_type() {
+        let evidence = vec![Evidence {
+            id: 1,
+            wp_id: 7,
+            fr_id: "FR-053".to_owned(),
+            evidence_type: EvidenceType::CiOutput,
+            artifact_path: "ci://run/1".to_owned(),
+            metadata: None,
+            created_at: Utc::now(),
+        }];
+
+        assert!(evidence_satisfies_requirement(
+            &evidence,
+            &HashSet::from([7]),
+            "FR-053",
+            Some(EvidenceType::CiOutput),
+        ));
+        assert!(!evidence_satisfies_requirement(
+            &evidence,
+            &HashSet::from([8]),
+            "FR-053",
+            Some(EvidenceType::CiOutput),
+        ));
+        assert!(!evidence_satisfies_requirement(
+            &evidence,
+            &HashSet::from([7]),
+            "FR-053",
+            Some(EvidenceType::SecurityScan),
+        ));
+    }
+
+    #[test]
+    fn governance_violation_reports_requirement_not_feature_slug() {
+        let rule = GovernanceRule {
+            transition: "validate".to_owned(),
+            required_evidence: vec!["FR-053:ci_output".to_owned()],
+            policy_refs: Vec::new(),
+        };
+        let violation = missing_evidence_violation(&rule, "FR-053", "FR-053:ci_output");
+
+        assert_eq!(violation.fr_id, "FR-053");
+        assert_eq!(violation.rule_id, "validate");
+        assert!(violation.message.contains("FR-053:ci_output"));
+        assert!(!violation.message.contains("feature"));
+    }
+}

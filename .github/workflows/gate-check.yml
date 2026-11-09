@@ -1,86 +1,59 @@
-# Reusable workflow: quality gates for a release promotion.
-# Contract: see .github/workflows/README.md ("gate-check.yml" section).
-#
-# Inputs:
-#   language     (required, string) — Programming language
-#   channel      (required, string) — Release channel (alpha, beta, stable)
-#   risk_profile (required, string) — Risk profile (low, medium, high)
-#
-# Always runs: lint, test.
-# Conditionally runs audit when channel == "stable" OR risk_profile == "high".
-#
-# Called by .github/workflows/promote.yml before publish.yml.
-name: Quality Gate Check
+name: Gate Check
 
 on:
-    workflow_call:
-        inputs:
-            language:
-                required: true
-                type: string
-                description: "Programming language"
-            channel:
-                required: true
-                type: string
-                description: "Release channel (alpha, beta, stable)"
-            risk_profile:
-                required: true
-                type: string
-                description: "Risk profile (low, medium, high)"
-
+  workflow_call:
+    inputs:
+      language:
+        required: true
+        type: string
+        description: 'Programming language'
+      channel:
+        required: true
+        type: string
+        description: 'Release channel (alpha, beta, stable)'
+      risk_profile:
+        required: true
+        type: string
+        description: 'Risk profile (low, medium, high)'
 permissions:
-    contents: read
+  contents: read
+
 
 jobs:
-    lint:
-        name: Lint (${{ inputs.language }})
-        runs-on: ubuntu-24.04
-        timeout-minutes: 20
-        steps:
-            - uses: actions/checkout@v7
-            - name: Install the pinned Rust channel
-              run: |
-                  set -euo pipefail
-                  channel="$(sed -n 's/^channel *= *"\(.*\)"$/\1/p' rust-toolchain.toml)"
-                  echo "pinned channel: ${channel}"
-                  test -n "${channel}"
-                  rustup toolchain install "${channel}" --profile minimal --component rustfmt,clippy --no-self-update
-            - name: cargo fmt --check
-              run: cargo fmt --all -- --check
-            - name: cargo clippy
-              run: cargo clippy --workspace --all-targets --locked -- -D warnings
-              continue-on-error: false
+  gate-check:
+    runs-on: ubuntu-24.04
+    env:
+      LANGUAGE: ${{ inputs.language }}
+      CHANNEL: ${{ inputs.channel }}
+      RISK_PROFILE: ${{ inputs.risk_profile }}
+    steps:
+      - uses: actions/checkout@v7
 
-    test:
-        name: Test (${{ inputs.language }})
-        runs-on: ubuntu-24.04
-        timeout-minutes: 45
-        steps:
-            - uses: actions/checkout@v7
-            - name: Install the pinned Rust channel
-              run: |
-                  set -euo pipefail
-                  channel="$(sed -n 's/^channel *= *"\(.*\)"$/\1/p' rust-toolchain.toml)"
-                  echo "pinned channel: ${channel}"
-                  test -n "${channel}"
-                  rustup toolchain install "${channel}" --profile minimal --no-self-update
-            - uses: Swatinem/rust-cache@v2
-            - name: cargo test
-              run: cargo test --workspace --locked --all-targets --no-fail-fast
+      - name: Install protoc
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+      - name: Setup mise
+        uses: jdx/mise-action@v4
 
-    audit:
-        name: Security audit
-        if: ${{ inputs.channel == 'stable' || inputs.risk_profile == 'high' }}
-        runs-on: ubuntu-24.04
-        timeout-minutes: 30
-        steps:
-            - uses: actions/checkout@v7
-            - name: cargo-deny
-              uses: EmbarkStudios/cargo-deny-action@v2
-              with:
-                  command: check
-                  arguments: --hide-inclusion-graph
-            - name: cargo audit
-              run: |
-                  cargo install --locked cargo-audit
-                  cargo audit --deny warnings
+      - name: Install clippy
+        run: rustup component add clippy --toolchain "$RUSTUP_TOOLCHAIN"
+
+      - name: Run lint
+        run: mise run lint
+        continue-on-error: false
+
+      - name: Run test
+        run: mise run test
+        continue-on-error: false
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked || true
+      - name: Run security audit
+        if: ${{ inputs.channel == 'beta' || inputs.channel == 'stable' || inputs.risk_profile == 'high' }}
+        run: mise run audit
+        continue-on-error: false
+
+      - name: Gate check result
+        run: |
+          echo "✓ Gate check passed for $LANGUAGE"
+          echo "  Channel: $CHANNEL"
+          echo "  Risk profile: $RISK_PROFILE"

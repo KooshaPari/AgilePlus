@@ -18,7 +18,7 @@ pub mod fallback;
 use agileplus_agent_dispatch::{CiStatus, DomainError, ReviewComment, ReviewOutcome, ReviewPort};
 use async_trait::async_trait;
 use std::time::Duration;
-use tokio::time::{Instant, sleep, timeout};
+use tokio::time::{sleep, timeout, Instant};
 use tracing::{debug, info, instrument, warn};
 
 // ─── Configuration ────────────────────────────────────────────────────────────
@@ -42,11 +42,7 @@ pub struct ReviewAdapterConfig {
 
 impl ReviewAdapterConfig {
     /// Create a new config with required fields and sensible defaults.
-    pub fn new(
-        github_token: impl Into<String>,
-        owner: impl Into<String>,
-        repo: impl Into<String>,
-    ) -> Self {
+    pub fn new(github_token: impl Into<String>, owner: impl Into<String>, repo: impl Into<String>) -> Self {
         Self {
             github_token: github_token.into(),
             github_owner: owner.into(),
@@ -111,9 +107,9 @@ impl ReviewAdapter {
             if parts.len() >= 4 && parts[2] == "pull" {
                 let owner = parts[0].to_owned();
                 let repo = parts[1].to_owned();
-                let number: u64 = parts[3].parse().map_err(|_| {
-                    DomainError::Other(format!("invalid PR number in URL: {pr_url}"))
-                })?;
+                let number: u64 = parts[3]
+                    .parse()
+                    .map_err(|_| DomainError::Other(format!("invalid PR number in URL: {pr_url}")))?;
                 return Ok((owner, repo, number));
             }
         }
@@ -234,15 +230,9 @@ impl ReviewPort for ReviewAdapter {
                 file_path: c.path.unwrap_or_else(|| "(PR comment)".to_owned()),
                 line: c.line,
                 severity: match c.severity {
-                    coderabbit::CommentSeverity::Error => {
-                        agileplus_agent_dispatch::CommentSeverity::Critical
-                    }
-                    coderabbit::CommentSeverity::Warning => {
-                        agileplus_agent_dispatch::CommentSeverity::Major
-                    }
-                    coderabbit::CommentSeverity::Info => {
-                        agileplus_agent_dispatch::CommentSeverity::Info
-                    }
+                    coderabbit::CommentSeverity::Error => agileplus_agent_dispatch::CommentSeverity::Critical,
+                    coderabbit::CommentSeverity::Warning => agileplus_agent_dispatch::CommentSeverity::Major,
+                    coderabbit::CommentSeverity::Info => agileplus_agent_dispatch::CommentSeverity::Info,
                 },
                 body: c.body,
             })
@@ -254,7 +244,11 @@ impl ReviewPort for ReviewAdapter {
 
     /// Poll CI until all checks complete or `ci_timeout` elapses.
     #[instrument(skip(self), fields(pr_url))]
-    async fn await_ci(&self, pr_url: &str, ci_timeout: Duration) -> Result<CiStatus, DomainError> {
+    async fn await_ci(
+        &self,
+        pr_url: &str,
+        ci_timeout: Duration,
+    ) -> Result<CiStatus, DomainError> {
         let (owner, repo, pr_number) = Self::parse_pr_url(pr_url)?;
 
         let poll_future = ci_status::poll_until_complete(
@@ -354,7 +348,11 @@ impl ReviewPort for GhReviewAdapter {
         gh_fetch_review_comments(pr_url).await
     }
 
-    async fn await_ci(&self, pr_url: &str, ci_timeout: Duration) -> Result<CiStatus, DomainError> {
+    async fn await_ci(
+        &self,
+        pr_url: &str,
+        ci_timeout: Duration,
+    ) -> Result<CiStatus, DomainError> {
         let future = async {
             let mut interval = Duration::from_secs(20);
             loop {
@@ -415,31 +413,30 @@ async fn gh_fetch_review_comments(pr_url: &str) -> Result<Vec<ReviewComment>, Do
 
     if let Some(reviews) = json["reviews"].as_array() {
         for review in reviews {
-            if let Some(body) = review["body"].as_str()
-                && !body.is_empty()
-            {
-                comments.push(ReviewComment {
-                    file_path: "(review summary)".to_owned(),
-                    line: None,
-                    severity: gh_infer_severity(body),
-                    body: body.to_owned(),
-                });
+            if let Some(body) = review["body"].as_str() {
+                if !body.is_empty() {
+                    comments.push(ReviewComment {
+                        file_path: "(review summary)".to_owned(),
+                        line: None,
+                        severity: gh_infer_severity(body),
+                        body: body.to_owned(),
+                    });
+                }
             }
         }
     }
 
     if let Some(pr_comments) = json["comments"].as_array() {
         for c in pr_comments {
-            if let Some(body) = c["body"].as_str()
-                && !body.is_empty()
-                && (body.contains("coderabbit") || body.contains("**"))
-            {
-                comments.push(ReviewComment {
-                    file_path: "(PR comment)".to_owned(),
-                    line: None,
-                    severity: gh_infer_severity(body),
-                    body: body.to_owned(),
-                });
+            if let Some(body) = c["body"].as_str() {
+                if !body.is_empty() && (body.contains("coderabbit") || body.contains("**")) {
+                    comments.push(ReviewComment {
+                        file_path: "(PR comment)".to_owned(),
+                        line: None,
+                        severity: gh_infer_severity(body),
+                        body: body.to_owned(),
+                    });
+                }
             }
         }
     }

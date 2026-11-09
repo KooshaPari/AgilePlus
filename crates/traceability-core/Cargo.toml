@@ -17,6 +17,3 @@ regex = { workspace = true }
 
 [dev-dependencies]
 proptest = "1"
-
-[package.metadata.dist]
-dist = false

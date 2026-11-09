@@ -68,14 +68,12 @@ Maps existing code relevant to the feature:
 ## Existing Email Code
 
 ### SendGrid Integration
-
 - **File**: `src/email/sendgrid.rs`
 - **Status**: Partial stub, not production-ready
 - **What it does**: Basic template rendering
 - **What's missing**: Error handling, retry logic
 
 ### Event System
-
 - **File**: `src/events/mod.rs`
 - **Type**: Pub/Sub event bus (async-trait)
 - **Usage**: Other services publish events here
@@ -83,7 +81,6 @@ Maps existing code relevant to the feature:
 - **Reusable**: Yes, used by 3 other features
 
 ### Database Models
-
 - **File**: `src/models/user.rs`
 - **Fields**: id, email, created_at
 - **Capability**: Can add email_subscribed, email_preference fields
@@ -91,7 +88,6 @@ Maps existing code relevant to the feature:
 ## Similar Features
 
 ### Feature: User Notifications (2023)
-
 - **File**: `src/features/notifications/mod.rs`
 - **Sends to**: In-app notifications only
 - **Pattern**: Event listener → create notification record
@@ -100,14 +96,12 @@ Maps existing code relevant to the feature:
 ## Dependencies
 
 ### Production Dependencies
-
 - `sendgrid`: 0.20 (for API integration)
 - `tokio`: 1.35 (async runtime, already present)
 - `sqlx`: 0.7 (ORM, already present)
 - `serde_json`: 1.0 (JSON, already present)
 
 ### Dev Dependencies
-
 - `mockall`: 0.12 (for mocking SendGrid)
 
 ## Patterns This Codebase Uses
@@ -122,32 +116,25 @@ Maps existing code relevant to the feature:
 
 ### With Event System
 ```
-
 UserSignedUp event
-→ email handler listens
-→ sends welcome email
-
+  → email handler listens
+  → sends welcome email
 ```
 
 ### With Database
 ```
-
 Email events
-→ stored in email_queue table
-→ processed by async worker
-→ status updated (pending → sent → failed)
-
+  → stored in email_queue table
+  → processed by async worker
+  → status updated (pending → sent → failed)
 ```
 
 ### With User Model
 ```
-
 User entity
-→ needs email_subscribed boolean
-→ needs email_preferences JSON
-
+  → needs email_subscribed boolean
+  → needs email_preferences JSON
 ```
-
 ```
 
 ## 2. Feasibility Assessment
@@ -160,7 +147,6 @@ Evaluates if we can build each requirement:
 ## Requirement Analysis
 
 ### REQ-1: Send Welcome Email
-
 **Can we build?** ✓ Yes
 **Effort**: 2-4 hours
 **Dependencies**: SendGrid API, User model
@@ -168,7 +154,6 @@ Evaluates if we can build each requirement:
 **Pattern**: Event listener → SendGrid send
 
 ### REQ-2: Send Mention Email
-
 **Can we build?** ✓ Yes
 **Effort**: 4-6 hours
 **Dependencies**: Mention event, SendGrid, user email lookup
@@ -176,7 +161,6 @@ Evaluates if we can build each requirement:
 **Mitigation**: Queue emails, batch sends
 
 ### REQ-3: Unsubscribe Support
-
 **Can we build?** ✓ Yes
 **Effort**: 3-4 hours
 **Dependencies**: Database preferences table, email links
@@ -184,7 +168,6 @@ Evaluates if we can build each requirement:
 **Pattern**: Similar to existing notification prefs
 
 ### REQ-4: 24-Hour Retry
-
 **Can we build?** ✓ Yes
 **Effort**: 2-3 hours
 **Dependencies**: Job queue (tokio-cron or similar)
@@ -196,25 +179,23 @@ Evaluates if we can build each requirement:
 **Summary**: ✓ All requirements are feasible
 
 **Complexity**: Medium
-
 - Not trivial (multiple components)
 - Not complex (clear patterns exist)
 - Estimated effort: 16-24 hours (2-3 days with full team)
 
 **Confidence**: High (85%)
-
 - Codebase has similar implementations
 - Dependencies are available and stable
 - No architectural blockers
 
 ## Risks
 
-| Risk                      | Severity | Mitigation                            |
-| ------------------------- | -------- | ------------------------------------- |
-| SendGrid API downtime     | Medium   | Implement retry + circuit breaker     |
-| Email bounces not handled | Medium   | Monitor bounces, disable on threshold |
-| Performance under load    | Low      | Async queue + batch processing        |
-| Database size             | Low      | Archive old emails quarterly          |
+| Risk | Severity | Mitigation |
+|------|----------|-----------|
+| SendGrid API downtime | Medium | Implement retry + circuit breaker |
+| Email bounces not handled | Medium | Monitor bounces, disable on threshold |
+| Performance under load | Low | Async queue + batch processing |
+| Database size | Low | Archive old emails quarterly |
 
 ## Dependencies
 
@@ -227,7 +208,7 @@ Evaluates if we can build each requirement:
 
 Technical decisions with reasoning:
 
-````markdown
+```markdown
 # Technical Decisions: Email Notifications
 
 ## Decision 1: Email Queue Storage
@@ -235,14 +216,12 @@ Technical decisions with reasoning:
 **Choice**: Store in database (not in-memory)
 
 **Rationale**:
-
 - Survives process restarts
 - Can retry failed sends
 - Audit trail for compliance
 - Codebase uses SQLx, not new dependency
 
 **Alternative considered**: Redis queue
-
 - Pro: Faster, simpler
 - Con: Loss on crash, no audit trail
 
@@ -255,19 +234,16 @@ Technical decisions with reasoning:
 **Choice**: Non-blocking async with tokio
 
 **Rationale**:
-
 - Codebase uses tokio everywhere
 - Aligns with existing patterns
 - Doesn't block request handling
 
 **Implementation**:
-
 ```rust
 tokio::spawn(async {
   send_email(recipient, template).await
 })
 ```
-````
 
 ---
 
@@ -276,13 +252,11 @@ tokio::spawn(async {
 **Choice**: Handlebars for email templates
 
 **Rationale**:
-
 - Lightweight, no unsafe code
 - Used in 2 other features already
 - Good for email templates
 
 **Alternative**: Tera or Minijinja
-
 - More powerful, overkill for email
 - Would introduce new dependency
 
@@ -295,13 +269,11 @@ tokio::spawn(async {
 **Choice**: Direct API calls (not wrapper crate)
 
 **Rationale**:
-
 - We only need send + webhook handling
 - Reduces dependency bloat
 - Simple REST API, easy to maintain
 
 **Implementation**:
-
 ```rust
 POST https://api.sendgrid.com/v3/mail/send
 {
@@ -316,14 +288,13 @@ POST https://api.sendgrid.com/v3/mail/send
 
 ## Summary Table
 
-| Decision        | Choice           | Confidence |
-| --------------- | ---------------- | ---------- |
-| Queue storage   | SQLx database    | High       |
-| Async runtime   | tokio (existing) | High       |
-| Template engine | Handlebars       | Medium     |
-| SendGrid API    | Direct REST      | High       |
-
-````
+| Decision | Choice | Confidence |
+|----------|--------|------------|
+| Queue storage | SQLx database | High |
+| Async runtime | tokio (existing) | High |
+| Template engine | Handlebars | Medium |
+| SendGrid API | Direct REST | High |
+```
 
 ## When to Research
 
@@ -334,7 +305,7 @@ Research is most valuable for:
 ```bash
 # Feature touches auth system we don't know well?
 agileplus research 001
-````
+```
 
 **2. Integration with External Systems**
 
@@ -407,19 +378,16 @@ Real example research output:
 ## Codebase Scan
 
 ### Existing Auth Code
-
 - `src/auth/jwt.rs` - JWT token generation and validation
 - `src/auth/password.rs` - Password hashing with argon2
 - `src/auth/middleware.rs` - Request guard for protected routes
 - `src/models/user.rs` - User entity with password_hash field
 
 ### Event System
-
 - `src/events/mod.rs` - Pub/sub for events
 - Available events: UserCreated, LoginAttempted, PasswordChanged
 
 ### Similar Features
-
 - Session management (implemented 2023)
 - Account settings page (implemented 2024)
 - Both use JWT tokens, similar patterns
@@ -429,14 +397,12 @@ Real example research output:
 **Summary**: ✓ Feasible, medium complexity
 
 **Requirements**:
-
 1. Login endpoint - ✓ Easy (JWT pattern exists)
 2. Signup endpoint - ✓ Easy (User model exists)
 3. Password reset - ✓ Medium (email integration needed)
 4. Session management - ✓ Easy (JWT already used)
 
 **Risks**:
-
 - Password reset requires email (depends on email feature)
 - Rate limiting needed (add to middleware)
 - Password validation rules need to be strict
@@ -491,7 +457,6 @@ agileplus plan 001
 ```
 
 This uses the research to create:
-
 - Architecture decisions
 - File changes list
 - Build sequence

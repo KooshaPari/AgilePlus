@@ -11,6 +11,7 @@ import typer
 
 from .models import RunnerCatalog, RunnerCommand
 
+
 _TARGET_RE = re.compile(r"^([A-Za-z0-9_.-]+):(?:\s|$)")
 
 
@@ -21,7 +22,7 @@ def _read_text(path: Path) -> str:
 def _makefile_targets(path: Path) -> list[str]:
     targets: list[str] = []
     for line in _read_text(path).splitlines():
-        if line.startswith(("\t", "#")):
+        if line.startswith("\t") or line.startswith("#"):
             continue
         match = _TARGET_RE.match(line)
         if not match:
@@ -38,7 +39,7 @@ def _task_targets(path: Path) -> list[str]:
     targets: list[str] = []
     for raw in _read_text(path).splitlines():
         line = raw.rstrip()
-        if not line or line.startswith((" ", "\t")):
+        if not line or line.startswith(" ") or line.startswith("\t"):
             continue
         if line.startswith("#"):
             continue
@@ -50,7 +51,7 @@ def _task_targets(path: Path) -> list[str]:
 def _just_targets(path: Path) -> list[str]:
     targets: list[str] = []
     for line in _read_text(path).splitlines():
-        if line.startswith(("#", " ")) or not line.strip():
+        if line.startswith("#") or not line.strip() or line.startswith(" "):
             continue
         match = _TARGET_RE.match(line)
         if match:
@@ -89,9 +90,7 @@ def build_runner_catalog(target: str, repo_checkout: Path) -> RunnerCatalog:
             commands.append(RunnerCommand("make", name, f"make {name}", str(makefile)))
 
     package_json = repo_checkout / "package.json"
-    if package_json.exists() and (
-        shutil.which("pnpm") or shutil.which("npm") or shutil.which("bun")
-    ):
+    if package_json.exists() and (shutil.which("pnpm") or shutil.which("npm") or shutil.which("bun")):
         if shutil.which("pnpm"):
             runner = "pnpm"
         elif shutil.which("bun"):
@@ -109,12 +108,7 @@ def build_runner_catalog(target: str, repo_checkout: Path) -> RunnerCatalog:
             commands.append(RunnerCommand(runner, name, cmd, str(package_json)))
 
     default = commands[0].description if commands else ""
-    return RunnerCatalog(
-        target_name=target,
-        runners_detected=sorted(set(runners)),
-        commands=commands,
-        default_command=default,
-    )
+    return RunnerCatalog(target_name=target, runners_detected=sorted(set(runners)), commands=commands, default_command=default)
 
 
 def pick_command_interactive(catalog: RunnerCatalog) -> RunnerCommand:

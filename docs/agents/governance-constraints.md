@@ -84,13 +84,13 @@ Each work package has an explicit file scope: the list of files the agent is aut
 
 ```json
 {
-    "wp_id": "WP01",
-    "file_scope": [
-        "src/components/LoginForm.tsx",
-        "src/components/__tests__/LoginForm.test.tsx",
-        "src/hooks/useLogin.ts",
-        "src/styles/LoginForm.module.css"
-    ]
+  "wp_id": "WP01",
+  "file_scope": [
+    "src/components/LoginForm.tsx",
+    "src/components/__tests__/LoginForm.test.tsx",
+    "src/hooks/useLogin.ts",
+    "src/styles/LoginForm.module.css"
+  ]
 }
 ```
 
@@ -107,7 +107,6 @@ Each work package has an explicit file scope: the list of files the agent is aut
 ### Allowed Exceptions
 
 **Lock files** (automatic dependency changes):
-
 - `package-lock.json`, `pnpm-lock.yaml`, `bun.lockb`
 - `Cargo.lock`
 - `requirements.txt` (if using pip)
@@ -131,7 +130,6 @@ The WP deliverables might say "Update tsconfig.json for strict mode". Only then:
 **Manifest files** (only if WP explicitly requires):
 
 Rarely, a WP might require updating:
-
 - `package.json` (add dependencies)
 - `tsconfig.json` (compiler options)
 - `.env.example` (document new env vars)
@@ -140,13 +138,13 @@ Only if listed in deliverables.
 
 ## Forbidden Git Operations
 
-| Command                    | Why Forbidden     | What to Do Instead                     |
-| -------------------------- | ----------------- | -------------------------------------- |
-| `git push --force`         | Destroys history  | `git rebase`, then `git push` normally |
-| `git reset --hard`         | Loses work        | `git reflog` to recover                |
-| `git clean -f`             | Deletes files     | `git restore` to undo changes          |
-| `git revert` (on main)     | Only humans merge | Revert only in your WP branch          |
-| `git merge main` (main→WP) | Pollutes history  | Keep WP branch linear from base        |
+| Command | Why Forbidden | What to Do Instead |
+|---------|---------------|--------------------|
+| `git push --force` | Destroys history | `git rebase`, then `git push` normally |
+| `git reset --hard` | Loses work | `git reflog` to recover |
+| `git clean -f` | Deletes files | `git restore` to undo changes |
+| `git revert` (on main) | Only humans merge | Revert only in your WP branch |
+| `git merge main` (main→WP) | Pollutes history | Keep WP branch linear from base |
 
 Example: How to fix a mistake
 
@@ -165,7 +163,6 @@ Before transitioning states, AgilePlus checks governance gates:
 ### SPECIFY → PLAN Gate
 
 Validates the specification:
-
 - [ ] Spec file exists and is valid markdown
 - [ ] Contains mission, acceptance criteria, FRs
 - [ ] FRs are traceable (FR-AUTH-001, FR-UI-002, etc.)
@@ -175,7 +172,6 @@ Validates the specification:
 ### PLAN → IMPLEMENT Gate
 
 Validates the plan:
-
 - [ ] Work packages defined (WP01, WP02, etc.)
 - [ ] Dependencies declared
 - [ ] File scope assigned
@@ -186,7 +182,6 @@ Validates the plan:
 ### IMPLEMENT → REVIEW Gate
 
 Validates implementation:
-
 - [ ] All WP01 deliverables exist
 - [ ] Tests pass locally
 - [ ] No files outside file_scope modified
@@ -198,7 +193,6 @@ Validates implementation:
 ### REVIEW → DONE Gate
 
 Validates review completion:
-
 - [ ] Code review approved (or waived)
 - [ ] CI tests pass
 - [ ] No governance violations outstanding
@@ -291,7 +285,6 @@ If governance rules conflict with task requirements:
 **Scenario:** Spec says "Email validation only", but tests require phone number field.
 
 **Resolution:**
-
 1. **Stop work** on implementation
 2. **Document conflict** in WP comment with link to spec section
 3. **Create blocker task** describing the conflict
@@ -299,18 +292,17 @@ If governance rules conflict with task requirements:
 5. **Resume** after conflict is resolved
 
 **Output:**
-
 ```json
 {
-    "success": false,
-    "status": "blocked",
-    "error": "Spec vs test conflict",
-    "conflict_details": {
-        "spec": "Section 2.1: 'Email validation only'",
-        "test": "TestEmailPhoneValidation.ts requires both fields",
-        "resolution_needed": "Clarify spec or update tests"
-    },
-    "remediation": "Human must reconcile spec and tests"
+  "success": false,
+  "status": "blocked",
+  "error": "Spec vs test conflict",
+  "conflict_details": {
+    "spec": "Section 2.1: 'Email validation only'",
+    "test": "TestEmailPhoneValidation.ts requires both fields",
+    "resolution_needed": "Clarify spec or update tests"
+  },
+  "remediation": "Human must reconcile spec and tests"
 }
 ```
 
@@ -319,7 +311,6 @@ If governance rules conflict with task requirements:
 **Scenario:** WP says "Build LoginForm", but needs to refactor auth.ts (outside scope).
 
 **Resolution:**
-
 1. **Stop** before modifying auth.ts
 2. **Document** why refactoring is needed (code smell, test failure, etc.)
 3. **Create new WP** for refactoring with proper scope
@@ -327,18 +318,17 @@ If governance rules conflict with task requirements:
 5. **Wait** for approval to do refactoring in new WP
 
 **Output:**
-
 ```json
 {
-    "success": false,
-    "status": "blocked",
-    "error": "File scope violation needed for task",
-    "violation": {
-        "required_file": "src/services/auth.ts",
-        "reason": "Refactoring needed to add session tokens",
-        "solution": "Create WP03 for auth.ts refactoring"
-    },
-    "remediation": "Create new WP with expanded scope"
+  "success": false,
+  "status": "blocked",
+  "error": "File scope violation needed for task",
+  "violation": {
+    "required_file": "src/services/auth.ts",
+    "reason": "Refactoring needed to add session tokens",
+    "solution": "Create WP03 for auth.ts refactoring"
+  },
+  "remediation": "Create new WP with expanded scope"
 }
 ```
 
@@ -347,7 +337,6 @@ If governance rules conflict with task requirements:
 **Scenario:** Need `zod` for email validation, but not in approved list.
 
 **Resolution:**
-
 1. **Stop** before adding dependency
 2. **Document** why it's needed (RFC 5322 email validation)
 3. **Request exception** from governance team
@@ -355,18 +344,17 @@ If governance rules conflict with task requirements:
 5. **Wait** for approval before adding dependency
 
 **Output:**
-
 ```json
 {
-    "success": false,
-    "status": "blocked",
-    "error": "Dependency not approved: zod",
-    "reason": "Email RFC 5322 validation requires proper parser",
-    "alternatives_tried": [
-        "regex (insufficient)",
-        "native browser validation (insufficient)"
-    ],
-    "remediation": "Request governance exception for zod"
+  "success": false,
+  "status": "blocked",
+  "error": "Dependency not approved: zod",
+  "reason": "Email RFC 5322 validation requires proper parser",
+  "alternatives_tried": [
+    "regex (insufficient)",
+    "native browser validation (insufficient)"
+  ],
+  "remediation": "Request governance exception for zod"
 }
 ```
 
@@ -380,7 +368,6 @@ Every agent action is logged immutably:
 ```
 
 This audit trail is:
-
 - **Append-only:** Cannot be modified or deleted
 - **Cryptographically chained:** Hash of each entry includes hash of previous entry
 - **Tamper-evident:** Any modification breaks the chain
@@ -389,7 +376,6 @@ This audit trail is:
 ## Summary
 
 **Remember:**
-
 1. **Follow spec exactly** — it's the source of truth
 2. **Stay in worktrees** — never touch main directly
 3. **Respect file scope** — only edit authorized files
@@ -404,20 +390,20 @@ This audit trail is:
 
 Agents interact with the state machine through the `agileplus governance` subcommands. Not all transitions are agent-triggerable:
 
-| Transition                 | Agent Can Trigger?    | Reason                         |
-| -------------------------- | --------------------- | ------------------------------ |
-| `created → specified`      | No                    | Requires human spec authorship |
-| `specified → researched`   | Yes                   | Research is agent work         |
-| `researched → planned`     | Yes                   | Plan generation is agent work  |
-| `planned → implementing`   | Yes                   | Assigning a WP to start        |
-| WP `planned → doing`       | Yes                   | Agent starts WP work           |
-| WP `doing → review`        | Yes                   | Agent submits completed work   |
-| WP `review → done`         | No                    | Requires human or CI approval  |
-| WP `review → doing`        | No                    | Human requests changes         |
-| `implementing → validated` | Yes, if all CI passes | Automated governance check     |
-| `validated → shipped`      | No                    | Requires human approval        |
-| `shipped → retrospected`   | No                    | Human-led retrospective        |
-| Any → `cancelled`          | No                    | Human decision only            |
+| Transition | Agent Can Trigger? | Reason |
+|------------|-------------------|--------|
+| `created → specified` | No | Requires human spec authorship |
+| `specified → researched` | Yes | Research is agent work |
+| `researched → planned` | Yes | Plan generation is agent work |
+| `planned → implementing` | Yes | Assigning a WP to start |
+| WP `planned → doing` | Yes | Agent starts WP work |
+| WP `doing → review` | Yes | Agent submits completed work |
+| WP `review → done` | No | Requires human or CI approval |
+| WP `review → doing` | No | Human requests changes |
+| `implementing → validated` | Yes, if all CI passes | Automated governance check |
+| `validated → shipped` | No | Requires human approval |
+| `shipped → retrospected` | No | Human-led retrospective |
+| Any → `cancelled` | No | Human decision only |
 
 Agents must check `agileplus governance check <transition>` before attempting any transition:
 
@@ -478,7 +464,6 @@ Enforcement flow:
 ```
 
 Agents must not attempt to circumvent this by:
-
 - Checking out the branch manually without going through `implement`
 - Editing files that belong to WP01's scope while WP01 is not Done
 - Assuming WP01's changes are present before they're merged to main
@@ -516,13 +501,13 @@ Evidence requirements per governance contract:
 
 ```json
 {
-    "transition": "implementing->validated",
-    "required_evidence": [
-        { "fr_id": "FR-001", "evidence_type": "TestResult" },
-        { "fr_id": "FR-002", "evidence_type": "TestResult" },
-        { "fr_id": "FR-003", "evidence_type": "SecurityScan" },
-        { "evidence_type": "LintResult" }
-    ]
+  "transition": "implementing->validated",
+  "required_evidence": [
+    {"fr_id": "FR-001", "evidence_type": "TestResult"},
+    {"fr_id": "FR-002", "evidence_type": "TestResult"},
+    {"fr_id": "FR-003", "evidence_type": "SecurityScan"},
+    {"evidence_type": "LintResult"}
+  ]
 }
 ```
 

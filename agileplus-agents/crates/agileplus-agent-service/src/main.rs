@@ -5,8 +5,8 @@
 //! - gRPC health check — for readiness probes
 
 use agileplus_agent_dispatch::AgentDispatchAdapter;
-use service::AgentDispatchServiceImpl;
 use service::proto::agent_dispatch_service_server::AgentDispatchServiceServer;
+use service::AgentDispatchServiceImpl;
 use std::sync::Arc;
 use tonic::transport::Server;
 use tonic_health::server::health_reporter;
@@ -19,26 +19,30 @@ mod service;
 mod vcs_noop {
     use agileplus_agent_dispatch::{DomainError, VcsPort};
     use async_trait::async_trait;
-    use std::path::{Path, PathBuf};
+    use std::path::PathBuf;
 
     pub struct NoopVcs;
 
     #[async_trait]
     impl VcsPort for NoopVcs {
-        async fn create_worktree(&self, feature: &str, wp: &str) -> Result<PathBuf, DomainError> {
+        async fn create_worktree(
+            &self,
+            feature: &str,
+            wp: &str,
+        ) -> Result<PathBuf, DomainError> {
             let path = std::env::temp_dir().join(format!("{feature}-{wp}"));
             tokio::fs::create_dir_all(&path).await?;
             Ok(path)
         }
 
-        async fn remove_worktree(&self, path: &Path) -> Result<(), DomainError> {
+        async fn remove_worktree(&self, path: &PathBuf) -> Result<(), DomainError> {
             let _ = tokio::fs::remove_dir_all(path).await;
             Ok(())
         }
 
         async fn new_commits_since(
             &self,
-            _path: &Path,
+            _path: &PathBuf,
             _since: &str,
         ) -> Result<Vec<String>, DomainError> {
             Ok(vec![])
@@ -66,7 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let service_impl = AgentDispatchServiceImpl::new(Arc::clone(&adapter));
 
     // Health check.
-    let (health_reporter, health_service) = health_reporter();
+    let (mut health_reporter, health_service) = health_reporter();
     health_reporter
         .set_serving::<AgentDispatchServiceServer<AgentDispatchServiceImpl>>()
         .await;

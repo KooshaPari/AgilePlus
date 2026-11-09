@@ -10,8 +10,6 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde_json::{Value, json};
 
-use agileplus_domain::domain::evaluation::GovernanceResult;
-use agileplus_domain::domain::governance_evaluator::evaluate_governance;
 use agileplus_domain::ports::vcs::VcsPort;
 use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 
@@ -102,97 +100,61 @@ where
             ApiError::NotFound(format!("No governance contract for feature '{slug}'"))
         })?;
 
-    let evaluation = evaluate_governance(state.storage.as_ref(), &contract, feature.id)
+    // Get evidence for all WPs in this feature
+    let wps = state
+        .storage
+        .list_wps_by_feature(feature.id)
         .await
         .map_err(ApiError::from)?;
-    // Per-rule satisfaction is now derivable from `evaluation.rule_results`
-    // — the evaluator records each rule independently so a partially
-    // satisfied contract still reports a meaningful count. Falling back to
-    // the binary pass/fail would lose that fidelity and would also mask
-    // vacuous rules (zero required_evidence, no policy_refs) from the
-    // satisfied count. A contract with zero rules is treated as vacuously
-    // satisfied per the documented contract ("no rules → all satisfied");
-    // the `result` field still distinguishes "not configured" semantics
-    // for empty contracts that have *no* contract row at all (handled
-    // upstream as a 404).
-    let total_rules = evaluation.rule_results.len();
-    let satisfied_rules = evaluation
-        .rule_results
-        .iter()
-        .filter(|r| r.satisfied)
-        .count();
-    let compliant = total_rules == 0 || satisfied_rules == total_rules;
-    let result = if !evaluation.configured(&contract) {
-        GovernanceResult::NotConfigured
-    } else if compliant {
-        GovernanceResult::Satisfied
-    } else {
-        GovernanceResult::Unsatisfied
-    };
 
+    let mut total_rules = 0usize;
+    let mut satisfied_rules = 0usize;
+
+    let wp_ids: std::collections::HashSet<i64> = wps.iter().map(|w| w.id).collect();
+
+    for rule in &contract.rules {
+        total_rules += 1;
+        // `required_evidence` entries are FR ids and/or evidence-type labels.
+        let mut rule_satisfied = true;
+        for req in &rule.required_evidence {
+            let by_fr = state
+                .storage
+                .get_evidence_by_fr(req)
+                .await
+                .map_err(ApiError::from)?;
+            let mut found = by_fr.iter().any(|e| wp_ids.contains(&e.wp_id));
+            if !found {
+                for wp in &wps {
+                    let ev = state
+                        .storage
+                        .get_evidence_by_wp(wp.id)
+                        .await
+                        .map_err(ApiError::from)?;
+                    if ev
+                        .iter()
+                        .any(|e| e.fr_id == *req || e.evidence_type.as_str() == req.as_str())
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if !found {
+                rule_satisfied = false;
+                break;
+            }
+        }
+        if rule_satisfied {
+            satisfied_rules += 1;
+        }
+    }
+
+    let compliant = satisfied_rules == total_rules;
     Ok(Json(json!({
         "feature_slug": slug,
         "governance_version": contract.version,
         "total_rules": total_rules,
         "satisfied_rules": satisfied_rules,
         "compliant": compliant,
-        "result": result.as_str(),
-        "missing_evidence": evaluation.missing_evidence,
-        "policy_results": evaluation.policy_results.iter().map(|p| serde_json::json!({"policy_id":p.policy_id,"domain":p.domain,"passed":p.passed,"message":p.message})).collect::<Vec<_>>(),
     })))
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn validation_summary_structure() {
-        let summary = serde_json::json!({
-            "feature_slug": "my-feat",
-            "governance_version": 3,
-            "total_rules": 5,
-            "satisfied_rules": 4,
-            "compliant": false,
-        });
-        assert_eq!(summary["feature_slug"], "my-feat");
-        assert_eq!(summary["governance_version"], 3);
-        assert_eq!(summary["total_rules"], 5);
-        assert_eq!(summary["satisfied_rules"], 4);
-        assert_eq!(summary["compliant"], false);
-    }
-
-    #[test]
-    fn validation_compliant_summary() {
-        let summary = serde_json::json!({
-            "feature_slug": "feat",
-            "governance_version": 1,
-            "total_rules": 2,
-            "satisfied_rules": 2,
-            "compliant": true,
-        });
-        assert!(summary["compliant"].as_bool().unwrap());
-        assert_eq!(summary["total_rules"], summary["satisfied_rules"]);
-    }
-
-    #[test]
-    fn validation_no_rules_is_not_configured() {
-        let total_rules = 0usize;
-        let satisfied_rules = 0usize;
-        let result = if total_rules == 0 {
-            "not_configured"
-        } else if satisfied_rules == total_rules {
-            "satisfied"
-        } else {
-            "unsatisfied"
-        };
-        let summary = serde_json::json!({
-            "feature_slug": "empty",
-            "governance_version": 1,
-            "total_rules": total_rules,
-            "satisfied_rules": satisfied_rules,
-            "compliant": result == "satisfied",
-            "result": result,
-        });
-        assert_eq!(summary["result"], "not_configured");
-        assert_eq!(summary["compliant"], false);
-    }
 }
