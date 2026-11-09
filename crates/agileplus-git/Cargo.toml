@@ -12,7 +12,7 @@ async-trait = "0.1"
 git2 = { version = "0.20", features = ["vendored-libgit2"] }
 gix = { version = "0.83.0", default-features = false, features = ["worktree-stream", "revision", "sha1"] }
 notify = "8"
-async-nats = "0.47"
+async-nats.workspace = true
 tokio = { version = "1", features = ["sync", "time", "macros"] }
 tracing = "0.1"
 toml = "0.8"
