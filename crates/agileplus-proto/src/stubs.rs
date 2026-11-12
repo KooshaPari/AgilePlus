@@ -9,6 +9,11 @@
 
 use std::collections::HashMap;
 
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ProjectScope {
+    pub canonical_repo_root: String,
+}
+
 // ── common.proto ─────────────────────────────────────────────────────────────
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -227,6 +232,7 @@ pub struct BacklogItem {
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct CreateBacklogItemRequest {
+    pub project_scope: Option<ProjectScope>,
     pub title: String,
     pub description: String,
     pub r#type: String,
@@ -263,6 +269,7 @@ pub struct GetBacklogItemResponse {
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ListBacklogRequest {
+    pub project_scope: Option<ProjectScope>,
     pub type_filter: String,
     pub state_filter: String,
     pub priority_filter: String,
@@ -437,9 +444,8 @@ pub trait AgilePlusCoreService: Send + Sync + 'static {
         request: Request<VerifyAuditChainRequest>,
     ) -> Result<Response<VerifyAuditChainResponse>, Status>;
 
-    type StreamAgentEventsStream: tokio_stream::Stream<
-            Item = Result<StreamAgentEventsResponse, Status>,
-        > + Send
+    type StreamAgentEventsStream: tokio_stream::Stream<Item = Result<StreamAgentEventsResponse, Status>>
+        + Send
         + 'static;
 
     async fn stream_agent_events(

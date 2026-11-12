@@ -55,7 +55,8 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
     """
 
     def __init__(self, address: str = "localhost:50051", project_root: str | None = None) -> None:
-        self._address = address
+        self._address = "127.0.0.1:" + address.removeprefix("localhost:") if address.startswith("localhost:") else address
+        self._channel_target: str | None = None
         self._project_root = str(Path(project_root).resolve()) if project_root else ""
         self._channel: Any | None = None
         self._stub: Any | None = None
@@ -77,7 +78,10 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
                 integrations_pb2_grpc,
             )
 
-            self._channel = grpc.aio.insecure_channel(self._address)
+            self._channel_target = self._address
+            self._channel = grpc.aio.insecure_channel(
+                self._channel_target, options=(("grpc.enable_http_proxy", 0),)
+            )
             await asyncio.wait_for(self._channel.channel_ready(), timeout=5.0)
             self._stub = core_pb2_grpc.AgilePlusCoreServiceStub(self._channel)
             self._integrations_stub = integrations_pb2_grpc.IntegrationsServiceStub(self._channel)
@@ -94,6 +98,7 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
         if self._channel is not None:
             await self._channel.close()
             self._channel = None
+            self._channel_target = None
             self._stub = None
             self._integrations_stub = None
             logger.info("gRPC channel closed")

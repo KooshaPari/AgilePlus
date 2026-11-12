@@ -13,3 +13,11 @@ Tonic gRPC adapter layer for AgilePlus core and work-item services.
 ```bash
 cargo test -p agileplus-grpc
 ```
+
+## Queue service trust boundary
+
+Queue create and list requests require the configured `AGILEPLUS_API_KEY` bearer
+credential and must include the core's canonical project root.
+Missing or mismatched scope is rejected. This is repository routing protection,
+not authentication; possession of the configured credential is checked separately. Older unscoped queue clients fail closed.
+Work-package associations and backlog promotion are not supported.

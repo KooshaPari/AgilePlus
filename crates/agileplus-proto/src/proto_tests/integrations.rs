@@ -175,6 +175,9 @@ roundtrip!(
         feature_id: "f".to_string(),
         wp_id: "1".to_string(),
         triaged_by: "jcode".to_string(),
+        project_scope: Some(ProjectScope {
+            canonical_repo_root: "/repo".to_string()
+        }),
     }
 );
 
@@ -212,6 +215,9 @@ roundtrip!(
         type_filter: "bug".to_string(),
         state_filter: "open".to_string(),
         feature_slug: "f".to_string(),
+        project_scope: Some(ProjectScope {
+            canonical_repo_root: "/repo".to_string()
+        }),
     }
 );
 

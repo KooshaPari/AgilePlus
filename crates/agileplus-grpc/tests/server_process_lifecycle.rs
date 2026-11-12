@@ -34,6 +34,7 @@ impl ServerProcess {
         let child = Command::new(env!("CARGO_BIN_EXE_agileplus-grpc"))
             .env("AGILEPLUS_GRPC_BIND", format!("127.0.0.1:{port}"))
             .env("AGILEPLUS_PROJECT_ROOT", root)
+            .env("AGILEPLUS_API_KEY", "fixture-queue-key")
             .env_remove("AGILEPLUS_CORE_DATABASE_PATH")
             .env_remove("AGILEPLUS_DB_PATH")
             .stdin(Stdio::null())
@@ -143,6 +144,135 @@ async fn server_binary_serves_requests_and_shuts_down_on_sigterm() {
 
     await_listening(&mut server, port).await;
 
+    let mut queue = agileplus_proto::agileplus::v1::integrations_service_client::IntegrationsServiceClient::connect(format!("http://127.0.0.1:{port}"))
+        .await.expect("queue client connects");
+    use agileplus_proto::agileplus::v1::{
+        CreateBacklogItemRequest, ListBacklogRequest, PromoteBacklogItemRequest,
+    };
+    let scope = ProjectScope {
+        canonical_repo_root: root.to_string_lossy().to_string(),
+    };
+    let request = CreateBacklogItemRequest {
+        r#type: "task".into(),
+        title: "isolated queue item".into(),
+        body: "test body".into(),
+        feature_id: "feature-a".into(),
+        triaged_by: "test".into(),
+        project_scope: Some(scope.clone()),
+        ..Default::default()
+    };
+    assert_eq!(
+        queue
+            .create_backlog_item(request.clone())
+            .await
+            .unwrap_err()
+            .code(),
+        Code::Unauthenticated
+    );
+    let mut wrong = tonic::Request::new(request.clone());
+    wrong
+        .metadata_mut()
+        .insert("authorization", "Bearer invalid-key".parse().unwrap());
+    assert_eq!(
+        queue.create_backlog_item(wrong).await.unwrap_err().code(),
+        Code::Unauthenticated
+    );
+    assert_eq!(
+        queue
+            .list_backlog(ListBacklogRequest {
+                project_scope: Some(scope.clone()),
+                ..Default::default()
+            })
+            .await
+            .unwrap_err()
+            .code(),
+        Code::Unauthenticated
+    );
+    let mut wrong_list = tonic::Request::new(ListBacklogRequest {
+        project_scope: Some(scope.clone()),
+        ..Default::default()
+    });
+    wrong_list
+        .metadata_mut()
+        .insert("authorization", "Bearer invalid-key".parse().unwrap());
+    assert_eq!(
+        queue.list_backlog(wrong_list).await.unwrap_err().code(),
+        Code::Unauthenticated
+    );
+    drop(queue);
+    let channel = tonic::transport::Channel::from_shared(format!("http://127.0.0.1:{port}"))
+        .unwrap()
+        .connect()
+        .await
+        .unwrap();
+    let mut queue = agileplus_proto::agileplus::v1::integrations_service_client::IntegrationsServiceClient::with_interceptor(channel, |mut r: tonic::Request<()>| {
+        r.metadata_mut().insert("authorization", "Bearer fixture-queue-key".parse().unwrap());
+        Ok(r)
+    });
+    let mut unscoped = request.clone();
+    unscoped.project_scope = None;
+    assert_eq!(
+        queue
+            .create_backlog_item(unscoped)
+            .await
+            .unwrap_err()
+            .code(),
+        Code::InvalidArgument
+    );
+    let mut foreign = request.clone();
+    foreign.project_scope = Some(ProjectScope {
+        canonical_repo_root: "/foreign".into(),
+    });
+    assert_eq!(
+        queue.create_backlog_item(foreign).await.unwrap_err().code(),
+        Code::PermissionDenied
+    );
+    let mut unsupported_wp = request.clone();
+    unsupported_wp.wp_id = "WP01".into();
+    assert_eq!(
+        queue
+            .create_backlog_item(unsupported_wp)
+            .await
+            .unwrap_err()
+            .code(),
+        Code::InvalidArgument
+    );
+    let unscoped_list = ListBacklogRequest::default();
+    assert_eq!(
+        queue.list_backlog(unscoped_list).await.unwrap_err().code(),
+        Code::InvalidArgument
+    );
+    let item = queue
+        .create_backlog_item(request)
+        .await
+        .expect("scoped create")
+        .into_inner()
+        .item
+        .expect("item");
+    assert_eq!(item.title, "isolated queue item");
+    let list = queue
+        .list_backlog(ListBacklogRequest {
+            feature_slug: "feature-a".into(),
+            project_scope: Some(scope.clone()),
+            ..Default::default()
+        })
+        .await
+        .expect("scoped list")
+        .into_inner();
+    assert_eq!(list.items.len(), 1);
+    assert_eq!(list.items[0].id, item.id);
+    assert_eq!(
+        queue
+            .promote_backlog_item(PromoteBacklogItemRequest {
+                backlog_item_id: item.id,
+                target_type: "feature".into()
+            })
+            .await
+            .unwrap_err()
+            .code(),
+        Code::Unimplemented
+    );
+
     // The server's canonical repository root is the canonicalized project
     // root, so scope-bound requests must name exactly that path.
     let canonical_root = root.to_string_lossy().to_string();
@@ -212,6 +342,7 @@ async fn server_binary_serves_requests_and_shuts_down_on_sigterm() {
     // it, so a held-open channel stalls shutdown indefinitely. Release the
     // client before signalling, the way a draining deploy would.
     drop(client);
+    drop(queue);
     tokio::time::sleep(Duration::from_millis(250)).await;
 
     server.terminate();
@@ -220,6 +351,36 @@ async fn server_binary_serves_requests_and_shuts_down_on_sigterm() {
         status.success(),
         "SIGTERM should produce a graceful exit, got {status:?}"
     );
+
+    let mut restarted = ServerProcess::spawn(&root, port);
+    await_listening(&mut restarted, port).await;
+    let channel = tonic::transport::Channel::from_shared(format!("http://127.0.0.1:{port}"))
+        .unwrap()
+        .connect()
+        .await
+        .unwrap();
+    let mut queue = agileplus_proto::agileplus::v1::integrations_service_client::IntegrationsServiceClient::with_interceptor(channel, |mut r: tonic::Request<()>| {
+        r.metadata_mut().insert("authorization", "Bearer fixture-queue-key".parse().unwrap());
+        Ok(r)
+    });
+    let items = queue
+        .list_backlog(ListBacklogRequest {
+            feature_slug: "feature-a".into(),
+            project_scope: Some(ProjectScope {
+                canonical_repo_root: root.to_string_lossy().to_string(),
+            }),
+            ..Default::default()
+        })
+        .await
+        .expect("list after restart")
+        .into_inner()
+        .items;
+    assert_eq!(items.len(), 1);
+    assert_eq!(items[0].id, item.id);
+    drop(queue);
+    tokio::time::sleep(Duration::from_millis(250)).await;
+    restarted.terminate();
+    assert!(restarted.wait_for_exit(Duration::from_secs(15)).success());
 
     let _ = std::fs::remove_dir_all(&root);
 }
