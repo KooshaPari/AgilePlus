@@ -18,18 +18,18 @@ impl VcsPort for GitVcsAdapter {
         let path = self.worktree_path(feature_slug, wp_id);
         let path_str = path.to_string_lossy().into_owned();
 
-        // If the branch already exists, use `git worktree add <path>
-        // -B <branch>` to attach the existing branch. Otherwise use
-        // `-b <branch>` to create a fresh one.
         let repo = self.open()?;
         let branch_exists = repo.find_branch(&branch, git2::BranchType::Local).is_ok();
-        let flag = if branch_exists { "-B" } else { "-b" };
 
         // Use the CLI for the worktree add â€” the git2 `Repository::worktree`
         // builder can produce a worktree in the wrong state on some
         // libgit2 versions, while `git worktree add` is the canonical,
         // well-tested path.
-        self.run_git_status(&["worktree", "add", &path_str, flag, &branch])?;
+        if branch_exists {
+            self.run_git_status(&["worktree", "add", &path_str, &branch])?;
+        } else {
+            self.run_git_status(&["worktree", "add", "-b", &branch, &path_str])?;
+        }
         std::fs::canonicalize(&path).map_err(|e| {
             DomainError::Storage(format!("canonicalize worktree {}: {e}", path.display()))
         })
