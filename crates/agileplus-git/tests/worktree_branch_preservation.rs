@@ -14,7 +14,13 @@ fn git(repo: &Path, args: &[&str]) -> String {
             command.env_remove(name);
         }
     }
-    let output = command.current_dir(repo).args(args).output().unwrap();
+    let output = command
+        .current_dir(repo)
+        .env("GIT_CONFIG_NOSYSTEM", "1")
+        .env("GIT_CONFIG_GLOBAL", repo.join("fixture-no-global-config"))
+        .args(args)
+        .output()
+        .unwrap();
     assert!(
         output.status.success(),
         "git {args:?}: {}",
@@ -29,6 +35,14 @@ fn poisoned_git_environment_cannot_redirect_fixture_or_worktree() {
     let decoy = fixture.path().join("decoy");
     std::fs::create_dir(&decoy).unwrap();
     git(&decoy, &["init", "-q", "-b", "main"]);
+    git(
+        &decoy,
+        &[
+            "config",
+            "core.hooksPath",
+            decoy.join(".git/hooks").to_str().unwrap(),
+        ],
+    );
     git(&decoy, &["config", "user.email", "fixture@example.invalid"]);
     git(&decoy, &["config", "user.name", "fixture"]);
     std::fs::write(decoy.join("keep"), "sentinel").unwrap();
@@ -50,6 +64,7 @@ fn poisoned_git_environment_cannot_redirect_fixture_or_worktree() {
         .env("GIT_CONFIG_COUNT", "1")
         .env("GIT_CONFIG_KEY_0", "core.worktree")
         .env("GIT_CONFIG_VALUE_0", &decoy)
+        .env("GIT_LFS_SKIP_SMUDGE", "preserved")
         .output()
         .unwrap();
     assert!(
@@ -72,6 +87,14 @@ async fn existing_branch_keeps_its_tip_and_occupied_target_is_preserved() {
     let repo = fixture.path().join("repo");
     std::fs::create_dir(&repo).unwrap();
     git(&repo, &["init", "-q", "-b", "main"]);
+    git(
+        &repo,
+        &[
+            "config",
+            "core.hooksPath",
+            repo.join(".git/hooks").to_str().unwrap(),
+        ],
+    );
     git(&repo, &["config", "user.email", "fixture@example.invalid"]);
     git(&repo, &["config", "user.name", "fixture"]);
     git(&repo, &["config", "core.autocrlf", "false"]);
@@ -83,6 +106,17 @@ async fn existing_branch_keeps_its_tip_and_occupied_target_is_preserved() {
     std::fs::write(repo.join("tracked"), "new\n").unwrap();
     git(&repo, &["commit", "-qam", "new"]);
     assert_ne!(old, git(&repo, &["rev-parse", "HEAD"]));
+    let hook = repo.join(".git/hooks/post-checkout");
+    std::fs::write(
+        &hook,
+        "#!/bin/sh\nprintf '%s' \"${GIT_LFS_SKIP_SMUDGE-unset}\" > .compat-env\n",
+    )
+    .unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&hook, std::fs::Permissions::from_mode(0o755)).unwrap();
+    }
 
     let adapter = GitVcsAdapter::new(repo.clone());
     let target = adapter.worktree_path("sample", "wp-1");
@@ -98,6 +132,10 @@ async fn existing_branch_keeps_its_tip_and_occupied_target_is_preserved() {
     let second = GitVcsAdapter::new(repo.clone());
     git(&repo, &["branch", "feat/other/wp-2", &old]);
     let worktree = second.create_worktree("other", "wp-2").await.unwrap();
+    assert_eq!(
+        std::fs::read_to_string(worktree.join(".compat-env")).unwrap(),
+        std::env::var("GIT_LFS_SKIP_SMUDGE").unwrap_or_else(|_| "unset".into())
+    );
     assert_eq!(git(&worktree, &["rev-parse", "HEAD"]), old);
     assert_eq!(git(&repo, &["rev-parse", "feat/other/wp-2"]), old);
     assert_eq!(

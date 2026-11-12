@@ -45,6 +45,31 @@ mod vcs_port_impl;
 
 pub use project_context::ProjectContext;
 
+fn git_repository_environment(name: &std::ffi::OsStr) -> bool {
+    let key = name.to_string_lossy().to_ascii_uppercase();
+    key.starts_with("GIT_CONFIG_")
+        || matches!(
+            key.as_str(),
+            "GIT_CONFIG"
+                | "GIT_DIR"
+                | "GIT_WORK_TREE"
+                | "GIT_COMMON_DIR"
+                | "GIT_INDEX_FILE"
+                | "GIT_OBJECT_DIRECTORY"
+                | "GIT_ALTERNATE_OBJECT_DIRECTORIES"
+                | "GIT_IMPLICIT_WORK_TREE"
+                | "GIT_GRAFT_FILE"
+                | "GIT_NO_REPLACE_OBJECTS"
+                | "GIT_REPLACE_REF_BASE"
+                | "GIT_PREFIX"
+                | "GIT_SHALLOW_FILE"
+                | "GIT_CEILING_DIRECTORIES"
+                | "GIT_DISCOVERY_ACROSS_FILESYSTEM"
+                | "GIT_NAMESPACE"
+                | "GIT_QUARANTINE_PATH"
+        )
+}
+
 /// Git-backed VCS adapter. Cheap to clone (the heavy state lives in
 /// libgit2's on-disk cache).
 #[derive(Debug, Clone)]
@@ -132,11 +157,7 @@ impl GitVcsAdapter {
         let mut command = Command::new("git");
         if clear_git_env {
             for (name, _) in std::env::vars_os() {
-                if name
-                    .to_string_lossy()
-                    .to_ascii_uppercase()
-                    .starts_with("GIT_")
-                {
+                if git_repository_environment(&name) {
                     command.env_remove(name);
                 }
             }

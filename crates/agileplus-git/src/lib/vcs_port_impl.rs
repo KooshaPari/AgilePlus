@@ -36,6 +36,8 @@ impl VcsPort for GitVcsAdapter {
         if branch_exists {
             self.run_git_inner(&["worktree", "add", &path_str, &branch], true)?;
         } else {
+            // If the branch appears after lookup, Git rejects -b rather than
+            // attaching a branch whose ownership has not been established.
             self.run_git_inner(&["worktree", "add", "-b", &branch, &path_str], true)?;
         }
         std::fs::canonicalize(&path).map_err(|e| {
