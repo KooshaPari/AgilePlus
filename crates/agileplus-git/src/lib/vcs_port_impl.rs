@@ -19,7 +19,15 @@ impl VcsPort for GitVcsAdapter {
         let path_str = path.to_string_lossy().into_owned();
 
         let repo = self.open()?;
-        let branch_exists = repo.find_branch(&branch, git2::BranchType::Local).is_ok();
+        let branch_exists = match repo.find_branch(&branch, git2::BranchType::Local) {
+            Ok(_) => true,
+            Err(error) if error.code() == git2::ErrorCode::NotFound => false,
+            Err(error) => {
+                return Err(DomainError::Storage(format!(
+                    "find branch {branch}: {error}"
+                )));
+            }
+        };
 
         // Use the CLI for the worktree add â€” the git2 `Repository::worktree`
         // builder can produce a worktree in the wrong state on some

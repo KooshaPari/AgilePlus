@@ -55,4 +55,17 @@ async fn existing_branch_keeps_its_tip_and_occupied_target_is_preserved() {
         std::fs::read_to_string(worktree.join("tracked")).unwrap(),
         "old\n"
     );
+
+    let missing = adapter.create_worktree("fresh", "wp-3").await.unwrap();
+    assert_eq!(
+        git(&missing, &["rev-parse", "HEAD"]),
+        git(&repo, &["rev-parse", "main"])
+    );
+    let before = git(&repo, &["worktree", "list", "--porcelain"]);
+    let error = adapter
+        .create_worktree("bad\0slug", "wp-4")
+        .await
+        .unwrap_err();
+    assert!(error.to_string().contains("find branch"), "{error}");
+    assert_eq!(git(&repo, &["worktree", "list", "--porcelain"]), before);
 }
