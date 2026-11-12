@@ -276,9 +276,6 @@ fn stub_backlog_types() {
     assert_eq!(item.clone(), item);
 
     let create = CreateBacklogItemRequest {
-        project_scope: Some(ProjectScope {
-            canonical_repo_root: "/repo".into(),
-        }),
         title: "T".to_string(),
         description: "D".to_string(),
         r#type: "bug".to_string(),
@@ -305,9 +302,6 @@ fn stub_backlog_types() {
     assert!(GetBacklogItemResponse::default().item.is_none());
 
     let list = ListBacklogRequest {
-        project_scope: Some(ProjectScope {
-            canonical_repo_root: "/repo".into(),
-        }),
         type_filter: "bug".to_string(),
         state_filter: "open".to_string(),
         priority_filter: "high".to_string(),

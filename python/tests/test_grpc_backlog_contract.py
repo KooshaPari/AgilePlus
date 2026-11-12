@@ -16,6 +16,7 @@ def _client_with_integrations_stub() -> tuple[AgilePlusCoreClient, MagicMock]:
     integrations = MagicMock()
     client._integrations_stub = integrations
     client._channel_target = "127.0.0.1:50051"
+    client._project_root = "/repo/\u00e9"
     return client, integrations
 
 
@@ -57,7 +58,10 @@ async def test_backlog_create_uses_the_generated_integrations_request_shape() ->
     }
     request = integrations.CreateBacklogItem.call_args.args[0]
     assert (request.feature_id, request.wp_id, request.triaged_by) == ("001", "WP14", "mcp")
-    assert request.HasField("project_scope")
+    assert (
+        "agileplus-project-root-bin",
+        "/repo/\u00e9".encode(),
+    ) in integrations.CreateBacklogItem.call_args.kwargs["metadata"]
 
 
 @pytest.mark.asyncio
@@ -131,7 +135,10 @@ async def test_backlog_list_and_promote_use_only_declared_rpc_fields() -> None:
     ]
     assert promotion == {"success": True, "created_entity_id": "FR-3", "message": "promoted"}
     list_request = integrations.ListBacklog.call_args.args[0]
-    assert list_request.HasField("project_scope")
+    assert (
+        "agileplus-project-root-bin",
+        "/repo/\u00e9".encode(),
+    ) in integrations.ListBacklog.call_args.kwargs["metadata"]
     promote_request = integrations.PromoteBacklogItem.call_args.args[0]
     assert (list_request.type_filter, list_request.state_filter, list_request.feature_slug) == (
         "bug",
@@ -154,14 +161,18 @@ async def test_backlog_requests_attach_configured_queue_credential(
     await client.create_backlog_item("task", "test")
     await client.list_backlog()
     assert integrations.CreateBacklogItem.call_args.kwargs["metadata"] == (
+        ("agileplus-project-root-bin", "/repo/\u00e9".encode()),
         ("authorization", "Bearer fixture-token"),
     )
     assert integrations.ListBacklog.call_args.kwargs["metadata"] == (
+        ("agileplus-project-root-bin", "/repo/\u00e9".encode()),
         ("authorization", "Bearer fixture-token"),
     )
     monkeypatch.delenv("AGILEPLUS_API_KEY")
     await client.list_backlog()
-    assert integrations.ListBacklog.call_args.kwargs["metadata"] == ()
+    assert integrations.ListBacklog.call_args.kwargs["metadata"] == (
+        ("agileplus-project-root-bin", "/repo/\u00e9".encode()),
+    )
 
 
 @pytest.mark.asyncio
@@ -220,3 +231,20 @@ async def test_default_channel_uses_numeric_loopback_and_disables_http_proxy(
     monkeypatch.setattr(grpc.aio, "insecure_channel", connect)
     await client.connect()
     connect.assert_called_once_with("127.0.0.1:50051", options=(("grpc.enable_http_proxy", 0),))
+
+
+@pytest.mark.asyncio
+async def test_list_scope_is_bound_before_retry(monkeypatch: pytest.MonkeyPatch) -> None:
+    client, integrations = _client_with_integrations_stub()
+    monkeypatch.setenv("AGILEPLUS_API_KEY", "fixture-token")
+    integrations.ListBacklog = AsyncMock(return_value=integrations_pb2.ListBacklogResponse())
+
+    async def retry_after_rebinding(factory):
+        client._project_root = "/different-project"
+        return await factory()
+
+    client._call_with_retry = retry_after_rebinding
+    await client.list_backlog()
+    assert ("agileplus-project-root-bin", "/repo/\u00e9".encode()) in (
+        integrations.ListBacklog.call_args.kwargs["metadata"]
+    )

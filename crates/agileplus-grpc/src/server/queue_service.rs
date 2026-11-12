@@ -10,7 +10,7 @@ use agileplus_proto::agileplus::v1::{
 };
 use tonic::{Request, Response, Status};
 
-use super::{domain_error_to_status, validate_project_scope};
+use super::domain_error_to_status;
 
 pub struct QueueService<S> {
     root: PathBuf,
@@ -45,12 +45,29 @@ impl<S> QueueService<S> {
         Ok(())
     }
 
-    fn validate_scope(&self, scope: Option<&proto::ProjectScope>) -> Result<(), Status> {
+    fn validate_scope<T>(&self, request: &Request<T>) -> Result<(), Status> {
         let root = self
             .root
             .to_str()
             .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?;
-        validate_project_scope(scope.map(|s| s.canonical_repo_root.as_str()), root)
+        let bytes = request
+            .metadata()
+            .get_bin("agileplus-project-root-bin")
+            .map(|value| value.to_bytes())
+            .transpose()
+            .map_err(|_| Status::invalid_argument("invalid project scope metadata"))?;
+        let scope = bytes
+            .as_ref()
+            .map(|value| std::str::from_utf8(value))
+            .transpose()
+            .map_err(|_| Status::invalid_argument("project scope is not UTF-8"))?;
+        match scope {
+            None | Some("") => Err(Status::invalid_argument("project scope is required")),
+            Some(scope) if scope == root => Ok(()),
+            Some(_) => Err(Status::permission_denied(
+                "project scope does not match this core server repository",
+            )),
+        }
     }
 }
 
@@ -129,8 +146,8 @@ impl<S: ContentStoragePort + 'static> IntegrationsService for QueueService<S> {
         request: Request<proto::CreateBacklogItemRequest>,
     ) -> Result<Response<proto::CreateBacklogItemResponse>, Status> {
         self.authorize(&request)?;
+        self.validate_scope(&request)?;
         let request = request.into_inner();
-        self.validate_scope(request.project_scope.as_ref())?;
         if !request.wp_id.is_empty() {
             return Err(Status::invalid_argument(
                 "wp_id is not supported by backlog storage",
@@ -172,8 +189,8 @@ impl<S: ContentStoragePort + 'static> IntegrationsService for QueueService<S> {
         request: Request<proto::ListBacklogRequest>,
     ) -> Result<Response<proto::ListBacklogResponse>, Status> {
         self.authorize(&request)?;
+        self.validate_scope(&request)?;
         let request = request.into_inner();
-        self.validate_scope(request.project_scope.as_ref())?;
         let filters = BacklogFilters {
             intent: if request.type_filter.is_empty() {
                 None

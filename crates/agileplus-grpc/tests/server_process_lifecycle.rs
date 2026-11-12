@@ -24,6 +24,22 @@ use agileplus_proto::agileplus::v1::{
 };
 use tonic::Code;
 
+fn queue_request<T>(body: T, token: Option<&str>, scope: Option<&[u8]>) -> tonic::Request<T> {
+    let mut request = tonic::Request::new(body);
+    if let Some(token) = token {
+        request
+            .metadata_mut()
+            .insert("authorization", format!("Bearer {token}").parse().unwrap());
+    }
+    if let Some(scope) = scope {
+        request.metadata_mut().insert_bin(
+            "agileplus-project-root-bin",
+            tonic::metadata::MetadataValue::from_bytes(scope),
+        );
+    }
+    request
+}
+
 /// Kills the child process if the test panics before the explicit shutdown.
 struct ServerProcess {
     child: Child,
@@ -102,7 +118,7 @@ fn temporary_project_root() -> PathBuf {
         .expect("the clock should be after the epoch")
         .as_nanos();
     let dir = std::env::temp_dir().join(format!(
-        "agileplus-grpc-server-{}-{nanos}",
+        "agileplus-grpc-server-é-{}-{nanos} ",
         std::process::id()
     ));
     std::fs::create_dir_all(&dir).expect("temporary project root should be creatable");
@@ -144,106 +160,131 @@ async fn server_binary_serves_requests_and_shuts_down_on_sigterm() {
 
     await_listening(&mut server, port).await;
 
-    let mut queue = agileplus_proto::agileplus::v1::integrations_service_client::IntegrationsServiceClient::connect(format!("http://127.0.0.1:{port}"))
-        .await.expect("queue client connects");
+    let mut queue = agileplus_proto::agileplus::v1::integrations_service_client::IntegrationsServiceClient::connect(format!("http://127.0.0.1:{port}")).await.expect("queue client connects");
     use agileplus_proto::agileplus::v1::{
         CreateBacklogItemRequest, ListBacklogRequest, PromoteBacklogItemRequest,
     };
-    let scope = ProjectScope {
-        canonical_repo_root: root.to_string_lossy().to_string(),
-    };
+    let scope_bytes = root.to_str().unwrap().as_bytes();
     let request = CreateBacklogItemRequest {
         r#type: "task".into(),
         title: "isolated queue item".into(),
         body: "test body".into(),
         feature_id: "feature-a".into(),
         triaged_by: "test".into(),
-        project_scope: Some(scope.clone()),
         ..Default::default()
     };
     assert_eq!(
         queue
-            .create_backlog_item(request.clone())
+            .create_backlog_item(queue_request(request.clone(), None, Some(scope_bytes)))
             .await
             .unwrap_err()
             .code(),
         Code::Unauthenticated
     );
-    let mut wrong = tonic::Request::new(request.clone());
-    wrong
-        .metadata_mut()
-        .insert("authorization", "Bearer invalid-key".parse().unwrap());
-    assert_eq!(
-        queue.create_backlog_item(wrong).await.unwrap_err().code(),
-        Code::Unauthenticated
-    );
     assert_eq!(
         queue
-            .list_backlog(ListBacklogRequest {
-                project_scope: Some(scope.clone()),
-                ..Default::default()
-            })
+            .create_backlog_item(queue_request(
+                request.clone(),
+                Some("invalid-key"),
+                Some(scope_bytes)
+            ))
             .await
             .unwrap_err()
             .code(),
         Code::Unauthenticated
     );
-    let mut wrong_list = tonic::Request::new(ListBacklogRequest {
-        project_scope: Some(scope.clone()),
-        ..Default::default()
-    });
-    wrong_list
-        .metadata_mut()
-        .insert("authorization", "Bearer invalid-key".parse().unwrap());
-    assert_eq!(
-        queue.list_backlog(wrong_list).await.unwrap_err().code(),
-        Code::Unauthenticated
-    );
-    drop(queue);
-    let channel = tonic::transport::Channel::from_shared(format!("http://127.0.0.1:{port}"))
-        .unwrap()
-        .connect()
-        .await
-        .unwrap();
-    let mut queue = agileplus_proto::agileplus::v1::integrations_service_client::IntegrationsServiceClient::with_interceptor(channel, |mut r: tonic::Request<()>| {
-        r.metadata_mut().insert("authorization", "Bearer fixture-queue-key".parse().unwrap());
-        Ok(r)
-    });
-    let mut unscoped = request.clone();
-    unscoped.project_scope = None;
     assert_eq!(
         queue
-            .create_backlog_item(unscoped)
+            .list_backlog(queue_request(
+                ListBacklogRequest::default(),
+                None,
+                Some(scope_bytes)
+            ))
+            .await
+            .unwrap_err()
+            .code(),
+        Code::Unauthenticated
+    );
+    assert_eq!(
+        queue
+            .list_backlog(queue_request(
+                ListBacklogRequest::default(),
+                Some("invalid-key"),
+                Some(scope_bytes)
+            ))
+            .await
+            .unwrap_err()
+            .code(),
+        Code::Unauthenticated
+    );
+    assert_eq!(
+        queue
+            .create_backlog_item(queue_request(
+                request.clone(),
+                Some("fixture-queue-key"),
+                None
+            ))
             .await
             .unwrap_err()
             .code(),
         Code::InvalidArgument
     );
-    let mut foreign = request.clone();
-    foreign.project_scope = Some(ProjectScope {
-        canonical_repo_root: "/foreign".into(),
-    });
     assert_eq!(
-        queue.create_backlog_item(foreign).await.unwrap_err().code(),
+        queue
+            .list_backlog(queue_request(
+                ListBacklogRequest::default(),
+                Some("fixture-queue-key"),
+                None
+            ))
+            .await
+            .unwrap_err()
+            .code(),
+        Code::InvalidArgument
+    );
+    assert_eq!(
+        queue
+            .create_backlog_item(queue_request(
+                request.clone(),
+                Some("fixture-queue-key"),
+                Some(b"/foreign")
+            ))
+            .await
+            .unwrap_err()
+            .code(),
         Code::PermissionDenied
+    );
+    assert_eq!(
+        queue
+            .create_backlog_item(queue_request(
+                request.clone(),
+                Some("fixture-queue-key"),
+                Some(b"\xff")
+            ))
+            .await
+            .unwrap_err()
+            .code(),
+        Code::InvalidArgument
     );
     let mut unsupported_wp = request.clone();
     unsupported_wp.wp_id = "WP01".into();
     assert_eq!(
         queue
-            .create_backlog_item(unsupported_wp)
+            .create_backlog_item(queue_request(
+                unsupported_wp,
+                Some("fixture-queue-key"),
+                Some(scope_bytes)
+            ))
             .await
             .unwrap_err()
             .code(),
         Code::InvalidArgument
     );
-    let unscoped_list = ListBacklogRequest::default();
-    assert_eq!(
-        queue.list_backlog(unscoped_list).await.unwrap_err().code(),
-        Code::InvalidArgument
-    );
     let item = queue
-        .create_backlog_item(request)
+        .create_backlog_item(queue_request(
+            request,
+            Some("fixture-queue-key"),
+            Some(scope_bytes),
+        ))
         .await
         .expect("scoped create")
         .into_inner()
@@ -251,11 +292,14 @@ async fn server_binary_serves_requests_and_shuts_down_on_sigterm() {
         .expect("item");
     assert_eq!(item.title, "isolated queue item");
     let list = queue
-        .list_backlog(ListBacklogRequest {
-            feature_slug: "feature-a".into(),
-            project_scope: Some(scope.clone()),
-            ..Default::default()
-        })
+        .list_backlog(queue_request(
+            ListBacklogRequest {
+                feature_slug: "feature-a".into(),
+                ..Default::default()
+            },
+            Some("fixture-queue-key"),
+            Some(scope_bytes),
+        ))
         .await
         .expect("scoped list")
         .into_inner();
@@ -354,23 +398,16 @@ async fn server_binary_serves_requests_and_shuts_down_on_sigterm() {
 
     let mut restarted = ServerProcess::spawn(&root, port);
     await_listening(&mut restarted, port).await;
-    let channel = tonic::transport::Channel::from_shared(format!("http://127.0.0.1:{port}"))
-        .unwrap()
-        .connect()
-        .await
-        .unwrap();
-    let mut queue = agileplus_proto::agileplus::v1::integrations_service_client::IntegrationsServiceClient::with_interceptor(channel, |mut r: tonic::Request<()>| {
-        r.metadata_mut().insert("authorization", "Bearer fixture-queue-key".parse().unwrap());
-        Ok(r)
-    });
+    let mut queue = agileplus_proto::agileplus::v1::integrations_service_client::IntegrationsServiceClient::connect(format!("http://127.0.0.1:{port}")).await.expect("queue reconnects");
     let items = queue
-        .list_backlog(ListBacklogRequest {
-            feature_slug: "feature-a".into(),
-            project_scope: Some(ProjectScope {
-                canonical_repo_root: root.to_string_lossy().to_string(),
-            }),
-            ..Default::default()
-        })
+        .list_backlog(queue_request(
+            ListBacklogRequest {
+                feature_slug: "feature-a".into(),
+                ..Default::default()
+            },
+            Some("fixture-queue-key"),
+            Some(scope_bytes),
+        ))
         .await
         .expect("list after restart")
         .into_inner()

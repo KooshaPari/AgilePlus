@@ -49,13 +49,15 @@ class AgilePlusBacklogGrpcMixin:
             feature_id=feature_id,
             wp_id=wp_id,
             triaged_by=triaged_by,
-            project_scope=host._project_scope(),
         )
         # Create has no idempotency key. Retrying after an ambiguous transport
         # failure could duplicate an item that the server already committed.
         try:
             response = await stub.CreateBacklogItem(
-                request, metadata=_queue_metadata(host._channel_target)
+                request,
+                metadata=_queue_metadata(
+                    host._channel_target, host._project_scope().canonical_repo_root
+                ),
             )
         except grpc.aio.AioRpcError as exc:
             # Import lazily to avoid a module cycle while grpc_client defines
@@ -84,11 +86,9 @@ class AgilePlusBacklogGrpcMixin:
             type_filter=type_filter or "",
             state_filter=state_filter or "",
             feature_slug=feature_slug or "",
-            project_scope=host._project_scope(),
         )
-        response = await host._call_with_retry(
-            lambda: stub.ListBacklog(request, metadata=_queue_metadata(host._channel_target))
-        )
+        metadata = _queue_metadata(host._channel_target, host._project_scope().canonical_repo_root)
+        response = await host._call_with_retry(lambda: stub.ListBacklog(request, metadata=metadata))
         return [self._backlog_item_to_dict(item) for item in response.items]
 
     async def promote_backlog_item(self, backlog_item_id: int, target_type: str) -> dict[str, Any]:
@@ -120,10 +120,8 @@ class AgilePlusBacklogGrpcMixin:
         }
 
 
-def _queue_metadata(channel_target: str | None) -> tuple[tuple[str, str], ...]:
+def _queue_metadata(channel_target: str | None, scope: str) -> tuple[tuple[str, str | bytes], ...]:
     token = os.environ.get("AGILEPLUS_API_KEY", "")
-    if not token:
-        return ()
     try:
         if channel_target is None or any(c in channel_target for c in "/?#@%"):
             raise ValueError("invalid target")
@@ -138,4 +136,7 @@ def _queue_metadata(channel_target: str | None) -> tuple[tuple[str, str], ...]:
         raise GrpcConnectionError(
             "Queue credentials require a numeric loopback gRPC target"
         ) from None
-    return (("authorization", f"Bearer {token}"),)
+    metadata: tuple[tuple[str, str | bytes], ...] = (
+        ("agileplus-project-root-bin", scope.encode("utf-8")),
+    )
+    return metadata + ((("authorization", f"Bearer {token}"),) if token else ())
