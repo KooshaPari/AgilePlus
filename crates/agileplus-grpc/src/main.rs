@@ -128,7 +128,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Arc::new(EventBus::new(256)),
         proxy,
     );
-    let service = AcceptanceCore::new(inner, storage, credentials, root);
+    let service = AcceptanceCore::new(inner, storage.clone(), credentials.clone(), root);
     tracing::info!(bind=%config.bind, database=%database.display(), "starting AgilePlus core");
-    agileplus_grpc::acceptance_server::serve(config.bind, service).await
+    agileplus_grpc::acceptance_server::serve_with_queue(
+        config.bind,
+        service,
+        context.repo_root().to_path_buf(),
+        storage,
+        credentials,
+    )
+    .await
 }
