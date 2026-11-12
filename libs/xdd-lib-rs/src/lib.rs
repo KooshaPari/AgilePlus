@@ -215,6 +215,10 @@ impl DialectRegistry {
 
 impl DialectRegistry {
     /// Convenience constructor pre-populated with the three built-in dialects.
+    #[allow(
+        clippy::should_implement_trait,
+        reason = "the existing Default trait produces an empty registry; this constructor includes built-ins"
+    )]
     pub fn default() -> Self {
         let mut reg = Self {
             by_name: HashMap::new(),
@@ -231,6 +235,21 @@ impl DialectRegistry {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn inherent_and_trait_default_keep_their_existing_contents() {
+        for registry in [DialectRegistry::new(), DialectRegistry::default()] {
+            let mut names = registry.dialect_names().collect::<Vec<_>>();
+            names.sort_unstable();
+            assert_eq!(names, ["json", "toml", "yaml"]);
+            for extension in ["json", "toml", "yaml", "yml"] {
+                assert!(registry.get_by_extension(extension).is_some());
+            }
+        }
+        let empty = <DialectRegistry as Default>::default();
+        assert_eq!(empty.dialect_names().count(), 0);
+        assert!(empty.get_by_extension("json").is_none());
+    }
 
     // â”€â”€ Smoke tests for each dialect â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
