@@ -155,4 +155,29 @@ async fn existing_branch_keeps_its_tip_and_occupied_target_is_preserved() {
         .unwrap_err();
     assert!(error.to_string().contains("find branch"), "{error}");
     assert_eq!(git(&repo, &["worktree", "list", "--porcelain"]), before);
+
+    git(&repo, &["branch", "feat/busy/wp-9"]);
+    let other_worktree = fixture.path().join("owned-elsewhere");
+    git(
+        &repo,
+        &[
+            "worktree",
+            "add",
+            other_worktree.to_str().unwrap(),
+            "feat/busy/wp-9",
+        ],
+    );
+    std::fs::write(other_worktree.join("untracked-sentinel"), "preserve").unwrap();
+    let before_branch = git(&repo, &["rev-parse", "feat/busy/wp-9"]);
+    let before_worktrees = git(&repo, &["worktree", "list", "--porcelain"]);
+    assert!(adapter.create_worktree("busy", "wp-9").await.is_err());
+    assert_eq!(git(&repo, &["rev-parse", "feat/busy/wp-9"]), before_branch);
+    assert_eq!(
+        git(&repo, &["worktree", "list", "--porcelain"]),
+        before_worktrees
+    );
+    assert_eq!(
+        std::fs::read_to_string(other_worktree.join("untracked-sentinel")).unwrap(),
+        "preserve"
+    );
 }
