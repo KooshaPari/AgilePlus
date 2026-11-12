@@ -142,23 +142,46 @@ async def test_backlog_list_and_promote_use_only_declared_rpc_fields() -> None:
 
 
 @pytest.mark.asyncio
-async def test_backlog_requests_attach_configured_queue_credential(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_backlog_requests_attach_configured_queue_credential(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     client, integrations = _client_with_integrations_stub()
     monkeypatch.setenv("AGILEPLUS_API_KEY", "fixture-token")
-    integrations.CreateBacklogItem = AsyncMock(return_value=integrations_pb2.CreateBacklogItemResponse())
+    integrations.CreateBacklogItem = AsyncMock(
+        return_value=integrations_pb2.CreateBacklogItemResponse()
+    )
     integrations.ListBacklog = AsyncMock(return_value=integrations_pb2.ListBacklogResponse())
     await client.create_backlog_item("task", "test")
     await client.list_backlog()
-    assert integrations.CreateBacklogItem.call_args.kwargs["metadata"] == (("authorization", "Bearer fixture-token"),)
-    assert integrations.ListBacklog.call_args.kwargs["metadata"] == (("authorization", "Bearer fixture-token"),)
+    assert integrations.CreateBacklogItem.call_args.kwargs["metadata"] == (
+        ("authorization", "Bearer fixture-token"),
+    )
+    assert integrations.ListBacklog.call_args.kwargs["metadata"] == (
+        ("authorization", "Bearer fixture-token"),
+    )
     monkeypatch.delenv("AGILEPLUS_API_KEY")
     await client.list_backlog()
     assert integrations.ListBacklog.call_args.kwargs["metadata"] == ()
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("target", ["10.0.0.1:50051", "localhost:50051", "localhost.evil:50051", "127.0.0.1.evil:50051", "dns:///127.0.0.1:50051", "127.0.0.1:50051@evil:1234", "[::ffff:10.0.0.1]:50051", "127.0.0.1", "127.0.0.1:99999"])
-async def test_queue_credential_refuses_non_numeric_loopback_target(monkeypatch: pytest.MonkeyPatch, target: str, caplog: pytest.LogCaptureFixture) -> None:
+@pytest.mark.parametrize(
+    "target",
+    [
+        "10.0.0.1:50051",
+        "localhost:50051",
+        "localhost.evil:50051",
+        "127.0.0.1.evil:50051",
+        "dns:///127.0.0.1:50051",
+        "127.0.0.1:50051@evil:1234",
+        "[::ffff:10.0.0.1]:50051",
+        "127.0.0.1",
+        "127.0.0.1:99999",
+    ],
+)
+async def test_queue_credential_refuses_non_numeric_loopback_target(
+    monkeypatch: pytest.MonkeyPatch, target: str, caplog: pytest.LogCaptureFixture
+) -> None:
     client, integrations = _client_with_integrations_stub()
     client._channel_target = target
     monkeypatch.setenv("AGILEPLUS_API_KEY", "sensitive-fixture-token")
@@ -175,7 +198,9 @@ async def test_queue_credential_refuses_non_numeric_loopback_target(monkeypatch:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("target", ["127.0.0.1:50051", "[::1]:50051"])
-async def test_queue_credential_accepts_numeric_loopback(monkeypatch: pytest.MonkeyPatch, target: str) -> None:
+async def test_queue_credential_accepts_numeric_loopback(
+    monkeypatch: pytest.MonkeyPatch, target: str
+) -> None:
     client, integrations = _client_with_integrations_stub()
     client._channel_target = target
     monkeypatch.setenv("AGILEPLUS_API_KEY", "fixture-token")
@@ -185,7 +210,9 @@ async def test_queue_credential_accepts_numeric_loopback(monkeypatch: pytest.Mon
 
 
 @pytest.mark.asyncio
-async def test_default_channel_uses_numeric_loopback_and_disables_http_proxy(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_default_channel_uses_numeric_loopback_and_disables_http_proxy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     client = AgilePlusCoreClient()
     channel = MagicMock()
     channel.channel_ready = AsyncMock()

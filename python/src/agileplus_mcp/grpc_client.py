@@ -55,7 +55,11 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
     """
 
     def __init__(self, address: str = "localhost:50051", project_root: str | None = None) -> None:
-        self._address = "127.0.0.1:" + address.removeprefix("localhost:") if address.startswith("localhost:") else address
+        self._address = (
+            "127.0.0.1:" + address.removeprefix("localhost:")
+            if address.startswith("localhost:")
+            else address
+        )
         self._channel_target: str | None = None
         self._project_root = str(Path(project_root).resolve()) if project_root else ""
         self._channel: Any | None = None

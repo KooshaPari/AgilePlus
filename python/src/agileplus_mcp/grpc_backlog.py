@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import ipaddress
 import os
-from urllib.parse import urlsplit
-
 from collections.abc import Awaitable, Callable
 from typing import Any, Protocol, cast
+from urllib.parse import urlsplit
 
 
 class _BacklogGrpcHost(Protocol):
@@ -55,7 +54,9 @@ class AgilePlusBacklogGrpcMixin:
         # Create has no idempotency key. Retrying after an ambiguous transport
         # failure could duplicate an item that the server already committed.
         try:
-            response = await stub.CreateBacklogItem(request, metadata=_queue_metadata(host._channel_target))
+            response = await stub.CreateBacklogItem(
+                request, metadata=_queue_metadata(host._channel_target)
+            )
         except grpc.aio.AioRpcError as exc:
             # Import lazily to avoid a module cycle while grpc_client defines
             # the public exceptions after importing this mixin.
@@ -85,7 +86,9 @@ class AgilePlusBacklogGrpcMixin:
             feature_slug=feature_slug or "",
             project_scope=host._project_scope(),
         )
-        response = await host._call_with_retry(lambda: stub.ListBacklog(request, metadata=_queue_metadata(host._channel_target)))
+        response = await host._call_with_retry(
+            lambda: stub.ListBacklog(request, metadata=_queue_metadata(host._channel_target))
+        )
         return [self._backlog_item_to_dict(item) for item in response.items]
 
     async def promote_backlog_item(self, backlog_item_id: int, target_type: str) -> dict[str, Any]:
@@ -132,5 +135,7 @@ def _queue_metadata(channel_target: str | None) -> tuple[tuple[str, str], ...]:
     except ValueError:
         from agileplus_mcp.grpc_client import GrpcConnectionError
 
-        raise GrpcConnectionError("Queue credentials require a numeric loopback gRPC target") from None
+        raise GrpcConnectionError(
+            "Queue credentials require a numeric loopback gRPC target"
+        ) from None
     return (("authorization", f"Bearer {token}"),)
