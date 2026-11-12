@@ -125,7 +125,23 @@ impl GitVcsAdapter {
     /// the trimmed stdout on success, or a [`DomainError::Storage`]
     /// with stderr on failure.
     fn run_git(&self, args: &[&str]) -> Result<String, DomainError> {
-        let output = Command::new("git")
+        self.run_git_inner(args, false)
+    }
+
+    fn run_git_inner(&self, args: &[&str], clear_git_env: bool) -> Result<String, DomainError> {
+        let mut command = Command::new("git");
+        if clear_git_env {
+            for (name, _) in std::env::vars_os() {
+                if name
+                    .to_string_lossy()
+                    .to_ascii_uppercase()
+                    .starts_with("GIT_")
+                {
+                    command.env_remove(name);
+                }
+            }
+        }
+        let output = command
             .args(args)
             .current_dir(&self.repo_root)
             .stdout(Stdio::piped())

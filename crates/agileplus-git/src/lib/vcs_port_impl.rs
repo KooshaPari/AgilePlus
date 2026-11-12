@@ -34,9 +34,9 @@ impl VcsPort for GitVcsAdapter {
         // libgit2 versions, while `git worktree add` is the canonical,
         // well-tested path.
         if branch_exists {
-            self.run_git_status(&["worktree", "add", &path_str, &branch])?;
+            self.run_git_inner(&["worktree", "add", &path_str, &branch], true)?;
         } else {
-            self.run_git_status(&["worktree", "add", "-b", &branch, &path_str])?;
+            self.run_git_inner(&["worktree", "add", "-b", &branch, &path_str], true)?;
         }
         std::fs::canonicalize(&path).map_err(|e| {
             DomainError::Storage(format!("canonicalize worktree {}: {e}", path.display()))

@@ -4,17 +4,66 @@ use std::path::Path;
 use std::process::Command;
 
 fn git(repo: &Path, args: &[&str]) -> String {
-    let output = Command::new("git")
-        .current_dir(repo)
-        .args(args)
-        .output()
-        .unwrap();
+    let mut command = Command::new("git");
+    for (name, _) in std::env::vars_os() {
+        if name
+            .to_string_lossy()
+            .to_ascii_uppercase()
+            .starts_with("GIT_")
+        {
+            command.env_remove(name);
+        }
+    }
+    let output = command.current_dir(repo).args(args).output().unwrap();
     assert!(
         output.status.success(),
         "git {args:?}: {}",
         String::from_utf8_lossy(&output.stderr)
     );
     String::from_utf8(output.stdout).unwrap().trim().to_owned()
+}
+
+#[test]
+fn poisoned_git_environment_cannot_redirect_fixture_or_worktree() {
+    let fixture = tempfile::tempdir().unwrap();
+    let decoy = fixture.path().join("decoy");
+    std::fs::create_dir(&decoy).unwrap();
+    git(&decoy, &["init", "-q", "-b", "main"]);
+    git(&decoy, &["config", "user.email", "fixture@example.invalid"]);
+    git(&decoy, &["config", "user.name", "fixture"]);
+    std::fs::write(decoy.join("keep"), "sentinel").unwrap();
+    git(&decoy, &["add", "keep"]);
+    git(&decoy, &["commit", "-qm", "decoy"]);
+    let refs = git(&decoy, &["show-ref"]);
+    let worktrees = git(&decoy, &["worktree", "list", "--porcelain"]);
+    let gitdir = decoy.join(".git");
+    let output = Command::new(std::env::current_exe().unwrap())
+        .args([
+            "--exact",
+            "existing_branch_keeps_its_tip_and_occupied_target_is_preserved",
+        ])
+        .env("GIT_DIR", &gitdir)
+        .env("GIT_WORK_TREE", &decoy)
+        .env("GIT_COMMON_DIR", &gitdir)
+        .env("GIT_INDEX_FILE", gitdir.join("index"))
+        .env("GIT_OBJECT_DIRECTORY", gitdir.join("objects"))
+        .env("GIT_CONFIG_COUNT", "1")
+        .env("GIT_CONFIG_KEY_0", "core.worktree")
+        .env("GIT_CONFIG_VALUE_0", &decoy)
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(git(&decoy, &["show-ref"]), refs);
+    assert_eq!(git(&decoy, &["worktree", "list", "--porcelain"]), worktrees);
+    assert_eq!(
+        std::fs::read_to_string(decoy.join("keep")).unwrap(),
+        "sentinel"
+    );
 }
 
 #[tokio::test]
