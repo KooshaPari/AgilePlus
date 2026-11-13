@@ -79,7 +79,7 @@ jobs:
 
             - name: Comment coverage on PR
               if: github.event_name == 'pull_request'
-              uses: py-cov-action/python-coverage-comment-action@v4.5
+              uses: py-cov-action/python-coverage-comment-action@v4.6
               with:
                   GITHUB_TOKEN: ${{ github.token }}
                   # The action's declared input is COVERAGE_PATH (underscore).
