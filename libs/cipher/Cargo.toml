@@ -11,12 +11,12 @@ categories.workspace = true
 description = "Cryptography utilities for AgilePlus - secure credentials, API keys, and tokens"
 
 [dependencies]
-aes-gcm = "0.10"
-argon2 = "0.5"
-rand = "0.8"
-sha2 = "0.10"
+aes-gcm = "0.11"
+argon2 = "0.6"
+rand = "0.10"
+sha2 = "0.11"
 hex = "0.4"
-hmac = "0.12"
+hmac = "0.13"
 thiserror.workspace = true
 serde = { workspace = true, features = ["derive"] }
 
