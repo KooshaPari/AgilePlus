@@ -1,0 +1,64 @@
+[package]
+name = "agileplus-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT OR Apache-2.0"
+repository.workspace = true
+homepage.workspace = true
+description.workspace = true
+documentation = "https://docs.rs/agileplus-cli"
+keywords = ["project-management", "traceability", "agile", "spec-first"]
+categories = ["command-line-utilities", "development-tools"]
+authors = ["<REDACTED>"]
+
+[[bin]]
+name = "agileplus"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+clap = { version = "4", features = ["derive", "env"] }
+chrono.workspace = true
+sha2.workspace = true
+agileplus-application = { version = "0.2.1", path = "../agileplus-application" }
+agileplus-domain = { version = "0.2.1", path = "../agileplus-domain" }
+agileplus-git = { version = "0.2.1", path = "../agileplus-git" }
+agileplus-github = { version = "0.2.1", path = "../agileplus-github" }
+agileplus-governance = { version = "0.1.0", path = "../agileplus-governance" }
+agileplus-plane = { version = "0.2.1", path = "../agileplus-plane" }
+agileplus-sqlite = { version = "0.2.1", path = "../agileplus-sqlite" }
+agileplus-subcmds = { version = "0.2.1", path = "../agileplus-subcmds", default-features = true }
+agileplus-triage = { version = "0.2.1", path = "../agileplus-triage" }
+agileplus-events = { version = "0.2.1", path = "../agileplus-events", optional = true }
+agileplus-telemetry.workspace = true
+rusqlite = { version = "0.40", features = ["bundled"] }
+async-trait.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+comfy-table = "8"
+similar = "3"
+dashmap = "6"
+uuid = { workspace = true }
+regex = { workspace = true }
+colored = "3"
+
+[dev-dependencies]
+assert_cmd.workspace = true
+predicates.workspace = true
+proptest = "1"
+tokio-test = "0.4"
+tempfile = "3"
+
+[package.metadata.cargo-machete]
+ignored = ["agileplus-git", "tracing-subscriber"]
+
+[features]
+default = ["full-deps"]
+full-deps = ["events", "plane", "triage"]
+events = ["dep:agileplus-events"]
+plane = []
+triage = []
