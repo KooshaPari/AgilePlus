@@ -62,29 +62,36 @@ jobs:
                   cargo fmt --all -- --check
 
             - name: Test
-              run: cargo test --workspace
-              continue-on-error: true
+              run: cargo test --locked --workspace
 
-            - name: Install published binary from crates.io
+            - name: Build checkout and record provenance
               shell: bash
               run: |
-                  cargo install "${{ env.PACKAGE }}" --root ./install --target ${{ matrix.target }}
-                  # The published crate may name the binary 'agileplus-cli'; accept either.
+                  set -euo pipefail
+                  cargo build --locked --release -p "${{ env.PACKAGE }}" --target "${{ matrix.target }}"
+                  src_dir="target/${{ matrix.target }}/release"
                   src_bin=""
                   for candidate in "${{ env.BIN_NAME }}" "${{ env.PACKAGE }}"; do
                       for ext in "" ".exe"; do
-                          if [ -f "install/bin/${candidate}${ext}" ]; then
-                              src_bin="install/bin/${candidate}${ext}"
+                          if [ -f "${src_dir}/${candidate}${ext}" ]; then
+                              src_bin="${src_dir}/${candidate}${ext}"
                               break 2
                           fi
                       done
                   done
                   if [ -z "$src_bin" ]; then
-                      echo "ERROR: could not locate installed binary"
+                      echo "ERROR: could not locate the binary built from this checkout"
                       exit 1
                   fi
-                  mkdir -p dist/nightly-${{ matrix.label }}
-                  cp "$src_bin" dist/nightly-${{ matrix.label }}/
+                  mkdir -p "dist/nightly-${{ matrix.label }}"
+                  cp "$src_bin" "dist/nightly-${{ matrix.label }}/"
+                  {
+                      echo "source_sha=$(git rev-parse HEAD)"
+                      echo "source_tree=$(git rev-parse HEAD^{tree})"
+                      echo "binary=$(basename "$src_bin")"
+                      echo "sha256=$(sha256sum "$src_bin" | awk '{print $1}')"
+                      echo "rustc=$(rustc --version)"
+                  } > "dist/nightly-${{ matrix.label }}/PROVENANCE.txt"
 
             - name: Package nightly artifact
               shell: bash
