@@ -127,7 +127,7 @@ TS/JS	pass	19s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933883/
 Workspace Path Dependency Audit	pass	28s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933794/job/117767906347	
 axe-core audit	pass	36s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933769/job/117767906840	
 Macroscope - Correctness Check	skipping	3s	https://github.com/KooshaPari/AgilePlus/pull/1163/checks?check_run_id=117767909441	
-security/snyk (kooshapari)	pass	0	https://app.snyk.io/org/kooshapari/pr-checks/3c8c8f2b-195d-4354-b758-0e47d20983f2	No manifest changes detected in 1 project
+security/snyk (kooshapari)	pass	0	https://app.snyk.io/org/kooshapari/pr-checks/<REDACTED-ROTATE-ME>	No manifest changes detected in 1 project
 plan	pass	23s	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933908/job/117767907168	
 flaky-test detection	pending	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933856/job/117767907202	
 Go	skipping	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39158933883/job/117767933612	
