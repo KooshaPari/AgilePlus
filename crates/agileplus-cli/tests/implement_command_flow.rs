@@ -341,6 +341,130 @@ fn implement_ci_fixture_without_review_stays_in_review_and_retains_worktree() {
     });
 }
 
+/// A successful agent run with both evidence gates satisfied must leave a
+/// terminal, candidate-bearing Attempt. The work package reaching Done is not
+/// enough: the producer record is what an independent evaluator consumes.
+#[test]
+fn implement_success_records_completed_attempt_with_candidate() {
+    block_on_paused(async {
+        use agileplus_cli::commands::evidence::{
+            AttachArgs, EvidenceArgs, EvidenceCommand, run_evidence,
+        };
+        use agileplus_domain::domain::execution::AttemptStatus;
+        use agileplus_domain::domain::governance::{GovernanceContract, GovernanceRule};
+        use agileplus_domain::ports::ExecutionRecordPort;
+
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let (fid, wp_id) = seed(&storage, "complete", FeatureState::Planned).await;
+        StoragePort::create_governance_contract(
+            &storage,
+            &GovernanceContract {
+                id: 0,
+                feature_id: fid,
+                version: 1,
+                rules: vec![
+                    GovernanceRule {
+                        transition: "WP01: Doing -> Review".into(),
+                        required_evidence: vec!["FR-CI:ci_output".into()],
+                        policy_refs: vec![],
+                    },
+                    GovernanceRule {
+                        transition: "WP01: Review -> Done".into(),
+                        required_evidence: vec!["FR-REVIEW:review_approval".into()],
+                        policy_refs: vec![],
+                    },
+                ],
+                bound_at: chrono::Utc::now(),
+            },
+        )
+        .await
+        .unwrap();
+
+        let mut artifacts = Vec::new();
+        for (fr, kind, payload) in [
+            ("FR-CI", "ci_output", "isolated fixture CI output"),
+            (
+                "FR-REVIEW",
+                "review_approval",
+                "isolated fixture review approval",
+            ),
+        ] {
+            let artifact = tempfile::NamedTempFile::new().unwrap();
+            std::fs::write(artifact.path(), payload).unwrap();
+            let artifact_path = artifact.path().to_path_buf();
+            artifacts.push(artifact);
+            run_evidence(
+                EvidenceArgs {
+                    command: EvidenceCommand::Attach(AttachArgs {
+                        feature: "complete".into(),
+                        wp: "WP01".into(),
+                        fr: fr.into(),
+                        evidence_type: kind.into(),
+                        artifact: artifact_path,
+                        result: "pass".into(),
+                    }),
+                },
+                &storage,
+            )
+            .await
+            .unwrap();
+        }
+
+        let vcs = TempVcs::new();
+        let agent = ScriptedAgent::success();
+        run_implement(args("complete"), &storage, &vcs, &agent)
+            .await
+            .expect("implement should succeed");
+
+        let wp = StoragePort::get_work_package(&storage, wp_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            wp.state,
+            WpState::Review,
+            "agent completion moves the WP to Review, not terminal Done"
+        );
+        let audit = StoragePort::get_audit_trail(&storage, fid).await.unwrap();
+        assert!(
+            audit
+                .iter()
+                .any(|entry| entry.transition == "WP01: Doing -> Review")
+        );
+        assert!(
+            !audit
+                .iter()
+                .any(|entry| entry.transition.contains("-> Done")),
+            "agent completion must not self-award terminal Done"
+        );
+
+        let assignment = ExecutionRecordPort::get_active_assignment(&storage, wp_id)
+            .await
+            .unwrap()
+            .expect("active assignment");
+        let attempts = ExecutionRecordPort::list_attempts(&storage, &assignment.id)
+            .await
+            .unwrap();
+        assert_eq!(attempts.len(), 1, "one attempt per invocation");
+        let attempt = &attempts[0];
+        assert_eq!(
+            attempt.status,
+            AttemptStatus::Completed,
+            "successful implementation must persist a Completed attempt"
+        );
+        assert!(
+            attempt.result_candidate_ref.is_some(),
+            "successful implementation must persist the exact candidate"
+        );
+        assert!(
+            attempt.ended_at.is_some(),
+            "terminal attempt must record ended_at"
+        );
+
+        vcs.cleanup();
+    });
+}
+
 /// A WP whose agent never succeeds exhausts the review cycles and is marked
 /// Blocked, with the last feedback surfaced and fed back to the agent.
 #[test]
