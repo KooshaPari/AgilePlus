@@ -12,7 +12,7 @@ mod db;
 mod evidence;
 mod traces;
 mod tray;
-mod work_packages;
+pub mod work_packages;
 
 #[cfg(test)]
 mod test_support;

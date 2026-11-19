@@ -108,16 +108,39 @@ pub fn update_work_package_state(
     {
         let conn_guard = state.db_connection()?;
         let conn = conn_guard.as_ref().ok_or("Database not initialized")?;
-        conn.execute(
-            "UPDATE work_packages SET state = ?1, updated_at = ?2 WHERE id = ?3",
-            rusqlite::params![new_state, now, id],
-        )
-        .map_err(|e| e.to_string())?;
+        update_work_package_state_in(conn, id, &new_state, &now)?;
     }
 
     let conn_guard = state.db_connection()?;
     let conn = conn_guard.as_ref().ok_or("Database not initialized")?;
 
+    query_work_package(conn, id)
+}
+
+pub fn update_work_package_state_in(
+    conn: &rusqlite::Connection,
+    id: i64,
+    new_state: &str,
+    now: &str,
+) -> Result<(), String> {
+    // Terminal and unknown states must go through the canonical lifecycle
+    // writer. The desktop command is deliberately not an alternate acceptor.
+    const ALLOWED_NON_TERMINAL_STATES: [&str; 3] = ["planned", "doing", "review"];
+    if !ALLOWED_NON_TERMINAL_STATES.contains(&new_state) {
+        return Err(format!(
+            "Desktop state '{new_state}' is terminal or unsupported; use the canonical lifecycle command"
+        ));
+    }
+
+    conn.execute(
+        "UPDATE work_packages SET state = ?1, updated_at = ?2 WHERE id = ?3",
+        rusqlite::params![new_state, now, id],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+fn query_work_package(conn: &rusqlite::Connection, id: i64) -> Result<WorkPackage, String> {
     conn.query_row(
         "SELECT id, feature_id, title, state, sequence, acceptance_criteria,
                 pr_url, pr_state, created_at, updated_at
