@@ -10,7 +10,7 @@ use rusqlite::Connection;
 const FEATURE_ID: i64 = 42;
 const WP_ID: i64 = 7;
 
-fn migrated_db_with_planned_wp() -> Connection {
+fn migrated_db_with_wp_state(state: &str) -> Connection {
     let conn = Connection::open_in_memory().expect("in-memory connection");
     MigrationRunner::new(&conn).run_all().expect("migrations");
     conn.execute(
@@ -21,11 +21,15 @@ fn migrated_db_with_planned_wp() -> Connection {
     .expect("seed feature");
     conn.execute(
         "INSERT INTO work_packages (id, feature_id, title, state, sequence, acceptance_criteria, created_at, updated_at) \
-         VALUES (?1, ?2, 'Guarded WP', 'planned', 1, 'criterion', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
-        rusqlite::params![WP_ID, FEATURE_ID],
+         VALUES (?1, ?2, 'Guarded WP', ?3, 1, 'criterion', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+        rusqlite::params![WP_ID, FEATURE_ID, state],
     )
-    .expect("seed planned work package");
+    .expect("seed work package");
     conn
+}
+
+fn migrated_db_with_planned_wp() -> Connection {
+    migrated_db_with_wp_state("planned")
 }
 
 #[test]
@@ -103,4 +107,49 @@ fn update_work_package_state_allows_non_terminal_transition() {
         )
         .expect("work package still exists");
     assert_eq!(state, "doing");
+}
+
+#[test]
+fn update_work_package_state_rejects_mutation_of_done_wp() {
+    for requested in ["planned", "review"] {
+        let conn = migrated_db_with_wp_state("done");
+
+        let err = update_work_package_state_in(
+            &conn,
+            WP_ID,
+            requested,
+            "2026-01-02T00:00:00Z",
+        )
+        .expect_err("an accepted Done work package must be immutable from desktop");
+        assert!(
+            err.contains("terminal"),
+            "unexpected error for request {requested}: {err}"
+        );
+
+        let current: String = conn
+            .query_row(
+                "SELECT state FROM work_packages WHERE id = ?1",
+                [WP_ID],
+                |row| row.get(0),
+            )
+            .expect("work package still exists");
+        assert_eq!(current, "done", "Done WP must remain Done");
+
+        let audit: i64 = conn
+            .query_row("SELECT COUNT(*) FROM audit_log", [], |row| row.get(0))
+            .expect("count audit entries");
+        assert_eq!(audit, 0, "rejected mutation must not write audit entries");
+
+        let receipts: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM feature_acceptance_receipts",
+                [],
+                |row| row.get(0),
+            )
+            .expect("count acceptance receipts");
+        assert_eq!(
+            receipts, 0,
+            "rejected mutation must not write acceptance receipts"
+        );
+    }
 }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Work package CRUD commands — reads from CLI's .agileplus schema.
 
+use rusqlite::OptionalExtension;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
@@ -123,7 +124,27 @@ pub fn update_work_package_state_in(
     new_state: &str,
     now: &str,
 ) -> Result<(), String> {
-    // Terminal and unknown states must go through the canonical lifecycle
+    // An accepted terminal work package is immutable from the desktop. Read
+    // the persisted state first so a second terminal writer cannot reopen or
+    // otherwise mutate it through this command.
+    const TERMINAL_STATES: [&str; 1] = ["done"];
+    let current_state: Option<String> = conn
+        .query_row(
+            "SELECT state FROM work_packages WHERE id = ?1",
+            [id],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| e.to_string())?;
+    if let Some(state) = current_state.as_deref() {
+        if TERMINAL_STATES.contains(&state) {
+            return Err(format!(
+                "Work package {id} is in terminal state '{state}' and cannot be mutated from the desktop"
+            ));
+        }
+    }
+
+    // Terminal and unknown requests must go through the canonical lifecycle
     // writer. The desktop command is deliberately not an alternate acceptor.
     const ALLOWED_NON_TERMINAL_STATES: [&str; 3] = ["planned", "doing", "review"];
     if !ALLOWED_NON_TERMINAL_STATES.contains(&new_state) {

@@ -12,6 +12,7 @@ mod db;
 mod evidence;
 mod traces;
 mod tray;
+#[doc(hidden)]
 pub mod work_packages;
 
 #[cfg(test)]
