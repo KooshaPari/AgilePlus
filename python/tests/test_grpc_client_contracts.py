@@ -76,7 +76,7 @@ async def _audit_responses() -> AsyncIterator[core_pb2.GetAuditTrailResponse]:
 @pytest.mark.asyncio
 async def test_audit_trail_adapter_streams_canonical_entries() -> None:
     client, stub = _client_with_stub()
-    stub.GetAuditTrail.side_effect = lambda _request: _audit_responses()
+    stub.GetAuditTrail.side_effect = lambda _request, **_kwargs: _audit_responses()
 
     entries = await client.get_audit_trail("engine", after_id=7)
 
