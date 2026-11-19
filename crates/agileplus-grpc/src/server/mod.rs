@@ -2,6 +2,9 @@
 //!
 //! Traceability: WP14-T079, T080
 
+#[cfg(not(agileplus_proto_stubs))]
+pub mod queue_service;
+
 use std::collections::{HashMap, HashSet};
 use std::net::SocketAddr;
 use std::path::PathBuf;

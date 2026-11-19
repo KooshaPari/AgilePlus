@@ -2,14 +2,21 @@
 
 from __future__ import annotations
 
+import ipaddress
+import os
 from collections.abc import Awaitable, Callable
 from typing import Any, Protocol, cast
+from urllib.parse import urlsplit
 
 
 class _BacklogGrpcHost(Protocol):
     """Host operations supplied by ``AgilePlusCoreClient``."""
 
+    _channel_target: str | None
+
     def _require_integrations_stub(self) -> Any: ...
+
+    def _project_scope(self) -> Any: ...
 
     async def _call_with_retry(self, coro_factory: Callable[[], Awaitable[Any]]) -> Any: ...
 
@@ -46,7 +53,12 @@ class AgilePlusBacklogGrpcMixin:
         # Create has no idempotency key. Retrying after an ambiguous transport
         # failure could duplicate an item that the server already committed.
         try:
-            response = await stub.CreateBacklogItem(request)
+            response = await stub.CreateBacklogItem(
+                request,
+                metadata=_queue_metadata(
+                    host._channel_target, host._project_scope().canonical_repo_root
+                ),
+            )
         except grpc.aio.AioRpcError as exc:
             # Import lazily to avoid a module cycle while grpc_client defines
             # the public exceptions after importing this mixin.
@@ -75,7 +87,8 @@ class AgilePlusBacklogGrpcMixin:
             state_filter=state_filter or "",
             feature_slug=feature_slug or "",
         )
-        response = await host._call_with_retry(lambda: stub.ListBacklog(request))
+        metadata = _queue_metadata(host._channel_target, host._project_scope().canonical_repo_root)
+        response = await host._call_with_retry(lambda: stub.ListBacklog(request, metadata=metadata))
         return [self._backlog_item_to_dict(item) for item in response.items]
 
     async def promote_backlog_item(self, backlog_item_id: int, target_type: str) -> dict[str, Any]:
@@ -105,3 +118,25 @@ class AgilePlusBacklogGrpcMixin:
             "state": item.state,
             "external_ref": item.external_ref,
         }
+
+
+def _queue_metadata(channel_target: str | None, scope: str) -> tuple[tuple[str, str | bytes], ...]:
+    token = os.environ.get("AGILEPLUS_API_KEY", "")
+    try:
+        if channel_target is None or any(c in channel_target for c in "/?#@%"):
+            raise ValueError("invalid target")
+        parsed = urlsplit("//" + channel_target)
+        if parsed.hostname is None or parsed.port is None or not 1 <= parsed.port <= 65535:
+            raise ValueError("invalid target")
+        if not ipaddress.ip_address(parsed.hostname).is_loopback:
+            raise ValueError("non-loopback target")
+    except ValueError:
+        from agileplus_mcp.grpc_client import GrpcConnectionError
+
+        raise GrpcConnectionError(
+            "Queue credentials require a numeric loopback gRPC target"
+        ) from None
+    metadata: tuple[tuple[str, str | bytes], ...] = (
+        ("agileplus-project-root-bin", scope.encode("utf-8")),
+    )
+    return metadata + ((("authorization", f"Bearer {token}"),) if token else ())
