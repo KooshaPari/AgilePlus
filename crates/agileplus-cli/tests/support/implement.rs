@@ -16,7 +16,7 @@ use async_trait::async_trait;
 use agileplus_cli::commands::implement::ImplementArgs;
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::state_machine::FeatureState;
-use agileplus_domain::domain::work_package::WorkPackage;
+use agileplus_domain::domain::work_package::{DependencyType, WorkPackage, WpDependency};
 use agileplus_domain::error::DomainError;
 use agileplus_domain::ports::agent::{AgentConfig, AgentPort, AgentResult, AgentStatus, AgentTask};
 use agileplus_domain::ports::vcs::{
@@ -452,4 +452,37 @@ pub async fn seed(storage: &SqliteStorageAdapter, slug: &str, fstate: FeatureSta
         .await
         .unwrap();
     (fid, wp_id)
+}
+
+/// Seed two work packages where WP01 explicitly depends on WP02.
+/// Returns `(feature_id, wp01_id, wp02_id)`.
+pub async fn seed_dependent_wps(
+    storage: &SqliteStorageAdapter,
+    slug: &str,
+    fstate: FeatureState,
+) -> (i64, i64, i64) {
+    let fid = StoragePort::create_feature(storage, &feature(slug, fstate))
+        .await
+        .unwrap();
+    let mut first = WorkPackage::new(fid, "Blocked task", 1, "works end to end");
+    first.id = 0;
+    let wp01_id = StoragePort::create_work_package(storage, &first)
+        .await
+        .unwrap();
+    let mut second = WorkPackage::new(fid, "Prerequisite task", 2, "prerequisite works");
+    second.id = 0;
+    let wp02_id = StoragePort::create_work_package(storage, &second)
+        .await
+        .unwrap();
+    StoragePort::add_wp_dependency(
+        storage,
+        &WpDependency {
+            wp_id: wp01_id,
+            depends_on: wp02_id,
+            dep_type: DependencyType::Explicit,
+        },
+    )
+    .await
+    .unwrap();
+    (fid, wp01_id, wp02_id)
 }

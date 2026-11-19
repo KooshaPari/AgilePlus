@@ -17,6 +17,7 @@ use agileplus_domain::ports::StoragePort;
 use agileplus_sqlite::SqliteStorageAdapter;
 use support::implement::{
     AgentBehavior, PLAN, SPEC, ScriptedAgent, TempVcs, args, block_on, block_on_paused, seed,
+    seed_dependent_wps,
 };
 
 /// A feature in an invalid state is rejected before any agent work happens.
@@ -773,6 +774,90 @@ fn implement_unknown_wp_selector_errors() {
         let msg = format!("{err:#}");
         assert!(msg.contains("Work package 'WP99' not found"), "got: {msg}");
         assert_eq!(agent.polls(), 0);
+        vcs.cleanup();
+    });
+}
+
+/// A selected WP with an unfinished dependency must fail with a named blocker.
+/// It must not create a worktree or dispatch an agent just to print `0/1 done`.
+#[test]
+fn implement_single_wp_blocked_by_unfinished_dependency_errors() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().expect("in-memory db");
+        let (_, wp01_id, _) =
+            seed_dependent_wps(&storage, "blocked-dep", FeatureState::Planned).await;
+        let vcs = TempVcs::new();
+        let agent = ScriptedAgent::success();
+        let mut a = args("blocked-dep");
+        a.wp = Some("WP01".to_string());
+
+        let err = run_implement(a, &storage, &vcs, &agent)
+            .await
+            .expect_err("blocked selected WP must fail");
+
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("WP01") && msg.contains("WP02"),
+            "error must name the selected WP and blocking dependency, got: {msg}"
+        );
+        assert_eq!(agent.polls(), 0, "blocked WP must not be polled");
+        assert!(
+            agent.dispatched.lock().unwrap().is_none(),
+            "blocked WP must not dispatch an agent"
+        );
+        assert!(
+            vcs.created_worktrees().is_empty(),
+            "blocked WP must not create a worktree"
+        );
+        let wp = StoragePort::get_work_package(&storage, wp01_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(wp.state, WpState::Planned, "blocked WP must remain Planned");
+        vcs.cleanup();
+    });
+}
+
+/// Positive control: once the dependency is Done, the same single-WP selector
+/// proceeds through the normal implement path.
+#[test]
+fn implement_single_wp_proceeds_when_dependency_is_done() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().expect("in-memory db");
+        let (_, wp01_id, wp02_id) =
+            seed_dependent_wps(&storage, "ready-dep", FeatureState::Planned).await;
+        StoragePort::update_wp_state(&storage, wp02_id, WpState::Done)
+            .await
+            .expect("dependency must be markable Done");
+        let vcs = TempVcs::new();
+        let agent = ScriptedAgent::success();
+        let mut a = args("ready-dep");
+        a.wp = Some("WP01".to_string());
+
+        run_implement(a, &storage, &vcs, &agent)
+            .await
+            .expect("WP01 should proceed once WP02 is Done");
+
+        assert_eq!(vcs.created_worktrees().len(), 1);
+        let task = agent
+            .dispatched
+            .lock()
+            .unwrap()
+            .clone()
+            .expect("agent dispatch");
+        assert!(
+            task.prompt_path.ends_with("tasks/WP01-blocked-task.md"),
+            "unexpected task: {task:?}"
+        );
+        let wp = StoragePort::get_work_package(&storage, wp01_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            wp.state,
+            WpState::Doing,
+            "WP01 awaits its governance contract"
+        );
         vcs.cleanup();
     });
 }

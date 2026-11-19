@@ -147,7 +147,7 @@ where
     }
 
     // Determine which WPs to process
-    let target_wps: Vec<&WorkPackage> = if let Some(ref wp_ref) = args.wp {
+    let mut target_wps: Vec<&WorkPackage> = if let Some(ref wp_ref) = args.wp {
         // Single WP mode: find by ID prefix or sequence
         let matched: Vec<&WorkPackage> = all_wps
             .iter()
@@ -189,6 +189,20 @@ where
     }
 
     let scheduler = Scheduler::new(wp_states.clone(), all_deps.clone());
+    let execution_plan = scheduler
+        .execution_plan()
+        .map_err(|error| anyhow::anyhow!("invalid WP dependency graph: {error}"))?;
+    let wave_by_id: HashMap<i64, u32> = execution_plan
+        .iter()
+        .flat_map(|wave| wave.wp_ids.iter().map(|id| (*id, wave.wave_number)))
+        .collect();
+    target_wps.sort_by_key(|wp| {
+        (
+            wave_by_id.get(&wp.id).copied().unwrap_or(u32::MAX),
+            wp.sequence,
+            wp.id,
+        )
+    });
 
     // Read spec content for PR descriptions
     let spec_content = vcs
@@ -204,13 +218,6 @@ where
         extra_args: vec![],
     };
 
-    // Process WPs
-    let completed: HashSet<i64> = all_wps
-        .iter()
-        .filter(|wp| wp.state == WpState::Done)
-        .map(|wp| wp.id)
-        .collect();
-
     let target_ids: HashSet<i64> = target_wps.iter().map(|wp| wp.id).collect();
 
     if args.resume {
@@ -218,7 +225,20 @@ where
     }
 
     for wp in &target_wps {
-        // Skip already done
+        // States may change outside this command while it is running. Re-read
+        // before each target so a dependency completed by another actor is
+        // observed, and a still-unfinished dependency cannot be silently
+        // skipped with a successful exit.
+        let current_wps = storage
+            .list_wps_by_feature(feature.id)
+            .await
+            .context("reloading work package states")?;
+        let completed: HashSet<i64> = current_wps
+            .iter()
+            .filter(|current| current.state == WpState::Done)
+            .map(|current| current.id)
+            .collect();
+
         if completed.contains(&wp.id) {
             println!(
                 "  WP{:02} '{}' already done, skipping.",
@@ -227,16 +247,33 @@ where
             continue;
         }
 
-        // Check dependencies
         if let Some(blockers) = scheduler.is_blocked(wp.id, &completed) {
-            let blocker_ids: Vec<String> = blockers.iter().map(|id| id.to_string()).collect();
-            println!(
-                "  WP{:02} '{}' is blocked by: [{}]. Skipping.",
+            let blocker_labels: Vec<String> = blockers
+                .iter()
+                .map(|blocker_id| {
+                    current_wps
+                        .iter()
+                        .find(|candidate| candidate.id == *blocker_id)
+                        .map(|blocker| {
+                            format!(
+                                "WP{:02} '{}' (state: {:?})",
+                                blocker.sequence, blocker.title, blocker.state
+                            )
+                        })
+                        .unwrap_or_else(|| format!("dependency {} (unknown WP)", blocker_id))
+                })
+                .collect();
+            anyhow::bail!(
+                "WP{:02} '{}' is blocked by unfinished dependenc{}: {}",
                 wp.sequence,
                 wp.title,
-                blocker_ids.join(", ")
+                if blocker_labels.len() == 1 {
+                    "y"
+                } else {
+                    "ies"
+                },
+                blocker_labels.join(", ")
             );
-            continue;
         }
 
         println!("Processing WP{:02}: '{}'...", wp.sequence, wp.title);
@@ -677,9 +714,18 @@ where
     }
 
     let elapsed_ms = start.elapsed().as_millis();
+    let final_wps = storage
+        .list_wps_by_feature(feature.id)
+        .await
+        .context("reloading final work package states")?;
+    let final_done: HashSet<i64> = final_wps
+        .iter()
+        .filter(|wp| wp.state == WpState::Done)
+        .map(|wp| wp.id)
+        .collect();
     let done_count = target_ids
         .iter()
-        .filter(|id| completed.contains(id))
+        .filter(|id| final_done.contains(id))
         .count();
     tracing::info!(command = "implement", slug = %slug, done = done_count, elapsed_ms = %elapsed_ms, "implement completed");
 
