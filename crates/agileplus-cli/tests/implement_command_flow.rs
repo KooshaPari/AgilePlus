@@ -465,6 +465,160 @@ fn implement_success_records_completed_attempt_with_candidate() {
     });
 }
 
+/// The producer, the independent evaluator, and the acceptance transaction form
+/// one normal CLI sequence: implement, evaluate, validate. A Review candidate
+/// must reach `accept_feature` without first being marked Done.
+#[test]
+fn implement_then_evaluate_then_validate_accepts_review_candidate() {
+    block_on_paused(async {
+        use agileplus_cli::commands::evaluate::{EvaluateArgs, run_evaluate};
+        use agileplus_cli::commands::evidence::{
+            AttachArgs, EvidenceArgs, EvidenceCommand, run_evidence,
+        };
+        use agileplus_cli::commands::validate::{ValidateArgs, run_validate};
+        use agileplus_domain::domain::governance::{GovernanceContract, GovernanceRule};
+        use agileplus_domain::ports::ExecutionRecordPort;
+        use agileplus_domain::ports::execution::AtomicAcceptancePort;
+        use agileplus_git::GitVcsAdapter;
+
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let (fid, wp_id) = seed(&storage, "journey", FeatureState::Planned).await;
+        StoragePort::create_governance_contract(
+            &storage,
+            &GovernanceContract {
+                id: 0,
+                feature_id: fid,
+                version: 1,
+                rules: vec![
+                    GovernanceRule {
+                        transition: "WP01: Doing -> Review".into(),
+                        required_evidence: vec!["FR-CI:ci_output".into()],
+                        policy_refs: vec![],
+                    },
+                    GovernanceRule {
+                        transition: "WP01: Review -> Done".into(),
+                        required_evidence: vec!["FR-REVIEW:review_approval".into()],
+                        policy_refs: vec![],
+                    },
+                ],
+                bound_at: chrono::Utc::now(),
+            },
+        )
+        .await
+        .unwrap();
+
+        let mut artifacts = Vec::new();
+        for (fr, kind) in [("FR-CI", "ci_output"), ("FR-REVIEW", "review_approval")] {
+            let artifact = tempfile::NamedTempFile::new().unwrap();
+            std::fs::write(artifact.path(), b"isolated fixture evidence").unwrap();
+            let path = artifact.path().to_path_buf();
+            artifacts.push(artifact);
+            run_evidence(
+                EvidenceArgs {
+                    command: EvidenceCommand::Attach(AttachArgs {
+                        feature: "journey".into(),
+                        wp: "WP01".into(),
+                        fr: fr.into(),
+                        evidence_type: kind.into(),
+                        artifact: path,
+                        result: "pass".into(),
+                    }),
+                },
+                &storage,
+            )
+            .await
+            .unwrap();
+        }
+
+        let vcs = TempVcs::new();
+        let agent = ScriptedAgent::success();
+        run_implement(args("journey"), &storage, &vcs, &agent)
+            .await
+            .expect("implement should succeed");
+
+        let assignment = ExecutionRecordPort::get_active_assignment(&storage, wp_id)
+            .await
+            .unwrap()
+            .expect("active assignment");
+        let criteria = ExecutionRecordPort::list_assignment_criteria(&storage, &assignment.id)
+            .await
+            .unwrap();
+        let attempts = ExecutionRecordPort::list_attempts(&storage, &assignment.id)
+            .await
+            .unwrap();
+        let candidate = attempts
+            .iter()
+            .find_map(|attempt| attempt.result_candidate_ref.clone())
+            .expect("producer captured a candidate");
+
+        let criterion_results: Vec<serde_json::Value> = criteria
+            .iter()
+            .map(|criterion| {
+                serde_json::json!({
+                    "criterion_id": criterion.id.clone(),
+                    "result": "satisfied",
+                    "evidence_refs": ["evidence:independent"],
+                    "rationale": "independent fixture evaluation",
+                })
+            })
+            .collect();
+        let receipt = serde_json::json!({
+            "candidate_ref": candidate,
+            "evaluator_id": "independent-evaluator",
+            "evaluator_version": "1",
+            "criterion_results": criterion_results,
+        });
+        let receipt_file = tempfile::NamedTempFile::new().unwrap();
+        std::fs::write(
+            receipt_file.path(),
+            serde_json::to_vec_pretty(&receipt).unwrap(),
+        )
+        .unwrap();
+
+        run_evaluate(
+            EvaluateArgs {
+                feature: "journey".into(),
+                wp: "WP01".into(),
+                receipt: receipt_file.path().to_path_buf(),
+            },
+            &storage,
+        )
+        .await
+        .expect("independent evaluation should be recorded");
+
+        let git_vcs = GitVcsAdapter::new(std::env::temp_dir());
+        run_validate(
+            ValidateArgs {
+                feature: "journey".into(),
+                format: "markdown".into(),
+                skip_policies: false,
+                output: None,
+                force: false,
+            },
+            &storage,
+            &git_vcs,
+        )
+        .await
+        .expect("validate should accept the Review candidate");
+
+        let feature = StoragePort::get_feature_by_slug(&storage, "journey")
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feature.state, FeatureState::Validated);
+        let wp = StoragePort::get_work_package(&storage, wp_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(wp.state, WpState::Done);
+        let accepted = AtomicAcceptancePort::get_feature_acceptance_receipt(&storage, fid)
+            .await
+            .unwrap();
+        assert!(accepted.is_some(), "acceptance receipt must be durable");
+        vcs.cleanup();
+    });
+}
+
 /// A WP whose agent never succeeds exhausts the review cycles and is marked
 /// Blocked, with the last feedback surfaced and fed back to the agent.
 #[test]
