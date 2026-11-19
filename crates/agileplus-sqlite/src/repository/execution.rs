@@ -102,6 +102,53 @@ pub fn create_spec_revision(c: &Connection, r: &SpecRevision) -> Result<(), Doma
         ))),
     }
 }
+pub fn get_spec_revision(
+    c: &Connection,
+    revision_id: &str,
+) -> Result<Option<SpecRevision>, DomainError> {
+    c.query_row(
+        "SELECT id,feature_id,content_hash,parent_revision_id,accepted_at,authority \
+         FROM spec_revisions WHERE id=?1",
+        [revision_id],
+        |row| {
+            Ok(SpecRevision {
+                id: row.get(0)?,
+                feature_id: row.get(1)?,
+                content_hash: row.get(2)?,
+                parent_revision_id: row.get(3)?,
+                accepted_at: dt(row.get(4)?)?,
+                authority: row.get(5)?,
+            })
+        },
+    )
+    .optional()
+    .map_err(err)
+}
+
+pub fn get_latest_spec_revision(
+    c: &Connection,
+    feature_id: i64,
+) -> Result<Option<SpecRevision>, DomainError> {
+    c.query_row(
+        "SELECT id,feature_id,content_hash,parent_revision_id,accepted_at,authority \
+         FROM spec_revisions WHERE feature_id=?1 \
+         ORDER BY accepted_at DESC, id DESC LIMIT 1",
+        [feature_id],
+        |row| {
+            Ok(SpecRevision {
+                id: row.get(0)?,
+                feature_id: row.get(1)?,
+                content_hash: row.get(2)?,
+                parent_revision_id: row.get(3)?,
+                accepted_at: dt(row.get(4)?)?,
+                authority: row.get(5)?,
+            })
+        },
+    )
+    .optional()
+    .map_err(err)
+}
+
 pub fn create_assignment(c: &Connection, a: &Assignment) -> Result<(), DomainError> {
     let st = match a.status {
         AssignmentStatus::Active => "active",
