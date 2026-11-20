@@ -386,7 +386,7 @@ impl AgentPort for RealAgentAdapter {
         let mut taken: Option<Child> = None;
         let was_running = match &mut *entry {
             JobState::Running { child, .. } => {
-                taken = { lock_child(child).take() };
+                taken = lock_child(child).take();
                 true
             }
             JobState::Finished(_) => false,
