@@ -116,7 +116,16 @@ pub fn get_spec_revision(
                 feature_id: row.get(1)?,
                 content_hash: row.get(2)?,
                 parent_revision_id: row.get(3)?,
-                accepted_at: dt(row.get(4)?)?,
+                accepted_at: dt(row.get(4)?).map_err(|e| {
+                    rusqlite::Error::FromSqlConversionFailure(
+                        4,
+                        rusqlite::types::Type::Text,
+                        Box::new(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            e.to_string(),
+                        )),
+                    )
+                })?,
                 authority: row.get(5)?,
             })
         },
@@ -140,7 +149,16 @@ pub fn get_latest_spec_revision(
                 feature_id: row.get(1)?,
                 content_hash: row.get(2)?,
                 parent_revision_id: row.get(3)?,
-                accepted_at: dt(row.get(4)?)?,
+                accepted_at: dt(row.get(4)?).map_err(|e| {
+                    rusqlite::Error::FromSqlConversionFailure(
+                        4,
+                        rusqlite::types::Type::Text,
+                        Box::new(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            e.to_string(),
+                        )),
+                    )
+                })?,
                 authority: row.get(5)?,
             })
         },
