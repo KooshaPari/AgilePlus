@@ -294,6 +294,29 @@ async fn run_refinement<S: StoragePort + ExecutionRecordPort, V: VcsPort>(
         .ne(&new_hash)
         .then(|| format!("spec:{}:{}", existing.id, hash_hex(&existing.spec_hash)));
 
+    // Earlier `specify` runs did not materialize the initial feature spec as a
+    // revision. Create that parent row when needed so the immutable child can
+    // reference it without disabling the `parent_revision_id` FK.
+    if let Some(ref parent_id) = parent_revision_id
+        && storage
+            .get_spec_revision(parent_id)
+            .await
+            .with_context(|| format!("checking parent revision {parent_id}"))?
+            .is_none()
+    {
+        storage
+            .create_spec_revision(&SpecRevision {
+                id: parent_id.clone(),
+                feature_id: existing.id,
+                content_hash: hash_hex(&existing.spec_hash),
+                parent_revision_id: None,
+                accepted_at: now,
+                authority: "feature.spec_hash".into(),
+            })
+            .await
+            .with_context(|| format!("persisting parent revision {parent_id}"))?;
+    }
+
     storage
         .create_spec_revision(&SpecRevision {
             id: new_revision_id.clone(),
