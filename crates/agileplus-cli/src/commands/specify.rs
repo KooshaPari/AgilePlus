@@ -332,7 +332,7 @@ async fn run_refinement<S: StoragePort + ExecutionRecordPort, V: VcsPort>(
         transition: "Specified -> Specified (revision)".into(),
         evidence_refs: vec![EvidenceRef {
             evidence_id: 0,
-            fr_id: new_revision_id,
+            fr_id: new_revision_id.clone(),
         }],
         prev_hash,
         hash: [0u8; 32],
