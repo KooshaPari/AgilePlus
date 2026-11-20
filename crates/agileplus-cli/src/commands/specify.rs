@@ -10,11 +10,11 @@ use anyhow::{Context, Result};
 use chrono::Utc;
 use sha2::{Digest, Sha256};
 
-use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
+use agileplus_domain::domain::audit::{AuditEntry, EvidenceRef, hash_entry};
 use agileplus_domain::domain::execution::SpecRevision;
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::state_machine::FeatureState;
-use agileplus_domain::ports::StoragePort;
+use agileplus_domain::ports::{ExecutionRecordPort, StoragePort};
 use agileplus_domain::ports::VcsPort;
 
 use super::governance::{enforce_governance, load_constitution, validate_spec_consistency};
@@ -42,7 +42,7 @@ pub struct SpecifyArgs {
 /// Run the `specify` command.
 pub async fn run_specify<S, V>(args: SpecifyArgs, storage: &S, vcs: &V) -> Result<()>
 where
-    S: StoragePort,
+    S: StoragePort + ExecutionRecordPort,
     V: VcsPort,
 {
     let start = std::time::Instant::now();
@@ -251,7 +251,7 @@ async fn run_create<S: StoragePort, V: VcsPort>(
 }
 
 /// Revise an existing feature's spec.
-async fn run_refinement<S: StoragePort, V: VcsPort>(
+async fn run_refinement<S: StoragePort + ExecutionRecordPort, V: VcsPort>(
     existing: Feature,
     slug: &str,
     new_spec_content: &str,
@@ -330,7 +330,10 @@ async fn run_refinement<S: StoragePort, V: VcsPort>(
         timestamp: Utc::now(),
         actor: "user".into(),
         transition: "Specified -> Specified (revision)".into(),
-        evidence_refs: vec![new_revision_id],
+        evidence_refs: vec![EvidenceRef {
+            evidence_id: 0,
+            fr_id: new_revision_id,
+        }],
         prev_hash,
         hash: [0u8; 32],
         event_id: None,
