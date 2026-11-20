@@ -202,10 +202,20 @@ async fn refines_existing_feature_and_records_revision_diff() {
         .iter()
         .find(|entry| entry.transition.contains("revision"))
         .expect("refinement audit entry");
-    assert_eq!(refinement_audit.evidence_refs, vec![new_revision_id]);
+    assert_eq!(
+        refinement_audit
+            .evidence_refs
+            .iter()
+            .map(|reference| reference.fr_id.as_str())
+            .collect::<Vec<_>>(),
+        vec![new_revision_id.as_str()]
+    );
     let old_revision_receipt = format!("evidence:revision:{old_revision_id}");
     assert!(
-        !refinement_audit.evidence_refs.contains(&old_revision_receipt),
+        !refinement_audit
+            .evidence_refs
+            .iter()
+            .any(|reference| reference.fr_id == old_revision_receipt),
         "old revision evidence must not satisfy the refinement"
     );
 }
