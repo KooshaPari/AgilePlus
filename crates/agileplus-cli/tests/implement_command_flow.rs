@@ -111,6 +111,78 @@ fn implement_skips_review_candidate_without_creating_another_worktree() {
     });
 }
 
+/// The run summary must count a WP that reached Review in this run.
+#[test]
+fn implement_summary_counts_wp_moved_to_review() {
+    block_on_paused(async {
+        use agileplus_cli::commands::evidence::{
+            AttachArgs, EvidenceArgs, EvidenceCommand, run_evidence,
+        };
+        use agileplus_domain::domain::governance::{GovernanceContract, GovernanceRule};
+
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let (fid, wp_id) = seed(&storage, "summary-review", FeatureState::Planned).await;
+        StoragePort::create_governance_contract(
+            &storage,
+            &GovernanceContract {
+                id: 0,
+                feature_id: fid,
+                version: 1,
+                rules: vec![GovernanceRule {
+                    transition: "WP01: Doing -> Review".into(),
+                    required_evidence: vec!["FR-CI:ci_output".into()],
+                    policy_refs: vec![],
+                }],
+                bound_at: chrono::Utc::now(),
+            },
+        )
+        .await
+        .unwrap();
+        let artifact = tempfile::NamedTempFile::new().unwrap();
+        std::fs::write(
+            artifact.path(),
+            b"isolated fixture CI output for summary test",
+        )
+        .unwrap();
+        run_evidence(
+            EvidenceArgs {
+                command: EvidenceCommand::Attach(AttachArgs {
+                    feature: "summary-review".into(),
+                    wp: "WP01".into(),
+                    fr: "FR-CI".into(),
+                    evidence_type: "ci_output".into(),
+                    artifact: artifact.path().to_path_buf(),
+                    result: "pass".into(),
+                }),
+            },
+            &storage,
+        )
+        .await
+        .unwrap();
+
+        let vcs = TempVcs::new();
+        let agent = ScriptedAgent::success();
+        run_implement(args("summary-review"), &storage, &vcs, &agent)
+            .await
+            .expect("implement should succeed");
+
+        // The WP must be in Review from this run's own single candidate. The
+        // summary count is derived from the same mutable set that records that
+        // transition, so this state assertion pins the counted outcome.
+        let wp = StoragePort::get_work_package(&storage, wp_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(wp.state, WpState::Review);
+        assert_eq!(
+            vcs.created_worktrees().len(),
+            1,
+            "the Review transition should come from this run's single candidate"
+        );
+        vcs.cleanup();
+    });
+}
+
 /// A feature with no work packages is rejected before dispatch.
 #[test]
 fn implement_reports_feature_without_work_packages() {

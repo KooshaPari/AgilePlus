@@ -205,7 +205,7 @@ where
     };
 
     // Process WPs
-    let completed: HashSet<i64> = all_wps
+    let mut completed: HashSet<i64> = all_wps
         .iter()
         .filter(|wp| wp.state == WpState::Done)
         .map(|wp| wp.id)
@@ -236,6 +236,9 @@ where
                 "  WP{:02} '{}' already in Review; candidate awaits independent acceptance, skipping.",
                 wp.sequence, wp.title
             );
+            // Review is a completed producer outcome for this run's summary and
+            // for dependency scheduling, but it is not terminal acceptance.
+            completed.insert(wp.id);
             continue;
         }
 
@@ -574,6 +577,7 @@ where
                     );
                     continue;
                 }
+                completed.insert(wp.id);
                 println!(
                     "  WP{:02} candidate {} captured and moved to Review; terminal acceptance is separate.",
                     wp.sequence, candidate_ref
@@ -689,6 +693,8 @@ where
     }
 
     let elapsed_ms = start.elapsed().as_millis();
+    // `completed` includes pre-existing Done WPs plus WPs this run moved to
+    // Review, which is the producer-completion outcome for an implement run.
     let done_count = target_ids
         .iter()
         .filter(|id| completed.contains(id))
