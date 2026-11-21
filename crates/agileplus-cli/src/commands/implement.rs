@@ -227,6 +227,18 @@ where
             continue;
         }
 
+        // A WP in Review already has a retained candidate worktree. Starting
+        // another implementation would create a second candidate for the same
+        // work package. Review acceptance is a separate, candidate-bound
+        // transaction and belongs to `validate`, not to `implement`.
+        if wp.state == WpState::Review {
+            println!(
+                "  WP{:02} '{}' already in Review; candidate awaits independent acceptance, skipping.",
+                wp.sequence, wp.title
+            );
+            continue;
+        }
+
         // Check dependencies
         if let Some(blockers) = scheduler.is_blocked(wp.id, &completed) {
             let blocker_ids: Vec<String> = blockers.iter().map(|id| id.to_string()).collect();
