@@ -693,21 +693,25 @@ where
     }
 
     let elapsed_ms = start.elapsed().as_millis();
-    // `completed` includes pre-existing Done WPs plus WPs this run moved to
-    // Review, which is the producer-completion outcome for an implement run.
+    let (done_count, total_count) = summary_counts(&target_ids, &completed);
+    tracing::info!(command = "implement", slug = %slug, done = done_count, elapsed_ms = %elapsed_ms, "implement completed");
+
+    println!();
+    println!("Implement complete: {done_count}/{total_count} WPs done.");
+
+    Ok(())
+}
+
+/// Count targeted work packages that reached a producer-completed state.
+///
+/// `completed` includes pre-existing Done WPs plus WPs this run moved to
+/// Review, which is the producer-completion outcome for an implement run.
+pub fn summary_counts(target_ids: &HashSet<i64>, completed: &HashSet<i64>) -> (usize, usize) {
     let done_count = target_ids
         .iter()
         .filter(|id| completed.contains(id))
         .count();
-    tracing::info!(command = "implement", slug = %slug, done = done_count, elapsed_ms = %elapsed_ms, "implement completed");
-
-    println!();
-    println!(
-        "Implement complete: {done_count}/{} WPs done.",
-        target_ids.len()
-    );
-
-    Ok(())
+    (done_count, target_ids.len())
 }
 
 async fn expire_interrupted_attempts<S: ExecutionRecordPort>(
@@ -796,6 +800,15 @@ async fn get_latest_hash<S: StoragePort>(storage: &S, feature_id: i64) -> [u8; 3
 mod tests {
     use super::*;
     use std::fs;
+
+    // ── summary_counts ────────────────────────────────────────────────────
+
+    #[test]
+    fn summary_counts_completed_targets_only() {
+        let targets = HashSet::from([1, 2, 3]);
+        let completed = HashSet::from([1, 3, 99]);
+        assert_eq!(summary_counts(&targets, &completed), (2, 3));
+    }
 
     // ── slugify ───────────────────────────────────────────────────────────
 

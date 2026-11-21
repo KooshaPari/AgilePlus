@@ -10,7 +10,7 @@
 
 mod support;
 
-use agileplus_cli::commands::implement::run_implement;
+use agileplus_cli::commands::implement::{run_implement, summary_counts};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::work_package::WpState;
 use agileplus_domain::ports::StoragePort;
@@ -178,6 +178,12 @@ fn implement_summary_counts_wp_moved_to_review() {
             vcs.created_worktrees().len(),
             1,
             "the Review transition should come from this run's single candidate"
+        );
+        let completed = std::collections::HashSet::from([wp.id]);
+        assert_eq!(
+            summary_counts(&std::collections::HashSet::from([wp.id]), &completed),
+            (1, 1),
+            "the Review run must report one completed work package out of one"
         );
         vcs.cleanup();
     });
