@@ -213,9 +213,9 @@ impl DialectRegistry {
     }
 }
 
-impl DialectRegistry {
+impl Default for DialectRegistry {
     /// Convenience constructor pre-populated with the three built-in dialects.
-    pub fn default() -> Self {
+    fn default() -> Self {
         let mut reg = Self {
             by_name: HashMap::new(),
             by_ext: HashMap::new(),

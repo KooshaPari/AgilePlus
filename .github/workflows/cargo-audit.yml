@@ -28,6 +28,13 @@ jobs:
             issues: write
         steps:
             - uses: actions/checkout@v7
+            # See security.yml: audit-check would otherwise build cargo-audit
+            # with the pinned nightly and fail on `filetime` E0658.
+            - name: Install cargo-audit (stable toolchain)
+              run: |
+                  set -euo pipefail
+                  rustup toolchain install stable --profile minimal --no-self-update
+                  cargo +stable install --locked cargo-audit
             - uses: rustsec/audit-check@v2.0.0
               with:
                   token: ${{ secrets.GITHUB_TOKEN }}
