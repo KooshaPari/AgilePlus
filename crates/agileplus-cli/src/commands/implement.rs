@@ -205,11 +205,14 @@ where
     };
 
     // Process WPs
-    let mut completed: HashSet<i64> = all_wps
+    let done: HashSet<i64> = all_wps
         .iter()
         .filter(|wp| wp.state == WpState::Done)
         .map(|wp| wp.id)
         .collect();
+    // Review WPs count in the run summary, but only Done WPs can release
+    // downstream dependencies.
+    let mut completed = done.clone();
 
     let target_ids: HashSet<i64> = target_wps.iter().map(|wp| wp.id).collect();
 
@@ -232,18 +235,37 @@ where
         // work package. Review acceptance is a separate, candidate-bound
         // transaction and belongs to `validate`, not to `implement`.
         if wp.state == WpState::Review {
-            println!(
-                "  WP{:02} '{}' already in Review; candidate awaits independent acceptance, skipping.",
-                wp.sequence, wp.title
-            );
-            // Review is a completed producer outcome for this run's summary and
-            // for dependency scheduling, but it is not terminal acceptance.
-            completed.insert(wp.id);
-            continue;
+            let wp_id_str = format!("WP{:02}", wp.sequence);
+            let worktrees = vcs
+                .list_worktrees()
+                .await
+                .context(format!("listing worktrees for {wp_id_str} in Review"))?;
+            if find_review_candidate(&worktrees, slug, &wp_id_str).is_none() {
+                // Review without a retained candidate has no acceptable exact
+                // work. Recover by re-dispatching once; the normal evidence
+                // gate below still controls the Doing -> Review transition.
+                println!(
+                    "  WP{:02} '{}' is in Review without a retained candidate; recovering.",
+                    wp.sequence, wp.title
+                );
+                storage
+                    .update_wp_state(wp.id, WpState::Doing)
+                    .await
+                    .context(format!("recovering {wp_id_str} from Review to Doing"))?;
+            } else {
+                println!(
+                    "  WP{:02} '{}' already in Review; candidate awaits independent acceptance, skipping.",
+                    wp.sequence, wp.title
+                );
+                // Review is a completed producer outcome for this run's summary,
+                // but it is not terminal acceptance and cannot release dependents.
+                completed.insert(wp.id);
+                continue;
+            }
         }
 
         // Check dependencies
-        if let Some(blockers) = scheduler.is_blocked(wp.id, &completed) {
+        if let Some(blockers) = scheduler.is_blocked(wp.id, &done) {
             let blocker_ids: Vec<String> = blockers.iter().map(|id| id.to_string()).collect();
             println!(
                 "  WP{:02} '{}' is blocked by: [{}]. Skipping.",
@@ -503,11 +525,13 @@ where
                 // The worker finished. Record the exact candidate and a terminal
                 // execution outcome before any governance projection. Work
                 // acceptance remains a separate, independent decision.
-                let candidate_ref = vcs
+                let worktrees = vcs
                     .list_worktrees()
                     .await
-                    .ok()
-                    .and_then(|items| items.into_iter().find(|w| w.path == worktree_path))
+                    .context("listing worktrees for approved candidate")?;
+                let candidate_ref = worktrees
+                    .into_iter()
+                    .find(|w| w.path == worktree_path)
                     .map(|w| format!("git:{}", w.commit));
 
                 let Some(candidate_ref) = candidate_ref else {
@@ -588,11 +612,13 @@ where
                 last_feedback,
             } => {
                 let ended_at = Utc::now();
-                let failed_candidate_ref = vcs
+                let worktrees = vcs
                     .list_worktrees()
                     .await
-                    .ok()
-                    .and_then(|items| items.into_iter().find(|w| w.path == worktree_path))
+                    .context("listing worktrees for failed candidate")?;
+                let failed_candidate_ref = worktrees
+                    .into_iter()
+                    .find(|w| w.path == worktree_path)
                     .map(|w| format!("git:{}", w.commit))
                     .unwrap_or_else(|| format!("unresolved:job:{job_id}"));
                 let exact_failed_candidate = failed_candidate_ref
@@ -767,6 +793,17 @@ fn find_resume_worktree(
                 || worktree.branch == format!("feat/{feature_slug}/{wp_id}")
         })
         .map(|worktree| worktree.path.clone())
+}
+
+fn find_review_candidate<'a>(
+    worktrees: &'a [agileplus_domain::ports::WorktreeInfo],
+    feature_slug: &str,
+    wp_id: &str,
+) -> Option<&'a agileplus_domain::ports::WorktreeInfo> {
+    worktrees.iter().find(|worktree| {
+        (worktree.feature_slug == feature_slug && worktree.wp_id == wp_id)
+            || worktree.branch == format!("feat/{feature_slug}/{wp_id}")
+    })
 }
 
 fn slugify(s: &str) -> String {

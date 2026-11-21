@@ -79,6 +79,8 @@ pub struct TempVcs {
     cleaned: Mutex<Vec<PathBuf>>,
     pub missing_prompt: bool,
     unresolved_candidate: bool,
+    list_worktrees_error: bool,
+    retained_candidate: Option<(String, String)>,
 }
 
 impl TempVcs {
@@ -98,6 +100,8 @@ impl TempVcs {
             cleaned: Mutex::new(vec![]),
             missing_prompt: false,
             unresolved_candidate: false,
+            list_worktrees_error: false,
+            retained_candidate: None,
         }
     }
 
@@ -108,6 +112,16 @@ impl TempVcs {
 
     pub fn with_unresolved_candidate(mut self) -> Self {
         self.unresolved_candidate = true;
+        self
+    }
+
+    pub fn with_list_worktrees_error(mut self) -> Self {
+        self.list_worktrees_error = true;
+        self
+    }
+
+    pub fn with_retained_candidate(mut self, feature_slug: &str, wp_id: &str) -> Self {
+        self.retained_candidate = Some((feature_slug.to_string(), wp_id.to_string()));
         self
     }
 
@@ -184,8 +198,22 @@ impl VcsPort for TempVcs {
     }
 
     async fn list_worktrees(&self) -> Result<Vec<WorktreeInfo>, DomainError> {
+        if self.list_worktrees_error {
+            return Err(DomainError::Other(
+                "simulated VCS worktree listing failure".into(),
+            ));
+        }
         if self.unresolved_candidate {
             return Ok(Vec::new());
+        }
+        if let Some((feature_slug, wp_id)) = &self.retained_candidate {
+            return Ok(vec![WorktreeInfo {
+                path: self.root.join(feature_slug).join(wp_id),
+                commit: TEST_CANDIDATE_COMMIT.to_string(),
+                branch: format!("feat/{feature_slug}/{wp_id}"),
+                feature_slug: feature_slug.clone(),
+                wp_id: wp_id.clone(),
+            }]);
         }
         // Approved Review needs a VCS-resolved exact Git candidate. The fake
         // previously returned an empty list, so it could only exercise the

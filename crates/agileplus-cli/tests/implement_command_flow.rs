@@ -13,6 +13,7 @@ mod support;
 use agileplus_cli::commands::implement::{run_implement, summary_counts};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::work_package::WpState;
+use agileplus_domain::domain::work_package::{DependencyType, WpDependency};
 use agileplus_domain::ports::StoragePort;
 use agileplus_sqlite::SqliteStorageAdapter;
 use support::implement::{
@@ -85,7 +86,7 @@ fn implement_skips_review_candidate_without_creating_another_worktree() {
         StoragePort::update_wp_state(&storage, wp_id, WpState::Review)
             .await
             .unwrap();
-        let vcs = TempVcs::new();
+        let vcs = TempVcs::new().with_retained_candidate("review-candidate", "WP01");
         let agent = ScriptedAgent::success();
 
         run_implement(args("review-candidate"), &storage, &vcs, &agent)
@@ -107,6 +108,163 @@ fn implement_skips_review_candidate_without_creating_another_worktree() {
             .unwrap()
             .unwrap();
         assert_eq!(wp.state, WpState::Review);
+        vcs.cleanup();
+    });
+}
+
+/// A VCS listing failure must not be reported as a missing candidate.
+#[test]
+fn implement_propagates_worktree_listing_failure() {
+    block_on_paused(async {
+        use agileplus_cli::commands::evidence::{
+            AttachArgs, EvidenceArgs, EvidenceCommand, run_evidence,
+        };
+        use agileplus_domain::domain::governance::{GovernanceContract, GovernanceRule};
+
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let (fid, _) = seed(&storage, "vcs-failure", FeatureState::Planned).await;
+        StoragePort::create_governance_contract(
+            &storage,
+            &GovernanceContract {
+                id: 0,
+                feature_id: fid,
+                version: 1,
+                rules: vec![GovernanceRule {
+                    transition: "WP01: Doing -> Review".into(),
+                    required_evidence: vec!["FR-CI:ci_output".into()],
+                    policy_refs: vec![],
+                }],
+                bound_at: chrono::Utc::now(),
+            },
+        )
+        .await
+        .unwrap();
+        let artifact = tempfile::NamedTempFile::new().unwrap();
+        std::fs::write(artifact.path(), b"ci output").unwrap();
+        run_evidence(
+            EvidenceArgs {
+                command: EvidenceCommand::Attach(AttachArgs {
+                    feature: "vcs-failure".into(),
+                    wp: "WP01".into(),
+                    fr: "FR-CI".into(),
+                    evidence_type: "ci_output".into(),
+                    artifact: artifact.path().to_path_buf(),
+                    result: "pass".into(),
+                }),
+            },
+            &storage,
+        )
+        .await
+        .unwrap();
+
+        let vcs = TempVcs::new().with_list_worktrees_error();
+        let agent = ScriptedAgent::success();
+        let err = run_implement(args("vcs-failure"), &storage, &vcs, &agent)
+            .await
+            .expect_err("VCS failure must not be swallowed");
+        assert!(
+            format!("{err:#}").contains("listing worktrees for approved candidate"),
+            "unexpected error: {err:#}"
+        );
+        vcs.cleanup();
+    });
+}
+
+/// A Review prerequisite cannot release a dependent until acceptance is Done.
+#[test]
+fn implement_review_prerequisite_does_not_release_dependent() {
+    block_on_paused(async {
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let (_, first_id) = seed(&storage, "dependency-gate", FeatureState::Implementing).await;
+        let mut second = agileplus_domain::domain::work_package::WorkPackage::new(
+            first_id, // replaced below with the real feature id
+            "Second", 2, "works",
+        );
+        let fid = StoragePort::get_work_package(&storage, first_id)
+            .await
+            .unwrap()
+            .unwrap()
+            .feature_id;
+        second.feature_id = fid;
+        second.id = 0;
+        let second_id = StoragePort::create_work_package(&storage, &second)
+            .await
+            .unwrap();
+        StoragePort::add_wp_dependency(
+            &storage,
+            &WpDependency {
+                wp_id: second_id,
+                depends_on: first_id,
+                dep_type: DependencyType::Explicit,
+            },
+        )
+        .await
+        .unwrap();
+        StoragePort::update_wp_state(&storage, first_id, WpState::Review)
+            .await
+            .unwrap();
+
+        let vcs = TempVcs::new().with_retained_candidate("dependency-gate", "WP01");
+        let agent = ScriptedAgent::success();
+        run_implement(args("dependency-gate"), &storage, &vcs, &agent)
+            .await
+            .expect("skipping unaccepted prerequisite must succeed");
+
+        let dependent = StoragePort::get_work_package(&storage, second_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(dependent.state, WpState::Planned);
+        assert_eq!(agent.polls(), 0, "dependent must not be dispatched");
+        vcs.cleanup();
+    });
+}
+
+/// A Review WP with no retained candidate is re-dispatched instead of stranded.
+#[test]
+fn implement_recovers_review_wp_without_candidate() {
+    block_on_paused(async {
+        use agileplus_domain::domain::governance::{GovernanceContract, GovernanceRule};
+
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let (fid, wp_id) = seed(&storage, "review-recovery", FeatureState::Implementing).await;
+        StoragePort::create_governance_contract(
+            &storage,
+            &GovernanceContract {
+                id: 0,
+                feature_id: fid,
+                version: 1,
+                rules: vec![GovernanceRule {
+                    transition: "WP01: Doing -> Review".into(),
+                    required_evidence: vec!["FR-CI:ci_output".into()],
+                    policy_refs: vec![],
+                }],
+                bound_at: chrono::Utc::now(),
+            },
+        )
+        .await
+        .unwrap();
+        StoragePort::update_wp_state(&storage, wp_id, WpState::Review)
+            .await
+            .unwrap();
+
+        let vcs = TempVcs::new();
+        let agent = ScriptedAgent::success();
+        run_implement(args("review-recovery"), &storage, &vcs, &agent)
+            .await
+            .expect("Review candidate recovery must succeed");
+
+        let wp = StoragePort::get_work_package(&storage, wp_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            wp.state,
+            WpState::Doing,
+            "recovered candidate awaits evidence before Review"
+        );
+        assert_eq!(vcs.created_worktrees().len(), 1);
+        assert_eq!(agent.polls(), 1);
         vcs.cleanup();
     });
 }
@@ -701,7 +859,8 @@ fn implement_then_evaluate_then_validate_accepts_review_candidate() {
         .await
         .expect("independent evaluation should be recorded");
 
-        let git_vcs = GitVcsAdapter::new(std::env::temp_dir());
+        let artifact_root = tempfile::TempDir::new().expect("create artifact root");
+        let git_vcs = GitVcsAdapter::new(artifact_root.path().to_path_buf());
         run_validate(
             ValidateArgs {
                 feature: "journey".into(),
