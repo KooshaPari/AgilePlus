@@ -165,7 +165,9 @@ impl DialectConverter {
 }
 
 /// Registry of known dialects, indexed by name and file extension.
-#[derive(Default)]
+///
+/// `Default` is implemented manually below so the default registry is
+/// pre-populated with the built-in dialects.
 pub struct DialectRegistry {
     by_name: HashMap<String, Arc<dyn Dialect>>,
     by_ext: HashMap<String, Arc<dyn Dialect>>,
