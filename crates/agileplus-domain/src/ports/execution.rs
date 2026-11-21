@@ -11,6 +11,20 @@ use async_trait::async_trait;
 #[async_trait]
 pub trait ExecutionRecordPort: Send + Sync {
     async fn create_spec_revision(&self, revision: &SpecRevision) -> Result<(), DomainError>;
+    async fn get_spec_revision(
+        &self,
+        revision_id: &str,
+    ) -> Result<Option<SpecRevision>, DomainError> {
+        let _ = revision_id;
+        Err(DomainError::NotImplemented)
+    }
+    async fn get_latest_spec_revision(
+        &self,
+        feature_id: i64,
+    ) -> Result<Option<SpecRevision>, DomainError> {
+        let _ = feature_id;
+        Err(DomainError::NotImplemented)
+    }
     async fn create_assignment(&self, assignment: &Assignment) -> Result<(), DomainError>;
     async fn create_assignment_with_criteria(
         &self,

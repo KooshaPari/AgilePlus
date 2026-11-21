@@ -344,6 +344,7 @@ dependencies = [
 name = "agileplus-desktop"
 version = "0.2.0"
 dependencies = [
+ "agileplus-sqlite",
  "chrono",
  "dirs-next",
  "log",

@@ -47,6 +47,16 @@ pub trait StoragePort: Send + Sync {
     async fn get_feature_by_slug(&self, slug: &str) -> Result<Option<Feature>, DomainError>;
     async fn get_feature_by_id(&self, id: i64) -> Result<Option<Feature>, DomainError>;
     async fn update_feature_state(&self, id: i64, state: FeatureState) -> Result<(), DomainError>;
+
+    /// Advance a feature's accepted specification content hash.
+    ///
+    /// Implementations must only mutate the mutable feature row description and
+    /// must preserve the feature's identity and state.
+    async fn update_spec_hash(&self, id: i64, spec_hash: [u8; 32]) -> Result<(), DomainError> {
+        let _ = (id, spec_hash);
+        Err(DomainError::NotImplemented)
+    }
+
     async fn list_features_by_state(
         &self,
         state: FeatureState,

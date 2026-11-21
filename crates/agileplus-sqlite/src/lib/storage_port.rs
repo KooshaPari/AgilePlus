@@ -47,6 +47,11 @@ impl StoragePort for SqliteStorageAdapter {
         features::update_feature_state(&conn, id, state)
     }
 
+    async fn update_spec_hash(&self, id: i64, spec_hash: [u8; 32]) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        features::update_spec_hash(&conn, id, &spec_hash)
+    }
+
     async fn update_feature(&self, feature: &Feature) -> Result<(), DomainError> {
         let conn = self.lock()?;
         features::update_feature(&conn, feature)
