@@ -227,6 +227,21 @@ where
             continue;
         }
 
+        // A WP in Review already has a retained candidate worktree. Starting
+        // another implementation would create a second candidate for the same
+        // work package. Review acceptance is a separate, candidate-bound
+        // transaction and belongs to `validate`, not to `implement`.
+        if wp.state == WpState::Review {
+            println!(
+                "  WP{:02} '{}' already in Review; candidate awaits independent acceptance, skipping.",
+                wp.sequence, wp.title
+            );
+            // Review is a completed producer outcome for this run's summary and
+            // for dependency scheduling, but it is not terminal acceptance.
+            completed.insert(wp.id);
+            continue;
+        }
+
         // Check dependencies
         if let Some(blockers) = scheduler.is_blocked(wp.id, &completed) {
             let blocker_ids: Vec<String> = blockers.iter().map(|id| id.to_string()).collect();
@@ -485,60 +500,87 @@ where
 
         match outcome {
             ReviewOutcome::Approved => {
-                // The scaffold review loop reports agent completion, not
-                // authenticated CI/reviewer approval. Apply the same contract
-                // gates as the public transition command before claiming Done.
+                // The worker finished. Record the exact candidate and a terminal
+                // execution outcome before any governance projection. Work
+                // acceptance remains a separate, independent decision.
+                let candidate_ref = vcs
+                    .list_worktrees()
+                    .await
+                    .ok()
+                    .and_then(|items| items.into_iter().find(|w| w.path == worktree_path))
+                    .map(|w| format!("git:{}", w.commit));
+
+                let Some(candidate_ref) = candidate_ref else {
+                    storage
+                        .update_attempt_runtime(
+                            &attempt_id,
+                            AttemptStatus::Failed,
+                            Some(&job_id),
+                            None,
+                            Some("candidate_unresolved"),
+                            Some(Utc::now()),
+                        )
+                        .await
+                        .context("recording unresolved candidate")?;
+                    println!(
+                        "  WP{:02} produced no exact candidate; attempt failed and worktree retained.",
+                        wp.sequence
+                    );
+                    continue;
+                };
+
+                storage
+                    .update_attempt_runtime(
+                        &attempt_id,
+                        AttemptStatus::Completed,
+                        Some(&job_id),
+                        Some(&candidate_ref),
+                        None,
+                        Some(Utc::now()),
+                    )
+                    .await
+                    .context("recording completed attempt")?;
+
+                // Agent completion is not independent acceptance. Apply only the
+                // Doing -> Review gate here; Review -> Done belongs to the
+                // canonical candidate-bound acceptance transaction.
                 let Some(contract) = storage
                     .get_latest_governance_contract(feature.id)
                     .await
                     .context("loading governance contract before agent completion")?
                 else {
                     println!(
-                        "  WP{:02} awaits a governance contract; worktree retained.",
-                        wp.sequence
+                        "  WP{:02} candidate {} captured; awaiting a governance contract before review.",
+                        wp.sequence, candidate_ref
                     );
                     continue;
                 };
-                let required_transitions = [
-                    format!("WP{:02}: Doing -> Review", wp.sequence),
-                    format!("WP{:02}: Review -> Done", wp.sequence),
-                ];
-                if required_transitions.iter().any(|transition| {
-                    !contract.rules.iter().any(|rule| {
-                        rule.transition == *transition && !rule.required_evidence.is_empty()
-                    })
+                let review_transition = format!("WP{:02}: Doing -> Review", wp.sequence);
+                if !contract.rules.iter().any(|rule| {
+                    rule.transition == review_transition && !rule.required_evidence.is_empty()
                 }) {
                     println!(
-                        "  WP{:02} awaits non-empty CI/test and review contract gates; worktree retained.",
-                        wp.sequence
+                        "  WP{:02} candidate {} captured; awaiting a non-empty review contract gate.",
+                        wp.sequence, candidate_ref
                     );
                     continue;
                 }
-                let mut gated = true;
-                for target in ["review", "done"] {
-                    let transition = super::mvp::TransitionArgs {
-                        wp: Some(wp.id),
-                        story: None,
-                        to: target.into(),
-                    };
-                    if let Err(error) = super::mvp::transition(&transition, storage).await {
-                        println!(
-                            "  WP{:02} awaits evidence: {error:#}; worktree retained.",
-                            wp.sequence
-                        );
-                        gated = false;
-                        break;
-                    }
-                }
-                if !gated {
+                let transition = super::mvp::TransitionArgs {
+                    wp: Some(wp.id),
+                    story: None,
+                    to: "review".into(),
+                };
+                if let Err(error) = super::mvp::transition(&transition, storage).await {
+                    println!(
+                        "  WP{:02} candidate {} captured; review gate blocked: {error:#}.",
+                        wp.sequence, candidate_ref
+                    );
                     continue;
                 }
                 completed.insert(wp.id);
-                println!("  WP{:02} completed with contract evidence.", wp.sequence);
-
                 println!(
-                    "  WP{:02} candidate {} is in Review; review approval is not terminal acceptance.",
-                    wp.sequence, job_id
+                    "  WP{:02} candidate {} captured and moved to Review; terminal acceptance is separate.",
+                    wp.sequence, candidate_ref
                 );
             }
             ReviewOutcome::MaxCyclesReached {
@@ -651,6 +693,8 @@ where
     }
 
     let elapsed_ms = start.elapsed().as_millis();
+    // `completed` includes pre-existing Done WPs plus WPs this run moved to
+    // Review, which is the producer-completion outcome for an implement run.
     let done_count = target_ids
         .iter()
         .filter(|id| completed.contains(id))
