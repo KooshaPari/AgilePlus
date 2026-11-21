@@ -93,21 +93,24 @@ where
             .list_wps_by_feature(feature.id)
             .await
             .context("loading work package states")?;
-        let incomplete: Vec<String> = wps
+        let ineligible: Vec<String> = wps
             .iter()
-            .filter(|wp| wp.state != WpState::Done)
+            .filter(|wp| !matches!(wp.state, WpState::Review | WpState::Done))
             .map(|wp| format!("WP{:02}={:?}", wp.sequence, wp.state))
             .collect();
         vec![PolicyEvalResult {
             policy_id: 0,
             domain: "work_packages".into(),
-            passed: !wps.is_empty() && incomplete.is_empty(),
+            passed: !wps.is_empty() && ineligible.is_empty(),
             message: if wps.is_empty() {
                 "No work packages found".into()
-            } else if incomplete.is_empty() {
-                format!("All {} work packages are Done", wps.len())
+            } else if ineligible.is_empty() {
+                format!("All {} work packages are Review or Done", wps.len())
             } else {
-                format!("Incomplete work packages: {}", incomplete.join(", "))
+                format!(
+                    "Work packages not eligible for acceptance: {}",
+                    ineligible.join(", ")
+                )
             },
         }]
     };

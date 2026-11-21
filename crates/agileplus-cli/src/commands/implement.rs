@@ -147,7 +147,7 @@ where
     }
 
     // Determine which WPs to process
-    let target_wps: Vec<&WorkPackage> = if let Some(ref wp_ref) = args.wp {
+    let mut target_wps: Vec<&WorkPackage> = if let Some(ref wp_ref) = args.wp {
         // Single WP mode: find by ID prefix or sequence
         let matched: Vec<&WorkPackage> = all_wps
             .iter()
@@ -189,6 +189,20 @@ where
     }
 
     let scheduler = Scheduler::new(wp_states.clone(), all_deps.clone());
+    let execution_plan = scheduler
+        .execution_plan()
+        .map_err(|error| anyhow::anyhow!("invalid WP dependency graph: {error}"))?;
+    let wave_by_id: HashMap<i64, u32> = execution_plan
+        .iter()
+        .flat_map(|wave| wave.wp_ids.iter().map(|id| (*id, wave.wave_number)))
+        .collect();
+    target_wps.sort_by_key(|wp| {
+        (
+            wave_by_id.get(&wp.id).copied().unwrap_or(u32::MAX),
+            wp.sequence,
+            wp.id,
+        )
+    });
 
     // Read spec content for PR descriptions
     let spec_content = vcs
@@ -204,13 +218,6 @@ where
         extra_args: vec![],
     };
 
-    // Process WPs
-    let mut completed: HashSet<i64> = all_wps
-        .iter()
-        .filter(|wp| wp.state == WpState::Done)
-        .map(|wp| wp.id)
-        .collect();
-
     let target_ids: HashSet<i64> = target_wps.iter().map(|wp| wp.id).collect();
 
     if args.resume {
@@ -218,7 +225,20 @@ where
     }
 
     for wp in &target_wps {
-        // Skip already done
+        // States may change outside this command while it is running. Re-read
+        // before each target so a dependency completed by another actor is
+        // observed, and a still-unfinished dependency cannot be silently
+        // skipped with a successful exit.
+        let current_wps = storage
+            .list_wps_by_feature(feature.id)
+            .await
+            .context("reloading work package states")?;
+        let completed: HashSet<i64> = current_wps
+            .iter()
+            .filter(|current| current.state == WpState::Done)
+            .map(|current| current.id)
+            .collect();
+
         if completed.contains(&wp.id) {
             println!(
                 "  WP{:02} '{}' already done, skipping.",
@@ -227,16 +247,33 @@ where
             continue;
         }
 
-        // Check dependencies
         if let Some(blockers) = scheduler.is_blocked(wp.id, &completed) {
-            let blocker_ids: Vec<String> = blockers.iter().map(|id| id.to_string()).collect();
-            println!(
-                "  WP{:02} '{}' is blocked by: [{}]. Skipping.",
+            let blocker_labels: Vec<String> = blockers
+                .iter()
+                .map(|blocker_id| {
+                    current_wps
+                        .iter()
+                        .find(|candidate| candidate.id == *blocker_id)
+                        .map(|blocker| {
+                            format!(
+                                "WP{:02} '{}' (state: {:?})",
+                                blocker.sequence, blocker.title, blocker.state
+                            )
+                        })
+                        .unwrap_or_else(|| format!("dependency {} (unknown WP)", blocker_id))
+                })
+                .collect();
+            anyhow::bail!(
+                "WP{:02} '{}' is blocked by unfinished dependenc{}: {}",
                 wp.sequence,
                 wp.title,
-                blocker_ids.join(", ")
+                if blocker_labels.len() == 1 {
+                    "y"
+                } else {
+                    "ies"
+                },
+                blocker_labels.join(", ")
             );
-            continue;
         }
 
         println!("Processing WP{:02}: '{}'...", wp.sequence, wp.title);
@@ -485,60 +522,86 @@ where
 
         match outcome {
             ReviewOutcome::Approved => {
-                // The scaffold review loop reports agent completion, not
-                // authenticated CI/reviewer approval. Apply the same contract
-                // gates as the public transition command before claiming Done.
+                // The worker finished. Record the exact candidate and a terminal
+                // execution outcome before any governance projection. Work
+                // acceptance remains a separate, independent decision.
+                let candidate_ref = vcs
+                    .list_worktrees()
+                    .await
+                    .ok()
+                    .and_then(|items| items.into_iter().find(|w| w.path == worktree_path))
+                    .map(|w| format!("git:{}", w.commit));
+
+                let Some(candidate_ref) = candidate_ref else {
+                    storage
+                        .update_attempt_runtime(
+                            &attempt_id,
+                            AttemptStatus::Failed,
+                            Some(&job_id),
+                            None,
+                            Some("candidate_unresolved"),
+                            Some(Utc::now()),
+                        )
+                        .await
+                        .context("recording unresolved candidate")?;
+                    println!(
+                        "  WP{:02} produced no exact candidate; attempt failed and worktree retained.",
+                        wp.sequence
+                    );
+                    continue;
+                };
+
+                storage
+                    .update_attempt_runtime(
+                        &attempt_id,
+                        AttemptStatus::Completed,
+                        Some(&job_id),
+                        Some(&candidate_ref),
+                        None,
+                        Some(Utc::now()),
+                    )
+                    .await
+                    .context("recording completed attempt")?;
+
+                // Agent completion is not independent acceptance. Apply only the
+                // Doing -> Review gate here; Review -> Done belongs to the
+                // canonical candidate-bound acceptance transaction.
                 let Some(contract) = storage
                     .get_latest_governance_contract(feature.id)
                     .await
                     .context("loading governance contract before agent completion")?
                 else {
                     println!(
-                        "  WP{:02} awaits a governance contract; worktree retained.",
-                        wp.sequence
+                        "  WP{:02} candidate {} captured; awaiting a governance contract before review.",
+                        wp.sequence, candidate_ref
                     );
                     continue;
                 };
-                let required_transitions = [
-                    format!("WP{:02}: Doing -> Review", wp.sequence),
-                    format!("WP{:02}: Review -> Done", wp.sequence),
-                ];
-                if required_transitions.iter().any(|transition| {
-                    !contract.rules.iter().any(|rule| {
-                        rule.transition == *transition && !rule.required_evidence.is_empty()
-                    })
+                let review_transition = format!("WP{:02}: Doing -> Review", wp.sequence);
+                if !contract.rules.iter().any(|rule| {
+                    rule.transition == review_transition && !rule.required_evidence.is_empty()
                 }) {
                     println!(
-                        "  WP{:02} awaits non-empty CI/test and review contract gates; worktree retained.",
-                        wp.sequence
+                        "  WP{:02} candidate {} captured; awaiting a non-empty review contract gate.",
+                        wp.sequence, candidate_ref
                     );
                     continue;
                 }
-                let mut gated = true;
-                for target in ["review", "done"] {
-                    let transition = super::mvp::TransitionArgs {
-                        wp: Some(wp.id),
-                        story: None,
-                        to: target.into(),
-                    };
-                    if let Err(error) = super::mvp::transition(&transition, storage).await {
-                        println!(
-                            "  WP{:02} awaits evidence: {error:#}; worktree retained.",
-                            wp.sequence
-                        );
-                        gated = false;
-                        break;
-                    }
-                }
-                if !gated {
+                let transition = super::mvp::TransitionArgs {
+                    wp: Some(wp.id),
+                    story: None,
+                    to: "review".into(),
+                };
+                if let Err(error) = super::mvp::transition(&transition, storage).await {
+                    println!(
+                        "  WP{:02} candidate {} captured; review gate blocked: {error:#}.",
+                        wp.sequence, candidate_ref
+                    );
                     continue;
                 }
-                completed.insert(wp.id);
-                println!("  WP{:02} completed with contract evidence.", wp.sequence);
-
                 println!(
-                    "  WP{:02} candidate {} is in Review; review approval is not terminal acceptance.",
-                    wp.sequence, job_id
+                    "  WP{:02} candidate {} captured and moved to Review; terminal acceptance is separate.",
+                    wp.sequence, candidate_ref
                 );
             }
             ReviewOutcome::MaxCyclesReached {
@@ -651,9 +714,18 @@ where
     }
 
     let elapsed_ms = start.elapsed().as_millis();
+    let final_wps = storage
+        .list_wps_by_feature(feature.id)
+        .await
+        .context("reloading final work package states")?;
+    let final_done: HashSet<i64> = final_wps
+        .iter()
+        .filter(|wp| wp.state == WpState::Done)
+        .map(|wp| wp.id)
+        .collect();
     let done_count = target_ids
         .iter()
-        .filter(|id| completed.contains(id))
+        .filter(|id| final_done.contains(id))
         .count();
     tracing::info!(command = "implement", slug = %slug, done = done_count, elapsed_ms = %elapsed_ms, "implement completed");
 

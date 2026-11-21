@@ -12,7 +12,8 @@ mod db;
 mod evidence;
 mod traces;
 mod tray;
-mod work_packages;
+#[doc(hidden)]
+pub mod work_packages;
 
 #[cfg(test)]
 mod test_support;
