@@ -74,6 +74,43 @@ fn implement_reports_unknown_feature_with_guidance() {
     });
 }
 
+/// A WP already in Review has a retained candidate worktree. A later normal
+/// `implement` run must not create a second worktree or dispatch another
+/// candidate for it; independent acceptance belongs to `validate`.
+#[test]
+fn implement_skips_review_candidate_without_creating_another_worktree() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().expect("in-memory db");
+        let (_, wp_id) = seed(&storage, "review-candidate", FeatureState::Implementing).await;
+        StoragePort::update_wp_state(&storage, wp_id, WpState::Review)
+            .await
+            .unwrap();
+        let vcs = TempVcs::new();
+        let agent = ScriptedAgent::success();
+
+        run_implement(args("review-candidate"), &storage, &vcs, &agent)
+            .await
+            .expect("skipping a Review candidate must succeed");
+
+        assert!(
+            vcs.created_worktrees().is_empty(),
+            "a Review candidate must not get a second worktree: {:?}",
+            vcs.created_worktrees()
+        );
+        assert_eq!(
+            agent.polls(),
+            0,
+            "a Review candidate must not get another agent dispatch"
+        );
+        let wp = StoragePort::get_work_package(&storage, wp_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(wp.state, WpState::Review);
+        vcs.cleanup();
+    });
+}
+
 /// A feature with no work packages is rejected before dispatch.
 #[test]
 fn implement_reports_feature_without_work_packages() {
