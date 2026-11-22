@@ -20,29 +20,21 @@ jobs:
     cargo-audit:
         name: Cargo Audit
         runs-on: ubuntu-24.04
+        # rustsec/audit-check@v2 fails while updating its check run with
+        # "Not Found - https://docs.github.com/rest/checks/runs#update-a-check-run"
+        # even when `cargo audit` reports "No vulnerabilities". Run the binary
+        # directly so the audit exit code gates the job without requiring
+        # checks/issues write permissions.
         permissions:
             contents: read
-            checks: write
-            # rustsec/audit-check@v2 creates one GitHub issue per advisory
-            # (incl. informational) when triggered on `schedule:`. Without
-            # `issues: write` the POST /repos/.../issues call returns
-            # "Resource not accessible by integration" and fails the step
-            # even though `cargo audit` itself reports "No vulnerabilities".
-            issues: write
         steps:
             - uses: actions/checkout@v7
-            # rustsec/audit-check only installs cargo-audit when it is absent.
-            # Building it under the pinned nightly fails on `filetime` (E0658
-            # fs_set_times), so install it with stable first. The advisory
-            # scan itself is toolchain-independent.
-            - name: Install cargo-audit (stable toolchain)
-              run: |
-                  set -euo pipefail
-                  rustup toolchain install stable --profile minimal --no-self-update
-                  cargo +stable install --locked cargo-audit
-            - uses: rustsec/audit-check@v2.0.0
+            - name: Install cargo-audit
+              uses: taiki-e/install-action@v2
               with:
-                  token: ${{ secrets.GITHUB_TOKEN }}
+                  tool: cargo-audit
+            - name: Run cargo audit
+              run: cargo audit
 
     # ─── Cargo Deny ───────────────────────────────────────────────────────
     cargo-deny:
