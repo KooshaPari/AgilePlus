@@ -82,5 +82,8 @@ jobs:
                   arguments: --hide-inclusion-graph
             - name: cargo audit
               run: |
-                  cargo install --locked cargo-audit
+                  # rust-toolchain.toml pins a nightly that cannot build
+                  # current cargo-audit (`filetime` E0658). Install with stable.
+                  rustup toolchain install stable --profile minimal --no-self-update
+                  cargo +stable install --locked cargo-audit
                   cargo audit --deny warnings
