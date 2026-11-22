@@ -165,7 +165,6 @@ impl DialectConverter {
 }
 
 /// Registry of known dialects, indexed by name and file extension.
-#[derive(Default)]
 pub struct DialectRegistry {
     by_name: HashMap<String, Arc<dyn Dialect>>,
     by_ext: HashMap<String, Arc<dyn Dialect>>,
@@ -213,9 +212,9 @@ impl DialectRegistry {
     }
 }
 
-impl DialectRegistry {
-    /// Convenience constructor pre-populated with the three built-in dialects.
-    pub fn default() -> Self {
+impl Default for DialectRegistry {
+    /// Creates a registry pre-populated with the three built-in dialects.
+    fn default() -> Self {
         let mut reg = Self {
             by_name: HashMap::new(),
             by_ext: HashMap::new(),
