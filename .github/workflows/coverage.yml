@@ -141,8 +141,15 @@ jobs:
                   version: "28.x"
                   repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Install cargo-llvm-cov
-              run: cargo install --locked cargo-llvm-cov
+            # Tool installs run on stable: the pinned nightly cannot compile
+            # current `filetime` (E0658 fs_set_times), which broke this job
+            # before it ever produced a report. The build/test/coverage steps
+            # below stay on the pinned channel from rust-toolchain.toml.
+            - name: Install cargo-llvm-cov (stable toolchain)
+              run: |
+                  set -euo pipefail
+                  rustup toolchain install stable --profile minimal --no-self-update
+                  cargo +stable install --locked cargo-llvm-cov
 
             - name: Workspace coverage
               run: |
