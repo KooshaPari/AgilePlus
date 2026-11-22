@@ -57,8 +57,16 @@ jobs:
                   echo "pinned channel: ${channel}"
                   test -n "${channel}"
                   rustup toolchain install "${channel}" --profile minimal --no-self-update
-            - name: Install cargo-deny
-              run: cargo install cargo-deny
+            # cargo-deny is a tool, not part of the build: building it with the
+            # pinned nightly fails on `filetime` (E0658 fs_set_times) and on CI
+            # runners that only have the gnu triple the pinned channel cannot be
+            # resolved under that override. The scan itself is
+            # toolchain-independent, so install the tool on stable.
+            - name: Install cargo-deny (stable toolchain)
+              run: |
+                  set -euo pipefail
+                  rustup toolchain install stable --profile minimal --no-self-update
+                  cargo +stable install --locked cargo-deny
             - name: Check advisories, licenses, duplicates
               run: cargo deny check
 
