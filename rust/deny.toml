@@ -8,6 +8,9 @@ ignore = [
   "RUSTSEC-2025-0140", # time non-utf8 TimeBuf::as_str - transitive dep, low impact
   "RUSTSEC-2026-0049", # rustls-webpki CRL distribution point matching - transitive dep, low impact
   "RUSTSEC-2024-0436", # paste unmaintained - transitive via utoipa-axum, no safe upgrade
+  "RUSTSEC-2026-0543", # chrono unmaintained (info) - no patched version, transitive, no security impact
+  "RUSTSEC-2026-0555", # chrono-tz unmaintained (info) - no patched version, follows the chrono line
+  "RUSTSEC-2026-0542", # humantime unmaintained (info) - no patched version, formatting-only helper
 ]
 
 [licenses]

@@ -116,4 +116,14 @@ ignore = [
   "RUSTSEC-2026-0371",
   "RUSTSEC-2026-0372",
   "RUSTSEC-2026-0374",
+  # chrono / chrono-tz / humantime: unmaintained (informational) advisories with
+  # an empty `patched` range, so there is no version to move to. All three are
+  # transitive date/time helpers; no security impact. Review when the owning
+  # crates migrate off them.
+  # Review note: RUSTSEC-2026-0543 (chrono) - chrono itself is archived upstream.
+  "RUSTSEC-2026-0543",
+  # Review note: RUSTSEC-2026-0555 (chrono-tz) - follows the chrono line.
+  "RUSTSEC-2026-0555",
+  # Review note: RUSTSEC-2026-0542 (humantime) - formatting-only helper.
+  "RUSTSEC-2026-0542",
 ]
