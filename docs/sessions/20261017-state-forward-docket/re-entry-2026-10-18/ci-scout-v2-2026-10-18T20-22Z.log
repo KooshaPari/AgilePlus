@@ -305,7 +305,7 @@ Verify CI passed for tagged commit	skipping	0	https://github.com/KooshaPari/Agil
 build-local-artifacts (${{ join(matrix.targets, ', ') }})	skipping	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160560964/job/117774362962	
 semgrep-cloud-platform/scan	pass	1m35s	https://semgrep.dev/orgs/phenotype/projects/5604926/scans/248879073	
 build-global-artifacts	skipping	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160560964/job/117774363372	
-security/snyk (kooshapari)	pass	0	https://app.snyk.io/org/kooshapari/pr-checks/2f61d732-aa86-449a-9379-070febc448dc	No manifest changes detected in 1 project
+security/snyk (kooshapari)	pass	0	https://app.snyk.io/org/kooshapari/pr-checks/<REDACTED-ROTATE-ME>	No manifest changes detected in 1 project
 host	skipping	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160560964/job/117774363009	
 === END #1165 ===
 === PR #1166 (no head, full) ===
@@ -354,7 +354,7 @@ qe / lint	pass	4m16s	https://github.com/KooshaPari/AgilePlus/actions/runs/391608
 qe / test	pass	12m15s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891103/job/117773776715	
 rust-coverage (cargo-llvm-cov)	pass	17m26s	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891380/job/117773777576	
 Mergify Merge Protections	skipping	5s	https://dashboard.mergify.com/orgs/KooshaPari/repos/AgilePlus/activity-log?pull_request=1166	
-security/snyk (kooshapari)	pass	0	https://app.snyk.io/org/kooshapari/pr-checks/6ad4afb8-2446-41f3-aa02-c885bd0de34b	No manifest changes detected in 1 project
+security/snyk (kooshapari)	pass	0	https://app.snyk.io/org/kooshapari/pr-checks/<REDACTED-ROTATE-ME>	No manifest changes detected in 1 project
 Rust	pending	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891398/job/117775741851	
 CodeQL	skipping	1s	https://github.com/KooshaPari/AgilePlus/runs/117776670568	
 cargo-mutants (agileplus-domain)	pending	0	https://github.com/KooshaPari/AgilePlus/actions/runs/39160891016/job/117773776213	
