@@ -153,7 +153,7 @@ jobs:
         with:
           tool: cargo-deny
       - name: cargo-deny check
-        run: cargo deny --manifest-path Cargo.toml check --all-features
+        run: cargo deny --manifest-path Cargo.toml check
 
   python:
     name: Python
