@@ -1,8 +1,10 @@
 name: gitleaks
 
 on:
+    # PR-branch pushes also fire `pull_request`, which produced two identical
+    # gitleaks runs per SHA (runner saturation). Canonical trigger is pull_request.
     push:
-        branches: ["**"]
+        branches: [main, master]
     pull_request:
         branches: ["**"]
     schedule:

@@ -1,8 +1,10 @@
 name: coverage
 
 on:
+    # feat/* and fix/* pushes also fire `pull_request`, which produced two
+    # identical coverage runs per SHA. Canonical trigger is pull_request.
     push:
-        branches: [main, master, "feat/*", "fix/*"]
+        branches: [main, master]
     pull_request:
         branches: [main, master]
 
