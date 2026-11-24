@@ -199,11 +199,14 @@ impl PluginRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plugin_trait::PluginConfig;
+    use crate::plugin_trait::{PluginConfig, PluginMetadata};
+    use std::sync::atomic::{AtomicUsize, Ordering};
 
     struct TestPlugin {
         name: String,
         version: String,
+        min_host_version: Option<String>,
+        initialize_calls: AtomicUsize,
     }
 
     impl TestPlugin {
@@ -211,6 +214,8 @@ mod tests {
             Self {
                 name: name.to_string(),
                 version: version.to_string(),
+                min_host_version: None,
+                initialize_calls: AtomicUsize::new(0),
             }
         }
     }
@@ -225,12 +230,64 @@ mod tests {
             &self.version
         }
 
+        fn metadata(&self) -> Option<PluginMetadata> {
+            Some(PluginMetadata {
+                name: self.name.clone(),
+                version: self.version.clone(),
+                min_host_version: self.min_host_version.clone(),
+                description: None,
+            })
+        }
+
         async fn initialize(&self, _config: PluginConfig) -> Result<()> {
+            self.initialize_calls.fetch_add(1, Ordering::SeqCst);
             Ok(())
         }
 
         async fn shutdown(&self) -> Result<()> {
             Ok(())
+        }
+    }
+
+    #[tokio::test]
+    async fn initialize_respects_minimum_and_calls_plugin_only_when_accepted() {
+        for (minimum, host, accepted) in [
+            (None, "0.1.0", true),
+            (Some("1.2.0"), "1.1.0", false),
+            (Some("1.2.0"), "1.2.0", true),
+            (Some("1.2.0"), "1.3.0", true),
+            (Some("1.2.0"), "1.10.0", false),
+        ] {
+            let registry = PluginRegistry::new();
+            let mut candidate = TestPlugin::new("versioned", "1.0.0");
+            candidate.min_host_version = minimum.map(str::to_owned);
+            let plugin = Arc::new(candidate);
+            registry.load(plugin.clone()).await.unwrap();
+            let config = PluginConfig {
+                host_version: host.to_owned(),
+                ..Default::default()
+            };
+            let result = registry.initialize("versioned", config).await;
+            if accepted {
+                assert!(result.is_ok(), "minimum={minimum:?}, host={host}");
+            } else {
+                match result {
+                    Err(PluginError::VersionMismatch {
+                        plugin,
+                        expected,
+                        found,
+                    }) => {
+                        assert_eq!(plugin, "versioned");
+                        assert_eq!(expected, minimum.unwrap());
+                        assert_eq!(found, host);
+                    }
+                    other => panic!("expected version mismatch, got {other:?}"),
+                }
+            }
+            assert_eq!(
+                plugin.initialize_calls.load(Ordering::SeqCst),
+                usize::from(accepted)
+            );
         }
     }
 
