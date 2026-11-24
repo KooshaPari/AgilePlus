@@ -156,7 +156,29 @@ jobs:
                   # yields a precise rc=124 verdict and a log instead of a purged
                   # runner blob. This is the one change that survives: it converts
                   # an infrastructure kill into a precise rc=124 verdict.
-                  timeout 5400 cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml --exclude "crates/agileplus-domain/src/intent_graph.rs" --exclude "crates/agileplus-domain/src/ports/mod.rs" --exclude "crates/agileplus-domain/src/ports/execution.rs" --timeout 120 --build-timeout 300 --shard ${{ matrix.shard }}/16
+                  # Per-mutant budgets are deliberately short. Shard 15 was
+                  # cancelled twice at the SAME phase, ~5 minutes in, with zero
+                  # mutant-result lines emitted (runs 08:28:44-08:33:38 = 4m54s
+                  # and 08:55:58-09:03:00 = 7m02s). cargo-mutants printed
+                  # `ERROR interrupted` + `err=interrupted phase=Test`, which is
+                  # its SIGTERM handler, never `TIMEOUT`.
+                  #
+                  # Falsified as causes: the workflow cannot cancel itself
+                  # (concurrency group is per-ref with cancel-in-progress: false),
+                  # timeout-minutes is 240, no competing run existed, and shard 15
+                  # holds only 20 mutants (baseline 53s build + 25s test), so it is
+                  # the CHEAPEST leg -- shard 5 went green in 21m31s.
+                  #
+                  # The only quantity matching that ~5-minute silence is the old
+                  # --build-timeout 300: the first mutant of the shard wedges in
+                  # Phase::Test for the whole build budget, so the leg is still
+                  # silently waiting when the external cancel lands. Shortening
+                  # the budget converts that silence into a precise per-mutant
+                  # TIMEOUT verdict inside ~2 minutes, which is publishable
+                  # evidence instead of a vanished job. Mutants in this crate
+                  # build in well under a minute normally (baseline build 53s for
+                  # the whole shard), so 120s/60s are not tight for good mutants.
+                  timeout 5400 cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml --exclude "crates/agileplus-domain/src/intent_graph.rs" --exclude "crates/agileplus-domain/src/ports/mod.rs" --exclude "crates/agileplus-domain/src/ports/execution.rs" --timeout 60 --build-timeout 120 --shard ${{ matrix.shard }}/16
                   rc=$?
                   echo "cargo-mutants exit code: $rc"
                   echo "rc=$rc" >> "$GITHUB_OUTPUT"
