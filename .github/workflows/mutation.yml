@@ -80,15 +80,21 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                # 8 legs, not 4. Shard 3 failed three times in a row, each time
+                # 16 legs, not 8. Shard 3 failed three times in a row, each time
                 # at a DIFFERENT mutant, always with the same signature: steady
                 # progress, then a long silence (16 min, 16 min, 39 min), then
                 # "The runner has received a shutdown signal". No cargo-mutants
                 # error is emitted and --build-timeout never fires, so the
-                # runner is dying rather than the tool reporting. Splitting into
-                # 8 legs cuts per-leg exposure to that failure in half; the
-                # distribution is balanced (59,59,59,59,59,59,59,57).
-                shard: [0, 1, 2, 3, 4, 5, 6, 7]
+                # runner is dying rather than the tool reporting. Splitting first
+                # into 8 legs halved per-leg exposure but left shard 7/8
+                # structurally overloaded: cargo-mutants assigns shards
+                # round-robin over the sorted mutant list, and 33 of the 57
+                # mutants landing in shard 7 came from
+                # src/domain/work_package/dependency.rs, so that one leg ran
+                # far past timeout-minutes: 240 while its siblings finished in
+                # 17-35 min. 16 legs scatters that file across shards again
+                # (expected ~8 mutants per leg).
+                shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
         steps:
             - uses: actions/checkout@v7
 
@@ -145,10 +151,12 @@ jobs:
                   set +e
                   # Outer cap: a wedged cargo-mutants never returns and never
                   # reports, which is what turns one bad mutant into a dead runner.
-                  # 170 min leaves room inside timeout-minutes: 240 for the guard.
-                  # This is the one change that survives: it converts an
-                  # infrastructure kill into a precise rc=124 verdict.
-                  timeout 10200 cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml --exclude "crates/agileplus-domain/src/intent_graph.rs" --exclude "crates/agileplus-domain/src/ports/mod.rs" --exclude "crates/agileplus-domain/src/ports/execution.rs" --timeout 120 --build-timeout 300 --shard ${{ matrix.shard }}/8
+                  # 90 min is above the observed worst sibling shard (35 min) with
+                  # headroom, and below timeout-minutes: 240, so a stuck shard
+                  # yields a precise rc=124 verdict and a log instead of a purged
+                  # runner blob. This is the one change that survives: it converts
+                  # an infrastructure kill into a precise rc=124 verdict.
+                  timeout 5400 cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml --exclude "crates/agileplus-domain/src/intent_graph.rs" --exclude "crates/agileplus-domain/src/ports/mod.rs" --exclude "crates/agileplus-domain/src/ports/execution.rs" --timeout 120 --build-timeout 300 --shard ${{ matrix.shard }}/16
                   rc=$?
                   echo "cargo-mutants exit code: $rc"
                   echo "rc=$rc" >> "$GITHUB_OUTPUT"
@@ -209,22 +217,22 @@ jobs:
                   shard="${{ matrix.shard }}"
 
                   if [ "${{ job.status }}" = "cancelled" ]; then
-                    echo "::warning::shard $shard/8 was cancelled by the runner before it produced a verdict; this is an infrastructure kill, not a mutant result. Re-run this shard."
+                    echo "::warning::shard $shard/16 was cancelled by the runner before it produced a verdict; this is an infrastructure kill, not a mutant result. Re-run this shard."
                     exit 0
                   fi
 
                   if [ ! -e mutants.out ]; then
-                    echo "::error::cargo-mutants produced no mutants.out; shard $shard/8 did not run"
+                    echo "::error::cargo-mutants produced no mutants.out; shard $shard/16 did not run"
                     exit 1
                   fi
                   if [ ! -f mutants.out/outcomes.json ]; then
-                    echo "::error::mutants.out exists but outcomes.json is missing; shard $shard/8 did not finish"
+                    echo "::error::mutants.out exists but outcomes.json is missing; shard $shard/16 did not finish"
                     exit 1
                   fi
 
                   end_time="$(jq -r '.end_time // empty' mutants.out/outcomes.json)"
                   if [ -z "$end_time" ]; then
-                    echo "::error::outcomes.json has no end_time, so shard $shard/8 did not finish"
+                    echo "::error::outcomes.json has no end_time, so shard $shard/16 did not finish"
                     jq -r '"progress: \(.caught) caught of \(.total_mutants) mutants"' mutants.out/outcomes.json
                     exit 1
                   fi
@@ -234,16 +242,16 @@ jobs:
                       echo "cargo-mutants exit code $rc is an acceptable campaign outcome"
                       ;;
                     "")
-                      echo "::error::no cargo-mutants exit code recorded; the run step was cancelled or never completed, so shard $shard/8 is not trustworthy"
+                      echo "::error::no cargo-mutants exit code recorded; the run step was cancelled or never completed, so shard $shard/16 is not trustworthy"
                       exit 1
                       ;;
                     *)
-                      echo "::error::cargo-mutants exited $rc (1=usage, 4=baseline tests failed, 5/6=filter-diff, 70=internal error); shard $shard/8 results are not trustworthy"
+                      echo "::error::cargo-mutants exited $rc (1=usage, 4=baseline tests failed, 5/6=filter-diff, 70=internal error); shard $shard/16 results are not trustworthy"
                       exit 1
                       ;;
                   esac
 
-                  jq -r --arg shard "$shard" '"shard \($shard)/8 finished at \(.end_time) with exit code '"$rc"': total=\(.total_mutants) caught=\(.caught) missed=\(.missed) timeout=\(.timeout) unviable=\(.unviable)"' mutants.out/outcomes.json
+                  jq -r --arg shard "$shard" '"shard \($shard)/16 finished at \(.end_time) with exit code '"$rc"': total=\(.total_mutants) caught=\(.caught) missed=\(.missed) timeout=\(.timeout) unviable=\(.unviable)"' mutants.out/outcomes.json
 
             - name: Upload mutation report
               if: always()
