@@ -45,6 +45,9 @@ ignore = [
   { id = "RUSTSEC-2026-0371", reason = "zbus_names unmaintained (info): merged into zbus 6.0.0 as zbus::names on 2026-10-16. Same LINUX-ONLY path as RUSTSEC-2026-0370 (zbus 5 backend). Re-evaluate alongside -0370 when keyring's linux backend migrates to zbus 6." },
   { id = "RUSTSEC-2026-0372", reason = "zvariant_derive unmaintained (info): merged into zbus 6.0.0 macros on 2026-10-16. Same LINUX-ONLY path as RUSTSEC-2026-0370. Re-evaluate alongside -0370 when keyring's linux backend migrates to zbus 6." },
   { id = "RUSTSEC-2026-0374", reason = "basic-toml unmaintained (archived upstream): transitive, build-time only; no safe upgrade exists." },
+  { id = "RUSTSEC-2026-0543", reason = "chrono unmaintained (info): archived upstream, no patched version exists. Transitive date/time dependency across the workspace; no security impact. Re-evaluate only if the chrono line is replaced." },
+  { id = "RUSTSEC-2026-0555", reason = "chrono-tz unmaintained (info): no patched version exists. Transitive via chrono timezone handling; no security impact. Re-evaluate when chrono/chrono-tz migrate to a maintained successor." },
+  { id = "RUSTSEC-2026-0542", reason = "humantime unmaintained (info): no patched version exists. Transitive, formatting-only helper; no security impact. Re-evaluate when the owning dependency drops it." },
 ]
 
 [licenses]

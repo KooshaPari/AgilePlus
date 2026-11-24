@@ -134,6 +134,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      # EmbarkStudios/cargo-deny-action runs inside a musl (Alpine) container, so
+      # rustup resolves the rust-toolchain.toml pin against the container host
+      # triple and demands `nightly-2026-07-31-x86_64-unknown-linux-musl`. The
+      # step above installs the gnu build on the runner, not inside that
+      # container, so the job died at toolchain setup before running any check.
+      # The musl override serves no purpose for this repo: install cargo-deny on
+      # the standard host target and run the same checks, mirroring deny.yml.
       - name: Install the pinned Rust channel
         run: |
           set -euo pipefail
@@ -141,10 +148,12 @@ jobs:
           echo "pinned channel: ${channel}"
           test -n "${channel}"
           rustup toolchain install "${channel}" --profile minimal --no-self-update
-      - name: cargo-deny check
-        uses: EmbarkStudios/cargo-deny-action@v2
+      - name: Install cargo-deny
+        uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912 # v2
         with:
-          arguments: --all-features
+          tool: cargo-deny
+      - name: cargo-deny check
+        run: cargo deny --manifest-path Cargo.toml check
 
   python:
     name: Python
