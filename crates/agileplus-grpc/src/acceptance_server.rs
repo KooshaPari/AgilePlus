@@ -1,6 +1,36 @@
 //! Serving the acceptance decorator without changing legacy embedders.
+use agileplus_domain::{credentials::CredentialStore, ports::ContentStoragePort};
 use agileplus_proto::agileplus::v1::agile_plus_core_service_server::AgilePlusCoreService;
-use std::net::SocketAddr;
+use std::{net::SocketAddr, path::PathBuf, sync::Arc};
+
+#[cfg(not(agileplus_proto_stubs))]
+pub async fn serve_with_queue<T: AgilePlusCoreService, S: ContentStoragePort + 'static>(
+    addr: SocketAddr,
+    service: T,
+    root: PathBuf,
+    storage: Arc<S>,
+    credentials: Arc<dyn CredentialStore>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use agileplus_proto::agileplus::v1::agile_plus_core_service_server::AgilePlusCoreServiceServer;
+    let queue = crate::server::queue_service::QueueService::new(root, storage, credentials);
+    tonic::transport::Server::builder()
+        .add_service(AgilePlusCoreServiceServer::new(service))
+        .add_service(agileplus_proto::agileplus::v1::integrations_service_server::IntegrationsServiceServer::new(queue))
+        .serve_with_shutdown(addr, shutdown())
+        .await?;
+    Ok(())
+}
+
+#[cfg(agileplus_proto_stubs)]
+pub async fn serve_with_queue<T: AgilePlusCoreService, S: ContentStoragePort + 'static>(
+    _addr: SocketAddr,
+    _service: T,
+    _root: PathBuf,
+    _storage: Arc<S>,
+    _credentials: Arc<dyn CredentialStore>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    Err("gRPC network server unavailable: protobuf generation was skipped".into())
+}
 
 #[cfg(not(agileplus_proto_stubs))]
 pub async fn serve<T: AgilePlusCoreService>(
