@@ -178,8 +178,40 @@ jobs:
                   # evidence instead of a vanished job. Mutants in this crate
                   # build in well under a minute normally (baseline build 53s for
                   # the whole shard), so 120s/60s are not tight for good mutants.
-                  timeout 5400 cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml --exclude "crates/agileplus-domain/src/intent_graph.rs" --exclude "crates/agileplus-domain/src/ports/mod.rs" --exclude "crates/agileplus-domain/src/ports/execution.rs" --timeout 60 --build-timeout 120 --shard ${{ matrix.shard }}/16
-                  rc=$?
+                  # Bounded retry, 2 attempts. cargo-mutants 27.1.0 exposes NO
+                  # --attempts flag (verified with `cargo mutants --help`; it has
+                  # only --timeout, --build-timeout, --minimum-test-timeout and the
+                  # multiplier variants), so the retry has to live here.
+                  #
+                  # Only infrastructure shapes are retried: 124 = the outer `timeout`
+                  # cap fired, 130/137/143 = SIGINT/SIGKILL/SIGTERM. Real campaign
+                  # outcomes (0 all caught, 2 missed mutants, 3 per-mutant timeout)
+                  # and real errors (1 usage, 4 baseline red, 5/6 filter-diff, 70
+                  # internal) break out immediately, so a second run can never mask
+                  # or launder a verdict. Worst case stays 2 x 90 min, inside the
+                  # 240-minute job ceiling.
+                  #
+                  # A cancel delivered to the STEP by the runner still kills the
+                  # shell, so this cannot rescue that case; the guard below already
+                  # downgrades a cancelled job to a retryable warning. This retry
+                  # covers the tool dying on its own (OOM kill, signal to the child
+                  # only) inside a step that survives.
+                  rc=0
+                  for attempt in 1 2; do
+                    timeout 5400 cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml --exclude "crates/agileplus-domain/src/intent_graph.rs" --exclude "crates/agileplus-domain/src/ports/mod.rs" --exclude "crates/agileplus-domain/src/ports/execution.rs" --timeout 60 --build-timeout 120 --shard ${{ matrix.shard }}/16
+                    rc=$?
+                    case "$rc" in
+                      124|130|137|143)
+                        if [ "$attempt" -lt 2 ]; then
+                          echo "::warning::cargo-mutants attempt $attempt ended with rc=$rc (infrastructure interrupt); retrying once"
+                          sleep 15
+                          continue
+                        fi
+                        echo "::error::cargo-mutants was interrupted on both attempts (rc=$rc); no verdict was produced"
+                        ;;
+                    esac
+                    break
+                  done
                   echo "cargo-mutants exit code: $rc"
                   echo "rc=$rc" >> "$GITHUB_OUTPUT"
                   exit 0
