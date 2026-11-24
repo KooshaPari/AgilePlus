@@ -23,11 +23,9 @@ jobs:
             contents: read
         steps:
             - uses: actions/checkout@v7
-            # Install prebuilt binaries rather than compiling on the pinned
-            # nightly: that toolchain cannot build current `filetime`
-            # (E0658 fs_set_times), which is why audit-check was replaced.
-            # Running `cargo audit` directly (below) also removes the
-            # checks/issues write permissions audit-check required.
+            # See security.yml: installing cargo-audit with the pinned nightly
+            # fails on `filetime` E0658, so use the prebuilt binary from
+            # taiki-e/install-action and run `cargo audit` directly below.
             - name: Install cargo-audit
               uses: taiki-e/install-action@fe3acb53a98b62c772db35de75ce0e4595e7ca8c # v2
               with:
