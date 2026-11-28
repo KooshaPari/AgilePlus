@@ -148,16 +148,16 @@ fn scan_file(path: &Path, out: &mut Vec<Finding>) {
             }
         }
 
-        if let Some(after) = strip_call(line, "expect") {
-            if after.trim().is_empty() || after.trim() == "()" || after.trim() == "\"\"" {
-                out.push(Finding {
-                    file: path.display().to_string(),
-                    line: lineno,
-                    rule_id: "expect_without_message",
-                    severity: Severity::Medium,
-                    message: "`expect()` requires a non-empty message".into(),
-                });
-            }
+        if let Some(after) = strip_call(line, "expect")
+            && (after.trim().is_empty() || after.trim() == "()" || after.trim() == "\"\"")
+        {
+            out.push(Finding {
+                file: path.display().to_string(),
+                line: lineno,
+                rule_id: "expect_without_message",
+                severity: Severity::Medium,
+                message: "`expect()` requires a non-empty message".into(),
+            });
         }
 
         if line.contains("unsafe ") || line.contains("unsafe{") || line.contains("unsafe {") {
