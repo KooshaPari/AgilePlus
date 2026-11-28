@@ -55,6 +55,17 @@ pub struct ImplementArgs {
     pub manual: bool,
 }
 
+/// A work package satisfies a dependency once it reaches the states `validate`
+/// treats as acceptance-eligible.
+///
+/// `implement` leaves successful work in `Review`; only feature-wide acceptance
+/// moves a package to `Done` afterwards. Gating dependents on `Done` alone
+/// therefore deadlocks every dependency chain, so both commands share this one
+/// predicate instead of restating the rule.
+fn satisfies_dependency(state: WpState) -> bool {
+    matches!(state, WpState::Review | WpState::Done)
+}
+
 /// Run the `implement` command.
 pub async fn run_implement<S, V, A>(
     args: ImplementArgs,
@@ -188,6 +199,40 @@ where
         all_deps.extend(deps);
     }
 
+    // A dependency is satisfied by the same eligibility `validate` uses when it
+    // accepts a feature: `Review` or `Done`. Using `Done` alone would deadlock
+    // every dependency chain, because successful work stops at `Review` and
+    // only feature-wide acceptance moves a package to `Done` afterwards.
+    let mut completed: HashSet<i64> = all_wps
+        .iter()
+        .filter(|wp| satisfies_dependency(wp.state))
+        .map(|wp| wp.id)
+        .collect();
+
+    // Dependencies may point at work packages outside this feature. Resolve any
+    // dependency id we have not seen, so a satisfied cross-feature prerequisite
+    // does not block forever.
+    let known_ids: HashSet<i64> = all_wps.iter().map(|wp| wp.id).collect();
+    let mut external_dep_ids: Vec<i64> = all_deps
+        .iter()
+        .map(|dep| dep.depends_on)
+        .filter(|id| !known_ids.contains(id))
+        .collect();
+    external_dep_ids.sort_unstable();
+    external_dep_ids.dedup();
+    for dep_id in external_dep_ids {
+        if let Some(dep_wp) = storage
+            .get_work_package(dep_id)
+            .await
+            .context("loading cross-feature dependency")?
+        {
+            wp_states.entry(dep_id).or_insert(dep_wp.state);
+            if satisfies_dependency(dep_wp.state) {
+                completed.insert(dep_id);
+            }
+        }
+    }
+
     let scheduler = Scheduler::new(wp_states.clone(), all_deps.clone());
 
     // Read spec content for PR descriptions
@@ -205,12 +250,6 @@ where
     };
 
     // Process WPs
-    let mut completed: HashSet<i64> = all_wps
-        .iter()
-        .filter(|wp| wp.state == WpState::Done)
-        .map(|wp| wp.id)
-        .collect();
-
     let target_ids: HashSet<i64> = target_wps.iter().map(|wp| wp.id).collect();
 
     if args.resume {
@@ -218,11 +257,14 @@ where
     }
 
     for wp in &target_wps {
-        // Skip already done
+        // Skip work packages that already reached the acceptance-eligible
+        // states (Review or Done); implement has nothing left to dispatch.
         if completed.contains(&wp.id) {
             println!(
-                "  WP{:02} '{}' already done, skipping.",
-                wp.sequence, wp.title
+                "  WP{:02} '{}' already {} - skipping.",
+                wp.sequence,
+                wp.title,
+                format!("{:?}", wp.state).to_lowercase()
             );
             continue;
         }
@@ -273,6 +315,16 @@ where
                 path
             }
         };
+
+        // Capture the worktree HEAD before dispatch so an agent that leaves its
+        // edits uncommitted cannot later be mistaken for a completed candidate.
+        let baseline_commit: Option<String> = vcs
+            .list_worktrees()
+            .await
+            .context("listing worktrees to capture the pre-dispatch commit")?
+            .into_iter()
+            .find(|w| w.path == worktree_path)
+            .map(|w| w.commit);
 
         // Plan artifacts are stored in the canonical checkout. Materialize the
         // spec, plan, and WP prompt into the new worktree before dispatch so
@@ -485,60 +537,105 @@ where
 
         match outcome {
             ReviewOutcome::Approved => {
-                // The scaffold review loop reports agent completion, not
-                // authenticated CI/reviewer approval. Apply the same contract
-                // gates as the public transition command before claiming Done.
+                // The worker finished. Record the exact candidate and a terminal
+                // execution outcome before any governance projection. Work
+                // acceptance remains a separate, independent decision.
+                let worktrees = vcs
+                    .list_worktrees()
+                    .await
+                    .context("listing worktrees to resolve the candidate commit")?;
+                let candidate_commit = worktrees
+                    .iter()
+                    .find(|w| w.path == worktree_path)
+                    .map(|w| w.commit.clone());
+
+                // `list_worktrees` reports the worktree's Git HEAD, so an agent
+                // that edited files without committing leaves no candidate at
+                // all. Recording the pre-dispatch commit would bind evaluation
+                // to code the agent did not write, so fail instead.
+                let candidate_ref = match candidate_commit {
+                    None => None,
+                    Some(commit) if Some(&commit) == baseline_commit.as_ref() => {
+                        tracing::warn!(
+                            wp = wp.id,
+                            commit = %commit,
+                            "agent finished without changing the worktree HEAD; no candidate recorded"
+                        );
+                        None
+                    }
+                    Some(commit) => Some(format!("git:{commit}")),
+                };
+
+                let Some(candidate_ref) = candidate_ref else {
+                    storage
+                        .update_attempt_runtime(
+                            &attempt_id,
+                            AttemptStatus::Failed,
+                            Some(&job_id),
+                            None,
+                            Some("candidate_unresolved"),
+                            Some(Utc::now()),
+                        )
+                        .await
+                        .context("recording unresolved candidate")?;
+                    println!(
+                        "  WP{:02} produced no exact candidate (worktree HEAD unchanged or unresolvable); attempt failed and worktree retained.",
+                        wp.sequence
+                    );
+                    continue;
+                };
+
+                storage
+                    .update_attempt_runtime(
+                        &attempt_id,
+                        AttemptStatus::Completed,
+                        Some(&job_id),
+                        Some(&candidate_ref),
+                        None,
+                        Some(Utc::now()),
+                    )
+                    .await
+                    .context("recording completed attempt")?;
+
+                // Agent completion is not independent acceptance. Apply only the
+                // Doing -> Review gate here; Review -> Done belongs to the
+                // canonical candidate-bound acceptance transaction.
                 let Some(contract) = storage
                     .get_latest_governance_contract(feature.id)
                     .await
                     .context("loading governance contract before agent completion")?
                 else {
                     println!(
-                        "  WP{:02} awaits a governance contract; worktree retained.",
-                        wp.sequence
+                        "  WP{:02} candidate {} captured; awaiting a governance contract before review.",
+                        wp.sequence, candidate_ref
                     );
                     continue;
                 };
-                let required_transitions = [
-                    format!("WP{:02}: Doing -> Review", wp.sequence),
-                    format!("WP{:02}: Review -> Done", wp.sequence),
-                ];
-                if required_transitions.iter().any(|transition| {
-                    !contract.rules.iter().any(|rule| {
-                        rule.transition == *transition && !rule.required_evidence.is_empty()
-                    })
+                let review_transition = format!("WP{:02}: Doing -> Review", wp.sequence);
+                if !contract.rules.iter().any(|rule| {
+                    rule.transition == review_transition && !rule.required_evidence.is_empty()
                 }) {
                     println!(
-                        "  WP{:02} awaits non-empty CI/test and review contract gates; worktree retained.",
-                        wp.sequence
+                        "  WP{:02} candidate {} captured; awaiting a non-empty review contract gate.",
+                        wp.sequence, candidate_ref
                     );
                     continue;
                 }
-                let mut gated = true;
-                for target in ["review", "done"] {
-                    let transition = super::mvp::TransitionArgs {
-                        wp: Some(wp.id),
-                        story: None,
-                        to: target.into(),
-                    };
-                    if let Err(error) = super::mvp::transition(&transition, storage).await {
-                        println!(
-                            "  WP{:02} awaits evidence: {error:#}; worktree retained.",
-                            wp.sequence
-                        );
-                        gated = false;
-                        break;
-                    }
-                }
-                if !gated {
+                let transition = super::mvp::TransitionArgs {
+                    wp: Some(wp.id),
+                    story: None,
+                    to: "review".into(),
+                };
+                if let Err(error) = super::mvp::transition(&transition, storage).await {
+                    println!(
+                        "  WP{:02} candidate {} captured; review gate blocked: {error:#}.",
+                        wp.sequence, candidate_ref
+                    );
                     continue;
                 }
-                completed.insert(wp.id);
-                println!("  WP{:02} completed with contract evidence.", wp.sequence);
-
                 println!(
-                    "  WP{:02} candidate {} is in Review; review approval is not terminal acceptance.",
-                    wp.sequence, job_id
+                    "  WP{:02} candidate {} captured and moved to Review; terminal acceptance is separate.",
+                    wp.sequence, candidate_ref
                 );
             }
             ReviewOutcome::MaxCyclesReached {
@@ -754,6 +851,21 @@ mod tests {
     use std::fs;
 
     // ── slugify ───────────────────────────────────────────────────────────
+
+    #[test]
+    fn dependency_is_satisfied_by_review_or_done_only() {
+        // `validate` accepts a feature once every WP is Review or Done, and
+        // `implement` leaves successful work in Review. A dependent WP must be
+        // releasable in that state or every chain deadlocks.
+        assert!(satisfies_dependency(WpState::Review));
+        assert!(satisfies_dependency(WpState::Done));
+        for state in [WpState::Planned, WpState::Doing, WpState::Blocked] {
+            assert!(
+                !satisfies_dependency(state),
+                "{state:?} must not satisfy a dependency"
+            );
+        }
+    }
 
     #[tokio::test]
     async fn restart_reconciliation_expires_only_live_attempts() {

@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 
 use crate::AppState;
+use crate::work_packages::{list_work_packages, WorkPackage};
 
 // ── Models matching CLI's .agileplus schema ──────────────────────────
 
@@ -12,20 +13,6 @@ pub struct Feature {
     pub friendly_name: String,
     pub state: String,
     pub target_branch: String,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct WorkPackage {
-    pub id: i64,
-    pub feature_id: i64,
-    pub title: String,
-    pub state: String,
-    pub sequence: i64,
-    pub acceptance_criteria: String,
-    pub pr_url: Option<String>,
-    pub pr_state: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -128,36 +115,11 @@ pub fn get_feature_with_details(
     let feature =
         get_feature(state.clone(), id)?.ok_or_else(|| format!("Feature '{id}' not found"))?;
 
+    // Fetch work packages through the single implementation of that query.
+    let work_packages = list_work_packages(state.clone(), id)?;
+
     let conn = state.db_connection()?;
     let conn = conn.as_ref().ok_or("Database not initialized")?;
-
-    // Fetch work packages
-    let mut wp_stmt = conn
-        .prepare(
-            "SELECT id, feature_id, title, state, sequence, acceptance_criteria,
-                    pr_url, pr_state, created_at, updated_at
-             FROM work_packages WHERE feature_id = ?1 ORDER BY sequence ASC",
-        )
-        .map_err(|e| e.to_string())?;
-
-    let work_packages: Vec<WorkPackage> = wp_stmt
-        .query_map([id], |row| {
-            Ok(WorkPackage {
-                id: row.get(0)?,
-                feature_id: row.get(1)?,
-                title: row.get(2)?,
-                state: row.get(3)?,
-                sequence: row.get(4)?,
-                acceptance_criteria: row.get(5)?,
-                pr_url: row.get(6)?,
-                pr_state: row.get(7)?,
-                created_at: row.get(8)?,
-                updated_at: row.get(9)?,
-            })
-        })
-        .map_err(|e| e.to_string())?
-        .filter_map(|r| r.ok())
-        .collect();
 
     // Fetch evidence (through work packages)
     let mut ev_stmt = conn
