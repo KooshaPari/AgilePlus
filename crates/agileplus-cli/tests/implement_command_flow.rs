@@ -18,6 +18,7 @@ use agileplus_domain::ports::StoragePort;
 use agileplus_sqlite::SqliteStorageAdapter;
 use support::implement::{
     AgentBehavior, PLAN, SPEC, ScriptedAgent, TempVcs, args, block_on, block_on_paused, seed,
+    seed_recorded_candidate,
 };
 
 /// A feature in an invalid state is rejected before any agent work happens.
@@ -75,17 +76,19 @@ fn implement_reports_unknown_feature_with_guidance() {
     });
 }
 
-/// A WP already in Review has a retained candidate worktree. A later normal
-/// `implement` run must not create a second worktree or dispatch another
-/// candidate for it; independent acceptance belongs to `validate`.
+/// A WP already in Review has a retained candidate worktree recorded as a
+/// Completed Attempt on its active Assignment. A later normal `implement` run
+/// must not create a second worktree or dispatch another candidate for it;
+/// independent acceptance belongs to `validate`.
 #[test]
 fn implement_skips_review_candidate_without_creating_another_worktree() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().expect("in-memory db");
-        let (_, wp_id) = seed(&storage, "review-candidate", FeatureState::Implementing).await;
+        let (fid, wp_id) = seed(&storage, "review-candidate", FeatureState::Implementing).await;
         StoragePort::update_wp_state(&storage, wp_id, WpState::Review)
             .await
             .unwrap();
+        let candidate_ref = seed_recorded_candidate(&storage, fid, wp_id).await;
         let vcs = TempVcs::new().with_retained_candidate("review-candidate", "WP01");
         let agent = ScriptedAgent::success();
 
@@ -108,6 +111,50 @@ fn implement_skips_review_candidate_without_creating_another_worktree() {
             .unwrap()
             .unwrap();
         assert_eq!(wp.state, WpState::Review);
+        // The skip is only legitimate because the ledger holds the candidate,
+        // and the missing Review audit entry is repaired before the WP counts.
+        let trail = StoragePort::get_audit_trail(&storage, fid).await.unwrap();
+        assert!(
+            trail
+                .iter()
+                .any(|entry| entry.wp_id == Some(wp_id)
+                    && entry.transition == "WP01: Doing -> Review"),
+            "the Review transition must have an audit entry: {trail:?}"
+        );
+        assert!(
+            candidate_ref.starts_with("git:"),
+            "the recorded candidate must be an exact ref, got {candidate_ref}"
+        );
+        vcs.cleanup();
+    });
+}
+
+/// A retained worktree with no recorded candidate is an inconsistent ledger,
+/// not a completed producer outcome: the WP recovers to Doing.
+#[test]
+fn implement_recovers_review_worktree_without_recorded_candidate() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().expect("in-memory db");
+        let (_, wp_id) = seed(&storage, "review-unrecorded", FeatureState::Implementing).await;
+        StoragePort::update_wp_state(&storage, wp_id, WpState::Review)
+            .await
+            .unwrap();
+        let vcs = TempVcs::new().with_retained_candidate("review-unrecorded", "WP01");
+        let agent = ScriptedAgent::success();
+
+        run_implement(args("review-unrecorded"), &storage, &vcs, &agent)
+            .await
+            .expect("recovering an unrecorded Review candidate must succeed");
+
+        let wp = StoragePort::get_work_package(&storage, wp_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_ne!(
+            wp.state,
+            WpState::Review,
+            "a worktree name alone cannot keep a WP counted as a Review outcome"
+        );
         vcs.cleanup();
     });
 }
@@ -122,7 +169,7 @@ fn implement_propagates_worktree_listing_failure() {
         use agileplus_domain::domain::governance::{GovernanceContract, GovernanceRule};
 
         let storage = SqliteStorageAdapter::in_memory().unwrap();
-        let (fid, _) = seed(&storage, "vcs-failure", FeatureState::Planned).await;
+        let (fid, wp_id) = seed(&storage, "vcs-failure", FeatureState::Planned).await;
         StoragePort::create_governance_contract(
             &storage,
             &GovernanceContract {
@@ -159,12 +206,39 @@ fn implement_propagates_worktree_listing_failure() {
 
         let vcs = TempVcs::new().with_list_worktrees_error();
         let agent = ScriptedAgent::success();
-        let err = run_implement(args("vcs-failure"), &storage, &vcs, &agent)
+        run_implement(args("vcs-failure"), &storage, &vcs, &agent)
             .await
-            .expect_err("VCS failure must not be swallowed");
+            .expect("a listing fault must be recorded, not abort the run");
+
+        // The approved worker finished but the candidate could not be
+        // resolved, so the attempt has to be terminal. A Running attempt with
+        // no ended_at reads as a live job in the ledger.
+        let wp = StoragePort::get_work_package(&storage, wp_id)
+            .await
+            .unwrap()
+            .unwrap();
+        let assignment =
+            agileplus_domain::ports::ExecutionRecordPort::get_active_assignment(&storage, wp.id)
+                .await
+                .unwrap()
+                .expect("the dispatch must have an active assignment");
+        let attempts =
+            agileplus_domain::ports::ExecutionRecordPort::list_attempts(&storage, &assignment.id)
+                .await
+                .unwrap();
+        let attempt = attempts.last().expect("the dispatch must have an attempt");
+        assert_eq!(
+            attempt.status,
+            agileplus_domain::domain::execution::AttemptStatus::Failed,
+            "a listing fault must leave a terminal attempt"
+        );
+        assert_eq!(
+            attempt.failure_class.as_deref(),
+            Some("candidate_list_failed")
+        );
         assert!(
-            format!("{err:#}").contains("listing worktrees for approved candidate"),
-            "unexpected error: {err:#}"
+            attempt.ended_at.is_some(),
+            "a terminal attempt needs ended_at"
         );
         vcs.cleanup();
     });
@@ -203,6 +277,7 @@ fn implement_review_prerequisite_does_not_release_dependent() {
         StoragePort::update_wp_state(&storage, first_id, WpState::Review)
             .await
             .unwrap();
+        seed_recorded_candidate(&storage, fid, first_id).await;
 
         let vcs = TempVcs::new().with_retained_candidate("dependency-gate", "WP01");
         let agent = ScriptedAgent::success();

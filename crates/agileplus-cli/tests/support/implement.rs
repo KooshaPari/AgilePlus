@@ -481,3 +481,61 @@ pub async fn seed(storage: &SqliteStorageAdapter, slug: &str, fstate: FeatureSta
         .unwrap();
     (fid, wp_id)
 }
+
+/// Record the exact candidate a Review work package is bound to: a Completed
+/// Attempt on an Active Assignment whose `result_candidate_ref` names the
+/// commit `TempVcs` reports. A retained worktree alone is not a candidate, so
+/// tests that expect a Review skip must call this.
+pub async fn seed_recorded_candidate(
+    storage: &SqliteStorageAdapter,
+    feature_id: i64,
+    wp_id: i64,
+) -> String {
+    use agileplus_domain::domain::execution::{
+        Assignment, AssignmentStatus, Attempt, AttemptStatus, SpecRevision,
+    };
+    use agileplus_domain::ports::ExecutionRecordPort;
+
+    let t0 = chrono::Utc::now();
+    let revision = SpecRevision {
+        id: format!("spec:{feature_id}:review-candidate"),
+        feature_id,
+        content_hash: "sha256:review-candidate".into(),
+        parent_revision_id: None,
+        accepted_at: t0,
+        authority: "test".into(),
+    };
+    ExecutionRecordPort::create_spec_revision(storage, &revision)
+        .await
+        .expect("spec revision");
+    let assignment = Assignment {
+        id: format!("assignment:{wp_id}:review-candidate"),
+        wp_id,
+        spec_revision_id: revision.id.clone(),
+        created_at: t0,
+        supersedes_assignment_id: None,
+        status: AssignmentStatus::Active,
+    };
+    ExecutionRecordPort::create_assignment(storage, &assignment)
+        .await
+        .expect("assignment");
+    let candidate_ref = format!("git:{TEST_CANDIDATE_COMMIT}");
+    let attempt = Attempt {
+        id: format!("attempt:{wp_id}:review-candidate"),
+        assignment_id: assignment.id.clone(),
+        worker_id: "worker".into(),
+        backend: "test".into(),
+        job_id: Some("job-review-candidate".into()),
+        worktree_path: None,
+        base_candidate_ref: Some("git:base".into()),
+        result_candidate_ref: Some(candidate_ref.clone()),
+        status: AttemptStatus::Completed,
+        failure_class: None,
+        started_at: t0,
+        ended_at: Some(t0),
+    };
+    ExecutionRecordPort::create_attempt(storage, &attempt)
+        .await
+        .expect("attempt");
+    candidate_ref
+}
