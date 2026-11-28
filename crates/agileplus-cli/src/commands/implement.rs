@@ -220,15 +220,15 @@ where
         .collect();
     external_dep_ids.sort_unstable();
     external_dep_ids.dedup();
-    for dep_id in external_dep_ids {
+    for dep_id in &external_dep_ids {
         if let Some(dep_wp) = storage
-            .get_work_package(dep_id)
+            .get_work_package(*dep_id)
             .await
             .context("loading cross-feature dependency")?
         {
-            wp_states.entry(dep_id).or_insert(dep_wp.state);
+            wp_states.entry(*dep_id).or_insert(dep_wp.state);
             if satisfies_dependency(dep_wp.state) {
-                completed.insert(dep_id);
+                completed.insert(*dep_id);
             }
         }
     }
@@ -281,17 +281,37 @@ where
         // Review and Done are both acceptance-eligible: implement leaves
         // successful work in Review, so gating on Done alone deadlocks every
         // dependency chain.
-        let completed: HashSet<i64> = current_wps
+        let mut completed: HashSet<i64> = current_wps
             .iter()
             .filter(|current| satisfies_dependency(current.state))
             .map(|current| current.id)
             .collect();
-        if completed.contains(&wp.id) {
+
+        // `current_wps` covers this feature only, and cross-feature
+        // prerequisites are not in it. Re-resolve them per iteration so a
+        // satisfied external dependency is not reported as still blocking.
+        for dep_id in &external_dep_ids {
+            if completed.contains(dep_id) {
+                continue;
+            }
+            if let Some(dep_wp) = storage
+                .get_work_package(*dep_id)
+                .await
+                .context("reloading cross-feature dependency")?
+                && satisfies_dependency(dep_wp.state)
+            {
+                completed.insert(*dep_id);
+            }
+        }
+
+        if let Some(current) = current_wps.iter().find(|current| current.id == wp.id)
+            && satisfies_dependency(current.state)
+        {
             println!(
                 "  WP{:02} '{}' already {} - skipping.",
                 wp.sequence,
                 wp.title,
-                format!("{:?}", wp.state).to_lowercase()
+                format!("{:?}", current.state).to_lowercase()
             );
             continue;
         }
