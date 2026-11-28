@@ -205,11 +205,25 @@ where
     };
 
     // Process WPs
-    let mut completed: HashSet<i64> = all_wps
+    //
+    // A dependency is satisfied by producer completion (Review) or by terminal
+    // acceptance (Done). Feature acceptance is a separate candidate-bound
+    // transaction, so scheduling on Review sequences producer work without
+    // treating an unaccepted package as accepted.
+    let mut released: HashSet<i64> = all_wps
+        .iter()
+        .filter(|wp| satisfies_dependency(wp.state))
+        .map(|wp| wp.id)
+        .collect();
+    // Only terminal acceptance short-circuits the loop. A package already in
+    // Review must still be visited: that is where a missing Review audit entry
+    // is repaired and where a candidate-less package is recovered.
+    let done: HashSet<i64> = all_wps
         .iter()
         .filter(|wp| wp.state == WpState::Done)
         .map(|wp| wp.id)
         .collect();
+    let mut completed = done.clone();
 
     let target_ids: HashSet<i64> = target_wps.iter().map(|wp| wp.id).collect();
 
@@ -219,7 +233,7 @@ where
 
     for wp in &target_wps {
         // Skip already done
-        if completed.contains(&wp.id) {
+        if done.contains(&wp.id) {
             println!(
                 "  WP{:02} '{}' already done, skipping.",
                 wp.sequence, wp.title
@@ -227,8 +241,11 @@ where
             continue;
         }
 
-        // Check dependencies
-        if let Some(blockers) = scheduler.is_blocked(wp.id, &completed) {
+        // Check dependencies before any state repair. Recovering a Review work
+        // package into Doing while a prerequisite is unmet would leave it in
+        // Doing, undispatchable and unreported, because the direct state write
+        // does not run the Doing transition's dependency gate.
+        if let Some(blockers) = scheduler.is_blocked(wp.id, &released) {
             let blocker_ids: Vec<String> = blockers.iter().map(|id| id.to_string()).collect();
             println!(
                 "  WP{:02} '{}' is blocked by: [{}]. Skipping.",
@@ -239,10 +256,97 @@ where
             continue;
         }
 
+        // A WP in Review already has a candidate. Starting another
+        // implementation would create a second candidate for the same work
+        // package. Review acceptance is a separate, candidate-bound transaction
+        // and belongs to `validate`, not to `implement`.
+        //
+        // Retained means two independent records agree: the ledger holds a
+        // Completed Attempt on the active Assignment whose
+        // `result_candidate_ref` names an exact commit, and the VCS listing
+        // shows a worktree at that same commit. A worktree name alone is not a
+        // candidate, so it cannot authorize the skip. A VCS listing fault is
+        // decided from the ledger alone rather than aborting every remaining
+        // work package.
+        // A Review work package with no recorded candidate is recovered to
+        // Doing below. Track that locally so the reuse path that follows sees
+        // the state this run actually operates in rather than the stale Review
+        // copy: the canonical worktree may already exist on disk, and
+        // `create_worktree` rejects an existing non-empty path.
+        let mut recovered_to_doing = false;
+
+        if wp.state == WpState::Review {
+            let wp_id_str = format!("WP{:02}", wp.sequence);
+            let (listed_ref, listing_failed) = match vcs.list_worktrees().await {
+                Ok(worktrees) => (
+                    find_review_candidate(&worktrees, slug, &wp_id_str)
+                        .map(|worktree| format!("git:{}", worktree.commit)),
+                    false,
+                ),
+                Err(error) => {
+                    println!(
+                        "  WP{:02} worktree listing failed ({error:#}); candidate cannot be verified.",
+                        wp.sequence
+                    );
+                    (None, true)
+                }
+            };
+            let recorded_ref = recorded_review_candidate(storage, wp.id).await?;
+            // A listing fault cannot confirm the exact-match rule, so no
+            // candidate is counted from the ledger alone. The work package is
+            // left untouched and the remaining targets still run.
+            if listing_failed {
+                println!(
+                    "  WP{:02} '{}' is in Review; candidate verification failed, leaving it unchanged.",
+                    wp.sequence, wp.title
+                );
+                continue;
+            }
+            let retained = match (recorded_ref, listed_ref) {
+                (Some(recorded), Some(listed)) if recorded == listed => Some(recorded),
+                _ => None,
+            };
+            if let Some(recorded) = retained {
+                // `mvp::transition` writes the state and then appends the
+                // audit entry, so a crash between the two leaves a Review
+                // work package with no entry that no retry would repair.
+                if ensure_review_audit(storage, wp.feature_id, wp.id, wp.sequence).await? {
+                    println!(
+                        "  WP{:02} recorded candidate {} had no Review audit entry; appended it.",
+                        wp.sequence, recorded
+                    );
+                }
+                println!(
+                    "  WP{:02} '{}' already in Review; recorded candidate {} awaits independent acceptance, skipping.",
+                    wp.sequence, wp.title, recorded
+                );
+                // Review is a completed producer outcome for this run's summary,
+                // so dependents are scheduled against it. Terminal acceptance
+                // is a separate candidate-bound transaction.
+                completed.insert(wp.id);
+                released.insert(wp.id);
+                continue;
+            }
+            // Review without a recorded candidate has no acceptable exact
+            // work. Recover by re-dispatching once; the normal evidence gate
+            // below still controls the Doing -> Review transition.
+            println!(
+                "  WP{:02} '{}' is in Review without a recorded candidate; recovering.",
+                wp.sequence, wp.title
+            );
+            storage
+                .update_wp_state(wp.id, WpState::Doing)
+                .await
+                .context(format!("recovering {wp_id_str} from Review to Doing"))?;
+            recovered_to_doing = true;
+        }
+
+        let in_doing = wp.state == WpState::Doing || recovered_to_doing;
+
         println!("Processing WP{:02}: '{}'...", wp.sequence, wp.title);
 
         // Resume mode: check if worktree already exists
-        if args.resume && wp.state == WpState::Doing {
+        if args.resume && in_doing {
             println!(
                 "  Resuming WP{:02} (already in 'doing' state)...",
                 wp.sequence
@@ -250,7 +354,7 @@ where
         }
 
         let wp_id_str = format!("WP{:02}", wp.sequence);
-        let existing_worktree = if args.resume && wp.state == WpState::Doing {
+        let existing_worktree = if (args.resume || recovered_to_doing) && in_doing {
             let worktrees = vcs
                 .list_worktrees()
                 .await
@@ -485,60 +589,109 @@ where
 
         match outcome {
             ReviewOutcome::Approved => {
-                // The scaffold review loop reports agent completion, not
-                // authenticated CI/reviewer approval. Apply the same contract
-                // gates as the public transition command before claiming Done.
+                // The worker finished. Record the exact candidate and a terminal
+                // execution outcome before any governance projection. Work
+                // acceptance remains a separate, independent decision.
+                // A listing fault must still leave a terminal attempt: an
+                // attempt that stays Running with no `ended_at` reads as a live
+                // job in the ledger until something expires it.
+                let candidate_ref = match vcs.list_worktrees().await {
+                    Ok(worktrees) => worktrees
+                        .into_iter()
+                        .find(|w| w.path == worktree_path)
+                        .map(|w| format!("git:{}", w.commit)),
+                    Err(error) => {
+                        storage
+                            .update_attempt_runtime(
+                                &attempt_id,
+                                AttemptStatus::Failed,
+                                Some(&job_id),
+                                None,
+                                Some("candidate_list_failed"),
+                                Some(Utc::now()),
+                            )
+                            .await
+                            .context("recording attempt failure after listing error")?;
+                        println!(
+                            "  WP{:02} could not list worktrees ({error:#}); attempt failed and worktree retained.",
+                            wp.sequence
+                        );
+                        continue;
+                    }
+                };
+
+                let Some(candidate_ref) = candidate_ref else {
+                    storage
+                        .update_attempt_runtime(
+                            &attempt_id,
+                            AttemptStatus::Failed,
+                            Some(&job_id),
+                            None,
+                            Some("candidate_unresolved"),
+                            Some(Utc::now()),
+                        )
+                        .await
+                        .context("recording unresolved candidate")?;
+                    println!(
+                        "  WP{:02} produced no exact candidate; attempt failed and worktree retained.",
+                        wp.sequence
+                    );
+                    continue;
+                };
+
+                storage
+                    .update_attempt_runtime(
+                        &attempt_id,
+                        AttemptStatus::Completed,
+                        Some(&job_id),
+                        Some(&candidate_ref),
+                        None,
+                        Some(Utc::now()),
+                    )
+                    .await
+                    .context("recording completed attempt")?;
+
+                // Agent completion is not independent acceptance. Apply only the
+                // Doing -> Review gate here; Review -> Done belongs to the
+                // canonical candidate-bound acceptance transaction.
                 let Some(contract) = storage
                     .get_latest_governance_contract(feature.id)
                     .await
                     .context("loading governance contract before agent completion")?
                 else {
                     println!(
-                        "  WP{:02} awaits a governance contract; worktree retained.",
-                        wp.sequence
+                        "  WP{:02} candidate {} captured; awaiting a governance contract before review.",
+                        wp.sequence, candidate_ref
                     );
                     continue;
                 };
-                let required_transitions = [
-                    format!("WP{:02}: Doing -> Review", wp.sequence),
-                    format!("WP{:02}: Review -> Done", wp.sequence),
-                ];
-                if required_transitions.iter().any(|transition| {
-                    !contract.rules.iter().any(|rule| {
-                        rule.transition == *transition && !rule.required_evidence.is_empty()
-                    })
+                let review_transition = format!("WP{:02}: Doing -> Review", wp.sequence);
+                if !contract.rules.iter().any(|rule| {
+                    rule.transition == review_transition && !rule.required_evidence.is_empty()
                 }) {
                     println!(
-                        "  WP{:02} awaits non-empty CI/test and review contract gates; worktree retained.",
-                        wp.sequence
+                        "  WP{:02} candidate {} captured; awaiting a non-empty review contract gate.",
+                        wp.sequence, candidate_ref
                     );
                     continue;
                 }
-                let mut gated = true;
-                for target in ["review", "done"] {
-                    let transition = super::mvp::TransitionArgs {
-                        wp: Some(wp.id),
-                        story: None,
-                        to: target.into(),
-                    };
-                    if let Err(error) = super::mvp::transition(&transition, storage).await {
-                        println!(
-                            "  WP{:02} awaits evidence: {error:#}; worktree retained.",
-                            wp.sequence
-                        );
-                        gated = false;
-                        break;
-                    }
-                }
-                if !gated {
+                let transition = super::mvp::TransitionArgs {
+                    wp: Some(wp.id),
+                    story: None,
+                    to: "review".into(),
+                };
+                if let Err(error) = super::mvp::transition(&transition, storage).await {
+                    println!(
+                        "  WP{:02} candidate {} captured; review gate blocked: {error:#}.",
+                        wp.sequence, candidate_ref
+                    );
                     continue;
                 }
                 completed.insert(wp.id);
-                println!("  WP{:02} completed with contract evidence.", wp.sequence);
-
+                released.insert(wp.id);
                 println!(
-                    "  WP{:02} candidate {} is in Review; review approval is not terminal acceptance.",
-                    wp.sequence, job_id
+                    "  WP{:02} candidate {} captured and moved to Review; terminal acceptance is separate.",
+                    wp.sequence, candidate_ref
                 );
             }
             ReviewOutcome::MaxCyclesReached {
@@ -546,13 +699,25 @@ where
                 last_feedback,
             } => {
                 let ended_at = Utc::now();
-                let failed_candidate_ref = vcs
-                    .list_worktrees()
-                    .await
-                    .ok()
-                    .and_then(|items| items.into_iter().find(|w| w.path == worktree_path))
-                    .map(|w| format!("git:{}", w.commit))
-                    .unwrap_or_else(|| format!("unresolved:job:{job_id}"));
+                // Exhaustion still has to reach the ledger. A listing fault
+                // here would otherwise skip the Unsatisfied evaluation, the
+                // Failed attempt and the Blocked work package, and stop the run
+                // before later targets dispatch, so fall back to the unresolved
+                // job reference and record all three writes.
+                let failed_candidate_ref = match vcs.list_worktrees().await {
+                    Ok(worktrees) => worktrees
+                        .into_iter()
+                        .find(|w| w.path == worktree_path)
+                        .map(|w| format!("git:{}", w.commit))
+                        .unwrap_or_else(|| format!("unresolved:job:{job_id}")),
+                    Err(error) => {
+                        println!(
+                            "  WP{:02} could not list worktrees ({error:#}); recording the unresolved job reference.",
+                            wp.sequence
+                        );
+                        format!("unresolved:job:{job_id}")
+                    }
+                };
                 let exact_failed_candidate = failed_candidate_ref
                     .starts_with("git:")
                     .then(|| failed_candidate_ref.clone());
@@ -651,19 +816,36 @@ where
     }
 
     let elapsed_ms = start.elapsed().as_millis();
+    let (done_count, total_count) = summary_counts(&target_ids, &completed);
+    tracing::info!(command = "implement", slug = %slug, done = done_count, elapsed_ms = %elapsed_ms, "implement completed");
+
+    println!();
+    println!("Implement complete: {done_count}/{total_count} WPs complete for implementation.");
+
+    Ok(())
+}
+
+/// A dependency is satisfied once its work package has completed producer work.
+///
+/// `Review` means a candidate exists and an independent, candidate-bound
+/// acceptance transaction can now run; `Done` means that transaction already
+/// accepted it. Scheduling dependents on `Review` keeps a feature moving
+/// through `implement` without ever treating an unaccepted package as accepted:
+/// terminal acceptance still requires `validate`.
+fn satisfies_dependency(state: WpState) -> bool {
+    matches!(state, WpState::Review | WpState::Done)
+}
+
+/// Count targeted work packages that reached a producer-completed state.
+///
+/// `completed` includes pre-existing Done WPs plus WPs this run moved to
+/// Review, which is the producer-completion outcome for an implement run.
+pub fn summary_counts(target_ids: &HashSet<i64>, completed: &HashSet<i64>) -> (usize, usize) {
     let done_count = target_ids
         .iter()
         .filter(|id| completed.contains(id))
         .count();
-    tracing::info!(command = "implement", slug = %slug, done = done_count, elapsed_ms = %elapsed_ms, "implement completed");
-
-    println!();
-    println!(
-        "Implement complete: {done_count}/{} WPs done.",
-        target_ids.len()
-    );
-
-    Ok(())
+    (done_count, target_ids.len())
 }
 
 async fn expire_interrupted_attempts<S: ExecutionRecordPort>(
@@ -721,6 +903,88 @@ fn find_resume_worktree(
         .map(|worktree| worktree.path.clone())
 }
 
+/// The exact candidate a Review work package is bound to, if the ledger holds
+/// one. Canonical acceptance accepts a candidate recorded as a Completed
+/// Attempt on the active Assignment; a worktree name is not a candidate.
+async fn recorded_review_candidate<S>(storage: &S, wp_id: i64) -> Result<Option<String>>
+where
+    S: StoragePort + ExecutionRecordPort,
+{
+    let Some(assignment) = storage
+        .get_active_assignment(wp_id)
+        .await
+        .context("loading active assignment for the review candidate")?
+    else {
+        return Ok(None);
+    };
+    let attempts = storage
+        .list_attempts(&assignment.id)
+        .await
+        .context("listing attempts for the active assignment")?;
+    Ok(attempts
+        .into_iter()
+        .filter(|attempt| attempt.status == AttemptStatus::Completed)
+        .filter_map(|attempt| attempt.result_candidate_ref)
+        .next_back())
+}
+
+/// Append the `Doing -> Review` audit entry when the state change landed but
+/// its entry did not. `mvp::transition` writes the state first and appends the
+/// entry second, so a failure between the two leaves a work package in Review
+/// that no retry repairs. Returns true when an entry was appended.
+async fn ensure_review_audit<S>(
+    storage: &S,
+    feature_id: i64,
+    wp_id: i64,
+    sequence: i32,
+) -> Result<bool>
+where
+    S: StoragePort + ExecutionRecordPort,
+{
+    let transition = format!("WP{sequence:02}: Doing -> Review");
+    let trail = storage
+        .get_audit_trail(feature_id)
+        .await
+        .context("loading the audit trail for review repair")?;
+    if trail
+        .iter()
+        .any(|entry| entry.wp_id == Some(wp_id) && entry.transition == transition)
+    {
+        return Ok(false);
+    }
+    let prev_hash = get_latest_hash(storage, feature_id).await;
+    let mut entry = AuditEntry {
+        id: 0,
+        feature_id,
+        wp_id: Some(wp_id),
+        timestamp: Utc::now(),
+        actor: "user".into(),
+        transition,
+        evidence_refs: vec![],
+        prev_hash,
+        hash: [0u8; 32],
+        event_id: None,
+        archived_to: None,
+    };
+    entry.hash = hash_entry(&entry);
+    storage
+        .append_audit_entry(&entry)
+        .await
+        .context("repairing the missing review transition audit entry")?;
+    Ok(true)
+}
+
+fn find_review_candidate<'a>(
+    worktrees: &'a [agileplus_domain::ports::WorktreeInfo],
+    feature_slug: &str,
+    wp_id: &str,
+) -> Option<&'a agileplus_domain::ports::WorktreeInfo> {
+    worktrees.iter().find(|worktree| {
+        (worktree.feature_slug == feature_slug && worktree.wp_id == wp_id)
+            || worktree.branch == format!("feat/{feature_slug}/{wp_id}")
+    })
+}
+
 fn slugify(s: &str) -> String {
     s.chars()
         .map(|c| {
@@ -752,6 +1016,26 @@ async fn get_latest_hash<S: StoragePort>(storage: &S, feature_id: i64) -> [u8; 3
 mod tests {
     use super::*;
     use std::fs;
+
+    // ── summary_counts ────────────────────────────────────────────────────
+
+    #[test]
+    fn summary_counts_completed_targets_only() {
+        let targets = HashSet::from([1, 2, 3]);
+        let completed = HashSet::from([1, 3, 99]);
+        assert_eq!(summary_counts(&targets, &completed), (2, 3));
+    }
+
+    // ── satisfies_dependency ──────────────────────────────────────────────
+
+    #[test]
+    fn dependency_is_satisfied_by_review_or_done_only() {
+        assert!(!satisfies_dependency(WpState::Planned));
+        assert!(!satisfies_dependency(WpState::Doing));
+        assert!(!satisfies_dependency(WpState::Blocked));
+        assert!(satisfies_dependency(WpState::Review));
+        assert!(satisfies_dependency(WpState::Done));
+    }
 
     // ── slugify ───────────────────────────────────────────────────────────
 

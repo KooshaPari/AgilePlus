@@ -216,7 +216,8 @@ impl DialectRegistry {
 }
 
 impl Default for DialectRegistry {
-    /// Convenience constructor pre-populated with the three built-in dialects.
+    /// Creates a registry pre-populated with the three built-in dialects; this is
+    /// how `DialectRegistry::new` obtains the built-in set.
     fn default() -> Self {
         let mut reg = Self {
             by_name: HashMap::new(),
