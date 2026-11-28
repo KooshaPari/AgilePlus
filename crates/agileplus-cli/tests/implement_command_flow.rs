@@ -254,9 +254,10 @@ fn implement_propagates_worktree_listing_failure() {
     });
 }
 
-/// A Review prerequisite cannot release a dependent until acceptance is Done.
+/// A Review prerequisite releases its dependent for producer work without
+/// being accepted: the prerequisite stays in Review.
 #[test]
-fn implement_review_prerequisite_does_not_release_dependent() {
+fn implement_review_prerequisite_releases_dependent_without_accepting_it() {
     block_on_paused(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
         let (_, first_id) = seed(&storage, "dependency-gate", FeatureState::Implementing).await;

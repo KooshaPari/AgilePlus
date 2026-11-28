@@ -205,16 +205,25 @@ where
     };
 
     // Process WPs
-    let released: HashSet<i64> = all_wps
-        .iter()
-        .filter(|wp| satisfies_dependency(wp.state))
-        .map(|wp| wp.id)
-        .collect();
+    //
     // A dependency is satisfied by producer completion (Review) or by terminal
     // acceptance (Done). Feature acceptance is a separate candidate-bound
     // transaction, so scheduling on Review sequences producer work without
     // treating an unaccepted package as accepted.
-    let mut completed = released.clone();
+    let mut released: HashSet<i64> = all_wps
+        .iter()
+        .filter(|wp| satisfies_dependency(wp.state))
+        .map(|wp| wp.id)
+        .collect();
+    // Only terminal acceptance short-circuits the loop. A package already in
+    // Review must still be visited: that is where a missing Review audit entry
+    // is repaired and where a candidate-less package is recovered.
+    let done: HashSet<i64> = all_wps
+        .iter()
+        .filter(|wp| wp.state == WpState::Done)
+        .map(|wp| wp.id)
+        .collect();
+    let mut completed = done.clone();
 
     let target_ids: HashSet<i64> = target_wps.iter().map(|wp| wp.id).collect();
 
@@ -224,7 +233,7 @@ where
 
     for wp in &target_wps {
         // Skip already done
-        if completed.contains(&wp.id) {
+        if done.contains(&wp.id) {
             println!(
                 "  WP{:02} '{}' already done, skipping.",
                 wp.sequence, wp.title
@@ -315,6 +324,7 @@ where
                 // so dependents are scheduled against it. Terminal acceptance
                 // is a separate candidate-bound transaction.
                 completed.insert(wp.id);
+                released.insert(wp.id);
                 continue;
             }
             // Review without a recorded candidate has no acceptable exact
@@ -678,6 +688,7 @@ where
                     continue;
                 }
                 completed.insert(wp.id);
+                released.insert(wp.id);
                 println!(
                     "  WP{:02} candidate {} captured and moved to Review; terminal acceptance is separate.",
                     wp.sequence, candidate_ref
