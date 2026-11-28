@@ -97,6 +97,20 @@ impl agileplus_domain::ports::ExecutionRecordPort for SqliteStorageAdapter {
         let c = self.lock()?;
         repository::execution::create_spec_revision(&c, r)
     }
+    async fn get_spec_revision(
+        &self,
+        revision_id: &str,
+    ) -> Result<Option<agileplus_domain::domain::execution::SpecRevision>, DomainError> {
+        let c = self.lock()?;
+        repository::execution::get_spec_revision(&c, revision_id)
+    }
+    async fn get_latest_spec_revision(
+        &self,
+        feature_id: i64,
+    ) -> Result<Option<agileplus_domain::domain::execution::SpecRevision>, DomainError> {
+        let c = self.lock()?;
+        repository::execution::get_latest_spec_revision(&c, feature_id)
+    }
     async fn create_assignment(
         &self,
         a: &agileplus_domain::domain::execution::Assignment,

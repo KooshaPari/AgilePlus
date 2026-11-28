@@ -68,7 +68,7 @@ pub fn args(feature: &str) -> ImplementArgs {
 pub const SPEC: &str = "# Spec\nAcceptance: the thing works.\n";
 pub const PLAN: &str = "# Plan\nStep one.\n";
 /// Exact immutable commit reported by the simulated worktree and worker.
-const TEST_CANDIDATE_COMMIT: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+pub const TEST_CANDIDATE_COMMIT: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
 /// A VCS double that materializes real files under a temp worktree root so the
 /// artifact-materialization step in `run_implement` performs genuine filesystem

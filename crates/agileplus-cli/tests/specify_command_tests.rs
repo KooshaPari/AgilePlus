@@ -12,7 +12,7 @@ use std::path::PathBuf;
 
 use agileplus_cli::commands::specify::{SpecifyArgs, run_specify};
 use agileplus_domain::domain::state_machine::FeatureState;
-use agileplus_domain::ports::StoragePort;
+use agileplus_domain::ports::{ExecutionRecordPort, StoragePort};
 use agileplus_sqlite::SqliteStorageAdapter;
 
 use support::MockVcs;
@@ -59,6 +59,19 @@ fn args(feature: Option<&str>, from_file: PathBuf) -> SpecifyArgs {
         target_branch: "main".to_string(),
         force: false,
     }
+}
+
+async fn stored_hash(storage: &SqliteStorageAdapter, slug: &str) -> [u8; 32] {
+    storage
+        .get_feature_by_slug(slug)
+        .await
+        .unwrap()
+        .expect("feature exists")
+        .spec_hash
+}
+
+fn hex(hash: &[u8; 32]) -> String {
+    hash.iter().map(|b| format!("{b:02x}")).collect()
 }
 
 // ── create path ──────────────────────────────────────────────────────────────
@@ -143,10 +156,34 @@ async fn refines_existing_feature_and_records_revision_diff() {
         .await
         .expect("initial create");
 
+    let original_hash = stored_hash(&storage, "alpha").await;
     let second = write_spec(tmp.path(), "spec2.md", REVISED_SPEC);
     run_specify(args(Some("alpha"), second), &storage, &vcs)
         .await
         .expect("refinement");
+
+    let refined_hash = stored_hash(&storage, "alpha").await;
+    assert_ne!(refined_hash, original_hash, "stored hash must advance");
+    let expected_hash = agileplus_cli::commands::specify::sha256_bytes(REVISED_SPEC);
+    assert_eq!(refined_hash, expected_hash);
+
+    let feature = storage.get_feature_by_slug("alpha").await.unwrap().unwrap();
+    let new_revision_id = format!("spec:{}:{}", feature.id, hex(&refined_hash));
+    let old_revision_id = format!("spec:{}:{}", feature.id, hex(&original_hash));
+    let mut old_revision = storage
+        .get_spec_revision(&old_revision_id)
+        .await
+        .unwrap()
+        .expect("original revision exists during assignment");
+    old_revision.parent_revision_id = Some(new_revision_id.clone());
+
+    let new_revision = storage
+        .get_spec_revision(&new_revision_id)
+        .await
+        .unwrap()
+        .expect("new immutable revision exists");
+    assert_eq!(new_revision.content_hash, hex(&refined_hash));
+    assert_eq!(new_revision.parent_revision_id.as_deref(), Some(old_revision_id.as_str()));
 
     assert_eq!(vcs.get("alpha", "spec.md").as_deref(), Some(REVISED_SPEC));
     let diff = vcs
@@ -161,6 +198,26 @@ async fn refines_existing_feature_and_records_revision_diff() {
     // create audit + refinement audit
     let trail = storage.get_audit_trail(feature.id).await.unwrap();
     assert_eq!(trail.len(), 2);
+    let refinement_audit = trail
+        .iter()
+        .find(|entry| entry.transition.contains("revision"))
+        .expect("refinement audit entry");
+    assert_eq!(
+        refinement_audit
+            .evidence_refs
+            .iter()
+            .map(|reference| reference.fr_id.as_str())
+            .collect::<Vec<_>>(),
+        vec![new_revision_id.as_str()]
+    );
+    let old_revision_receipt = format!("evidence:revision:{old_revision_id}");
+    assert!(
+        !refinement_audit
+            .evidence_refs
+            .iter()
+            .any(|reference| reference.fr_id == old_revision_receipt),
+        "old revision evidence must not satisfy the refinement"
+    );
 }
 
 #[tokio::test]

@@ -10,10 +10,11 @@ use anyhow::{Context, Result};
 use chrono::Utc;
 use sha2::{Digest, Sha256};
 
-use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
+use agileplus_domain::domain::audit::{AuditEntry, EvidenceRef, hash_entry};
+use agileplus_domain::domain::execution::SpecRevision;
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::state_machine::FeatureState;
-use agileplus_domain::ports::StoragePort;
+use agileplus_domain::ports::{ExecutionRecordPort, StoragePort};
 use agileplus_domain::ports::VcsPort;
 
 use super::governance::{enforce_governance, load_constitution, validate_spec_consistency};
@@ -41,7 +42,7 @@ pub struct SpecifyArgs {
 /// Run the `specify` command.
 pub async fn run_specify<S, V>(args: SpecifyArgs, storage: &S, vcs: &V) -> Result<()>
 where
-    S: StoragePort,
+    S: StoragePort + ExecutionRecordPort,
     V: VcsPort,
 {
     let start = std::time::Instant::now();
@@ -250,7 +251,7 @@ async fn run_create<S: StoragePort, V: VcsPort>(
 }
 
 /// Revise an existing feature's spec.
-async fn run_refinement<S: StoragePort, V: VcsPort>(
+async fn run_refinement<S: StoragePort + ExecutionRecordPort, V: VcsPort>(
     existing: Feature,
     slug: &str,
     new_spec_content: &str,
@@ -278,10 +279,61 @@ async fn run_refinement<S: StoragePort, V: VcsPort>(
 
     let new_hash = sha256_bytes(new_spec_content);
 
-    // Update spec hash via state update (use a dedicated update or re-create)
-    // The storage port doesn't have update_spec_hash, so we re-use update_feature_state
-    // which touches updated_at. Hash updates are reflected in the audit trail.
-    // We store the new hash in the audit evidence for traceability.
+    let new_hash_hex = hash_hex(&new_hash);
+    let new_revision_id = format!("spec:{}:{}", existing.id, new_hash_hex);
+    let now = Utc::now();
+    let parent_revision_id = existing
+        .spec_hash
+        .ne(&new_hash)
+        .then(|| format!("spec:{}:{}", existing.id, hash_hex(&existing.spec_hash)));
+
+    // Earlier `specify` runs did not materialize the initial feature spec as a
+    // revision. Create that parent row when needed so the immutable child can
+    // reference it without disabling the `parent_revision_id` FK.
+    //
+    // The backfilled parent describes content that was accepted when the
+    // feature was created, not now, so it carries the feature's creation
+    // timestamp and an authority that marks it as reconstructed.
+    if let Some(ref parent_id) = parent_revision_id
+        && storage
+            .get_spec_revision(parent_id)
+            .await
+            .with_context(|| format!("checking parent revision {parent_id}"))?
+            .is_none()
+    {
+        storage
+            .create_spec_revision(&SpecRevision {
+                id: parent_id.clone(),
+                feature_id: existing.id,
+                content_hash: hash_hex(&existing.spec_hash),
+                parent_revision_id: None,
+                accepted_at: existing.created_at,
+                authority: "feature.spec_hash.backfill".into(),
+            })
+            .await
+            .with_context(|| format!("persisting parent revision {parent_id}"))?;
+    }
+
+    storage
+        .create_spec_revision(&SpecRevision {
+            id: new_revision_id.clone(),
+            feature_id: existing.id,
+            content_hash: new_hash_hex.clone(),
+            parent_revision_id,
+            accepted_at: now,
+            authority: "feature.spec_hash".into(),
+        })
+        .await
+        .context("persisting refined immutable spec revision")?;
+
+    // Advance the feature pointer last: the immutable revision is the durable
+    // record, so publishing the hash before the row exists would leave the
+    // feature naming a revision that was never written. Re-running is
+    // idempotent because `create_spec_revision` inserts with `OR IGNORE`.
+    storage
+        .update_spec_hash(existing.id, new_hash)
+        .await
+        .context("persisting refined spec hash")?;
 
     // Write updated spec
     vcs.write_artifact(slug, "spec.md", new_spec_content)
@@ -307,7 +359,10 @@ async fn run_refinement<S: StoragePort, V: VcsPort>(
         timestamp: Utc::now(),
         actor: "user".into(),
         transition: "Specified -> Specified (revision)".into(),
-        evidence_refs: vec![],
+        evidence_refs: vec![EvidenceRef {
+            evidence_id: 0,
+            fr_id: new_revision_id.clone(),
+        }],
         prev_hash,
         hash: [0u8; 32],
         event_id: None,
@@ -319,10 +374,14 @@ async fn run_refinement<S: StoragePort, V: VcsPort>(
         .await
         .context("appending refinement audit entry")?;
 
-    let _ = new_hash; // hash tracked in audit
     println!("Spec for '{slug}' updated (revision {rev_n}).");
+    println!("  Spec revision: {new_revision_id}");
     println!("  Diff saved to: kitty-specs/{slug}/{diff_artifact_path}");
     Ok(())
+}
+
+fn hash_hex(hash: &[u8; 32]) -> String {
+    hash.iter().map(|b| format!("{b:02x}")).collect()
 }
 
 /// Compute a simple line-by-line diff summary using the `similar` crate.

@@ -162,6 +162,25 @@ pub fn update_feature_state(
     Ok(())
 }
 
+pub fn update_spec_hash(
+    conn: &Connection,
+    id: i64,
+    spec_hash: &[u8],
+) -> Result<(), DomainError> {
+    if spec_hash.len() != 32 {
+        return Err(DomainError::Validation(
+            "spec hash must be exactly 32 bytes".into(),
+        ));
+    }
+    let now = chrono::Utc::now().to_rfc3339();
+    conn.execute(
+        "UPDATE features SET spec_hash = ?1, updated_at = ?2 WHERE id = ?3",
+        params![spec_hash, now, id],
+    )
+    .map_err(map_err)?;
+    Ok(())
+}
+
 pub fn update_feature(conn: &Connection, feature: &Feature) -> Result<(), DomainError> {
     let now = chrono::Utc::now().to_rfc3339();
     conn.execute(
