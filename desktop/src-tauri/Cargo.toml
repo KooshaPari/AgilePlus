@@ -34,7 +34,7 @@ dirs-next = "2"
 # Tauri's MockRuntime over IPC. Kept out of [dependencies] so release builds do
 # not compile the mock runtime.
 tauri = { version = "2.11.2", features = ["test"] }
-agileplus-sqlite = { path = "../../crates/agileplus-sqlite" }
+agileplus-sqlite = { path = "../../crates/agileplus-sqlite", version = "0.2.4" }
 
 [package.metadata.dist]
 dist = false
