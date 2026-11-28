@@ -150,10 +150,20 @@ fn implement_recovers_review_worktree_without_recorded_candidate() {
             .await
             .unwrap()
             .unwrap();
-        assert_ne!(
+        assert_eq!(
             wp.state,
-            WpState::Review,
+            WpState::Doing,
             "a worktree name alone cannot keep a WP counted as a Review outcome"
+        );
+        assert!(
+            vcs.created_worktrees().is_empty(),
+            "the canonical worktree must be reused, not re-created: {:?}",
+            vcs.created_worktrees()
+        );
+        assert_eq!(
+            agent.polls(),
+            1,
+            "recovery must re-dispatch instead of returning before dispatch"
         );
         vcs.cleanup();
     });
@@ -283,14 +293,31 @@ fn implement_review_prerequisite_does_not_release_dependent() {
         let agent = ScriptedAgent::success();
         run_implement(args("dependency-gate"), &storage, &vcs, &agent)
             .await
-            .expect("skipping unaccepted prerequisite must succeed");
+            .expect("scheduling a dependent of an unaccepted prerequisite must succeed");
 
+        let prerequisite = StoragePort::get_work_package(&storage, first_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            prerequisite.state,
+            WpState::Review,
+            "scheduling dependents must not accept the prerequisite"
+        );
         let dependent = StoragePort::get_work_package(&storage, second_id)
             .await
             .unwrap()
             .unwrap();
-        assert_eq!(dependent.state, WpState::Planned);
-        assert_eq!(agent.polls(), 0, "dependent must not be dispatched");
+        assert_ne!(
+            dependent.state,
+            WpState::Planned,
+            "producer completion releases the dependent for implementation"
+        );
+        assert_eq!(
+            agent.polls(),
+            1,
+            "the dependent must be dispatched once its prerequisite produced a candidate"
+        );
         vcs.cleanup();
     });
 }

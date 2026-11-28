@@ -205,14 +205,16 @@ where
     };
 
     // Process WPs
-    let done: HashSet<i64> = all_wps
+    let released: HashSet<i64> = all_wps
         .iter()
-        .filter(|wp| wp.state == WpState::Done)
+        .filter(|wp| satisfies_dependency(wp.state))
         .map(|wp| wp.id)
         .collect();
-    // Review WPs count in the run summary, but only Done WPs can release
-    // downstream dependencies.
-    let mut completed = done.clone();
+    // A dependency is satisfied by producer completion (Review) or by terminal
+    // acceptance (Done). Feature acceptance is a separate candidate-bound
+    // transaction, so scheduling on Review sequences producer work without
+    // treating an unaccepted package as accepted.
+    let mut completed = released.clone();
 
     let target_ids: HashSet<i64> = target_wps.iter().map(|wp| wp.id).collect();
 
@@ -234,7 +236,7 @@ where
         // package into Doing while a prerequisite is unmet would leave it in
         // Doing, undispatchable and unreported, because the direct state write
         // does not run the Doing transition's dependency gate.
-        if let Some(blockers) = scheduler.is_blocked(wp.id, &done) {
+        if let Some(blockers) = scheduler.is_blocked(wp.id, &released) {
             let blocker_ids: Vec<String> = blockers.iter().map(|id| id.to_string()).collect();
             println!(
                 "  WP{:02} '{}' is blocked by: [{}]. Skipping.",
@@ -257,6 +259,13 @@ where
         // candidate, so it cannot authorize the skip. A VCS listing fault is
         // decided from the ledger alone rather than aborting every remaining
         // work package.
+        // A Review work package with no recorded candidate is recovered to
+        // Doing below. Track that locally so the reuse path that follows sees
+        // the state this run actually operates in rather than the stale Review
+        // copy: the canonical worktree may already exist on disk, and
+        // `create_worktree` rejects an existing non-empty path.
+        let mut recovered_to_doing = false;
+
         if wp.state == WpState::Review {
             let wp_id_str = format!("WP{:02}", wp.sequence);
             let (listed_ref, listing_failed) = match vcs.list_worktrees().await {
@@ -267,16 +276,25 @@ where
                 ),
                 Err(error) => {
                     println!(
-                        "  WP{:02} worktree listing failed ({error:#}); deciding from the recorded candidate.",
+                        "  WP{:02} worktree listing failed ({error:#}); candidate cannot be verified.",
                         wp.sequence
                     );
                     (None, true)
                 }
             };
             let recorded_ref = recorded_review_candidate(storage, wp.id).await?;
+            // A listing fault cannot confirm the exact-match rule, so no
+            // candidate is counted from the ledger alone. The work package is
+            // left untouched and the remaining targets still run.
+            if listing_failed {
+                println!(
+                    "  WP{:02} '{}' is in Review; candidate verification failed, leaving it unchanged.",
+                    wp.sequence, wp.title
+                );
+                continue;
+            }
             let retained = match (recorded_ref, listed_ref) {
                 (Some(recorded), Some(listed)) if recorded == listed => Some(recorded),
-                (Some(recorded), None) if listing_failed => Some(recorded),
                 _ => None,
             };
             if let Some(recorded) = retained {
@@ -294,7 +312,8 @@ where
                     wp.sequence, wp.title, recorded
                 );
                 // Review is a completed producer outcome for this run's summary,
-                // but it is not terminal acceptance and cannot release dependents.
+                // so dependents are scheduled against it. Terminal acceptance
+                // is a separate candidate-bound transaction.
                 completed.insert(wp.id);
                 continue;
             }
@@ -309,12 +328,15 @@ where
                 .update_wp_state(wp.id, WpState::Doing)
                 .await
                 .context(format!("recovering {wp_id_str} from Review to Doing"))?;
+            recovered_to_doing = true;
         }
+
+        let in_doing = wp.state == WpState::Doing || recovered_to_doing;
 
         println!("Processing WP{:02}: '{}'...", wp.sequence, wp.title);
 
         // Resume mode: check if worktree already exists
-        if args.resume && wp.state == WpState::Doing {
+        if args.resume && in_doing {
             println!(
                 "  Resuming WP{:02} (already in 'doing' state)...",
                 wp.sequence
@@ -322,7 +344,7 @@ where
         }
 
         let wp_id_str = format!("WP{:02}", wp.sequence);
-        let existing_worktree = if args.resume && wp.state == WpState::Doing {
+        let existing_worktree = if (args.resume || recovered_to_doing) && in_doing {
             let worktrees = vcs
                 .list_worktrees()
                 .await
@@ -787,9 +809,20 @@ where
     tracing::info!(command = "implement", slug = %slug, done = done_count, elapsed_ms = %elapsed_ms, "implement completed");
 
     println!();
-    println!("Implement complete: {done_count}/{total_count} WPs done.");
+    println!("Implement complete: {done_count}/{total_count} WPs complete for implementation.");
 
     Ok(())
+}
+
+/// A dependency is satisfied once its work package has completed producer work.
+///
+/// `Review` means a candidate exists and an independent, candidate-bound
+/// acceptance transaction can now run; `Done` means that transaction already
+/// accepted it. Scheduling dependents on `Review` keeps a feature moving
+/// through `implement` without ever treating an unaccepted package as accepted:
+/// terminal acceptance still requires `validate`.
+fn satisfies_dependency(state: WpState) -> bool {
+    matches!(state, WpState::Review | WpState::Done)
 }
 
 /// Count targeted work packages that reached a producer-completed state.
@@ -980,6 +1013,17 @@ mod tests {
         let targets = HashSet::from([1, 2, 3]);
         let completed = HashSet::from([1, 3, 99]);
         assert_eq!(summary_counts(&targets, &completed), (2, 3));
+    }
+
+    // ── satisfies_dependency ──────────────────────────────────────────────
+
+    #[test]
+    fn dependency_is_satisfied_by_review_or_done_only() {
+        assert!(!satisfies_dependency(WpState::Planned));
+        assert!(!satisfies_dependency(WpState::Doing));
+        assert!(!satisfies_dependency(WpState::Blocked));
+        assert!(satisfies_dependency(WpState::Review));
+        assert!(satisfies_dependency(WpState::Done));
     }
 
     // ── slugify ───────────────────────────────────────────────────────────
