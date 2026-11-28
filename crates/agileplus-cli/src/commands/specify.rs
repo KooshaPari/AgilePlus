@@ -279,13 +279,6 @@ async fn run_refinement<S: StoragePort + ExecutionRecordPort, V: VcsPort>(
 
     let new_hash = sha256_bytes(new_spec_content);
 
-    // The refined content hash is the identity of the new revision. Persist it
-    // on the feature before creating the immutable revision that names it.
-    storage
-        .update_spec_hash(existing.id, new_hash)
-        .await
-        .context("persisting refined spec hash")?;
-
     let new_hash_hex = hash_hex(&new_hash);
     let new_revision_id = format!("spec:{}:{}", existing.id, new_hash_hex);
     let now = Utc::now();
@@ -297,6 +290,10 @@ async fn run_refinement<S: StoragePort + ExecutionRecordPort, V: VcsPort>(
     // Earlier `specify` runs did not materialize the initial feature spec as a
     // revision. Create that parent row when needed so the immutable child can
     // reference it without disabling the `parent_revision_id` FK.
+    //
+    // The backfilled parent describes content that was accepted when the
+    // feature was created, not now, so it carries the feature's creation
+    // timestamp and an authority that marks it as reconstructed.
     if let Some(ref parent_id) = parent_revision_id
         && storage
             .get_spec_revision(parent_id)
@@ -310,8 +307,8 @@ async fn run_refinement<S: StoragePort + ExecutionRecordPort, V: VcsPort>(
                 feature_id: existing.id,
                 content_hash: hash_hex(&existing.spec_hash),
                 parent_revision_id: None,
-                accepted_at: now,
-                authority: "feature.spec_hash".into(),
+                accepted_at: existing.created_at,
+                authority: "feature.spec_hash.backfill".into(),
             })
             .await
             .with_context(|| format!("persisting parent revision {parent_id}"))?;
@@ -328,6 +325,15 @@ async fn run_refinement<S: StoragePort + ExecutionRecordPort, V: VcsPort>(
         })
         .await
         .context("persisting refined immutable spec revision")?;
+
+    // Advance the feature pointer last: the immutable revision is the durable
+    // record, so publishing the hash before the row exists would leave the
+    // feature naming a revision that was never written. Re-running is
+    // idempotent because `create_spec_revision` inserts with `OR IGNORE`.
+    storage
+        .update_spec_hash(existing.id, new_hash)
+        .await
+        .context("persisting refined spec hash")?;
 
     // Write updated spec
     vcs.write_artifact(slug, "spec.md", new_spec_content)
