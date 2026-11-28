@@ -101,10 +101,10 @@ impl IntentRegistry {
         let mut by_cat = self.by_category.write().await;
         let mut by_act = self.by_action.write().await;
 
-        for (_, ids) in by_cat.iter_mut() {
+        for ids in by_cat.values_mut() {
             ids.retain(|id| id != service_id);
         }
-        for (_, ids) in by_act.iter_mut() {
+        for ids in by_act.values_mut() {
             ids.retain(|id| id != service_id);
         }
 
