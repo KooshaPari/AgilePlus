@@ -124,26 +124,6 @@ pub fn update_work_package_state_in(
     new_state: &str,
     now: &str,
 ) -> Result<(), String> {
-    // An accepted terminal work package is immutable from the desktop. Read
-    // the persisted state first so a second terminal writer cannot reopen or
-    // otherwise mutate it through this command.
-    const TERMINAL_STATES: [&str; 1] = ["done"];
-    let current_state: Option<String> = conn
-        .query_row(
-            "SELECT state FROM work_packages WHERE id = ?1",
-            [id],
-            |row| row.get(0),
-        )
-        .optional()
-        .map_err(|e| e.to_string())?;
-    if let Some(state) = current_state.as_deref() {
-        if TERMINAL_STATES.contains(&state) {
-            return Err(format!(
-                "Work package {id} is in terminal state '{state}' and cannot be mutated from the desktop"
-            ));
-        }
-    }
-
     // Terminal and unknown requests must go through the canonical lifecycle
     // writer. The desktop command is deliberately not an alternate acceptor.
     const ALLOWED_NON_TERMINAL_STATES: [&str; 3] = ["planned", "doing", "review"];
@@ -153,12 +133,46 @@ pub fn update_work_package_state_in(
         ));
     }
 
-    conn.execute(
-        "UPDATE work_packages SET state = ?1, updated_at = ?2 WHERE id = ?3",
-        rusqlite::params![new_state, now, id],
-    )
-    .map_err(|e| e.to_string())?;
-    Ok(())
+    // An accepted terminal work package is immutable from the desktop. The
+    // guard belongs on the write itself, not on a prior SELECT: canonical
+    // acceptance can commit `done` between a read and a write, and an
+    // unconditional UPDATE would then reopen the accepted package.
+    //
+    // `blocked` is deliberately NOT terminal here: `implement` assigns it when
+    // a work package exhausts its review cycles, and an operator retrying that
+    // work needs the desktop to move it back to `planned`/`doing`. Only `done`
+    // carries an acceptance receipt that a desktop write would invalidate.
+    const TERMINAL_STATES: [&str; 1] = ["done"];
+    let updated = conn
+        .execute(
+            "UPDATE work_packages
+             SET state = ?1, updated_at = ?2
+             WHERE id = ?3 AND state NOT IN ('done')",
+            rusqlite::params![new_state, now, id],
+        )
+        .map_err(|e| e.to_string())?;
+    if updated > 0 {
+        return Ok(());
+    }
+
+    // Nothing was written: distinguish "no such package" from "terminal state".
+    let current_state: Option<String> = conn
+        .query_row(
+            "SELECT state FROM work_packages WHERE id = ?1",
+            [id],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| e.to_string())?;
+    match current_state.as_deref() {
+        None => Err(format!("Work package {id} not found")),
+        Some(state) if TERMINAL_STATES.contains(&state) => Err(format!(
+            "Work package {id} is in terminal state '{state}' and cannot be mutated from the desktop"
+        )),
+        Some(state) => Err(format!(
+            "Work package {id} state changed concurrently (now '{state}'); retry"
+        )),
+    }
 }
 
 fn query_work_package(conn: &rusqlite::Connection, id: i64) -> Result<WorkPackage, String> {

@@ -153,3 +153,23 @@ fn update_work_package_state_rejects_mutation_of_done_wp() {
         );
     }
 }
+
+#[test]
+fn update_work_package_state_releases_a_blocked_work_package_for_retry() {
+    // `implement` parks a work package in `blocked` when it exhausts its review
+    // cycles. Only `done` carries an acceptance receipt, so `blocked` must stay
+    // mutable: otherwise an operator can never retry the abandoned work.
+    let conn = migrated_db_with_wp_state("blocked");
+
+    update_work_package_state_in(&conn, WP_ID, "planned", "2026-01-02T00:00:00Z")
+        .expect("blocked -> planned must remain available for operator retry");
+
+    let state: String = conn
+        .query_row(
+            "SELECT state FROM work_packages WHERE id = ?1",
+            [WP_ID],
+            |row| row.get(0),
+        )
+        .expect("work package still exists");
+    assert_eq!(state, "planned");
+}
