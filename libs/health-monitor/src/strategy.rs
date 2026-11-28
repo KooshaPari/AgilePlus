@@ -41,10 +41,10 @@ impl Default for ThresholdStrategy {
 
 impl HealthStrategy for ThresholdStrategy {
     fn evaluate(&self, result: &HealthCheckResult) -> HealthAction {
-        if let Some(rt) = result.response_time_ms {
-            if rt > self.slow_response_threshold_ms {
-                return HealthAction::Degrade;
-            }
+        if let Some(rt) = result.response_time_ms
+            && rt > self.slow_response_threshold_ms
+        {
+            return HealthAction::Degrade;
         }
 
         match result.status {
